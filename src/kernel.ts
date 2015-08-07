@@ -1,9 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-
-import serialize = require('./serialize');
-import utils = require('./utils');
+module jupyter.services {
 
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
@@ -916,3 +914,5 @@ function validateKernelId(info: IKernelId) : void {
      throw Error('Invalid kernel id');
    }
 }
+
+}  // module jupyter.services

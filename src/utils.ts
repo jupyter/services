@@ -1,6 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+module jupyter.services.utils {
 
 /**
  * Copy the contents of one object to another, recursively.
@@ -178,3 +179,5 @@ function ajaxRequest(url: string, settings: IAjaxSetttings): Promise<any> {
     }
   });
 }
+
+}  // module jupyter.services 

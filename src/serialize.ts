@@ -1,10 +1,10 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import utils = require('./utils');
-import kernel = require('./kernel');
 
-import IKernelMsg = kernel.IKernelMsg;
+module jupyter.services.serialize {
+
+import IKernelMsg = services.IKernelMsg;
 
 
 /**
@@ -113,3 +113,5 @@ function replace_buffers(key: string, value: any) {
   }
   return value;
 }
+
+}  // module jupyter.services

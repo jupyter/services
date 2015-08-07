@@ -1,3 +1,4 @@
+
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, S. Chris Colbert
 |
@@ -38,9 +39,9 @@ var testsTypings = buildTypings.concat([
 
 
 var tsSources = [
+  'serialize',
   'kernel',
   'utils',
-  'serialize'
 ].map(function(name) { return './src/' + name + '.ts'; });
 
 
@@ -56,7 +57,6 @@ gulp.task('src', function() {
     declarationFiles: true,
     noImplicitAny: true,
     target: 'ES5',
-    module: 'amd'
   });
 
   var src = gulp.src(buildTypings.concat(tsSources))
