@@ -35,9 +35,52 @@ class RequestHandler {
 }
 
 
-describe('jupyter.services', () => {
+describe('jupyter.services - Kernel', () => {
 
-  describe('Kernel', () => {
+    describe('#list()', () => {
+
+        it('should yield a list of valid kernel ids', () => {
+          var handler = new RequestHandler();
+          var list = Kernel.list('baseUrl');
+          var data = JSON.stringify([{id: "1234", name: "test"},
+                                      {id: "5678", name: "test2"}]);
+          handler.respond(200, { 'Content-Type': 'text/json' }, data);
+          return list.then((response: IKernelId[]) => {
+            expect(response[0].name).to.be("test");
+            expect(response[0].id).to.be("1234");
+            handler.restore();
+          });
+          
+        });
+
+        it('should throw an error for an invalid model', () => {
+          var handler = new RequestHandler();
+          var list = Kernel.list('baseUrl');
+          var data = JSON.stringify({id: "1234", name: "test"});
+          handler.respond(200, { 'Content-Type': 'text/json' }, data);
+          return list.then(() => {
+            throw Error('should not reach this point');
+          }).catch((err) => {
+            expect(err.message).to.be("Invalid kernel list");
+          });
+          
+        });
+
+        it('should throw an error for an invalid response', () => {
+          var handler = new RequestHandler();
+          var list = Kernel.list('baseUrl');
+          var data = JSON.stringify([{id: "1234", name: "test"},
+                                     {id: "5678", name: "test2"}]);
+          handler.respond(201, { 'Content-Type': 'text/json' }, data);
+          return list.then(() => {
+            throw Error('should not reach this point');
+          }).catch((err) => {
+            expect(err.message).to.be("Invalid Status: 201");
+          });
+          
+        });
+
+      });
 
     describe('#constructor()', () => {
 
@@ -68,24 +111,35 @@ describe('jupyter.services', () => {
         
       });
 
-      it('should throw an error for an invvalid kernel id', () => {
+      it('should throw an error for an invalid kernel id', () => {
         var kernel = new Kernel('baseUrl', 'wsUrl');
         var handler = new RequestHandler();
         var info = kernel.getInfo();
-        var data = JSON.stringify({id: "1234");
+        var data = JSON.stringify({id: "1234"});
         handler.respond(200, { 'Content-Type': 'text/json' }, data);
-        return info.then((response: IKernelId) => {
-          expect(response.name).to.be("test");
-          expect(response.id).to.be("1234");
-          handler.restore();
+        return info.then(() => {
+          throw Error('should not reach this point');
+        }).catch((err) => {
+          expect(err.message).to.be("Invalid kernel id");
+        });
+        
+      });
+
+      it('should throw an error for an invalid response', () => {
+        var kernel = new Kernel('baseUrl', 'wsUrl');
+        var handler = new RequestHandler();
+        var info = kernel.getInfo();
+        var data = JSON.stringify({id: "1234", name: "test"});
+        handler.respond(201, { 'Content-Type': 'text/json' }, data);
+        return info.then(() => {
+          throw Error('should not reach this point');
+        }).catch((err) => {
+          expect(err.message).to.be("Invalid Status: 201");
         });
         
       });
 
     });
-
-   });
-
 
 });
 

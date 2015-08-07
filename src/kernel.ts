@@ -180,7 +180,7 @@ class Kernel {
         if (!Array.isArray(success.data)) {
           throw Error('Invalid kernel list');
         }
-        for (var i = 0; i < success.data.length(); i++) {
+        for (var i = 0; i < success.data.length; i++) {
           validateKernelId(success.data[i]);
         }
         return success.data;
