@@ -68,6 +68,20 @@ describe('jupyter.services', () => {
         
       });
 
+      it('should throw an error for an invvalid kernel id', () => {
+        var kernel = new Kernel('baseUrl', 'wsUrl');
+        var handler = new RequestHandler();
+        var info = kernel.getInfo();
+        var data = JSON.stringify({id: "1234");
+        handler.respond(200, { 'Content-Type': 'text/json' }, data);
+        return info.then((response: IKernelId) => {
+          expect(response.name).to.be("test");
+          expect(response.id).to.be("1234");
+          handler.restore();
+        });
+        
+      });
+
     });
 
    });
