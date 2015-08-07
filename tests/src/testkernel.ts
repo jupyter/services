@@ -11,6 +11,9 @@ module tests {
 import Kernel = jupyter.services.Kernel;
 import IKernelId = jupyter.services.IKernelId;
 declare var sinon: any;
+declare var MockWebServer: any;
+declare var MockServer: any;
+declare var MockWebSocket: any;
 
 
 class RequestHandler {
@@ -141,6 +144,23 @@ describe('jupyter.services - Kernel', () => {
 
     });
 
+    describe('#connect()', () => {
+
+      it('should start the websocket', () => {
+        var mockServer = new MockServer('ws://localhost/api/kernel/1234/channels');
+        mockServer.on('connection', function(server: any) {
+          mockServer.send('test message 1');
+          mockServer.send('test message 2');
+        });
+
+        //window.WebSocket = MockWebSocket;
+        var kernel = new Kernel('/localhost', 'ws://');
+        var kernelId = {id: "1234", name: "test"};
+        kernel.connect(kernelId);
+        console.log(kernel.isConnected);
+      });
+
+    });
 });
 
 }  // module tests
