@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="../node_modules/mocha/mocha.css" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="../node_modules/expect.js/index.js"></script>
+  <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
+  <script type="text/javascript" src="../bower_componts/phosphor/dist/phosphor.js"></script>
+  <script type="text/javascript" src="../dist/jupyter-js-services.js"></script>
+  <title>Jupyter JS Services Tests</title>
+</head>
+<body>
+  <div id="mocha"></div>
+  <script>
+  	mocha.setup('bdd');
+  </script>
+  <script type="text/javascript" src="build/index.js"></script>
+  <script>
+  	mocha.run();
+  </script>
+</body>
+</html>

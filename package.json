@@ -1,0 +1,42 @@
+{
+  "name": "jupyter-services",
+  "version": "0.0.1",
+  "description": "Client APIs for the Jupyter services REST APIs",
+  "dependencies": {},
+  "devDependencies": {
+    "del": "^0.1.3",
+    "event-stream": "^3.1.7",
+    "expect.js": "^0.3.1",
+    "gulp": "^3.8.9",
+    "gulp-concat": "^2.5.2",
+    "gulp-header": "^1.2.2",
+    "gulp-rename": "^1.2.0",
+    "gulp-stylus": "^2.0.1",
+    "gulp-typedoc": "^1.1.0",
+    "gulp-typescript": "^2.7.8",
+    "gulp-uglify": "^1.2.0",
+    "mocha": "^2.2.5",
+    "nib": "^1.1.0",
+    "karma": "^0.12.36",
+    "karma-chrome-launcher": "^0.1.12",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-safari-launcher": "^0.1.1",
+    "karma-mocha": "^0.2.0",
+    "karma-mocha-reporter": "^1.0.2",
+    "typescript": "Microsoft/TypeScript#release-1.5"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jupyter/jupyter-js-services"
+  },
+  "keywords": [
+  ],
+  "author": "Project Jupyter",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/jupyter/jupyter-js-services/issues"
+  },
+  "homepage": "https://github.com/jupyter/jupyter-js-services"
+}
