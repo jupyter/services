@@ -89,7 +89,7 @@ describe('jupyter.services - Kernel', () => {
 
       it('should set initial conditions', () => {
         var kernel = new Kernel('baseUrl', 'wsUrl');
-        expect(kernel.name).to.be("unknown");
+        expect(kernel.name).to.be("");
         kernel.name = "test";
         expect(kernel.name).to.be("test");
         expect(kernel.status).to.be("unknown");
@@ -162,6 +162,12 @@ describe('jupyter.services - Kernel', () => {
           expect(kernel.status).to.be('connected');
         }, 100);
         
+      });
+
+      it('should throw an error for an uninitialized kernel id', () => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        expect(kernel.connect).to.throwError(/You must set the kernel id before starting/);
+        ;
       });
 
     });

@@ -193,8 +193,7 @@ class Kernel {
    * Construct a new kernel.
    */
   constructor(baseUrl: string, wsUrl: string) {
-    console.log('constructor');
-    console.log(this._kernelUrl);
+    this._status = 'unknown';
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
     if (!this._wsUrl) {
@@ -361,20 +360,18 @@ class Kernel {
    * should be used instead.
    */
   start(id?: IKernelId): Promise<IKernelId> {
-    if (id) {
+    if (id !== void 0) {
+      console.log('setting this thing');
       this.id = id.id;
       this.name = id.name;
     }
-    console.log('hello');
-    console.log(this._kernelUrl);
-    if (this._kernelUrl === "unknown") {
+    if (!this._kernelUrl) {
       throw Error('You must set the kernel id before starting.');
     }
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
     }).then((success: IAjaxSuccess) => {
-      console.log('started');
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -410,11 +407,11 @@ class Kernel {
    * This should only be called directly by a session.
    */
   connect(id?: IKernelId): void {
-    if (id) {
+    if (id !== void 0) {
       this.id = id.id;
       this.name = id.name;
     }
-    if (this._kernelUrl === "unknown") {
+    if (!this._kernelUrl) {
       throw Error('You must set the kernel id before starting');
     }
     this._startChannels();
@@ -801,13 +798,13 @@ class Kernel {
     }
   }
 
-  private _id = 'unknown';
-  private _name = 'unknown';
-  private _baseUrl = 'unknown';
-  private _kernelUrl = 'unknown';
-  private _wsUrl = 'unknown';
-  private _username = 'unknown';
-  private _staticId = 'unknown';
+  private _id = '';
+  private _name = '';
+  private _baseUrl = '';
+  private _kernelUrl = '';
+  private _wsUrl = '';
+  private _username = '';
+  private _staticId = '';
   private _ws: WebSocket = null;
   private _infoReply: IKernelInfo = null;
   private _reconnectLimit = 7;
@@ -815,7 +812,7 @@ class Kernel {
   private _reconnectAttempt = 0;
   private _handlerMap: Map<string, KernelFutureHandler> = null;
   private _iopubHandlers: Map<string, (msg: IKernelMsg) => void> = null;
-  private _status = 'unknown';
+  private _status = '';
 }
 
 

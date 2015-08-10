@@ -150,13 +150,13 @@ var jupyter;
              * Construct a new kernel.
              */
             function Kernel(baseUrl, wsUrl) {
-                this._id = 'unknown';
-                this._name = 'unknown';
-                this._baseUrl = 'unknown';
-                this._kernelUrl = 'unknown';
-                this._wsUrl = 'unknown';
-                this._username = 'unknown';
-                this._staticId = 'unknown';
+                this._id = '';
+                this._name = '';
+                this._baseUrl = '';
+                this._kernelUrl = '';
+                this._wsUrl = '';
+                this._username = '';
+                this._staticId = '';
                 this._ws = null;
                 this._infoReply = null;
                 this._reconnectLimit = 7;
@@ -164,9 +164,8 @@ var jupyter;
                 this._reconnectAttempt = 0;
                 this._handlerMap = null;
                 this._iopubHandlers = null;
+                this._status = '';
                 this._status = 'unknown';
-                console.log('constructor');
-                console.log(this._kernelUrl);
                 this._baseUrl = baseUrl;
                 this._wsUrl = wsUrl;
                 if (!this._wsUrl) {
@@ -370,20 +369,18 @@ var jupyter;
              */
             Kernel.prototype.start = function (id) {
                 var _this = this;
-                if (id) {
+                if (id !== void 0) {
+                    console.log('setting this thing');
                     this.id = id.id;
                     this.name = id.name;
                 }
-                console.log('hello');
-                console.log(this._kernelUrl);
-                if (this._kernelUrl === "unknown") {
+                if (!this._kernelUrl) {
                     throw Error('You must set the kernel id before starting.');
                 }
                 return services.utils.ajaxRequest(this._kernelUrl, {
                     method: "POST",
                     dataType: "json"
                 }).then(function (success) {
-                    console.log('started');
                     if (success.xhr.status !== 200) {
                         throw Error('Invalid Status: ' + success.xhr.status);
                     }
@@ -416,11 +413,11 @@ var jupyter;
              * This should only be called directly by a session.
              */
             Kernel.prototype.connect = function (id) {
-                if (id) {
+                if (id !== void 0) {
                     this.id = id.id;
                     this.name = id.name;
                 }
-                if (this._kernelUrl === "unknown") {
+                if (!this._kernelUrl) {
                     throw Error('You must set the kernel id before starting');
                 }
                 this._startChannels();
