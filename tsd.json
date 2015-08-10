@@ -19,6 +19,9 @@
     },
     "text-encoding/text-encoding.d.ts": {
       "commit": "281db74a55053efb4084f96021be65eafd96029f"
+    },
+    "sinon/sinon.d.ts": {
+      "commit": "639337b32bed76f70e1e7918c4ad076c4492e1ed"
     }
   }
 }

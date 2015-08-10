@@ -10,10 +10,6 @@ module tests {
 
 import Kernel = jupyter.services.Kernel;
 import IKernelId = jupyter.services.IKernelId;
-declare var sinon: any;
-declare var MockWebServer: any;
-declare var MockServer: any;
-declare var MockWebSocket: any;
 
 
 class RequestHandler {

@@ -35,6 +35,8 @@ var buildTypings = [
 var testsTypings = buildTypings.concat([
   './typings/expect.js/expect.js.d.ts',
   './typings/mocha/mocha.d.ts',
+  './typings/sinon/sinon.d.ts',
+  './mock-socket.d.ts'
 ]);
 
 
