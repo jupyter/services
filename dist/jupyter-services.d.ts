@@ -164,9 +164,16 @@ declare module jupyter.services {
          */
         status: string;
         /**
-         * Get the current id of the kernel
+         * Get the current id of the kernel.
+         */
+        /**
+         * Set the current id of the kernel.
          */
         id: string;
+        /**
+         * Get the full websocket url.
+         */
+        wsUrl: string;
         /**
          * GET /api/kernels/[:kernel_id]
          *
@@ -184,13 +191,27 @@ declare module jupyter.services {
          *
          * Restart the kernel.
          */
-        restart(): Promise<void>;
+        restart(): Promise<IKernelId>;
+        /**
+         * POST /api/kernels/[:kernel_id]
+         *
+         * Start a kernel.  Note: if using a session, Session.start()
+         * should be used instead.
+         */
+        start(id?: IKernelId): Promise<IKernelId>;
+        /**
+         * DELETE /api/kernels/[:kernel_id]
+         *
+         * Kill a kernel. Note: if useing a session, Session.delete()
+         * should be used instead.
+         */
+        delete(): Promise<void>;
         /**
          * Connect to the server-side the kernel.
          *
-         * This should only be called by a session.
+         * This should only be called directly by a session.
          */
-        connect(id: IKernelId): void;
+        connect(id?: IKernelId): void;
         /**
          * Reconnect to a disconnected kernel. This is not actually a
          * standard HTTP request, but useful function nonetheless for
@@ -333,6 +354,99 @@ declare module jupyter.services {
      * Validate an object as being of IKernelID type
      */
     function validateKernelId(info: IKernelId): void;
+}
+
+declare module jupyter.services {
+    import ISignal = phosphor.core.ISignal;
+    /**
+     * Notebook Identification specification.
+     */
+    interface INotebookId {
+        path: string;
+    }
+    /**
+     * Session Identification specification.
+     */
+    interface ISessionId {
+        id: string;
+        notebook: INotebookId;
+        kernel: IKernelId;
+    }
+    /**
+     * Session initialization options.
+     */
+    interface ISessionOptions {
+        notebookPath: string;
+        kernelName: string;
+        baseUrl: string;
+        wsUrl: string;
+    }
+    /**
+     * Session object for accessing the session REST api. The session
+     * should be used to start kernels and then shut them down -- for
+     * all other operations, the kernel object should be used.
+     **/
+    class NotebookSession {
+        /**
+         * A signal emitted when the session changes state.
+         */
+        statusChanged: ISignal<string>;
+        /**
+         * GET /api/sessions
+         *
+         * Get a list of the current sessions.
+         */
+        static list(baseUrl: string): Promise<ISessionId[]>;
+        /**
+         * Construct a new session.
+         */
+        constructor(options: ISessionOptions);
+        /**
+         * Get the session kernel object.
+        */
+        kernel: Kernel;
+        /**
+         * POST /api/sessions
+         *
+         * Start a new session. This function can only be successfully executed once.
+         */
+        start(): Promise<ISessionId>;
+        /**
+         * GET /api/sessions/[:session_id]
+         *
+         * Get information about a session.
+         */
+        getInfo(): Promise<ISessionId>;
+        /**
+         * DELETE /api/sessions/[:session_id]
+         *
+         * Kill the kernel and shutdown the session.
+         */
+        delete(): Promise<void>;
+        /**
+         * Restart the session by deleting it and then starting it fresh.
+         */
+        restart(options?: ISessionOptions): Promise<void>;
+        /**
+         * Rename the notebook.
+         */
+        renameNotebook(path: string): Promise<ISessionId>;
+        /**
+         * Get the data model for the session, which includes the notebook path
+         * and kernel (name and id).
+         */
+        private _model;
+        /**
+         * Handle a session status change.
+         */
+        private _handleStatus(status);
+        private _id;
+        private _notebookPath;
+        private _baseUrl;
+        private _sessionUrl;
+        private _wsUrl;
+        private _kernel;
+    }
 }
 
 declare module jupyter.services.utils {

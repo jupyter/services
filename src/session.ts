@@ -1,8 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import utils = require('./utils')
-import kernel = require('./kernel')
+module jupyter.services {
 
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
@@ -37,7 +36,7 @@ export
 interface ISessionId {
   id: string;
   notebook: INotebookId;
-  kernel: kernel.IKernelId;
+  kernel: IKernelId;
 };
 
 
@@ -98,7 +97,7 @@ class NotebookSession {
     this._notebookPath = options.notebookPath;
     this._baseUrl = options.baseUrl;
     this._wsUrl = options.wsUrl;
-    this._kernel = new kernel.Kernel(this._baseUrl, this._wsUrl);
+    this._kernel = new Kernel(this._baseUrl, this._wsUrl);
     this._sessionUrl = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL,
                                            this._id);
   }
@@ -106,7 +105,7 @@ class NotebookSession {
   /**
    * Get the session kernel object.
   */
-  get kernel() : kernel.Kernel {
+  get kernel() : Kernel {
     return this._kernel;
   }
 
@@ -239,7 +238,7 @@ class NotebookSession {
   private _baseUrl = "unknown";
   private _sessionUrl = "unknown";
   private _wsUrl = "unknown";
-  private _kernel: kernel.Kernel = null;
+  private _kernel: Kernel = null;
 }
 
 
@@ -251,7 +250,7 @@ function validateSessionId(info: ISessionId): void {
       !info.hasOwnProperty('kernel')) {
     throw Error('Invalid Session Model');
   }
-  kernel.validateKernelId(info.kernel);
+  validateKernelId(info.kernel);
   if (typeof info.id !== 'string') {
     throw Error('Invalid Session Model');
   }
@@ -267,3 +266,5 @@ function validateNotebookId(model: INotebookId): void {
      throw Error('Invalid Notebook Model');
    }
 }
+
+} // module jupyter.services

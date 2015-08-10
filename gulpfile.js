@@ -41,6 +41,7 @@ var testsTypings = buildTypings.concat([
 var tsSources = [
   'serialize',
   'kernel',
+  'session',
   'utils',
 ].map(function(name) { return './src/' + name + '.ts'; });
 

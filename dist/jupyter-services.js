@@ -267,10 +267,31 @@ var jupyter;
             });
             Object.defineProperty(Kernel.prototype, "id", {
                 /**
-                 * Get the current id of the kernel
+                 * Get the current id of the kernel.
                  */
                 get: function () {
                     return this._id;
+                },
+                /**
+                 * Set the current id of the kernel.
+                 */
+                set: function (value) {
+                    this._id = value;
+                    this._kernelUrl = services.utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL, this._id);
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Kernel.prototype, "wsUrl", {
+                /**
+                 * Get the full websocket url.
+                 */
+                get: function () {
+                    return [
+                        this._wsUrl,
+                        services.utils.urlJoinEncode(this._kernelUrl, 'channels'),
+                        "?session_id=" + this._staticId
+                    ].join('');
                 },
                 enumerable: true,
                 configurable: true
@@ -332,20 +353,72 @@ var jupyter;
                     if (success.xhr.status !== 200) {
                         throw Error('Invalid Status: ' + success.xhr.status);
                     }
-                    _this.connect(success.data);
+                    validateKernelId(success.data);
+                    _this.connect();
+                    return success.data;
                 }, function (error) {
                     _this._onError(error);
                 });
             };
             /**
+             * POST /api/kernels/[:kernel_id]
+             *
+             * Start a kernel.  Note: if using a session, Session.start()
+             * should be used instead.
+             */
+            Kernel.prototype.start = function (id) {
+                var _this = this;
+                if (id) {
+                    this.id = id.id;
+                    this.name = id.name;
+                }
+                if (this._kernelUrl === "unknown") {
+                    throw Error('You must set the kernel id before starting');
+                }
+                return services.utils.ajaxRequest(this._kernelUrl, {
+                    method: "POST",
+                    dataType: "json"
+                }).then(function (success) {
+                    console.log('started');
+                    if (success.xhr.status !== 200) {
+                        throw Error('Invalid Status: ' + success.xhr.status);
+                    }
+                    validateKernelId(success.data);
+                    _this.connect(success.data);
+                    return success.data;
+                }, function (error) {
+                    _this._onError(error);
+                });
+            };
+            /**
+             * DELETE /api/kernels/[:kernel_id]
+             *
+             * Kill a kernel. Note: if useing a session, Session.delete()
+             * should be used instead.
+             */
+            Kernel.prototype.delete = function () {
+                return services.utils.ajaxRequest(this._kernelUrl, {
+                    method: "DELETE",
+                    dataType: "json"
+                }).then(function (success) {
+                    if (success.xhr.status !== 204) {
+                        throw Error('Invalid response');
+                    }
+                });
+            };
+            /**
              * Connect to the server-side the kernel.
              *
-             * This should only be called by a session.
+             * This should only be called directly by a session.
              */
             Kernel.prototype.connect = function (id) {
-                this._id = id.id;
-                this._kernelUrl = services.utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL, this._id);
-                this._name = id.name;
+                if (id) {
+                    this.id = id.id;
+                    this.name = id.name;
+                }
+                if (this._kernelUrl === "unknown") {
+                    throw Error('You must set the kernel id before starting');
+                }
                 this._startChannels();
                 this._handleStatus('created');
             };
@@ -533,11 +606,7 @@ var jupyter;
                 this.disconnect();
                 var ws_host_url = this._wsUrl + this._kernelUrl;
                 kernel_log.info("Starting WebSockets:", ws_host_url);
-                this._ws = new WebSocket([
-                    this._wsUrl,
-                    services.utils.urlJoinEncode(this._kernelUrl, 'channels'),
-                    "?session_id=" + this._staticId
-                ].join(''));
+                this._ws = new WebSocket(this.wsUrl);
                 // Ensure incoming binary messages are not Blobs
                 this._ws.binaryType = 'arraybuffer';
                 var already_called_onclose = false; // only alert once
@@ -609,6 +678,7 @@ var jupyter;
                 // get kernel info so we know what state the kernel is in
                 this.kernelInfo().onReply(function (reply) {
                     _this._infoReply = reply.content;
+                    console.log('info reply');
                     _this._handleStatus('ready');
                     _this._autorestartAttempt = 0;
                 });
@@ -892,6 +962,241 @@ var jupyter;
             }
         }
         services.validateKernelId = validateKernelId;
+    })(services = jupyter.services || (jupyter.services = {}));
+})(jupyter || (jupyter = {})); // module jupyter.services
+
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") return Reflect.decorate(decorators, target, key, desc);
+    switch (arguments.length) {
+        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);
+        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);
+        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);
+    }
+};
+var jupyter;
+(function (jupyter) {
+    var services;
+    (function (services) {
+        var signal = phosphor.core.signal;
+        /**
+         * The url for the session service.
+         */
+        var SESSION_SERVICE_URL = 'api/sessions';
+        /**
+         * Get a logger session objects.
+         */
+        var session_log = Logger.get('session');
+        ;
+        ;
+        ;
+        /**
+         * Session object for accessing the session REST api. The session
+         * should be used to start kernels and then shut them down -- for
+         * all other operations, the kernel object should be used.
+         **/
+        var NotebookSession = (function () {
+            /**
+             * Construct a new session.
+             */
+            function NotebookSession(options) {
+                this._id = "unknown";
+                this._notebookPath = "unknown";
+                this._baseUrl = "unknown";
+                this._sessionUrl = "unknown";
+                this._wsUrl = "unknown";
+                this._kernel = null;
+                this._id = services.utils.uuid();
+                this._notebookPath = options.notebookPath;
+                this._baseUrl = options.baseUrl;
+                this._wsUrl = options.wsUrl;
+                this._kernel = new services.Kernel(this._baseUrl, this._wsUrl);
+                this._sessionUrl = services.utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL, this._id);
+            }
+            /**
+             * GET /api/sessions
+             *
+             * Get a list of the current sessions.
+             */
+            NotebookSession.list = function (baseUrl) {
+                var sessionUrl = services.utils.urlJoinEncode(baseUrl, SESSION_SERVICE_URL);
+                return services.utils.ajaxRequest(sessionUrl, {
+                    method: "GET",
+                    dataType: "json"
+                }).then(function (success) {
+                    if (success.xhr.status !== 200) {
+                        throw Error('Invalid Status: ' + success.xhr.status);
+                    }
+                    if (!Array.isArray(success.data)) {
+                        throw Error('Invalid Session list');
+                    }
+                    for (var i = 0; i < success.data.length; i++) {
+                        validateSessionId(success.data[i]);
+                    }
+                    return success.data;
+                });
+            };
+            Object.defineProperty(NotebookSession.prototype, "kernel", {
+                /**
+                 * Get the session kernel object.
+                */
+                get: function () {
+                    return this._kernel;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * POST /api/sessions
+             *
+             * Start a new session. This function can only be successfully executed once.
+             */
+            NotebookSession.prototype.start = function () {
+                var _this = this;
+                var url = services.utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL);
+                return services.utils.ajaxRequest(url, {
+                    method: "POST",
+                    dataType: "json",
+                    data: JSON.stringify(this._model),
+                    contentType: 'application/json'
+                }).then(function (success) {
+                    if (success.xhr.status !== 201) {
+                        throw Error('Invalid response');
+                    }
+                    validateSessionId(success.data);
+                    _this._kernel.connect(success.data.kernel);
+                    _this._handleStatus('kernelCreated');
+                    return success.data;
+                }, function (error) {
+                    _this._handleStatus('kernelDead');
+                });
+            };
+            /**
+             * GET /api/sessions/[:session_id]
+             *
+             * Get information about a session.
+             */
+            NotebookSession.prototype.getInfo = function () {
+                return services.utils.ajaxRequest(this._sessionUrl, {
+                    method: "GET",
+                    dataType: "json"
+                }).then(function (success) {
+                    if (success.xhr.status !== 200) {
+                        throw Error('Invalid response');
+                    }
+                    validateSessionId(success.data);
+                    return success.data;
+                });
+            };
+            /**
+             * DELETE /api/sessions/[:session_id]
+             *
+             * Kill the kernel and shutdown the session.
+             */
+            NotebookSession.prototype.delete = function () {
+                if (this._kernel) {
+                    this._handleStatus('kernelKilled');
+                    this._kernel.disconnect();
+                }
+                return services.utils.ajaxRequest(this._sessionUrl, {
+                    method: "DELETE",
+                    dataType: "json"
+                }).then(function (success) {
+                    if (success.xhr.status !== 204) {
+                        throw Error('Invalid response');
+                    }
+                    validateSessionId(success.data);
+                }, function (rejected) {
+                    if (rejected.xhr.status === 410) {
+                        throw Error('The kernel was deleted but the session was not');
+                    }
+                    throw Error(rejected.statusText);
+                });
+            };
+            /**
+             * Restart the session by deleting it and then starting it fresh.
+             */
+            NotebookSession.prototype.restart = function (options) {
+                var _this = this;
+                return this.delete().then(function () { return _this.start(); }).catch(function () { return _this.start(); }).then(function () {
+                    if (options && options.notebookPath) {
+                        _this._notebookPath = options.notebookPath;
+                    }
+                    if (options && options.kernelName) {
+                        _this._kernel.name = options.kernelName;
+                    }
+                });
+            };
+            /**
+             * Rename the notebook.
+             */
+            NotebookSession.prototype.renameNotebook = function (path) {
+                this._notebookPath = path;
+                return services.utils.ajaxRequest(this._sessionUrl, {
+                    method: "PATCH",
+                    dataType: "json",
+                    data: JSON.stringify(this._model),
+                    contentType: 'application/json'
+                }).then(function (success) {
+                    if (success.xhr.status !== 200) {
+                        throw Error('Invalid response');
+                    }
+                    validateSessionId(success.data);
+                    return success.data;
+                });
+            };
+            Object.defineProperty(NotebookSession.prototype, "_model", {
+                /**
+                 * Get the data model for the session, which includes the notebook path
+                 * and kernel (name and id).
+                 */
+                get: function () {
+                    return {
+                        id: this._id,
+                        notebook: { path: this._notebookPath },
+                        kernel: { name: this._kernel.name,
+                            id: this._kernel.id }
+                    };
+                },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Handle a session status change.
+             */
+            NotebookSession.prototype._handleStatus = function (status) {
+                this.statusChanged.emit(status);
+                session_log.error('Session: ' + status + ' (' + this._id + ')');
+            };
+            __decorate([
+                signal
+            ], NotebookSession.prototype, "statusChanged");
+            return NotebookSession;
+        })();
+        services.NotebookSession = NotebookSession;
+        /**
+         * Validate an object as being of ISessionId type.
+         */
+        function validateSessionId(info) {
+            if (!info.hasOwnProperty('id') || !info.hasOwnProperty('notebook') ||
+                !info.hasOwnProperty('kernel')) {
+                throw Error('Invalid Session Model');
+            }
+            services.validateKernelId(info.kernel);
+            if (typeof info.id !== 'string') {
+                throw Error('Invalid Session Model');
+            }
+            validateNotebookId(info.notebook);
+        }
+        /**
+         * Validate an object as being of INotebookId type.
+         */
+        function validateNotebookId(model) {
+            if ((!model.hasOwnProperty('path')) || (typeof model.path !== 'string')) {
+                throw Error('Invalid Notebook Model');
+            }
+        }
     })(services = jupyter.services || (jupyter.services = {}));
 })(jupyter || (jupyter = {})); // module jupyter.services
 
