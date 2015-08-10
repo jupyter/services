@@ -165,6 +165,8 @@ var jupyter;
                 this._handlerMap = null;
                 this._iopubHandlers = null;
                 this._status = 'unknown';
+                console.log('constructor');
+                console.log(this._kernelUrl);
                 this._baseUrl = baseUrl;
                 this._wsUrl = wsUrl;
                 if (!this._wsUrl) {
@@ -372,8 +374,10 @@ var jupyter;
                     this.id = id.id;
                     this.name = id.name;
                 }
+                console.log('hello');
+                console.log(this._kernelUrl);
                 if (this._kernelUrl === "unknown") {
-                    throw Error('You must set the kernel id before starting');
+                    throw Error('You must set the kernel id before starting.');
                 }
                 return services.utils.ajaxRequest(this._kernelUrl, {
                     method: "POST",

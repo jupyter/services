@@ -193,6 +193,8 @@ class Kernel {
    * Construct a new kernel.
    */
   constructor(baseUrl: string, wsUrl: string) {
+    console.log('constructor');
+    console.log(this._kernelUrl);
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
     if (!this._wsUrl) {
@@ -363,8 +365,10 @@ class Kernel {
       this.id = id.id;
       this.name = id.name;
     }
+    console.log('hello');
+    console.log(this._kernelUrl);
     if (this._kernelUrl === "unknown") {
-      throw Error('You must set the kernel id before starting');
+      throw Error('You must set the kernel id before starting.');
     }
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
