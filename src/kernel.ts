@@ -1,8 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import serialize = require('./serialize');
-import utils = require('./utils');
+module jupyter.services {
 
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
@@ -200,7 +199,6 @@ class Kernel {
       // trailing 's' in https will become wss for secure web sockets
       this._wsUrl = location.protocol.replace('http', 'ws') + "//" + location.host;
     }
-
     this._staticId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
 
@@ -261,10 +259,30 @@ class Kernel {
   }
 
   /**
-   * Get the current id of the kernel
+   * Get the current id of the kernel.
    */
   get id(): string {
     return this._id;
+  }
+
+  /**
+   * Set the current id of the kernel.
+   */
+  set id(value: string) {
+    this._id = value;
+    this._kernelUrl = utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL,
+                                          this._id);
+  }
+
+  /**
+   * Get the full websocket url.
+   */
+  get wsUrl(): string {
+    return [
+      this._wsUrl,
+      utils.urlJoinEncode(this._kernelUrl, 'channels'),
+      "?session_id=" + this._staticId
+    ].join('')
   }
 
   /**
@@ -326,7 +344,7 @@ class Kernel {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
-      this.connect(success.data);
+      this.connect();
       return success.data;
     }, (error: IAjaxError) => {
       this._onError(error);
@@ -340,11 +358,19 @@ class Kernel {
    * Start a kernel.  Note: if using a session, Session.start()
    * should be used instead.
    */
-  start(): Promise<IKernelId> {
+  start(id?: IKernelId): Promise<IKernelId> {
+    if (id) {
+      this.id = id.id;
+      this.name = id.name;
+    }
+    if (this._kernelUrl === "unknown") {
+      throw Error('You must set the kernel id before starting');
+    }
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
     }).then((success: IAjaxSuccess) => {
+      console.log('started');
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -379,11 +405,14 @@ class Kernel {
    *
    * This should only be called directly by a session.
    */
-  connect(id: IKernelId) : void {
-    this._id = id.id;
-    this._kernelUrl = utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL,
-                                          this._id);
-    this._name = id.name;
+  connect(id?: IKernelId): void {
+    if (id) {
+      this.id = id.id;
+      this.name = id.name;
+    }
+    if (this._kernelUrl === "unknown") {
+      throw Error('You must set the kernel id before starting');
+    }
     this._startChannels();
     this._handleStatus('created');
   }
@@ -581,12 +610,7 @@ class Kernel {
 
     kernel_log.info("Starting WebSockets:", ws_host_url);
 
-    this._ws = new WebSocket([
-      this._wsUrl,
-      utils.urlJoinEncode(this._kernelUrl, 'channels'),
-      "?session_id=" + this._staticId
-    ].join('')
-      );
+    this._ws = new WebSocket(this.wsUrl);
 
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
@@ -662,6 +686,7 @@ class Kernel {
     // get kernel info so we know what state the kernel is in
     this.kernelInfo().onReply((reply?: IKernelMsg) => {
       this._infoReply = reply.content;
+      console.log('info reply');
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
     });
@@ -958,3 +983,5 @@ function validateKernelId(info: IKernelId) : void {
      throw Error('Invalid kernel id');
    }
 }
+
+}  // module jupyter.services
