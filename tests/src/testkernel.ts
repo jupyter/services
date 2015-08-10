@@ -147,19 +147,68 @@ describe('jupyter.services - Kernel', () => {
     describe('#connect()', () => {
 
       it('should start the websocket', () => {
-        var mockServer = new MockServer('ws://localhost/api/kernel/1234/channels');
-        mockServer.on('connection', function(server: any) {
-          mockServer.send('test message 1');
-          mockServer.send('test message 2');
-        });
-
-        //window.WebSocket = MockWebSocket;
+        (<any>window).WebSocket = MockWebSocket;
         var kernel = new Kernel('/localhost', 'ws://');
-        var kernelId = {id: "1234", name: "test"};
-        kernel.connect(kernelId);
-        console.log(kernel.isConnected);
+        kernel.id = "1234";
+        kernel.name = "test";
+        var mockServer = new MockServer(kernel.wsUrl);
+        kernel.connect();
+        expect(kernel.status).to.be('created');
+
+        setTimeout(function() {
+          expect(kernel.isConnected).to.be(true);
+          expect(kernel.name).to.be("test");
+          expect(kernel.id).to.be("1234");
+          expect(kernel.status).to.be('connected');
+        }, 100);
+        
       });
 
+    });
+
+    describe('#start()', () => {
+
+      it('should start the kernel', () => {
+        (<any>window).WebSocket = MockWebSocket;
+        var kernel = new Kernel('/localhost', 'ws://');
+        kernel.name = "test";
+        kernel.id = "1234";
+        var handler = new RequestHandler();
+        var mockServer = new MockServer(kernel.wsUrl);
+        var start = kernel.start();
+        var data = JSON.stringify({id: "1234", name: "test"});
+        handler.respond(200, { 'Content-Type': 'text/json' }, data);
+
+        return start.then((id: any) => {
+          setTimeout(function() {
+            expect(kernel.isConnected).to.be(true);
+            expect(kernel.name).to.be("test");
+            expect(kernel.id).to.be("1234");
+            expect(kernel.status).to.be('connected');
+          }, 100);
+        });
+      });
+
+      it('should throw an error for an invalid kernel id', () => {
+        (<any>window).WebSocket = MockWebSocket;
+        var kernel = new Kernel('/localhost', 'ws://');
+        kernel.name = "test";
+        kernel.id = "1234";
+        var handler = new RequestHandler();
+        var mockServer = new MockServer(kernel.wsUrl);
+        var start = kernel.start();
+        var data = JSON.stringify({id: "1234", name: "test"});
+        handler.respond(201, { 'Content-Type': 'text/json' }, data);
+
+        return start.then((id: any) => {
+          setTimeout(function() {
+            expect(kernel.isConnected).to.be(true);
+            expect(kernel.name).to.be("test");
+            expect(kernel.id).to.be("1234");
+            expect(kernel.status).to.be('connected');
+          }, 100);
+        });
+      });
     });
 });
 
