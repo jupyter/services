@@ -1,7 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-module jupyter.services {
+import serialize = require('./serialize');
+import utils = require('./utils');
 
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
@@ -312,7 +313,7 @@ class Kernel {
    *
    * Restart the kernel.
    */
-  restart(): Promise<void> {
+  restart(): Promise<IKernelId> {
     this._handleStatus('restarting');
     this.disconnect();
 
@@ -324,16 +325,59 @@ class Kernel {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
+      validateKernelId(success.data);
       this.connect(success.data);
+      return success.data;
     }, (error: IAjaxError) => {
       this._onError(error);
+    });
+  }
+
+
+  /**
+   * POST /api/kernels/[:kernel_id]
+   *
+   * Start a kernel.  Note: if using a session, Session.start()
+   * should be used instead.
+   */
+  start(): Promise<IKernelId> {
+    return utils.ajaxRequest(this._kernelUrl, {
+      method: "POST",
+      dataType: "json"
+    }).then((success: IAjaxSuccess) => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      validateKernelId(success.data);
+      this.connect(success.data);
+      return success.data;
+    }, (error: IAjaxError) => {
+      this._onError(error);
+    });
+  }
+
+
+  /**
+   * DELETE /api/kernels/[:kernel_id]
+   *
+   * Kill a kernel. Note: if useing a session, Session.delete()
+   * should be used instead.
+   */
+  delete(): Promise<void> {
+    return utils.ajaxRequest(this._kernelUrl, {
+      method: "DELETE",
+      dataType: "json"
+    }).then((success: IAjaxSuccess) => {
+      if (success.xhr.status !== 204) {
+        throw Error('Invalid response');
+      }
     });
   }
 
   /**
    * Connect to the server-side the kernel.
    *
-   * This should only be called by a session.
+   * This should only be called directly by a session.
    */
   connect(id: IKernelId) : void {
     this._id = id.id;
@@ -914,5 +958,3 @@ function validateKernelId(info: IKernelId) : void {
      throw Error('Invalid kernel id');
    }
 }
-
-}  // module jupyter.services
