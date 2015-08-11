@@ -1,10 +1,5 @@
-/*-----------------------------------------------------------------------------
-| Copyright (c) 2014-2015, S. Chris Colbert
-|
-| Distributed under the terms of the BSD 3-Clause License.
-|
-| The full license is in the file LICENSE, distributed with this software.
-|----------------------------------------------------------------------------*/
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
 
 module tests {
 
@@ -22,7 +17,8 @@ class RequestHandler {
   }
 
   respond(statusCode: number, header: any, data: any): void {
-    this._requests[0].respond(statusCode, header, data);
+    var payload = JSON.stringify(data);
+    this._requests[0].respond(statusCode, header, payload);
   }
 
   restore(): void {
@@ -34,6 +30,37 @@ class RequestHandler {
 }
 
 
+class KernelTester {
+
+  constructor(kernel: Kernel) {
+    (<any>window).WebSocket = MockWebSocket;
+    this._kernel = kernel;
+    this._handler = new RequestHandler();
+  }
+
+  startServer() {
+    this._server = new MockServer(this._kernel.wsUrl)
+  }
+
+  respond(statusCode: number, header: any, data: any): void {
+    this._handler.respond(statusCode, header, data);
+  }
+
+  private _kernel: Kernel = null;
+  private _handler: RequestHandler = null;
+  private _server: MockServer = null;
+}
+
+
+function expectFailure(promise: Promise<any>, message: string): Promise<any> {
+  return promise.then(() => {
+    throw Error('Should not reach this point');
+  }).catch((err) => {
+    expect(err.message).to.be(message);
+  });
+}
+
+
 describe('jupyter.services - Kernel', () => {
 
     describe('#list()', () => {
@@ -41,8 +68,8 @@ describe('jupyter.services - Kernel', () => {
         it('should yield a list of valid kernel ids', () => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = JSON.stringify([{id: "1234", name: "test"},
-                                      {id: "5678", name: "test2"}]);
+          var data = [{id: "1234", name: "test"},
+                      {id: "5678", name: "test2"}];
           handler.respond(200, { 'Content-Type': 'text/json' }, data);
           return list.then((response: IKernelId[]) => {
             expect(response[0].name).to.be("test");
@@ -55,28 +82,18 @@ describe('jupyter.services - Kernel', () => {
         it('should throw an error for an invalid model', () => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = JSON.stringify({id: "1234", name: "test"});
+          var data = {id: "1234", name: "test"};
           handler.respond(200, { 'Content-Type': 'text/json' }, data);
-          return list.then(() => {
-            throw Error('should not reach this point');
-          }).catch((err) => {
-            expect(err.message).to.be("Invalid kernel list");
-          });
-          
+          expectFailure(list, "Invalid kernel list");
         });
 
         it('should throw an error for an invalid response', () => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = JSON.stringify([{id: "1234", name: "test"},
-                                     {id: "5678", name: "test2"}]);
+          var data = [{id: "1234", name: "test"},
+                      {id: "5678", name: "test2"}];
           handler.respond(201, { 'Content-Type': 'text/json' }, data);
-          return list.then(() => {
-            throw Error('should not reach this point');
-          }).catch((err) => {
-            expect(err.message).to.be("Invalid Status: 201");
-          });
-          
+          expectFailure(list, "Invalid Status: 201");
         });
 
       });
@@ -84,7 +101,7 @@ describe('jupyter.services - Kernel', () => {
     describe('#constructor()', () => {
 
       it('should set initial conditions', () => {
-        var kernel = new Kernel('baseUrl', 'wsUrl');
+        var kernel = new Kernel('/localhost', 'ws://');
         expect(kernel.name).to.be("");
         kernel.name = "test";
         expect(kernel.name).to.be("test");
@@ -97,45 +114,34 @@ describe('jupyter.services - Kernel', () => {
     describe('#getInfo()', () => {
 
       it('should yield a valid kernel id', () => {
-        var kernel = new Kernel('baseUrl', 'wsUrl');
-        var handler = new RequestHandler();
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = JSON.stringify({id: "1234", name: "test"});
-        handler.respond(200, { 'Content-Type': 'text/json' }, data);
+        var data = {id: "1234", name: "test"};
+        tester.respond(200, { 'Content-Type': 'text/json' }, data);
         return info.then((response: IKernelId) => {
           expect(response.name).to.be("test");
           expect(response.id).to.be("1234");
-          handler.restore();
         });
         
       });
 
       it('should throw an error for an invalid kernel id', () => {
-        var kernel = new Kernel('baseUrl', 'wsUrl');
-        var handler = new RequestHandler();
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = JSON.stringify({id: "1234"});
-        handler.respond(200, { 'Content-Type': 'text/json' }, data);
-        return info.then(() => {
-          throw Error('should not reach this point');
-        }).catch((err) => {
-          expect(err.message).to.be("Invalid kernel id");
-        });
-        
+        var data = {id: "1234"};
+        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        return expectFailure(info, "Invalid kernel id");
       });
 
       it('should throw an error for an invalid response', () => {
-        var kernel = new Kernel('baseUrl', 'wsUrl');
-        var handler = new RequestHandler();
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = JSON.stringify({id: "1234", name: "test"});
-        handler.respond(201, { 'Content-Type': 'text/json' }, data);
-        return info.then(() => {
-          throw Error('should not reach this point');
-        }).catch((err) => {
-          expect(err.message).to.be("Invalid Status: 201");
-        });
-        
+        var data = {id: "1234", name: "test"};
+        tester.respond(201, { 'Content-Type': 'text/json' }, data);
+        return expectFailure(info, "Invalid Status: 201");
       });
 
     });
@@ -143,11 +149,11 @@ describe('jupyter.services - Kernel', () => {
     describe('#connect()', () => {
 
       it('should start the websocket', () => {
-        (<any>window).WebSocket = MockWebSocket;
         var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         kernel.id = "1234";
         kernel.name = "test";
-        var mockServer = new MockServer(kernel.wsUrl);
+        tester.startServer();
         kernel.connect();
         expect(kernel.status).to.be('created');
 
@@ -163,7 +169,6 @@ describe('jupyter.services - Kernel', () => {
       it('should throw an error for an uninitialized kernel id', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         expect(kernel.connect).to.throwError(/You must set the kernel id before starting/);
-        ;
       });
 
     });
@@ -171,15 +176,14 @@ describe('jupyter.services - Kernel', () => {
     describe('#start()', () => {
 
       it('should start the kernel', () => {
-        (<any>window).WebSocket = MockWebSocket;
         var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         kernel.name = "test";
         kernel.id = "1234";
-        var handler = new RequestHandler();
-        var mockServer = new MockServer(kernel.wsUrl);
+        tester.startServer();
         var start = kernel.start();
-        var data = JSON.stringify({id: "1234", name: "test"});
-        handler.respond(200, { 'Content-Type': 'text/json' }, data);
+        var data = {id: "1234", name: "test"};
+        tester.respond(200, { 'Content-Type': 'text/json' }, data);
 
         return start.then((id: any) => {
           setTimeout(function() {
@@ -193,43 +197,33 @@ describe('jupyter.services - Kernel', () => {
 
       it('should throw an error for an invalid kernel id', () => {
         var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         kernel.name = "test";
         kernel.id = "1234";
-        var handler = new RequestHandler();
         var start = kernel.start();
-        var data = JSON.stringify({id: "1234"});
-        handler.respond(200, { 'Content-Type': 'text/json' }, data);
-
-        return start.then((id: any) => {
-          throw Error('Should not get here');
-        }).catch((err) => {
-          expect(err.message).to.be("Invalid kernel id");
-        });
+        var data = {id: "1234"};
+        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        return expectFailure(start, "Invalid kernel id");
       });
 
       it('should throw an error for an invalid response', () => {
         var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
         kernel.name = "test";
         kernel.id = "1234";
-        var handler = new RequestHandler();
         var start = kernel.start();
-        var data = JSON.stringify({id: "1234"});
-        handler.respond(201, { 'Content-Type': 'text/json' }, data);
-
-        return start.then((id: any) => {
-          throw Error('Should not get here');
-        }).catch((err) => {
-          expect(err.message).to.be("Invalid Status: 201");
-        });
+        var data = {id: "1234"};
+        tester.respond(201, { 'Content-Type': 'text/json' }, data);
+        return expectFailure(start, "Invalid Status: 201");
       });
 
       it('should throw an error for an uninitialized kernel id', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         kernel.name = "test";
         expect(kernel.start).to.throwError(/You must set the kernel id before starting/);
-        ;
       });
     });
+    
 });
 
 }  // module tests
