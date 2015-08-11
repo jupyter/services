@@ -326,6 +326,7 @@ var jupyter;
                 var _this = this;
                 this._handleStatus('interrupting');
                 var url = services.utils.urlJoinEncode(this._kernelUrl, 'interrupt');
+                console.log("hi there");
                 return services.utils.ajaxRequest(url, {
                     method: "POST",
                     dataType: "json"

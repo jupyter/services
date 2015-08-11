@@ -315,6 +315,7 @@ class Kernel {
     this._handleStatus('interrupting');
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
+    console.log("hi there");
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"

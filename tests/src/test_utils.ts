@@ -20,7 +20,7 @@ class RequestHandler {
     if (header === void 0) {
       header = {'Content-Type': 'text/json'};
     }
-    this._requests[0].respond(statusCode, header, data);
+    this._requests[this._requests.length - 1].respond(statusCode, header, data);
   }
 
   restore(): void {
@@ -33,11 +33,12 @@ class RequestHandler {
 
 
 export
-function expectFailure(promise: Promise<any>, message: string): Promise<any> {
+function expectFailure(promise: Promise<any>, done: () => void, message: string): Promise<any> {
   return promise.then(() => {
     throw Error('Should not reach this point');
   }).catch((err) => {
     expect(err.message).to.be(message);
+    done();
   });
 }
 
