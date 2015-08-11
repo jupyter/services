@@ -114,6 +114,7 @@ gulp.task('tests', function() {
 
   var sources = testsTypings.concat([
     'dist/jupyter-services.d.ts',
+    'tests/test_utils.ts',
     'tests/**/*.ts'
   ]);
 

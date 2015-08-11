@@ -5,29 +5,8 @@ module tests {
 
 import Kernel = jupyter.services.Kernel;
 import IKernelId = jupyter.services.IKernelId;
-
-
-class RequestHandler {
-
-  constructor() {
-    this._xhr = sinon.useFakeXMLHttpRequest();
-    this._xhr.onCreate = (xhr: any) => {
-      this._requests.push(xhr);
-    }
-  }
-
-  respond(statusCode: number, header: any, data: any): void {
-    var payload = JSON.stringify(data);
-    this._requests[0].respond(statusCode, header, payload);
-  }
-
-  restore(): void {
-    this._xhr.restore();
-  }
-
-  private _requests: any[] = [];
-  private _xhr: any = null;
-}
+import RequestHandler = utils.RequestHandler;
+import expectFailure = utils.expectFailure;
 
 
 class KernelTester {
@@ -38,26 +17,17 @@ class KernelTester {
     this._handler = new RequestHandler();
   }
 
-  startServer() {
+  startSocket() {
     this._server = new MockServer(this._kernel.wsUrl)
   }
 
-  respond(statusCode: number, header: any, data: any): void {
-    this._handler.respond(statusCode, header, data);
+  respond(statusCode: number, data: any, header?: any): void {
+    this._handler.respond(statusCode, data, header);
   }
 
   private _kernel: Kernel = null;
   private _handler: RequestHandler = null;
   private _server: MockServer = null;
-}
-
-
-function expectFailure(promise: Promise<any>, message: string): Promise<any> {
-  return promise.then(() => {
-    throw Error('Should not reach this point');
-  }).catch((err) => {
-    expect(err.message).to.be(message);
-  });
 }
 
 
@@ -70,7 +40,7 @@ describe('jupyter.services - Kernel', () => {
           var list = Kernel.list('baseUrl');
           var data = [{id: "1234", name: "test"},
                       {id: "5678", name: "test2"}];
-          handler.respond(200, { 'Content-Type': 'text/json' }, data);
+          handler.respond(200, data);
           return list.then((response: IKernelId[]) => {
             expect(response[0].name).to.be("test");
             expect(response[0].id).to.be("1234");
@@ -83,7 +53,7 @@ describe('jupyter.services - Kernel', () => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
           var data = {id: "1234", name: "test"};
-          handler.respond(200, { 'Content-Type': 'text/json' }, data);
+          handler.respond(200, data);
           expectFailure(list, "Invalid kernel list");
         });
 
@@ -92,7 +62,7 @@ describe('jupyter.services - Kernel', () => {
           var list = Kernel.list('baseUrl');
           var data = [{id: "1234", name: "test"},
                       {id: "5678", name: "test2"}];
-          handler.respond(201, { 'Content-Type': 'text/json' }, data);
+          handler.respond(201, data);
           expectFailure(list, "Invalid Status: 201");
         });
 
@@ -118,7 +88,7 @@ describe('jupyter.services - Kernel', () => {
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
         var data = {id: "1234", name: "test"};
-        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        tester.respond(200, data);
         return info.then((response: IKernelId) => {
           expect(response.name).to.be("test");
           expect(response.id).to.be("1234");
@@ -131,7 +101,7 @@ describe('jupyter.services - Kernel', () => {
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
         var data = {id: "1234"};
-        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        tester.respond(200, data);
         return expectFailure(info, "Invalid kernel id");
       });
 
@@ -140,7 +110,7 @@ describe('jupyter.services - Kernel', () => {
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
         var data = {id: "1234", name: "test"};
-        tester.respond(201, { 'Content-Type': 'text/json' }, data);
+        tester.respond(201, data);
         return expectFailure(info, "Invalid Status: 201");
       });
 
@@ -153,7 +123,7 @@ describe('jupyter.services - Kernel', () => {
         var tester = new KernelTester(kernel);
         kernel.id = "1234";
         kernel.name = "test";
-        tester.startServer();
+        tester.startSocket();
         kernel.connect();
         expect(kernel.status).to.be('created');
 
@@ -180,10 +150,10 @@ describe('jupyter.services - Kernel', () => {
         var tester = new KernelTester(kernel);
         kernel.name = "test";
         kernel.id = "1234";
-        tester.startServer();
+        tester.startSocket();
         var start = kernel.start();
         var data = {id: "1234", name: "test"};
-        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        tester.respond(200, data);
 
         return start.then((id: any) => {
           setTimeout(function() {
@@ -202,7 +172,7 @@ describe('jupyter.services - Kernel', () => {
         kernel.id = "1234";
         var start = kernel.start();
         var data = {id: "1234"};
-        tester.respond(200, { 'Content-Type': 'text/json' }, data);
+        tester.respond(200, data);
         return expectFailure(start, "Invalid kernel id");
       });
 
@@ -213,7 +183,7 @@ describe('jupyter.services - Kernel', () => {
         kernel.id = "1234";
         var start = kernel.start();
         var data = {id: "1234"};
-        tester.respond(201, { 'Content-Type': 'text/json' }, data);
+        tester.respond(201, data);
         return expectFailure(start, "Invalid Status: 201");
       });
 
