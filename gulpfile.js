@@ -25,7 +25,6 @@ var karma = require('karma').server;
 
 
 var buildTypings = [
-  './typings/es6-promise/es6-promise.d.ts',
   './typings/requirejs/require.d.ts',
   './typings/text-encoding/text-encoding.d.ts',
   './bower_components/phosphor/dist/phosphor.d.ts',
@@ -61,8 +60,7 @@ gulp.task('src', function() {
     experimentalDecorators: true,
     declarationFiles: true,
     noImplicitAny: true,
-    target: 'ES5',
-    module: "commonjs"
+    target: 'ES6',
   });
 
   var src = gulp.src(buildTypings.concat(tsSources))
@@ -71,7 +69,7 @@ gulp.task('src', function() {
   var dts = src.dts.pipe(concat('jupyter-services.d.ts'))
     .pipe(gulp.dest('./dist'));
 
-  var js = src.pipe(gulp.dest('./dist'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./dist'));
 
   return stream.merge(dts, js);
 });

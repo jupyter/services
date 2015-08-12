@@ -1,3 +1,12 @@
-var kernel_1 = require('./kernel');
-var session_1 = require('./session');
-exports.default = { Kernel: kernel_1.Kernel, NotebookSession: session_1.NotebookSession };
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _kernel = require('./kernel');
+
+var _session = require('./session');
+
+exports['default'] = { Kernel: _kernel.Kernel, NotebookSession: _session.NotebookSession };
+module.exports = exports['default'];

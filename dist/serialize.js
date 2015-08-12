@@ -3,31 +3,38 @@
 /**
  * Deserialize and return the unpacked message.
  */
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.deserialize = deserialize;
+exports.serialize = serialize;
+
 function deserialize(data) {
     var value;
     if (typeof data === "string") {
         value = JSON.parse(data);
-    }
-    else {
+    } else {
         value = deserializeBinary(data);
     }
     return value;
 }
-exports.deserialize = deserialize;
+
 /**
  * Serialize a kernel message for transport.
  */
+
 function serialize(msg) {
     var value;
     if (msg.buffers && msg.buffers.length) {
         value = serializeBinary(msg);
-    }
-    else {
+    } else {
         value = JSON.stringify(msg);
     }
     return value;
 }
-exports.serialize = serialize;
+
 /**
  * Deserialize a binary message to a Kernel Message.
  */
@@ -43,7 +50,7 @@ function deserializeBinary(buf) {
         offsets.push(data.getUint32(i * 4));
     }
     var json_bytes = new Uint8Array(buf.slice(offsets[0], offsets[1]));
-    var msg = JSON.parse((new TextDecoder('utf8')).decode(json_bytes));
+    var msg = JSON.parse(new TextDecoder('utf8').decode(json_bytes));
     // the remaining chunks are stored as DataViews in msg.buffers
     msg.buffers = [];
     for (var i = 1; i < nbufs; i++) {
