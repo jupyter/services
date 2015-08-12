@@ -20,11 +20,11 @@ var typedoc = require('gulp-typedoc');
 var typescript = require('typescript');
 var gulpTypescript = require('gulp-typescript');
 var uglify = require('gulp-uglify');
+var babel = require('gulp-babel');
 var karma = require('karma').server;
 
 
 var buildTypings = [
-  './typings/es6-promise/es6-promise.d.ts',
   './typings/requirejs/require.d.ts',
   './typings/text-encoding/text-encoding.d.ts',
   './bower_components/phosphor/dist/phosphor.d.ts',
@@ -59,8 +59,7 @@ gulp.task('src', function() {
     experimentalDecorators: true,
     declarationFiles: true,
     noImplicitAny: true,
-    target: 'ES5',
-    module: "commonjs"
+    target: 'ES6',
   });
 
   var src = gulp.src(buildTypings.concat(tsSources))
@@ -69,7 +68,8 @@ gulp.task('src', function() {
   var dts = src.dts.pipe(concat('jupyter-services.d.ts'))
     .pipe(gulp.dest('./dist'));
 
-  var js = src.pipe(concat('jupyter-services.js'))
+  var js = src.pipe(babel())
+    .pipe(concat('jupyter-services.js'))
     .pipe(header('"use strict";\n'))
     .pipe(gulp.dest('./dist'));
 
@@ -82,7 +82,7 @@ gulp.task('build', ['src']);
 
 gulp.task('dist', ['build'], function() {
   return gulp.src('./dist/jupyter-services.js')
-    .pipe(uglify())
+    //.pipe(uglify())
     .pipe(rename('jupyter-services.min.js'))
     .pipe(gulp.dest('./dist'));
 });
