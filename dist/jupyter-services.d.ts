@@ -512,3 +512,11 @@ export declare class NotebookSession {
     private _wsUrl;
     private _kernel;
 }
+
+import { Kernel } from './kernel';
+import { NotebookSession } from './session';
+declare var _default: {
+    Kernel: typeof Kernel;
+    NotebookSession: typeof NotebookSession;
+};
+export default _default;
