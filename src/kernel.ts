@@ -971,6 +971,14 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
 }
 
 
+export
+class KernelSub extends Kernel {
+  doSomething() {
+    
+  }
+}
+
+
 /**
  * Validate an object as being of IKernelID type
  */

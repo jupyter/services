@@ -406,6 +406,9 @@ export declare class Kernel {
     private _iopubHandlers;
     private _status;
 }
+export declare class KernelSub extends Kernel {
+    doSomething(): void;
+}
 /**
  * Validate an object as being of IKernelID type
  */

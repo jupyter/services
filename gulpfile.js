@@ -22,6 +22,9 @@ var gulpTypescript = require('gulp-typescript');
 var uglify = require('gulp-uglify');
 var babel = require('gulp-babel');
 var karma = require('karma').server;
+var browserify = require('browserify');
+var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
 
 
 var buildTypings = [
@@ -69,7 +72,7 @@ gulp.task('src', function() {
   var dts = src.dts.pipe(concat('jupyter-services.d.ts'))
     .pipe(gulp.dest('./dist'));
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./dist'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./lib'));
 
   return stream.merge(dts, js);
 });
@@ -79,9 +82,14 @@ gulp.task('build', ['src']);
 
 
 gulp.task('dist', ['build'], function() {
-  return gulp.src('./dist/jupyter-services.js')
-    //.pipe(uglify())
-    .pipe(rename('jupyter-services.min.js'))
+  var b = browserify({
+    entries: 'lib/index.js',
+    debug: true
+  })
+
+  return b.bundle()
+    .pipe(source('jupyter-js-services.js'))
+    .pipe(buffer())
     .pipe(gulp.dest('./dist'));
 });
 
