@@ -1,15 +1,13 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-module jupyter.services {
-
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
 import IDisposable = phosphor.utility.IDisposable;
 import Disposable = phosphor.utility.Disposable;
-import IAjaxSuccess = utils.IAjaxSuccess;
-import IAjaxError = utils.IAjaxError;
-
+import {IAjaxSuccess, IAjaxError} from './utils';
+import * as utils from './utils';
+import {serialize, deserialize} from './serialize';
 
 /**
  * The url for the kernel service.
@@ -457,7 +455,7 @@ class Kernel {
     var msg = this._createMsg(msg_type, content, metadata, buffers);
     msg.channel = 'shell';
 
-    this._ws.send(serialize.serialize(msg));
+    this._ws.send(serialize(msg));
 
     var future = new KernelFutureHandler(() => {
       this._handlerMap.delete(msg.header.msgId);
@@ -553,7 +551,7 @@ class Kernel {
     };
     var msg = this._createMsg("input_reply", content);
     msg.channel = 'stdin';
-    this._ws.send(serialize.serialize(msg));
+    this._ws.send(serialize(msg));
     return msg.header.msgId;
   }
 
@@ -752,7 +750,7 @@ class Kernel {
    */
   private _handleWSMessage(e: MessageEvent): void {
     try {
-      var msg = serialize.deserialize(e.data);
+      var msg = deserialize(e.data);
     } catch (error) {
       kernel_log.error(error.message);
       return;
@@ -986,4 +984,3 @@ function validateKernelId(info: IKernelId) : void {
    }
 }
 
-}  // module jupyter.services

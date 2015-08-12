@@ -2,9 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 
-module jupyter.services.serialize {
-
-import IKernelMsg = services.IKernelMsg;
+import {IKernelMsg} from './kernel';
 
 
 /**
@@ -113,5 +111,3 @@ function replace_buffers(key: string, value: any) {
   }
   return value;
 }
-
-}  // module jupyter.services

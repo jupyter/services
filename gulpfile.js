@@ -60,6 +60,7 @@ gulp.task('src', function() {
     declarationFiles: true,
     noImplicitAny: true,
     target: 'ES5',
+    module: "commonjs"
   });
 
   var src = gulp.src(buildTypings.concat(tsSources))

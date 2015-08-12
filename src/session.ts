@@ -1,12 +1,11 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-module jupyter.services {
-
 import ISignal = phosphor.core.ISignal;
 import signal = phosphor.core.signal;
-import IAjaxSuccess = utils.IAjaxSuccess;
-import IAjaxError = utils.IAjaxError;
+import {IAjaxSuccess, IAjaxError} from './utils';
+import * as utils from './utils';
+import {IKernelId, Kernel, validateKernelId} from './kernel';
 
 /**
  * The url for the session service.
@@ -266,5 +265,3 @@ function validateNotebookId(model: INotebookId): void {
      throw Error('Invalid Notebook Model');
    }
 }
-
-} // module jupyter.services
