@@ -1,2 +1,0 @@
-
-import {KernelTester} from './testkernel';

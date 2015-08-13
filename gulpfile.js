@@ -50,7 +50,6 @@ var tsSources = [
   'kernel',
   'session',
   'utils',
-  'index'
 ].map(function(name) { return './src/' + name + '.ts'; });
 
 
@@ -68,22 +67,27 @@ gulp.task('src', function() {
     target: 'ES6',
   });
 
-  var src = gulp.src(buildTypings.concat(tsSources))
+  var src = gulp.src(buildTypings.concat(tsSources).concat(['src/index.ts']))
     .pipe(gulpTypescript(project));
 
   var js = src.pipe(babel()).pipe(gulp.dest('./build'));
 
-  var dts = dbundle.bundle({
-        name: 'jupyter-js-services',
-        main: 'build/index.d.ts',
-        baseDir: 'dist',
-    });
+  var dts = src.dts.pipe(gulp.dest('./build'));
 
   return js;
 });
 
 
-gulp.task('build', ['src']);
+gulp.task('build', ['src'], function () {
+
+  var dts = dbundle.bundle({
+        name: 'jupyter-js-services',
+        main: 'build/index.d.ts',
+        out: '../dist/jupyter-js-services.d.ts'
+    });
+  return dts;
+
+});
 
 
 gulp.task('dist', ['build'], function() {
@@ -115,7 +119,7 @@ gulp.task('docs', function() {
 });
 
 
-gulp.task('tests', function() {
+gulp.task('build-tests', function() {
   var project = gulpTypescript.createProject({
     typescript: typescript,
     experimentalDecorators: true,
@@ -124,14 +128,20 @@ gulp.task('tests', function() {
     target: 'ES6',
   });
 
-  var src = gulp.src(testsTypings.concat(tsSources).concat([
+  var src = gulp.src(testsTypings.concat([
+    'dist/jupyter-js-services.d.ts',
     './tests/**/*.ts'
   ])).pipe(gulpTypescript(project));
 
   var js = src.pipe(babel()).pipe(gulp.dest('./tests/build'));
 
+  return js;
+});
+
+
+gulp.task('tests', ['build-tests'], function () {
   var b = browserify({
-    entries: './tests/build/test_index.js',
+    entries: './tests/build/index.js',
     debug: true
   });
 
