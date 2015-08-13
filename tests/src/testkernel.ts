@@ -127,7 +127,7 @@ describe('jupyter.services - Kernel', () => {
           expect(kernel.id).to.be("1234");
           expect(kernel.status).to.be('connected');
           done();
-        }, 100);
+        }, 10);
         
       });
 
@@ -154,7 +154,7 @@ describe('jupyter.services - Kernel', () => {
             expect(kernel.id).to.be("1234");
             expect(kernel.status).to.be('connected');
             done();
-          }, 100);
+          }, 10);
         });
       });
 
@@ -201,7 +201,7 @@ describe('jupyter.services - Kernel', () => {
               expect(kernel.isConnected).to.be(true);
               expect(kernel.id).to.be("1234");
               done();
-            }, 100);
+            }, 10);
           });
         });
       });
