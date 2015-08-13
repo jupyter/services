@@ -7,9 +7,12 @@ module.exports = function (config) {
         frameworks: ['mocha'],
 
         files: [
-            'dist/jupter-js-services.js',
             'node_modules/expect.js/index.js',
-            'tests/build/*.js'
+            'node_modules/sinon/pkg/sinon-1.15.4.js',
+            'node_modules/mock-socket/dist/mock-socket.js',
+            'bower_components/phosphor/dist/phosphor.js',
+            'bower_components/js-logger/src/logger.js',
+            'tests/build/test_app.js'
         ],
 
         reporters: ['mocha'],
