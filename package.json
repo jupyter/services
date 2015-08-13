@@ -45,5 +45,6 @@
   "bugs": {
     "url": "https://github.com/jupyter/jupyter-js-services/issues"
   },
+  "main": "lib/index.js",
   "homepage": "https://github.com/jupyter/jupyter-js-services"
 }

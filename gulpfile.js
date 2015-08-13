@@ -70,9 +70,9 @@ gulp.task('src', function() {
   var src = gulp.src(buildTypings.concat(tsSources).concat(['src/index.ts']))
     .pipe(gulpTypescript(project));
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./node_modules/jupyter-js-services'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./lib'));
 
-  var dts = src.dts.pipe(gulp.dest('./node_modules/jupyter-js-services'));
+  var dts = src.dts.pipe(gulp.dest('./build'));
 
   return js;
 });
@@ -82,7 +82,7 @@ gulp.task('build', ['src'], function () {
 
   var dts = dbundle.bundle({
         name: 'jupyter-js-services',
-        main: 'node_modules/jupyter-js-services/index.d.ts',
+        main: 'build/index.d.ts',
         out: '../dist/jupyter-js-services.d.ts'
     });
   return dts;
@@ -91,8 +91,10 @@ gulp.task('build', ['src'], function () {
 
 
 gulp.task('dist', ['build'], function() {
+
   var b = browserify({
     entries: 'lib/index.js',
+    standalone: "jupyterServices",
     debug: true
   })
 
@@ -134,6 +136,9 @@ gulp.task('build-tests', function() {
   ])).pipe(gulpTypescript(project));
 
   var js = src.pipe(babel()).pipe(gulp.dest('./tests/build'));
+
+  var mod = gulp.src(['./lib/*.js'])
+    .pipe(gulp.dest('./node_modules/jupyter-js-services'))
 
   return js;
 });
