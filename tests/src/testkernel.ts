@@ -6,9 +6,9 @@ import {RequestHandler, expectFailure} from './test_utils';
 
 
 // Set up debug logging
-Logger.useDefaults();
-var kernel_log = Logger.get('kernel');
-kernel_log.setLevel(Logger.DEBUG);
+//Logger.useDefaults();
+//var kernel_log = Logger.get('kernel');
+//kernel_log.setLevel(Logger.DEBUG);
 
 
 /**
