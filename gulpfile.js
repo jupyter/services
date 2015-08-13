@@ -70,9 +70,9 @@ gulp.task('src', function() {
   var src = gulp.src(buildTypings.concat(tsSources).concat(['src/index.ts']))
     .pipe(gulpTypescript(project));
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./build'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./node_modules/jupyter-js-services'));
 
-  var dts = src.dts.pipe(gulp.dest('./build'));
+  var dts = src.dts.pipe(gulp.dest('./node_modules/jupyter-js-services'));
 
   return js;
 });
@@ -82,7 +82,7 @@ gulp.task('build', ['src'], function () {
 
   var dts = dbundle.bundle({
         name: 'jupyter-js-services',
-        main: 'build/index.d.ts',
+        main: 'node_modules/jupyter-js-services/index.d.ts',
         out: '../dist/jupyter-js-services.d.ts'
     });
   return dts;
