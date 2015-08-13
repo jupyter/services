@@ -130,7 +130,7 @@ gulp.task('build-tests', function() {
 
   var src = gulp.src(testsTypings.concat([
     'dist/jupyter-js-services.d.ts',
-    './tests/**/*.ts'
+    './tests/src/*.ts'
   ])).pipe(gulpTypescript(project));
 
   var js = src.pipe(babel()).pipe(gulp.dest('./tests/build'));
@@ -140,13 +140,15 @@ gulp.task('build-tests', function() {
 
 
 gulp.task('tests', ['build-tests'], function () {
+
   var b = browserify({
     entries: './tests/build/index.js',
-    debug: true
+    debug: true,
+    external: './dist/jupyter-js-services.js'
   });
 
   return b.bundle()
-    .pipe(source('app.js'))
+    .pipe(source('test_app.js'))
     .pipe(buffer())
     .pipe(gulp.dest('./tests/build'));
 });

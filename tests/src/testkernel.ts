@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {Kernel, IKernelId} from '../src/kernel';
+import {Kernel, IKernelId} from 'jupyter-js-services';
 import {RequestHandler, expectFailure} from './test_utils';
 
 
