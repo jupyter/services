@@ -611,7 +611,7 @@ class Kernel {
 
     kernel_log.info("Starting WebSockets:", ws_host_url);
 
-    this._ws = new WebSocket(this.wsUrl);
+    this._ws = new (<any>window).WebSocket(this.wsUrl);
 
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
