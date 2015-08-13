@@ -198,10 +198,10 @@ declare module '__jupyter-js-services/kernel' {
             /**
                 * DELETE /api/kernels/[:kernel_id]
                 *
-                * Kill a kernel. Note: if useing a session, Session.delete()
+                * Shut down a kernel. Note: if useing a session, Session.shutdown()
                 * should be used instead.
                 */
-            delete(): Promise<void>;
+            shutdown(): Promise<void>;
             /**
                 * Connect to the server-side the kernel.
                 *
@@ -209,15 +209,15 @@ declare module '__jupyter-js-services/kernel' {
                 */
             connect(id?: IKernelId): void;
             /**
-                * Reconnect to a disconnected kernel. This is not actually a
-                * standard HTTP request, but useful function nonetheless for
-                * reconnecting to the kernel if the connection is somehow lost.
-                */
-            reconnect(): void;
-            /**
                 * Disconnect the kernel.
                 */
             disconnect(): void;
+            /**
+                 * Reconnect to a disconnected kernel. This is not actually a
+                 * standard HTTP request, but useful function nonetheless for
+                 * reconnecting to the kernel if the connection is somehow lost.
+                 */
+            reconnect(): void;
             /**
                 * Send a message on the kernel's shell channel.
                 */
@@ -270,9 +270,6 @@ declare module '__jupyter-js-services/kernel' {
                 * which has no reference to the session or the kernel
                 */
             sendInputReply(input: any): string;
-    }
-    export class KernelSub extends Kernel {
-            doSomething(): void;
     }
     /**
         * Validate an object as being of IKernelID type
