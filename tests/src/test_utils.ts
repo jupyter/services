@@ -1,8 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-module tests.utils {
-
 export
 class RequestHandler {
 
@@ -41,5 +39,3 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
     done();
   });
 }
-
-}  // module tests.utils

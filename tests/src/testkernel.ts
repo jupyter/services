@@ -1,14 +1,11 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-module tests {
-
-import Kernel = jupyter.services.Kernel;
-import IKernelId = jupyter.services.IKernelId;
-import RequestHandler = utils.RequestHandler;
-import expectFailure = utils.expectFailure;
+import {Kernel, IKernelId} from '../../src/kernel';
+import {RequestHandler, expectFailure} from './test_utils';
 
 
+export
 class KernelTester {
 
   constructor(kernel: Kernel) {
@@ -221,5 +218,3 @@ describe('jupyter.services - Kernel', () => {
 
 
 });
-
-}  // module tests

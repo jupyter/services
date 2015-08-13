@@ -25,6 +25,8 @@ var karma = require('karma').server;
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
+var dbundle = require('dts-bundle');
+
 
 
 var buildTypings = [
@@ -39,7 +41,7 @@ var testsTypings = buildTypings.concat([
   './typings/expect.js/expect.js.d.ts',
   './typings/mocha/mocha.d.ts',
   './typings/sinon/sinon.d.ts',
-  './mock-socket.d.ts'
+  './mock-socket.d.ts',
 ]);
 
 
@@ -69,12 +71,15 @@ gulp.task('src', function() {
   var src = gulp.src(buildTypings.concat(tsSources))
     .pipe(gulpTypescript(project));
 
-  var dts = src.dts.pipe(concat('jupyter-services.d.ts'))
-    .pipe(gulp.dest('./dist'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./build'));
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./lib'));
+  var dts = dbundle.bundle({
+        name: 'jupyter-js-services',
+        main: 'build/index.d.ts',
+        baseDir: 'dist',
+    });
 
-  return stream.merge(dts, js);
+  return js;
 });
 
 
@@ -116,20 +121,24 @@ gulp.task('tests', function() {
     experimentalDecorators: true,
     declarationFiles: false,
     noImplicitAny: true,
-    target: 'ES5',
+    target: 'ES6',
   });
 
-  var sources = testsTypings.concat([
-    'dist/jupyter-services.d.ts',
-    'tests/test_utils.ts',
-    'tests/**/*.ts'
-  ]);
+  var src = gulp.src(testsTypings.concat(tsSources).concat([
+    './tests/**/*.ts'
+  ])).pipe(gulpTypescript(project));
 
-  return gulp.src(sources)
-    .pipe(gulpTypescript(project))
-    .pipe(concat('index.js'))
-    .pipe(header('"use strict";\n'))
-    .pipe(gulp.dest('tests/build'));
+  var js = src.pipe(babel()).pipe(gulp.dest('./tests/build'));
+
+  var b = browserify({
+    entries: './tests/build/test_index.js',
+    debug: true
+  });
+
+  return b.bundle()
+    .pipe(source('app.js'))
+    .pipe(buffer())
+    .pipe(gulp.dest('./tests/build'));
 });
 
 
