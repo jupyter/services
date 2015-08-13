@@ -2,6 +2,7 @@
 npm install -g gulp
 npm install -g typedoc
 npm install
+npm install -g bower
 bower install
 
 # install Karma test suite and modules
