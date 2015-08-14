@@ -1,10 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import ISignal = phosphor.core.ISignal;
-import signal = phosphor.core.signal;
-import IDisposable = phosphor.utility.IDisposable;
-import Disposable = phosphor.utility.Disposable;
+import {ISignal, signal} from 'phosphor-signaling';
+import {IDisposable, Disposable} from './disposable';
 import {IAjaxSuccess, IAjaxError} from './utils';
 import * as utils from './utils';
 import {serialize, deserialize} from './serialize';
@@ -13,12 +11,6 @@ import {serialize, deserialize} from './serialize';
  * The url for the kernel service.
  */
 var KERNEL_SERVICE_URL = 'api/kernel';
-
-
-/**
- * Get a logger kernel objects.
- */
-var kernel_log = Logger.get('kernel');
 
 
 /**
@@ -591,9 +583,9 @@ class Kernel {
     this._status = status;
     var msg = 'Kernel: ' + status + ' (' + this._id + ')';
     if (status === 'idle' || status === 'busy') {
-      kernel_log.debug(msg);
+      // console.log(msg);
     } else {
-      kernel_log.info(msg);
+      console.log(msg);
     }
   }
 
@@ -603,7 +595,7 @@ class Kernel {
    */
   private _onError(error: IAjaxError): void {
     var msg = "API request failed (" + error.statusText + "): ";
-    kernel_log.error(msg);
+    console.error(msg);
     throw Error(error.statusText);
   }
 
@@ -615,7 +607,7 @@ class Kernel {
     this.disconnect();
     var ws_host_url = this._wsUrl + this._kernelUrl;
 
-    kernel_log.info("Starting WebSockets:", ws_host_url);
+    console.info("Starting WebSockets:", ws_host_url);
 
     if (typeof(WebSocket) !== 'undefined') {
       this._ws = new WebSocket(this.wsUrl);
@@ -737,7 +729,7 @@ class Kernel {
     this.disconnect();
     this._handleStatus('disconnected');
     if (error) {
-      kernel_log.error('WebSocket connection failed: ', ws_url);
+      console.error('WebSocket connection failed: ', ws_url);
       this._handleStatus('connectionFailed');
     }
     this._scheduleReconnect();
@@ -750,11 +742,11 @@ class Kernel {
   private _scheduleReconnect(): void {
     if (this._reconnectAttempt < this._reconnectLimit) {
       var timeout = Math.pow(2, this._reconnectAttempt);
-      kernel_log.error("Connection lost, reconnecting in " + timeout + " seconds.");
+      console.error("Connection lost, reconnecting in " + timeout + " seconds.");
       setTimeout(() => { this.reconnect(); }, 1e3 * timeout);
     } else {
       this._handleStatus('connectionDead');
-      kernel_log.error("Failed to reconnect, giving up.");
+      console.error("Failed to reconnect, giving up.");
     }
   }
 
@@ -765,7 +757,7 @@ class Kernel {
     try {
       var msg = deserialize(e.data);
     } catch (error) {
-      kernel_log.error(error.message);
+      console.error(error.message);
       return;
     }
     if (msg.channel === 'iopub' && msg.msgType === 'status') {

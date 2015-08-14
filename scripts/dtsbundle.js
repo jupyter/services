@@ -7,5 +7,5 @@
 |----------------------------------------------------------------------------*/
 require('dts-bundle').bundle({
   name: 'jupyter-js-services',
-  main: 'lib/index.d.ts',
+  main: 'lib/index.d.ts'
 });

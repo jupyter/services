@@ -5,10 +5,9 @@
   "main": "lib/index.js",
   "dependencies": {
     "js-logger": "^1.1.1",
-    "phosphor": "^0.4.0"
+    "phosphor-signaling": "^0.9.0"
   },
   "devDependencies": {
-    "browserify": "^11.0.1",
     "dts-bundle": "^0.3.0",
     "expect.js": "^0.3.1",
     "karma": "^0.12.36",
@@ -23,13 +22,13 @@
     "typescript": "^1.5.3"
   },
   "scripts": {
-    "clean": "rimraf lib && rimraf test/*.js",
+    "clean": "rimraf lib && rimraf test/build/*.js",
     "build:src": "tsc --project src",
     "build:dts": "node scripts/dtsbundle.js",
     "build:test": "tsc --project test",
     "build": "npm run build:src && npm run build:dts && npm run build:test",
     "prepublish": "npm run build",
-    "test": "mocha"
+    "test": "karma start test/karma.conf.js"
   },
   "repository": {
     "type": "git",

@@ -4,11 +4,18 @@
     "noImplicitAny": true,
     "noEmitOnError": true,
     "module": "commonjs",
-    "target": "ES5"
+    "target": "ES5",
+    "outDir": "build"
   },
   "files": [
     "../typings/expect.js/expect.js.d.ts",
     "../typings/mocha/mocha.d.ts",
-    "index.ts"
+    "../typings/es6-promise/es6-promise.d.ts",
+    "../typings/sinon/sinon.d.ts",
+    "../typings/mock-socket.d.ts",
+    "../typings/logger.d.ts",
+    "../node_modules/phosphor/dist/phosphor.d.ts",
+    "test_utils.ts",
+    "testkernel.ts"
   ]
 }

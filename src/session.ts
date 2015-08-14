@@ -1,8 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import ISignal = phosphor.core.ISignal;
-import signal = phosphor.core.signal;
+import {ISignal, signal} from 'phosphor-signaling';
 import {IAjaxSuccess, IAjaxError} from './utils';
 import * as utils from './utils';
 import {IKernelId, Kernel, validateKernelId} from './kernel';
@@ -11,12 +10,6 @@ import {IKernelId, Kernel, validateKernelId} from './kernel';
  * The url for the session service.
  */
 var SESSION_SERVICE_URL = 'api/sessions';
-
-
-/**
- * Get a logger session objects.
- */
-var session_log = Logger.get('session');
 
 
 /**
@@ -229,7 +222,7 @@ class NotebookSession {
    */
   private _handleStatus(status: string) {
     this.statusChanged.emit(status);
-    session_log.error('Session: ' + status + ' (' + this._id + ')');
+    console.error('Session: ' + status + ' (' + this._id + ')');
   }
 
   private _id = "unknown";

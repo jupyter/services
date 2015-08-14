@@ -12,13 +12,14 @@
   "files": [
     "../typings/text-encoding/text-encoding.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
-    "../node_modules/phosphor/dist/phosphor.d.ts",
+    "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
     "../typings/logger.d.ts",
     "../typings/es6.d.ts",
     "index.ts",
     "kernel.ts",
     "session.ts",
     "utils.ts",
-    "serialize.ts"
+    "serialize.ts",
+    "disposable.ts"
   ]
 }

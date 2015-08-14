@@ -1,14 +1,15 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {Kernel, IKernelId} from 'jupyter-js-services';
+import {Kernel, IKernelId} from '../lib/kernel';
 import {RequestHandler, expectFailure} from './test_utils';
+import expect = require('expect.js');
 
 
 // Set up debug logging
-//Logger.useDefaults();
-//var kernel_log = Logger.get('kernel');
-//kernel_log.setLevel(Logger.DEBUG);
+Logger.useDefaults();
+var kernel_log = Logger.get('kernel');
+kernel_log.setLevel(Logger.DEBUG);
 
 
 /**

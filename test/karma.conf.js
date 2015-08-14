@@ -12,7 +12,7 @@ module.exports = function (config) {
             'node_modules/mock-socket/dist/mock-socket.js',
             'node_modules/phosphor/dist/phosphor.js',
             'node_modules/js-logger/src/logger.js',
-            'tests/build/test_app.js'
+            'test/build/index.js'
         ],
 
         reporters: ['mocha'],
