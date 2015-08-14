@@ -33,9 +33,3 @@ interface MapConstructor {
 
 declare var Map: MapConstructor;
 
-// Typescript has a bug in the DataView type: https://github.com/Microsoft/TypeScript/issues/3896
-// so we correct it
-interface DataView {
-    getUint32(byteOffset: number, littleEndian?: boolean): number;
-    setUint32(byteOffset: number, value: number, littleEndian?: boolean): void;
-}

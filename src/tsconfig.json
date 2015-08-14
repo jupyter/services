@@ -12,7 +12,8 @@
   "files": [
     "../typings/text-encoding/text-encoding.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
-    "../typings/es6.d.ts",
+    "../typings/es6-map.d.ts",
+    "../typings/es6-dataview.d.ts",
     "index.ts",
     "kernel.ts",
     "session.ts",
