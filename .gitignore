@@ -5,3 +5,5 @@ build
 node_modules
 bower_components
 typings/tsd.d.ts
+lib
+dist

@@ -33,15 +33,15 @@ var buildTypings = [
   './typings/requirejs/require.d.ts',
   './typings/text-encoding/text-encoding.d.ts',
   './bower_components/phosphor/dist/phosphor.d.ts',
-  './logger.d.ts',
-  './es6.d.ts'
+  './typings/logger.d.ts',
+  './typings/es6.d.ts'
 ];
 
 var testsTypings = buildTypings.concat([
   './typings/expect.js/expect.js.d.ts',
   './typings/mocha/mocha.d.ts',
   './typings/sinon/sinon.d.ts',
-  './mock-socket.d.ts',
+  './typings/mock-socket.d.ts',
 ]);
 
 
