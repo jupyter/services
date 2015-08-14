@@ -2,17 +2,10 @@ language: node_js
 node_js:
   - '0.12'
 sudo: false
-before_install:
-  - chmod +x ./scripts/travis_install.sh
-  - chmod +x ./scripts/travis_script.sh
   - chmod +x ./scripts/travis_after_success.sh
-install:
-  - ./scripts/travis_install.sh
 before_script:
   # start a virtual screen for Firefox
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-script:
-  - ./scripts/travis_script.sh
 after_success:
   - ./scripts/travis_after_success.sh
