@@ -5,14 +5,14 @@
   "main": "lib/index.js",
   "dependencies": {
     "js-logger": "^1.1.1",
-    "phosphor-signaling": "^0.9.0"
+    "phosphor-signaling": "^0.9.1"
   },
   "devDependencies": {
+    "browserify": "11.0.1",
     "dts-bundle": "^0.3.0",
     "expect.js": "^0.3.1",
     "karma": "^0.12.36",
     "karma-chrome-launcher": "^0.1.12",
-    "karma-ie-launcher": "^0.2.0",
     "karma-mocha": "^0.2.0",
     "karma-mocha-reporter": "^1.0.2",
     "mocha": "^2.2.5",
@@ -28,6 +28,7 @@
     "build:test": "tsc --project test",
     "build": "npm run build:src && npm run build:dts && npm run build:test",
     "prepublish": "npm run build",
+    "pretest": "browserify test/build/index.js --outfile test/build/app.js --debug",
     "test": "karma start test/karma.conf.js"
   },
   "repository": {

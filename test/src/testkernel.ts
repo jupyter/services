@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {Kernel, IKernelId} from '../lib/kernel';
+import {Kernel, IKernelId} from '../../lib/kernel';
 import {RequestHandler, expectFailure} from './test_utils';
 import expect = require('expect.js');
 

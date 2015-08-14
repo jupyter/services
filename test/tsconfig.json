@@ -15,7 +15,8 @@
     "../typings/mock-socket.d.ts",
     "../typings/logger.d.ts",
     "../node_modules/phosphor/dist/phosphor.d.ts",
-    "test_utils.ts",
-    "testkernel.ts"
+    "src/test_utils.ts",
+    "src/testkernel.ts",
+    "src/index.ts"
   ]
 }
