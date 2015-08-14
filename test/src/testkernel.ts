@@ -5,13 +5,6 @@ import {Kernel, IKernelId} from '../../lib/kernel';
 import {RequestHandler, expectFailure} from './test_utils';
 import expect = require('expect.js');
 
-
-// Set up debug logging
-Logger.useDefaults();
-var kernel_log = Logger.get('kernel');
-kernel_log.setLevel(Logger.DEBUG);
-
-
 /**
  * Kernel class test rig.
  */
@@ -51,7 +44,7 @@ class KernelTester extends RequestHandler {
   }
 
   private _kernel: Kernel = null;
-  private _server: MockServer = null;
+  private _server: any = null;
 }
 
 

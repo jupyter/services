@@ -7,10 +7,7 @@ module.exports = function (config) {
         frameworks: ['mocha'],
 
         files: [
-            'node_modules/expect.js/index.js',
-            'node_modules/sinon/pkg/sinon-1.15.4.js',
             'node_modules/mock-socket/dist/mock-socket.js',
-            'node_modules/js-logger/src/logger.js',
             'test/build/app.js'
         ],
 
