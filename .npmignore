@@ -4,3 +4,4 @@
 node_modules
 typings/tsd.d.ts
 npm-debug.log
+test/build
