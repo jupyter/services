@@ -20,7 +20,6 @@ var typedoc = require('gulp-typedoc');
 var typescript = require('typescript');
 var gulpTypescript = require('gulp-typescript');
 var uglify = require('gulp-uglify');
-var babel = require('gulp-babel');
 var karma = require('karma').server;
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
@@ -28,14 +27,14 @@ var buffer = require('vinyl-buffer');
 var dbundle = require('dts-bundle');
 
 
-
 var buildTypings = [
-  './typings/requirejs/require.d.ts',
   './typings/text-encoding/text-encoding.d.ts',
+  './typings/es6-promise/es6-promise.d.ts',
   './node_modules/phosphor/dist/phosphor.d.ts',
   './typings/logger.d.ts',
   './typings/es6.d.ts'
 ];
+
 
 var testsTypings = buildTypings.concat([
   './typings/expect.js/expect.js.d.ts',
@@ -64,13 +63,14 @@ gulp.task('src', function() {
     experimentalDecorators: true,
     declarationFiles: true,
     noImplicitAny: true,
-    target: 'ES6',
+    target: 'ES5',
+    module: 'commonjs'
   });
 
   var src = gulp.src(buildTypings.concat(tsSources).concat(['src/index.ts']))
-    .pipe(gulpTypescript(project));
+    .pipe(gulpTypescript(project))
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./lib'));
+  var js = src.pipe(gulp.dest('./lib'));
 
   var dts = src.dts.pipe(gulp.dest('./build'));
 
@@ -127,7 +127,8 @@ gulp.task('build-tests', function() {
     experimentalDecorators: true,
     declarationFiles: false,
     noImplicitAny: true,
-    target: 'ES6',
+    target: 'ES5',
+    module: 'commonjs'
   });
 
   var src = gulp.src(testsTypings.concat([
@@ -135,7 +136,7 @@ gulp.task('build-tests', function() {
     './tests/src/*.ts'
   ])).pipe(gulpTypescript(project));
 
-  var js = src.pipe(babel()).pipe(gulp.dest('./tests/build'));
+  var js = src.pipe(gulp.dest('./tests/build'));
 
   var mod = gulp.src(['./lib/*.js'])
     .pipe(gulp.dest('./node_modules/jupyter-js-services'))

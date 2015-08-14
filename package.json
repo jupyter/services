@@ -2,7 +2,11 @@
   "name": "jupyter-services",
   "version": "0.0.1",
   "description": "Client APIs for the Jupyter services REST APIs",
-  "dependencies": {},
+  "main": "lib/index.js",
+  "dependencies": {
+    "js-logger": "^1.1.1",
+    "phosphor": "^0.4.0"
+  },
   "devDependencies": {
     "browserify": "^11.0.1",
     "del": "^0.1.3",
@@ -25,7 +29,7 @@
     "karma-mocha-reporter": "^1.0.2",
     "mocha": "^2.2.5",
     "mock-socket": "^0.6.0",
-    "nib": "^1.1.0",
+    "nils": "^1.1.0",
     "sinon": "^1.15.4",
     "typescript": "Microsoft/TypeScript#release-1.5",
     "vinyl-source-stream": "^1.1.0",
