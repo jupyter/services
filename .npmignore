@@ -1,8 +1,6 @@
 *.suo
 *.user
 .DS_Store
-build
 node_modules
-bower_components
 typings/tsd.d.ts
-dist
+npm-debug.log
