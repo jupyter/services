@@ -22,6 +22,12 @@ var kernel_log = Logger.get('kernel');
 
 
 /**
+ * Stub for Mozilla web socket type.
+ */
+declare var MozWebSocket: any;
+
+
+/**
  * Kernel message header content.
  */
 export
@@ -611,7 +617,13 @@ class Kernel {
 
     kernel_log.info("Starting WebSockets:", ws_host_url);
 
-    this._ws = new (<any>window).WebSocket(this.wsUrl);
+    if (typeof(WebSocket) !== 'undefined') {
+      this._ws = new WebSocket(this.wsUrl);
+    } else if (typeof(MozWebSocket) !== 'undefined') {
+      this._ws = MozWebSocket(this.wsUrl);
+    } else {
+      alert('Your browser does not have WebSocket support, please try Chrome, Safari or Firefox ≥ 6. Firefox 4 and 5 are also supported by you have to enable WebSockets in about:config.');
+    }
 
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
