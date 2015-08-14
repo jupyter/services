@@ -46,6 +46,8 @@
   "bugs": {
     "url": "https://github.com/jupyter/jupyter-js-services/issues"
   },
-  "main": "lib/index.js",
+  "typescript":{
+    "definition": "lib/jupyter-js-services.d.ts"
+  },
   "homepage": "https://github.com/jupyter/jupyter-js-services"
 }
