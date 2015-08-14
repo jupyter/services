@@ -32,7 +32,7 @@ var dbundle = require('dts-bundle');
 var buildTypings = [
   './typings/requirejs/require.d.ts',
   './typings/text-encoding/text-encoding.d.ts',
-  './bower_components/phosphor/dist/phosphor.d.ts',
+  './node_modules/phosphor/dist/phosphor.d.ts',
   './typings/logger.d.ts',
   './typings/es6.d.ts'
 ];
