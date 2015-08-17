@@ -5,7 +5,12 @@
 |
 | The full license is in the file LICENSE, distributed with this software.
 |----------------------------------------------------------------------------*/
-require('dts-bundle').bundle({
+require('dts-generator').generate({
   name: 'jupyter-js-services',
-  main: 'lib/index.d.ts'
+  main: 'index.d.ts',
+  baseDir: 'lib',
+  files: ['phosphor-signaling.d.ts',
+          'index.d.ts', 
+          ],
+  out: 'lib/jupyter-js-services.d.ts'
 });

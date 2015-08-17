@@ -1,7 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-/// <reference path="../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts" />
 import {ISignal, signal} from 'phosphor-signaling';
 import {IDisposable, Disposable} from './disposable';
 import {IAjaxSuccess, IAjaxError} from './utils';
