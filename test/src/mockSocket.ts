@@ -10,15 +10,7 @@ import expect = require('expect.js');
 
 // stubs for node global variables
 declare var global: any;
-declare var process: any;
-
-
-/**
- * Simple event class stub for node.
- */
-class Event {
-  constructor(type: string) { }
-}
+declare var setImmediate: any;
 
 
 /**
@@ -94,7 +86,7 @@ class SocketBase {
   triggerClose() {
     this._readyState = ReadyState.CLOSING;
     if (this._onClose) {
-      process.nextTick(() => {
+      setImmediate(() => {
         this._readyState = ReadyState.CLOSED;
         this._onClose();
       });
@@ -106,9 +98,7 @@ class SocketBase {
    */
   triggerError(msg: string) {
     if (this._onError) {
-      var evt = new Event('Websocket');
-      (<any>evt).message = msg;
-      process.nextTick(() => {this._onError(evt);});
+      setImmediate(() => {this._onError({message: msg});});
     }
   }
 
@@ -120,16 +110,14 @@ class SocketBase {
       throw Error('Websocket not connected');
     }
     if (this._onMessage) {
-      var evt = new Event('Websocket');
-      (<any>evt).data = msg;
-      process.nextTick(() => {this._onMessage(evt);});
+      setImmediate(() => {this._onMessage({data: msg});});
     }
   }
 
   private _onOpen: () => void = null;
   private _onClose: () => void = null;
-  private _onMessage: (evt?: Event) => void = null;
-  private _onError: (evt?: Event) => void = null;
+  private _onMessage: (evt?: any) => void = null;
+  private _onError: (evt?: any) => void = null;
   private _readyState = ReadyState.CLOSED;
 }
 
