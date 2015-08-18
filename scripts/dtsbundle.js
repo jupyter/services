@@ -7,9 +7,8 @@
 |----------------------------------------------------------------------------*/
 require('dts-generator').generate({
   name: 'jupyter-js-services',
-  main: 'index.d.ts',
+  main: 'jupyter-js-services/index',
   baseDir: 'lib',
-  files: ['index.d.ts', 
-          ],
+  files: ['index.d.ts'],
   out: 'lib/jupyter-js-services.d.ts'
 });
