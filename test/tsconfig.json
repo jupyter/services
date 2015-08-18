@@ -11,10 +11,11 @@
     "../typings/expect.js/expect.js.d.ts",
     "../typings/mocha/mocha.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
-    "../typings/sinon/sinon.d.ts",
-    "../typings/mock-socket/mock-socket.d.ts",
+    "../typings/es6-container-shim.d.ts",
+    "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
+    "src/mockSocket.ts",
+    "src/mockXHR.ts",
     "src/test_utils.ts",
-    "src/testkernel.ts",
-    "src/index.ts"
+    "src/testkernel.ts"
   ]
 }
