@@ -2,8 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {Kernel, IKernelId} from '../../lib/kernel';
-import {RequestHandler, expectFailure} from './test_utils';
+import {expectFailure, RequestHandler} from './test_utils';
 import expect = require('expect.js');
+import {MockWebSocketServer} from './mockSocket';
 
 /**
  * Kernel class test rig.
@@ -15,32 +16,31 @@ class KernelTester extends RequestHandler {
    */
   constructor(kernel: Kernel) {
     super();
-    (<any>window).WebSocket = MockWebSocket;
     this._kernel = kernel;
     kernel.name = "test";
     kernel.id = "1234";
-    this._server = new MockServer(this._kernel.wsUrl);
+    this._server = new MockWebSocketServer(this._kernel.wsUrl);
   }
 
   /**
    * Register a connection callback with the websocket server.
    */
   onConnection(cb: () => void) {
-    this._server.on('connection', cb);
+    this._server.onpen = cb;
   }
 
   /**
    * Register a message callback with the websocket server.
    */
   onMessage(cb: () => void) {
-    this._server.on('message', cb);
+    this._server.onmessage = cb;
   }
 
   /**
    * Register a close with the websocket server.
    */
   onClose(cb: () => void) {
-    this._server.on('close', cb);
+    this._server.close = cb;
   }
 
   private _kernel: Kernel = null;
