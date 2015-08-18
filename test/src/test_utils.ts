@@ -4,6 +4,10 @@
 import {MockXMLHttpRequest} from './mockXHR';
 
 
+// stub for node global
+declare var global: any;
+
+
 export
 class RequestHandler {
 
@@ -11,6 +15,7 @@ class RequestHandler {
    * Create a new RequestHandler.
    */
   constructor() {
+    global.XMLHttpRequest = MockXMLHttpRequest;
     MockXMLHttpRequest.requests = [];
   }
 
@@ -18,8 +23,9 @@ class RequestHandler {
    * Respond to the latest Ajax request.
    */
   respond(statusCode: number, data: any, header?: any): void {
-    var request = MockXMLHttpRequest.requests[-1];
-    request.respond(statusCode, header, data);
+    var len = MockXMLHttpRequest.requests.length;
+    var request = MockXMLHttpRequest.requests[len - 1];
+    request.respond(statusCode, data, header);
   }
 }
 

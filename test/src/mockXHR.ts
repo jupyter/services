@@ -162,8 +162,7 @@ class MockXMLHttpRequest {
     if (data !== void 0) {
       this._data = data;
     }
-
-    setImmediate(() => {MockXMLHttpRequest.requests.push(this);});
+    MockXMLHttpRequest.requests.push(this);;
   }
 
   /**
@@ -191,14 +190,13 @@ class MockXMLHttpRequest {
     if (header === void 0) {
       header = {'Content-Type': 'text/json'};
     }
+    if (typeof response !== 'string') {
+      response = JSON.stringify(response);
+    }
     this._status = statusCode;
     this._response = response;
     this._responseHeader = header;
     this._readyState = ReadyState.DONE;
-    if (this._mimetype === 'application/json' 
-        && typeof response === 'string') {
-      response = JSON.parse(response);
-    }
     if (statusCode >= 400) {
       if (this._onError) {
         var evt = {message: 'Invalid status code'};
@@ -245,14 +243,11 @@ describe('jupyter.services - mockXHR', () => {
 
   global.XMLHttpRequest = MockXMLHttpRequest;
 
-  it('should make a request', (done) => {
+  it('should make a request', () => {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'test.com');
     xhr.send();
-    setImmediate(() => {
-      expect(MockXMLHttpRequest.requests.length).to.be(1);
-      done();
-    });
+    expect(MockXMLHttpRequest.requests.length).to.be(1);
   });
 
   it('should yield a successful response', (done) => {
@@ -263,10 +258,8 @@ describe('jupyter.services - mockXHR', () => {
       done();
     }
     xhr.send();
-    setImmediate(() => {
-      var request = MockXMLHttpRequest.requests[0];
-      request.respond(200, {}, '');
-    });
+    var request = MockXMLHttpRequest.requests[0];
+    request.respond(200, {}, '');
   });
 
   it('should yield an error response', (done) => {
@@ -277,10 +270,8 @@ describe('jupyter.services - mockXHR', () => {
       done();
     }
     xhr.send();
-    setImmediate(() => {
-      var request = MockXMLHttpRequest.requests[0];
-      request.respond(500, {}, '');
-    });
+    var request = MockXMLHttpRequest.requests[0];
+    request.respond(500, {}, '');
   });
 
   it('should handle a response header', (done) => {
@@ -291,10 +282,8 @@ describe('jupyter.services - mockXHR', () => {
       done();
     }
     xhr.send();
-    setImmediate(() => {
-      var request = MockXMLHttpRequest.requests[0];
-      request.respond(200, '', {'Location': 'Somewhere'});
-    });
+    var request = MockXMLHttpRequest.requests[0];
+    request.respond(200, '', {'Location': 'Somewhere'});
   });
 
 });
