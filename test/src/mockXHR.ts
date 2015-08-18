@@ -187,7 +187,10 @@ class MockXMLHttpRequest {
   /**
    * Respond to a Mock XHR.
    */
-  respond(statusCode: number, header: any, response: any) {
+  respond(statusCode: number, response: any, header?: any) {
+    if (header === void 0) {
+      header = {'Content-Type': 'text/json'};
+    }
     this._status = statusCode;
     this._response = response;
     this._responseHeader = header;
@@ -290,21 +293,7 @@ describe('jupyter.services - mockXHR', () => {
     xhr.send();
     setImmediate(() => {
       var request = MockXMLHttpRequest.requests[0];
-      request.respond(200, {'Location': 'Somewhere'}, '');
-    });
-  });
-
-  it('should handle a response header', (done) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'test.com');
-    xhr.onload = () => {
-      expect(xhr.getResponseHeader('Location')).to.be("Somewhere");
-      done();
-    }
-    xhr.send();
-    setImmediate(() => {
-      var request = MockXMLHttpRequest.requests[0];
-      request.respond(200, {'Location': 'Somewhere'}, '');
+      request.respond(200, '', {'Location': 'Somewhere'});
     });
   });
 
