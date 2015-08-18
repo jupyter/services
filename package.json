@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "rimraf lib && rimraf test/build",
     "build:src": "tsc --project src",
-    "build:dts": "cp node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts lib/ && node scripts/dtsbundle.js",
+    "build:dts": "node scripts/dtsbundle.js",
     "build:test": "tsc --project test",
     "build": "npm run build:src && npm run build:dts && npm run build:test",
     "docs": "typedoc --out build/docs --name 'Jupyter JS Services Docs' --mode file --target ES6 --experimentalDecorators --includeDeclarations typings/text-encoding/ typings/es6-dataview.d.ts src/",

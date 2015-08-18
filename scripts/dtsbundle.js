@@ -9,8 +9,7 @@ require('dts-generator').generate({
   name: 'jupyter-js-services',
   main: 'index.d.ts',
   baseDir: 'lib',
-  files: ['phosphor-signaling.d.ts',
-          'index.d.ts', 
+  files: ['index.d.ts', 
           ],
   out: 'lib/jupyter-js-services.d.ts'
 });
