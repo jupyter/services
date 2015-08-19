@@ -4,7 +4,7 @@
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "dependencies": {
-    "phosphor-signaling": "^0.9.1"
+    "phosphor-signaling": "^0.9.7"
   },
   "devDependencies": {
     "dts-generator": "^1.5.0",
