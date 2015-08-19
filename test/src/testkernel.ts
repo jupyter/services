@@ -26,7 +26,7 @@ class KernelTester extends RequestHandler {
    * Register a connection callback with the websocket server.
    */
   onConnection(cb: () => void) {
-    this._server.onpen = cb;
+    this._server.onconnect = cb;
   }
 
   /**

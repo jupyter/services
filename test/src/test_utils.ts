@@ -15,7 +15,11 @@ class RequestHandler {
    * Create a new RequestHandler.
    */
   constructor() {
-    global.XMLHttpRequest = MockXMLHttpRequest;
+    if (typeof window === 'undefined') {
+      global.XMLHttpRequest = MockXMLHttpRequest;
+    } else {
+      (<any>window).XMLHttpRequest = MockXMLHttpRequest;
+    }
     MockXMLHttpRequest.requests = [];
   }
 
