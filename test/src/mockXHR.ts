@@ -10,20 +10,6 @@ import expect = require('expect.js');
 
 // stubs for node global variables
 declare var global: any;
-declare var setImmediate: any;
-
-
-/**
- * Possible ready states for the request.
- **/
-enum ReadyState {
-  UNSENT = 0, // open() has not been called yet.
-  OPENED = 1, // send() has been called.
-  HEADERS_RECEIVED = 2, // send() has been called, and headers and status 
-                        // are available.
-  LOADING = 3, // Downloading; responseText holds partial data.
-  DONE = 4 // The operation is complete.
-}
 
 
 /**
@@ -33,6 +19,13 @@ enum ReadyState {
  */
 export
 class MockXMLHttpRequest {
+
+  static UNSENT = 0; // open() has not been called yet.
+  static OPENED = 1; // send() has been called.
+  static HEADERS_RECEIVED = 2;  // send() has been called, and headers and 
+                               // status are available.
+  static LOADING = 3; // Downloading; responseText holds partial data.
+  static DONE = 4;  // The operation is complete.
 
   /**
    * Global list of XHRs.
@@ -142,7 +135,7 @@ class MockXMLHttpRequest {
     if (password !== void 0) {
       this._password = password;
     }
-    this._readyState = ReadyState.OPENED;
+    this._readyState = MockXMLHttpRequest.OPENED;
     if (this._onReadyState) {
       setImmediate(() => {this._onReadyState()});
     }
@@ -196,8 +189,9 @@ class MockXMLHttpRequest {
     this._status = statusCode;
     this._response = response;
     this._responseHeader = header;
-    this._readyState = ReadyState.DONE;
+    this._readyState = MockXMLHttpRequest.DONE;
     if (statusCode >= 400) {
+      console.log('request code error')
       if (this._onError) {
         var evt = {message: 'Invalid status code'};
         setImmediate(() => {this._onError(evt);});
@@ -212,7 +206,7 @@ class MockXMLHttpRequest {
     }
   }
 
-  private _readyState = ReadyState.UNSENT;
+  private _readyState = MockXMLHttpRequest.UNSENT;
   private _response: any = '';
   private _responseType = '';
   private _status = -1;
@@ -241,7 +235,11 @@ beforeEach(() => {
 
 describe('jupyter.services - mockXHR', () => {
 
-  global.XMLHttpRequest = MockXMLHttpRequest;
+  if (typeof window === 'undefined') {
+    global.XMLHttpRequest = MockXMLHttpRequest;
+  } else {
+    (<any>window).XMLHttpRequest = MockXMLHttpRequest;
+  }
 
   it('should make a request', () => {
     var xhr = new XMLHttpRequest();
