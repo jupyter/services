@@ -1,13 +1,13 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-
 'use strict';
 
-import {ISignal, signal} from 'phosphor-signaling';
-import {IDisposable, Disposable} from './disposable';
-import {IAjaxSuccess, IAjaxError} from './utils';
+import { ISignal, defineSignal } from 'phosphor-signaling';
+
+import { IDisposable, Disposable } from './disposable';
+import { serialize, deserialize } from './serialize';
 import * as utils from './utils';
-import {serialize, deserialize} from './serialize';
+
 
 /**
  * The url for the kernel service.
@@ -160,7 +160,7 @@ class Kernel {
   /**
    * A signal emitted when the kernel changes state.
    */
-  @signal
+  @defineSignal
   statusChanged: ISignal<string>;
 
   /**
@@ -173,7 +173,7 @@ class Kernel {
     return utils.ajaxRequest(kernelServiceUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess): IKernelId[] => {
+    }).then((success: utils.IAjaxSuccess): IKernelId[] => {
       if (success.xhr.status === 200) {
         if (!Array.isArray(success.data)) {
           throw Error('Invalid kernel list');
@@ -289,13 +289,13 @@ class Kernel {
     return utils.ajaxRequest(this._kernelUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -312,11 +312,11 @@ class Kernel {
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -334,14 +334,14 @@ class Kernel {
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       this.connect();
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -365,14 +365,14 @@ class Kernel {
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       this.connect(success.data);
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -390,7 +390,7 @@ class Kernel {
     return utils.ajaxRequest(this._kernelUrl, {
       method: "DELETE",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid response');
       }
@@ -591,7 +591,7 @@ class Kernel {
    * Handle a failed AJAX request by logging the error message, and throwing
    * another error.
    */
-  private _onError(error: IAjaxError): void {
+  private _onError(error: utils.IAjaxError): void {
     var msg = "API request failed (" + error.statusText + "): ";
     console.error(msg);
     throw Error(error.statusText);

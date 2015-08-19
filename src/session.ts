@@ -1,12 +1,12 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-
 'use strict';
 
-import {ISignal, signal} from 'phosphor-signaling';
-import {IAjaxSuccess, IAjaxError} from './utils';
+import { ISignal, defineSignal } from 'phosphor-signaling';
+
+import { IKernelId, Kernel, validateKernelId } from './kernel';
 import * as utils from './utils';
-import {IKernelId, Kernel, validateKernelId} from './kernel';
+
 
 /**
  * The url for the session service.
@@ -56,7 +56,7 @@ class NotebookSession {
   /**
    * A signal emitted when the session changes state.
    */
-  @signal
+  @defineSignal
   statusChanged: ISignal<string>;
 
   /**
@@ -69,7 +69,7 @@ class NotebookSession {
     return utils.ajaxRequest(sessionUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess): ISessionId[] => {
+    }).then((success: utils.IAjaxSuccess): ISessionId[] => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -115,7 +115,7 @@ class NotebookSession {
       dataType: "json",
       data: JSON.stringify(this._model),
       contentType: 'application/json'
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid response');
       }
@@ -123,7 +123,7 @@ class NotebookSession {
       this._kernel.connect(success.data.kernel);
       this._handleStatus('kernelCreated');
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._handleStatus('kernelDead');
     });
   }
@@ -137,7 +137,7 @@ class NotebookSession {
     return utils.ajaxRequest(this._sessionUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess): ISessionId => {
+    }).then((success: utils.IAjaxSuccess): ISessionId => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
@@ -159,12 +159,12 @@ class NotebookSession {
     return utils.ajaxRequest(this._sessionUrl, {
       method: "DELETE",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid response');
       }
       validateSessionId(success.data);
-    }, (rejected: IAjaxError) => {
+    }, (rejected: utils.IAjaxError) => {
         if (rejected.xhr.status === 410) {
           throw Error('The kernel was deleted but the session was not');
         }
@@ -189,7 +189,7 @@ class NotebookSession {
 
   /**
    * Rename the notebook.
-   */ 
+   */
   renameNotebook(path: string): Promise<ISessionId> {
     this._notebookPath = path;
     return utils.ajaxRequest(this._sessionUrl, {
@@ -197,7 +197,7 @@ class NotebookSession {
       dataType: "json",
       data: JSON.stringify(this._model),
       contentType: 'application/json'
-    }).then((success: IAjaxSuccess): ISessionId => {
+    }).then((success: utils.IAjaxSuccess): ISessionId => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
