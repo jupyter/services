@@ -1,9 +1,10 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-
 'use strict';
 
-import {MockXMLHttpRequest} from './mockXHR';
+import expect = require('expect.js');
+
+import { MockXMLHttpRequest } from './mockxhr';
 
 
 // stub for node global
@@ -37,8 +38,7 @@ class RequestHandler {
 
 
 /**
- * Expect a failure on a promise with the given message, then call 
-   a mocha done() callback.
+ * Expect a failure on a promise with the given message, then call `done`.
  */
 export
 function expectFailure(promise: Promise<any>, done: () => void, message: string): Promise<any> {
@@ -48,4 +48,13 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
     expect(err.message).to.be(message);
     done();
   });
+}
+
+
+/**
+ * Do something in the future ensuring total ordering wrt to Promises.
+ */
+export
+function doLater(cb: () => void): void {
+  Promise.resolve().then(cb);
 }

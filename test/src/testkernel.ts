@@ -6,9 +6,9 @@ import expect = require('expect.js');
 
 import { IKernelId, Kernel } from '../../lib/kernel';
 
-import { MockWebSocketServer } from './mockSocket';
+import { MockWebSocketServer } from './mocksocket';
 
-import { RequestHandler, expectFailure } from './test_utils';
+import { RequestHandler, expectFailure } from './utils';
 
 
 /**
