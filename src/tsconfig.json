@@ -15,11 +15,11 @@
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/es6-dataview.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
-    "disposable.ts"
+    "disposable.ts",
     "index.ts",
     "kernel.ts",
     "serialize.ts",
     "session.ts",
-    "utils.ts",
+    "utils.ts"
   ]
 }
