@@ -10,24 +10,16 @@ import expect = require('expect.js');
 
 // stubs for node global variables
 declare var global: any;
-declare var setImmediate: any;
-
-
-/**
- * Possible ready states for the socket.
- **/
-enum ReadyState {
-  CONNECTING = 0,  // The connection is not yet open.
-  OPEN = 1,  //  The connection is open and ready to communicate.
-  CLOSING = 2,  //  The connection is in the process of closing.
-  CLOSED = 3 //  The connection is closed or couldn't be opened.
-}
-
 
 /**
  * Base class for a mock socket implementation.
  */
 class SocketBase {
+
+  static CONNECTING = 0;  // The connection is not yet open.
+  static OPEN = 1;  //  The connection is open and ready to communicate.
+  static CLOSING = 2;  //  The connection is in the process of closing.
+  static CLOSED = 3; //  The connection is closed or couldn't be opened.
 
   /**
    * Get the current ready state.
@@ -38,9 +30,13 @@ class SocketBase {
 
   /**
    * Assign a callback for the websocket opening.
+   * If it is already opened, call immediately.
    */
   set onopen(cb: () => void) {
     this._onOpen = cb;
+    if (this._readyState === SocketBase.OPEN) {
+      cb();
+    }
   }
 
   /**
@@ -67,27 +63,26 @@ class SocketBase {
   // Implementation details
 
   /**
-   * Trigger an open event.
-   * Allow time for an onopen callback to be assigned.
+   * Trigger an open event on the next event loop run.
    */
   triggerOpen() {
-    this._readyState = ReadyState.CONNECTING;
-    setTimeout(() => {
-      this._readyState = ReadyState.OPEN;
+    this._readyState = SocketBase.CONNECTING;
+    setImmediate(() => {
+      this._readyState = SocketBase.OPEN;
       if (this._onOpen) {
         this._onOpen();
       }
-    }, 10);
+    });
   }
 
   /**
    * Trigger a close event on the next event loop run.
    */
   triggerClose() {
-    this._readyState = ReadyState.CLOSING;
+    this._readyState = SocketBase.CLOSING;
     if (this._onClose) {
       setImmediate(() => {
-        this._readyState = ReadyState.CLOSED;
+        this._readyState = SocketBase.CLOSED;
         this._onClose();
       });
     }
@@ -106,7 +101,7 @@ class SocketBase {
    * Trigger a message event on the next event loop run.
    */
   triggerMessage(msg: string | ArrayBuffer) {
-    if (this._readyState != ReadyState.OPEN) {
+    if (this._readyState != SocketBase.OPEN) {
       throw Error('Websocket not connected');
     }
     if (this._onMessage) {
@@ -118,7 +113,7 @@ class SocketBase {
   private _onClose: () => void = null;
   private _onMessage: (evt?: any) => void = null;
   private _onError: (evt?: any) => void = null;
-  private _readyState = ReadyState.CLOSED;
+  private _readyState = SocketBase.CLOSED;
 }
 
 
@@ -172,7 +167,7 @@ class MockWebSocket extends SocketBase {
    * Close the connection to the server.
    */
   close() {
-    this._server.close(this);
+    this._server.closeSocket(this);
   }
 
   private _binaryType = 'arraybuffer';
@@ -191,24 +186,47 @@ class MockWebSocketServer extends SocketBase {
    */
   constructor(url: string) {
     super();
-    (<any>global).WebSocket = MockWebSocket;
+    if (typeof window === 'undefined') {
+      global.WebSocket = MockWebSocket;
+    } else {
+      (<any>window).WebSocket = MockWebSocket;
+    }
     MockWebSocket.servers.set(url, this);
+    this.triggerOpen();
+  }
+
+  /**
+   * Assign a callback for a websocket connection.
+   * If there are existing open connections, call the callback for each.
+   */
+  set onconnect(cb: (ws: MockWebSocket) => void) {
+    this._onConnect = cb;
+    for (var i = 0; i < this._connections.length; i++) {
+      if (this._connections[i].readyState == MockWebSocket.OPEN) {
+        setImmediate(() => {
+          this._onConnect(this._connections[i]);
+        });
+      }
+    };
   }
 
   /**
    * Handle a connection from a mock websocket.
    */
   connect(ws: MockWebSocket) {
-    this.triggerOpen();
     ws.triggerOpen();
     this._connections.push(ws);
+    setImmediate(() => {
+      if (this._onConnect) {
+        this._onConnect(ws);
+      }
+    });
   }
 
   /**
    * Handle a closing websocket.
    */
-  close(ws: MockWebSocket) {
-    this.triggerClose();
+  closeSocket(ws: MockWebSocket) {
     ws.triggerClose();
     var index = this._connections.indexOf(ws);
     this._connections.splice(index, 1);
@@ -220,13 +238,14 @@ class MockWebSocketServer extends SocketBase {
   send(msg: string | ArrayBuffer) {
     for (var i = 0; i < this._connections.length; i++) {
       var ws = this._connections[i];
-      if (ws.readyState == ReadyState.OPEN) {
+      if (ws.readyState == SocketBase.OPEN) {
         ws.triggerMessage(msg);
       }
     }
   }
 
   private _connections: MockWebSocket[] = [];
+  private _onConnect: (ws: MockWebSocket) => void = null;
 }
 
 
@@ -235,9 +254,9 @@ describe('jupyter.services - mockSocket', () => {
   it('should connect', (done) => {
     var server = new MockWebSocketServer('hello');
     var ws = new WebSocket('hello');
-    expect(ws.readyState).to.be(ReadyState.CONNECTING);
+    expect(ws.readyState).to.be(WebSocket.CONNECTING);
     ws.onopen = () => {
-      expect(ws.readyState).to.be(ReadyState.OPEN);
+      expect(ws.readyState).to.be(WebSocket.OPEN);
       done();
     };
   });
@@ -268,12 +287,12 @@ describe('jupyter.services - mockSocket', () => {
     var server = new MockWebSocketServer('hello');
     var ws = new WebSocket('hello');
     ws.onclose = () => {
-      expect(ws.readyState).to.be(ReadyState.CLOSED);
+      expect(ws.readyState).to.be(WebSocket.CLOSED);
       done();
     };
     ws.onopen = () => {
       ws.close();
-      expect(ws.readyState).to.be(ReadyState.CLOSING);
+      expect(ws.readyState).to.be(WebSocket.CLOSING);
     }
   });
 
@@ -287,6 +306,15 @@ describe('jupyter.services - mockSocket', () => {
     ws2.onopen = () => {
       server.send('hi');
     }
+  });
+
+  it('should open in the right order', (done) => {
+    var server = new MockWebSocketServer('hello');
+    server.onconnect = (ws: MockWebSocket) => {
+      expect(ws.readyState).to.be(WebSocket.OPEN);
+      done();
+    }
+    var ws = new WebSocket('hello');
   });
 });
 
