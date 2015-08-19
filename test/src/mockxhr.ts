@@ -46,7 +46,7 @@ class MockXMLHttpRequest {
    * Response data for the request as string.
    */
   get responseText(): string {
-    return String(this._response);
+    return '' + this._response;
   }
 
   /**
@@ -132,9 +132,10 @@ class MockXMLHttpRequest {
       this._password = password;
     }
     this._readyState = MockXMLHttpRequest.OPENED;
-    if (this._onReadyState) {
-      utils.doLater(() => {this._onReadyState()});
-    }
+    utils.doLater(() => {
+      var onReadyState = this._onReadyState;
+      if (onReadyState) onReadyState();
+    });
   }
 
   /**
@@ -186,20 +187,17 @@ class MockXMLHttpRequest {
     this._response = response;
     this._responseHeader = header;
     this._readyState = MockXMLHttpRequest.DONE;
-    if (statusCode >= 400) {
-      console.log('request code error')
-      if (this._onError) {
-        var evt = {message: 'Invalid status code'};
-        utils.doLater(() => {this._onError(evt);});
+    utils.doLater(() => {
+      if (statusCode >= 400) {
+        var onError = this._onError;
+        if (onError) onError({ message: 'Invalid status code' });
+      } else {
+        var onReadyState = this._onReadyState;
+        if (onReadyState) onReadyState();
+        var onLoad = this._onLoad;
+        if (onLoad) onLoad();
       }
-    } else {
-      if (this._onReadyState) {
-        utils.doLater(() => {this._onReadyState()});
-      }
-      if (this._onLoad) {
-        utils.doLater(() => {this._onLoad()});
-      }
-    }
+    });
   }
 
   private _readyState = MockXMLHttpRequest.UNSENT;
