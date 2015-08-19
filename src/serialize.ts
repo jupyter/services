@@ -1,10 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
 
-
-module jupyter.services.serialize {
-
-import IKernelMsg = services.IKernelMsg;
+import { IKernelMsg } from './kernel';
 
 
 /**
@@ -113,5 +111,3 @@ function replace_buffers(key: string, value: any) {
   }
   return value;
 }
-
-}  // module jupyter.services

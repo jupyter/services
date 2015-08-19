@@ -1,32 +1,55 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
 
-module tests {
+import expect = require('expect.js');
 
-import Kernel = jupyter.services.Kernel;
-import IKernelId = jupyter.services.IKernelId;
-import RequestHandler = utils.RequestHandler;
-import expectFailure = utils.expectFailure;
+import { IKernelId, Kernel } from '../../lib/kernel';
+
+import { MockWebSocketServer } from './mocksocket';
+
+import { RequestHandler, expectFailure } from './utils';
 
 
-class KernelTester {
+/**
+ * Kernel class test rig.
+ */
+class KernelTester extends RequestHandler {
 
+  /**
+   * Create a new Kernel tester.
+   */
   constructor(kernel: Kernel) {
-    (<any>window).WebSocket = MockWebSocket;
+    super();
     this._kernel = kernel;
     kernel.name = "test";
     kernel.id = "1234";
-    this._server = new MockServer(this._kernel.wsUrl);
-    this._handler = new RequestHandler();
+    this._server = new MockWebSocketServer(this._kernel.wsUrl);
   }
 
-  respond(statusCode: number, data: any, header?: any): void {
-    this._handler.respond(statusCode, data, header);
+  /**
+   * Register a connection callback with the websocket server.
+   */
+  onConnection(cb: () => void) {
+    this._server.onconnect = cb;
+  }
+
+  /**
+   * Register a message callback with the websocket server.
+   */
+  onMessage(cb: () => void) {
+    this._server.onmessage = cb;
+  }
+
+  /**
+   * Register a close with the websocket server.
+   */
+  onClose(cb: () => void) {
+    this._server.close = cb;
   }
 
   private _kernel: Kernel = null;
-  private _handler: RequestHandler = null;
-  private _server: MockServer = null;
+  private _server: any = null;
 }
 
 
@@ -37,21 +60,21 @@ describe('jupyter.services - Kernel', () => {
         it('should yield a list of valid kernel ids', (done) => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = [{id: "1234", name: "test"},
-                      {id: "5678", name: "test2"}];
+          var data = [{ id: "1234", name: "test" },
+                      { id: "5678", name: "test2" }];
           handler.respond(200, data);
           return list.then((response: IKernelId[]) => {
             expect(response[0].name).to.be("test");
             expect(response[0].id).to.be("1234");
             done();
           });
-          
+
         });
 
         it('should throw an error for an invalid model', (done) => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = {id: "1234", name: "test"};
+          var data = { id: "1234", name: "test"  };
           handler.respond(200, data);
           expectFailure(list, done, "Invalid kernel list");
         });
@@ -59,8 +82,8 @@ describe('jupyter.services - Kernel', () => {
         it('should throw an error for an invalid response', (done) => {
           var handler = new RequestHandler();
           var list = Kernel.list('baseUrl');
-          var data = [{id: "1234", name: "test"},
-                      {id: "5678", name: "test2"}];
+          var data = [{ id: "1234", name: "test" },
+                      { id: "5678", name: "test2" }];
           handler.respond(201, data);
           expectFailure(list, done, "Invalid Status: 201");
         });
@@ -86,21 +109,21 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = {id: "1234", name: "test"};
+        var data = { id: "1234", name: "test" };
         tester.respond(200, data);
         return info.then((response: IKernelId) => {
           expect(response.name).to.be("test");
           expect(response.id).to.be("1234");
           done();
         });
-        
+
       });
 
       it('should throw an error for an invalid kernel id', (done) => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = {id: "1234"};
+        var data = { id: "1234" };
         tester.respond(200, data);
         return expectFailure(info, done, "Invalid kernel id");
       });
@@ -109,7 +132,7 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var info = kernel.getInfo();
-        var data = {id: "1234", name: "test"};
+        var data = { id: "1234", name: "test" };
         tester.respond(201, data);
         return expectFailure(info, done, "Invalid Status: 201");
       });
@@ -124,14 +147,16 @@ describe('jupyter.services - Kernel', () => {
         kernel.connect();
         expect(kernel.status).to.be('created');
 
-        setTimeout(function() {
+        tester.onConnection(() => {
           expect(kernel.isConnected).to.be(true);
           expect(kernel.name).to.be("test");
           expect(kernel.id).to.be("1234");
-          expect(kernel.status).to.be('connected');
-          done();
-        }, 100);
-        
+          setTimeout(() => {
+            expect(kernel.status).to.be('connected');
+            done();
+          }, 10);
+        });
+
       });
 
       it('should throw an error for an uninitialized kernel id', () => {
@@ -147,17 +172,19 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var start = kernel.start();
-        var data = {id: "1234", name: "test"};
+        var data = { id: "1234", name: "test" };
         tester.respond(200, data);
 
         return start.then((id: any) => {
-          setTimeout(function() {
+          tester.onConnection(() => {
             expect(kernel.isConnected).to.be(true);
             expect(kernel.name).to.be("test");
             expect(kernel.id).to.be("1234");
-            expect(kernel.status).to.be('connected');
-            done();
-          }, 100);
+            setTimeout(() => {
+              expect(kernel.status).to.be('connected');
+              done();
+            }, 10);
+          });
         });
       });
 
@@ -165,7 +192,7 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var start = kernel.start();
-        var data = {id: "1234"};
+        var data = { id: "1234" };
         tester.respond(200, data);
         return expectFailure(start, done, "Invalid kernel id");
       });
@@ -174,7 +201,7 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var start = kernel.start();
-        var data = {id: "1234"};
+        var data = { id: "1234" };
         tester.respond(201, data);
         return expectFailure(start, done, "Invalid Status: 201");
       });
@@ -193,18 +220,20 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var start = kernel.start();
-        var data = {id: "1234", name: "test"};
+        var data = { id: "1234", name: "test" };
         tester.respond(200, data);
 
         return start.then((id: any) => {
-          var interrupt = kernel.interrupt();
-          tester.respond(204, data);
-          return interrupt.then((id: any) => {
-            setTimeout(function() {
-              expect(kernel.isConnected).to.be(true);
-              expect(kernel.id).to.be("1234");
-              done();
-            }, 100);
+          tester.onConnection(() => {
+            var interrupt = kernel.interrupt();
+            tester.respond(204, data);
+            return interrupt.then((id: any) => {
+              setTimeout(function() {
+                expect(kernel.isConnected).to.be(true);
+                expect(kernel.id).to.be("1234");
+                done();
+              }, 10);
+            });
           });
         });
       });
@@ -213,13 +242,68 @@ describe('jupyter.services - Kernel', () => {
         var kernel = new Kernel('/localhost', 'ws://');
         var tester = new KernelTester(kernel);
         var interrupt = kernel.interrupt();
-        var data = {id: "1234", name: "test"};
+        var data = { id: "1234", name: "test" };
         tester.respond(200, data);
         return expectFailure(interrupt, done, "Invalid Status: 200");
       });
     });
 
 
-});
+    describe('#shutdown()', () => {
 
-}  // module tests
+      it('should delete the kernel', (done) => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
+        var start = kernel.start();
+        var data = { id: "1234", name: "test" };
+        tester.respond(200, data);
+
+        return start.then((id: any) => {
+          tester.onConnection(() => {
+            var shutdown = kernel.shutdown();
+            tester.respond(204, data);
+            return shutdown.then((id: any) => {
+              setTimeout(function() {
+                expect(kernel.isConnected).to.be(false);
+                expect(kernel.id).to.be("1234");
+                done();
+              }, 10);
+            });
+          });
+        });
+      });
+
+      it('should throw an error for an invalid response', (done) => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
+        var shutdown = kernel.shutdown();
+        var data = { id: "1234", name: "test" };
+        tester.respond(200, data);
+        return expectFailure(shutdown, done, "Invalid response");
+      });
+
+    });
+
+
+    describe('#disconnect()', () => {
+
+      it('should disconnect the websocket', (done) => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        var tester = new KernelTester(kernel);
+        kernel.connect();
+        expect(kernel.status).to.be('created');
+
+        tester.onConnection(() => {
+          expect(kernel.isConnected).to.be(true);
+          kernel.disconnect();
+          setTimeout(() => {
+            expect(kernel.isConnected).to.be(false);
+            done();
+          }, 10);
+        });
+      });
+    });
+
+
+
+});

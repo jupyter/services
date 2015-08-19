@@ -1,14 +1,12 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
 
-module jupyter.services {
+import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import ISignal = phosphor.core.ISignal;
-import signal = phosphor.core.signal;
-import IDisposable = phosphor.utility.IDisposable;
-import Disposable = phosphor.utility.Disposable;
-import IAjaxSuccess = utils.IAjaxSuccess;
-import IAjaxError = utils.IAjaxError;
+import { IDisposable, Disposable } from './disposable';
+import { serialize, deserialize } from './serialize';
+import * as utils from './utils';
 
 
 /**
@@ -18,9 +16,9 @@ var KERNEL_SERVICE_URL = 'api/kernel';
 
 
 /**
- * Get a logger kernel objects.
+ * Stub for Mozilla web socket type.
  */
-var kernel_log = Logger.get('kernel');
+declare var MozWebSocket: any;
 
 
 /**
@@ -162,7 +160,7 @@ class Kernel {
   /**
    * A signal emitted when the kernel changes state.
    */
-  @signal
+  @defineSignal
   statusChanged: ISignal<string>;
 
   /**
@@ -175,7 +173,7 @@ class Kernel {
     return utils.ajaxRequest(kernelServiceUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess): IKernelId[] => {
+    }).then((success: utils.IAjaxSuccess): IKernelId[] => {
       if (success.xhr.status === 200) {
         if (!Array.isArray(success.data)) {
           throw Error('Invalid kernel list');
@@ -202,10 +200,6 @@ class Kernel {
     }
     this._staticId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
-
-    if (typeof WebSocket === 'undefined') {
-      alert('Your browser does not have WebSocket support, please try Chrome, Safari, or Firefox ≥ 11.');
-    }
   }
 
   /**
@@ -295,13 +289,13 @@ class Kernel {
     return utils.ajaxRequest(this._kernelUrl, {
       method: "GET",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -315,15 +309,14 @@ class Kernel {
     this._handleStatus('interrupting');
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
-    console.log("hi there");
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -341,14 +334,14 @@ class Kernel {
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       this.connect();
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -362,24 +355,24 @@ class Kernel {
    */
   start(id?: IKernelId): Promise<IKernelId> {
     if (id !== void 0) {
-      console.log('setting this thing');
       this.id = id.id;
       this.name = id.name;
     }
     if (!this._kernelUrl) {
       throw Error('You must set the kernel id before starting.');
     }
+    this._handleStatus('starting');
     return utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validateKernelId(success.data);
       this.connect(success.data);
       return success.data;
-    }, (error: IAjaxError) => {
+    }, (error: utils.IAjaxError) => {
       this._onError(error);
     });
   }
@@ -388,14 +381,16 @@ class Kernel {
   /**
    * DELETE /api/kernels/[:kernel_id]
    *
-   * Kill a kernel. Note: if useing a session, Session.delete()
+   * Shut down a kernel. Note: if useing a session, Session.shutdown()
    * should be used instead.
    */
-  delete(): Promise<void> {
+  shutdown(): Promise<void> {
+    this._handleStatus('shutdown');
+    this.disconnect();
     return utils.ajaxRequest(this._kernelUrl, {
       method: "DELETE",
       dataType: "json"
-    }).then((success: IAjaxSuccess) => {
+    }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid response');
       }
@@ -420,6 +415,20 @@ class Kernel {
   }
 
   /**
+   * Disconnect the kernel.
+   */
+  disconnect(): void {
+    if (this._ws !== null) {
+      if (this._ws.readyState === WebSocket.OPEN) {
+        this._ws.onclose = () => { this._clearSocket(); };
+        this._ws.close();
+      } else {
+        this._clearSocket();
+      }
+    }
+  }
+
+ /**
    * Reconnect to a disconnected kernel. This is not actually a
    * standard HTTP request, but useful function nonetheless for
    * reconnecting to the kernel if the connection is somehow lost.
@@ -434,20 +443,6 @@ class Kernel {
   }
 
   /**
-   * Disconnect the kernel.
-   */
-  disconnect(): void {
-    if (this._ws !== null) {
-      if (this._ws.readyState === WebSocket.OPEN) {
-        this._ws.onclose = () => { this._clearSocket(); };
-        this._ws.close();
-      } else {
-        this._clearSocket();
-      }
-    }
-  }
-
-  /**
    * Send a message on the kernel's shell channel.
    */
   sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: string[] = []): IKernelFuture {
@@ -457,7 +452,7 @@ class Kernel {
     var msg = this._createMsg(msg_type, content, metadata, buffers);
     msg.channel = 'shell';
 
-    this._ws.send(serialize.serialize(msg));
+    this._ws.send(serialize(msg));
 
     var future = new KernelFutureHandler(() => {
       this._handlerMap.delete(msg.header.msgId);
@@ -553,7 +548,7 @@ class Kernel {
     };
     var msg = this._createMsg("input_reply", content);
     msg.channel = 'stdin';
-    this._ws.send(serialize.serialize(msg));
+    this._ws.send(serialize(msg));
     return msg.header.msgId;
   }
 
@@ -586,9 +581,9 @@ class Kernel {
     this._status = status;
     var msg = 'Kernel: ' + status + ' (' + this._id + ')';
     if (status === 'idle' || status === 'busy') {
-      kernel_log.debug(msg);
+      // console.log(msg);
     } else {
-      kernel_log.info(msg);
+      console.log(msg);
     }
   }
 
@@ -596,9 +591,9 @@ class Kernel {
    * Handle a failed AJAX request by logging the error message, and throwing
    * another error.
    */
-  private _onError(error: IAjaxError): void {
+  private _onError(error: utils.IAjaxError): void {
     var msg = "API request failed (" + error.statusText + "): ";
-    kernel_log.error(msg);
+    console.error(msg);
     throw Error(error.statusText);
   }
 
@@ -610,7 +605,7 @@ class Kernel {
     this.disconnect();
     var ws_host_url = this._wsUrl + this._kernelUrl;
 
-    kernel_log.info("Starting WebSockets:", ws_host_url);
+    console.info("Starting WebSockets:", ws_host_url);
 
     this._ws = new WebSocket(this.wsUrl);
 
@@ -675,6 +670,7 @@ class Kernel {
     if (this._ws && this._ws.readyState === WebSocket.CLOSED) {
       this._ws = null;
     }
+    this._handleStatus('disconnected');
   }
 
   /**
@@ -688,7 +684,6 @@ class Kernel {
     // get kernel info so we know what state the kernel is in
     this.kernelInfo().onReply((reply?: IKernelMsg) => {
       this._infoReply = reply.content;
-      console.log('info reply');
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
     });
@@ -726,7 +721,7 @@ class Kernel {
     this.disconnect();
     this._handleStatus('disconnected');
     if (error) {
-      kernel_log.error('WebSocket connection failed: ', ws_url);
+      console.error('WebSocket connection failed: ', ws_url);
       this._handleStatus('connectionFailed');
     }
     this._scheduleReconnect();
@@ -739,11 +734,11 @@ class Kernel {
   private _scheduleReconnect(): void {
     if (this._reconnectAttempt < this._reconnectLimit) {
       var timeout = Math.pow(2, this._reconnectAttempt);
-      kernel_log.error("Connection lost, reconnecting in " + timeout + " seconds.");
+      console.error("Connection lost, reconnecting in " + timeout + " seconds.");
       setTimeout(() => { this.reconnect(); }, 1e3 * timeout);
     } else {
       this._handleStatus('connectionDead');
-      kernel_log.error("Failed to reconnect, giving up.");
+      console.error("Failed to reconnect, giving up.");
     }
   }
 
@@ -752,9 +747,9 @@ class Kernel {
    */
   private _handleWSMessage(e: MessageEvent): void {
     try {
-      var msg = serialize.deserialize(e.data);
+      var msg = deserialize(e.data);
     } catch (error) {
-      kernel_log.error(error.message);
+      console.error(error.message);
       return;
     }
     if (msg.channel === 'iopub' && msg.msgType === 'status') {
@@ -985,5 +980,3 @@ function validateKernelId(info: IKernelId) : void {
      throw Error('Invalid kernel id');
    }
 }
-
-}  // module jupyter.services
