@@ -17,7 +17,7 @@ then
     git config credential.helper "store --file=.git/credentials"
 
     rm -rf ./*
-    cp -r ../build/docs/* ./.
+    cp -r ../docs/* ./.
     git add -A
     git commit -m "autocommit docs"
     git push origin gh-pages
