@@ -1,7 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-/// <reference path="../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts" />
+'use strict';
+
 import {ISignal, signal} from 'phosphor-signaling';
 import {IAjaxSuccess, IAjaxError} from './utils';
 import * as utils from './utils';

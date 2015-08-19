@@ -4,6 +4,7 @@
 // Mock implementation of a Web Socket and server following
 // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
 
+'use strict';
 
 import expect = require('expect.js');
 
