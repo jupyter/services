@@ -19,9 +19,9 @@ declare var global: any;
 class SocketBase {
 
   static CONNECTING = 0;  // The connection is not yet open.
-  static OPEN = 1;  //  The connection is open and ready to communicate.
-  static CLOSING = 2;  //  The connection is in the process of closing.
-  static CLOSED = 3; //  The connection is closed or couldn't be opened.
+  static OPEN = 1;        // The connection is open and ready to communicate.
+  static CLOSING = 2;     // The connection is in the process of closing.
+  static CLOSED = 3;      // The connection is closed or couldn't be opened.
 
   /**
    * Get the current ready state.
@@ -32,13 +32,9 @@ class SocketBase {
 
   /**
    * Assign a callback for the websocket opening.
-   * If it is already opened, call immediately.
    */
   set onopen(cb: () => void) {
     this._onOpen = cb;
-    if (this._readyState === SocketBase.OPEN) {
-      cb();
-    }
   }
 
   /**
@@ -71,9 +67,8 @@ class SocketBase {
     this._readyState = SocketBase.CONNECTING;
     utils.doLater(() => {
       this._readyState = SocketBase.OPEN;
-      if (this._onOpen) {
-        this._onOpen();
-      }
+      var onOpen = this._onOpen;
+      if (onOpen) onOpen();
     });
   }
 
@@ -82,21 +77,21 @@ class SocketBase {
    */
   triggerClose() {
     this._readyState = SocketBase.CLOSING;
-    if (this._onClose) {
-      utils.doLater(() => {
-        this._readyState = SocketBase.CLOSED;
-        this._onClose();
-      });
-    }
+    utils.doLater(() => {
+      this._readyState = SocketBase.CLOSED;
+      var onClose = this._onClose;
+      if (onClose) onClose();
+    });
   }
 
   /**
    * Trigger an error event on the next event loop run.
    */
   triggerError(msg: string) {
-    if (this._onError) {
-      utils.doLater(() => {this._onError({message: msg});});
-    }
+    utils.doLater(() => {
+      var onError = this._onError;
+      if (onError) onError({ message: msg });
+    });
   }
 
   /**
@@ -106,9 +101,11 @@ class SocketBase {
     if (this._readyState != SocketBase.OPEN) {
       throw Error('Websocket not connected');
     }
-    if (this._onMessage) {
-      utils.doLater(() => {this._onMessage({data: msg});});
-    }
+    utils.doLater(() => {
+      var onMessage = this._onMessage;
+      var isOpen = this._readyState === SocketBase.OPEN;
+      if (onMessage && isOpen) onMessage({ data: msg });
+    });
   }
 
   private _onOpen: () => void = null;
@@ -124,11 +121,10 @@ class SocketBase {
  */
 export
 class MockWebSocket extends SocketBase {
-
   /**
    * A map of available servers by url.
    */
-  static servers: Map<string, MockWebSocketServer> = new Map<string, MockWebSocketServer>();
+  static servers = new Map<string, MockWebSocketServer>();
 
   /**
    * Create a new Mock Websocket.
@@ -137,9 +133,7 @@ class MockWebSocket extends SocketBase {
   constructor(url: string) {
     super();
     var server = MockWebSocket.servers.get(url);
-    if (!server) {
-      throw Error('No Server found on: ' + url);
-    }
+    if (!server) throw Error('No Server found on: ' + url);
     this._server = server;
     this._server.connect(this);
   }
@@ -182,7 +176,6 @@ class MockWebSocket extends SocketBase {
  */
 export
 class MockWebSocketServer extends SocketBase {
-
   /**
    * Create a new mock web socket server.
    */
@@ -199,17 +192,9 @@ class MockWebSocketServer extends SocketBase {
 
   /**
    * Assign a callback for a websocket connection.
-   * If there are existing open connections, call the callback for each.
    */
   set onconnect(cb: (ws: MockWebSocket) => void) {
     this._onConnect = cb;
-    for (var i = 0; i < this._connections.length; i++) {
-      if (this._connections[i].readyState == MockWebSocket.OPEN) {
-        utils.doLater(() => {
-          this._onConnect(this._connections[i]);
-        });
-      }
-    };
   }
 
   /**
@@ -219,9 +204,8 @@ class MockWebSocketServer extends SocketBase {
     ws.triggerOpen();
     this._connections.push(ws);
     utils.doLater(() => {
-      if (this._onConnect) {
-        this._onConnect(ws);
-      }
+      var onConnect = this._onConnect;
+      if (onConnect) onConnect(ws);
     });
   }
 
@@ -230,20 +214,17 @@ class MockWebSocketServer extends SocketBase {
    */
   closeSocket(ws: MockWebSocket) {
     ws.triggerClose();
-    var index = this._connections.indexOf(ws);
-    this._connections.splice(index, 1);
+    var i = this._connections.indexOf(ws);
+    if (i !== -1) this._connections.splice(i, 1);
   }
 
   /**
    * Send a message to all connected web sockets.
    */
   send(msg: string | ArrayBuffer) {
-    for (var i = 0; i < this._connections.length; i++) {
-      var ws = this._connections[i];
-      if (ws.readyState == SocketBase.OPEN) {
-        ws.triggerMessage(msg);
-      }
-    }
+    this._connections.forEach(ws => {
+      if (ws.readyState == SocketBase.OPEN) ws.triggerMessage(msg);
+    });
   }
 
   private _connections: MockWebSocket[] = [];
