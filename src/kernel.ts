@@ -198,10 +198,6 @@ class Kernel {
     }
     this._staticId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
-
-    if (typeof WebSocket === 'undefined') {
-      alert('Your browser does not have WebSocket support, please try Chrome, Safari, or Firefox ≥ 11.');
-    }
   }
 
   /**
@@ -609,13 +605,7 @@ class Kernel {
 
     console.info("Starting WebSockets:", ws_host_url);
 
-    if (typeof(WebSocket) !== 'undefined') {
-      this._ws = new WebSocket(this.wsUrl);
-    } else if (typeof(MozWebSocket) !== 'undefined') {
-      this._ws = MozWebSocket(this.wsUrl);
-    } else {
-      alert('Your browser does not have WebSocket support, please try Chrome, Safari or Firefox ≥ 6. Firefox 4 and 5 are also supported by you have to enable WebSockets in about:config.');
-    }
+    this._ws = new WebSocket(this.wsUrl);
 
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
