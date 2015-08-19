@@ -1,16 +1,17 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
+
+import * as utils from './utils';
+
 
 // Mock implementation of a Web Socket and server following
 // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
 
-'use strict';
-
-import expect = require('expect.js');
-
 
 // stubs for node global variables
 declare var global: any;
+
 
 /**
  * Base class for a mock socket implementation.
@@ -68,7 +69,7 @@ class SocketBase {
    */
   triggerOpen() {
     this._readyState = SocketBase.CONNECTING;
-    setImmediate(() => {
+    utils.doLater(() => {
       this._readyState = SocketBase.OPEN;
       if (this._onOpen) {
         this._onOpen();
@@ -82,7 +83,7 @@ class SocketBase {
   triggerClose() {
     this._readyState = SocketBase.CLOSING;
     if (this._onClose) {
-      setImmediate(() => {
+      utils.doLater(() => {
         this._readyState = SocketBase.CLOSED;
         this._onClose();
       });
@@ -94,7 +95,7 @@ class SocketBase {
    */
   triggerError(msg: string) {
     if (this._onError) {
-      setImmediate(() => {this._onError({message: msg});});
+      utils.doLater(() => {this._onError({message: msg});});
     }
   }
 
@@ -106,7 +107,7 @@ class SocketBase {
       throw Error('Websocket not connected');
     }
     if (this._onMessage) {
-      setImmediate(() => {this._onMessage({data: msg});});
+      utils.doLater(() => {this._onMessage({data: msg});});
     }
   }
 
@@ -121,7 +122,7 @@ class SocketBase {
 /**
  * Mock Websocket class that talks to a mock server.
  */
-export 
+export
 class MockWebSocket extends SocketBase {
 
   /**
@@ -157,7 +158,7 @@ class MockWebSocket extends SocketBase {
     this._binaryType = type;
   }
 
-  /** 
+  /**
    * Send a message to the server.
    */
   send(msg: string | ArrayBuffer) {
@@ -204,7 +205,7 @@ class MockWebSocketServer extends SocketBase {
     this._onConnect = cb;
     for (var i = 0; i < this._connections.length; i++) {
       if (this._connections[i].readyState == MockWebSocket.OPEN) {
-        setImmediate(() => {
+        utils.doLater(() => {
           this._onConnect(this._connections[i]);
         });
       }
@@ -217,7 +218,7 @@ class MockWebSocketServer extends SocketBase {
   connect(ws: MockWebSocket) {
     ws.triggerOpen();
     this._connections.push(ws);
-    setImmediate(() => {
+    utils.doLater(() => {
       if (this._onConnect) {
         this._onConnect(ws);
       }
@@ -248,74 +249,3 @@ class MockWebSocketServer extends SocketBase {
   private _connections: MockWebSocket[] = [];
   private _onConnect: (ws: MockWebSocket) => void = null;
 }
-
-
-describe('jupyter.services - mockSocket', () => {
-
-  it('should connect', (done) => {
-    var server = new MockWebSocketServer('hello');
-    var ws = new WebSocket('hello');
-    expect(ws.readyState).to.be(WebSocket.CONNECTING);
-    ws.onopen = () => {
-      expect(ws.readyState).to.be(WebSocket.OPEN);
-      done();
-    };
-  });
-
-  it('should send a message', (done) => {
-    var server = new MockWebSocketServer('hello');
-    var ws = new WebSocket('hello');
-    server.onmessage = () => {
-      done();
-    };
-    ws.onopen = () => {
-      ws.send('hi');
-    };
-  });
-
-  it('should receive a message', (done) => {
-    var server = new MockWebSocketServer('hello');
-    var ws = new WebSocket('hello');
-    ws.onmessage = () => {
-      done();
-    };
-    ws.onopen = () => {
-      server.send('hi');
-    };
-  });
-
-  it('should close the socket', (done) => {
-    var server = new MockWebSocketServer('hello');
-    var ws = new WebSocket('hello');
-    ws.onclose = () => {
-      expect(ws.readyState).to.be(WebSocket.CLOSED);
-      done();
-    };
-    ws.onopen = () => {
-      ws.close();
-      expect(ws.readyState).to.be(WebSocket.CLOSING);
-    }
-  });
-
-  it('should handle multiple connections', (done) => {
-    var server = new MockWebSocketServer('hello');
-    var ws1 = new WebSocket('hello');
-    var ws2 = new WebSocket('hello');
-    ws1.onmessage = () => {
-      done();
-    };
-    ws2.onopen = () => {
-      server.send('hi');
-    }
-  });
-
-  it('should open in the right order', (done) => {
-    var server = new MockWebSocketServer('hello');
-    server.onconnect = (ws: MockWebSocket) => {
-      expect(ws.readyState).to.be(WebSocket.OPEN);
-      done();
-    }
-    var ws = new WebSocket('hello');
-  });
-});
-

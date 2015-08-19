@@ -1,16 +1,12 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
+
+import * as utils from './utils';
+
 
 // Mock implementation of XMLHttpRequest following
 // https://developer.mozilla.org/en-US/docs/Web/API/xmlhttprequest
-
-'use strict';
-
-import expect = require('expect.js');
-
-
-// stubs for node global variables
-declare var global: any;
 
 
 /**
@@ -21,12 +17,11 @@ declare var global: any;
 export
 class MockXMLHttpRequest {
 
-  static UNSENT = 0; // open() has not been called yet.
-  static OPENED = 1; // send() has been called.
-  static HEADERS_RECEIVED = 2;  // send() has been called, and headers and 
-                               // status are available.
-  static LOADING = 3; // Downloading; responseText holds partial data.
-  static DONE = 4;  // The operation is complete.
+  static UNSENT = 0;            // open() has not been called yet.
+  static OPENED = 1;            // send() has been called.
+  static HEADERS_RECEIVED = 2;  // send() has been called, and headers and status are available.
+  static LOADING = 3;           // Downloading; responseText holds partial data.
+  static DONE = 4;              // The operation is complete.
 
   /**
    * Global list of XHRs.
@@ -114,7 +109,7 @@ class MockXMLHttpRequest {
     this._onProgress = cb;
   }
 
-  /** 
+  /**
    * Set a callback for when the ready state changes.
    */
   set onreadystatechange(cb: () => void) {
@@ -123,7 +118,7 @@ class MockXMLHttpRequest {
 
   /**
    * Initialize a request.
-   */ 
+   */
   open(method: string, url: string, async?: boolean, user?: string, password?:string): void {
     this._method = method;
     this._url = url;
@@ -138,7 +133,7 @@ class MockXMLHttpRequest {
     }
     this._readyState = MockXMLHttpRequest.OPENED;
     if (this._onReadyState) {
-      setImmediate(() => {this._onReadyState()});
+      utils.doLater(() => {this._onReadyState()});
     }
   }
 
@@ -150,7 +145,7 @@ class MockXMLHttpRequest {
   }
 
   /**
-   * Sends the request. 
+   * Sends the request.
    */
   send(data?: any) {
     if (data !== void 0) {
@@ -167,8 +162,8 @@ class MockXMLHttpRequest {
   }
 
   /**
-   * Returns the string containing the text of the specified header, 
-   * or null if either the response has not yet been received 
+   * Returns the string containing the text of the specified header,
+   * or null if either the response has not yet been received
    * or the header doesn't exist in the response.
    */
   getResponseHeader(header: string): string{
@@ -195,14 +190,14 @@ class MockXMLHttpRequest {
       console.log('request code error')
       if (this._onError) {
         var evt = {message: 'Invalid status code'};
-        setImmediate(() => {this._onError(evt);});
+        utils.doLater(() => {this._onError(evt);});
       }
     } else {
       if (this._onReadyState) {
-        setImmediate(() => {this._onReadyState()});
+        utils.doLater(() => {this._onReadyState()});
       }
       if (this._onLoad) {
-        setImmediate(() => {this._onLoad()});
+        utils.doLater(() => {this._onLoad()});
       }
     }
   }
@@ -218,7 +213,7 @@ class MockXMLHttpRequest {
   private _method = '';
   private _url = '';
   private _async = true;
-  private _user = ''
+  private _user = '';
   private _password = '';
   private _onLoad: () => void = null;
   private _onError: (evt?: any) => void = null;
@@ -227,63 +222,3 @@ class MockXMLHttpRequest {
   private _responseHeader: any = {};
   private _onReadyState: () => void = null;
 }
-
-
-beforeEach(() => {
-    MockXMLHttpRequest.requests = [];
-});
-
-
-describe('jupyter.services - mockXHR', () => {
-
-  if (typeof window === 'undefined') {
-    global.XMLHttpRequest = MockXMLHttpRequest;
-  } else {
-    (<any>window).XMLHttpRequest = MockXMLHttpRequest;
-  }
-
-  it('should make a request', () => {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'test.com');
-    xhr.send();
-    expect(MockXMLHttpRequest.requests.length).to.be(1);
-  });
-
-  it('should yield a successful response', (done) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'test.com');
-    xhr.onload = () => {
-      expect(xhr.status).to.be(200);
-      done();
-    }
-    xhr.send();
-    var request = MockXMLHttpRequest.requests[0];
-    request.respond(200, {}, '');
-  });
-
-  it('should yield an error response', (done) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'test.com');
-    xhr.onerror = (evt: any) => {
-      expect(evt.message).to.be("Invalid status code");
-      done();
-    }
-    xhr.send();
-    var request = MockXMLHttpRequest.requests[0];
-    request.respond(500, {}, '');
-  });
-
-  it('should handle a response header', (done) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'test.com');
-    xhr.onload = () => {
-      expect(xhr.getResponseHeader('Location')).to.be("Somewhere");
-      done();
-    }
-    xhr.send();
-    var request = MockXMLHttpRequest.requests[0];
-    request.respond(200, '', {'Location': 'Somewhere'});
-  });
-
-});
-
