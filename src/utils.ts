@@ -1,5 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+'use strict';
+
 
 /**
  * Copy the contents of one object to another, recursively.
@@ -98,7 +100,7 @@ var browser: string[] = (() => {
 })();
 
 
-/** 
+/**
  * Return a serialized object string suitable for a query.
  *
  * http://stackoverflow.com/a/30707423
@@ -139,7 +141,7 @@ interface IAjaxSuccess {
 /**
  * Error handler for AJAX request.
  */
-export 
+export
 interface IAjaxError {
   xhr: XMLHttpRequest;
   statusText: string;

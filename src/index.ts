@@ -1,5 +1,7 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+'use strict';
 
-import {Kernel} from './kernel';
-import {NotebookSession} from './session';
-export * from "./kernel";
-export * from "./session";
+
+export * from './kernel';
+export * from './session';
