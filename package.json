@@ -22,7 +22,7 @@
     "build": "npm run build:src && npm run build:dts && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
     "prepublish": "npm run build",
-    "test": "mocha test/build"
+    "test": "mocha test/build/test*.js"
   },
   "repository": {
     "type": "git",
