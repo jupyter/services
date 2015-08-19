@@ -3,6 +3,8 @@
 
 'use strict';
 
+import expect = require('expect.js');
+
 import {MockXMLHttpRequest} from './mockXHR';
 
 
