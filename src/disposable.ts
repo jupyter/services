@@ -8,6 +8,8 @@
 'use strict';
 
 
+'use strict';
+
 /**
  * An object which holds disposable resources.
  */

@@ -15,7 +15,7 @@
     "typescript": "^1.5.3"
   },
   "scripts": {
-    "clean": "rimraf lib && rimraf test/build",
+    "clean": "rimraf docs && rimraf lib && rimraf test/build",
     "build:src": "tsc --project src",
     "build:dts": "node scripts/dtsbundle.js",
     "build:test": "tsc --project test",
@@ -30,7 +30,6 @@
   },
   "keywords": [
     "jupyter",
-    "js",
     "services",
     "notebook"
   ],

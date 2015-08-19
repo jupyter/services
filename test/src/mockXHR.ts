@@ -4,6 +4,7 @@
 // Mock implementation of XMLHttpRequest following
 // https://developer.mozilla.org/en-US/docs/Web/API/xmlhttprequest
 
+'use strict';
 
 import expect = require('expect.js');
 
