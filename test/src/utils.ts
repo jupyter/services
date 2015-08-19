@@ -13,7 +13,6 @@ declare var global: any;
 
 export
 class RequestHandler {
-
   /**
    * Create a new RequestHandler.
    */
