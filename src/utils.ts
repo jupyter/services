@@ -2,9 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-
-'use strict';
-
 /**
  * Copy the contents of one object to another, recursively.
  *
