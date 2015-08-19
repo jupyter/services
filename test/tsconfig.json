@@ -10,8 +10,8 @@
   "files": [
     "../typings/expect.js/expect.js.d.ts",
     "../typings/mocha/mocha.d.ts",
+    "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
-    "../typings/es6-container-shim.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
     "src/mockSocket.ts",
     "src/mockXHR.ts",

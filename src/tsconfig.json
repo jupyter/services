@@ -11,8 +11,8 @@
   },
   "files": [
     "../typings/text-encoding/text-encoding.d.ts",
+    "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
-    "../typings/es6-container-shim.d.ts",
     "../typings/es6-dataview.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
     "index.ts",
