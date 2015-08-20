@@ -13,6 +13,9 @@ import * as utils from './utils';
 declare var global: any;
 
 
+const CLOSE_NORMAL = 1000;
+
+
 /**
  * Base class for a mock socket implementation.
  */
@@ -75,12 +78,12 @@ class SocketBase {
   /**
    * Trigger a close event on the next event loop run.
    */
-  triggerClose() {
+  triggerClose(evt: any) {
     this._readyState = SocketBase.CLOSING;
     utils.doLater(() => {
       this._readyState = SocketBase.CLOSED;
       var onClose = this._onClose;
-      if (onClose) onClose({wasClean: this._clean});
+      if (onClose) onClose(evt);
     });
   }
 
@@ -164,16 +167,19 @@ class MockWebSocket extends SocketBase {
   /**
    * Close the connection to the server.
    */
-  close() {
-    this._server.closeSocket(this);
-  }
-
-  /**
-   * Simulate a connection that does not close cleanly.
-   */
-  kill() {
-    this._clean = false;
-    this._server.closeSocket(this);
+  close(code?: number, reason?: string) {
+    if (this.readyState === SocketBase.CLOSED) {
+      return;
+    }
+    if (code === void 0) {
+      code = CLOSE_NORMAL;
+    }
+    if (reason === void 0) {
+      reason = '';
+    }
+    var evt = { code: code, reason: reason, wasClean: code === CLOSE_NORMAL };
+    this.triggerClose(evt);
+    this._server.closeSocket(this, evt); 
   }
 
   private _binaryType = 'arraybuffer';
@@ -229,14 +235,13 @@ class MockWebSocketServer extends SocketBase {
   /**
    * Handle a closing websocket.
    */
-  closeSocket(ws: MockWebSocket) {
-    ws.triggerClose();
+  closeSocket(ws: MockWebSocket, evt: any) {
     var i = this._connections.indexOf(ws);
     if (i !== -1) {
       this._connections.splice(i, 1);
       utils.doLater(() => {
         var onClose = this._onWSClose;
-        if (onClose) onClose(ws);
+        if (onClose) onClose(ws, evt);
       });
     }
   }
@@ -249,7 +254,7 @@ class MockWebSocketServer extends SocketBase {
       if (ws.readyState == SocketBase.OPEN) ws.triggerMessage(msg);
     });
   }
-  private _onWSClose: (ws: MockWebSocket) => void = null;
+  private _onWSClose: (ws: MockWebSocket, evt: any) => void = null;
   private _connections: MockWebSocket[] = [];
   private _onConnect: (ws: MockWebSocket) => void = null;
 }

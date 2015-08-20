@@ -11,6 +11,10 @@ import { MockWebSocketServer, MockWebSocket } from './mocksocket';
 import { RequestHandler, expectFailure } from './utils';
 
 
+// Abnormal websocket close.
+const CLOSE_ABNORMAL = 1006;
+
+
 /**
  * Kernel class test rig.
  */
@@ -189,8 +193,8 @@ describe('jupyter.services - Kernel', () => {
       var tester = new KernelTester(kernel);
 
       tester.onConnect((ws: MockWebSocket) => {
-        ws.kill();
-        ws.kill();  // should have no effect
+        ws.close(CLOSE_ABNORMAL);
+        ws.close(CLOSE_ABNORMAL);  // should have no effect
       });
 
       tester.onClose((ws: MockWebSocket) => {
@@ -211,8 +215,8 @@ describe('jupyter.services - Kernel', () => {
       var tester = new KernelTester(kernel);
 
       tester.onConnect((ws: MockWebSocket) => {
-        ws.kill();
-        ws.kill();  // second one has no effect
+        ws.close(CLOSE_ABNORMAL);
+        ws.close(CLOSE_ABNORMAL);  // second one has no effect
       });
 
       tester.onClose((ws: MockWebSocket) => {
@@ -234,8 +238,8 @@ describe('jupyter.services - Kernel', () => {
       tester.onConnect((ws: MockWebSocket) => {
         // trigger a late error close
         setTimeout(() => { 
-           ws.kill(); 
-           ws.kill();  // second one has no effect
+           ws.close(CLOSE_ABNORMAL); 
+           ws.close(CLOSE_ABNORMAL);  // second one has no effect
          }, 1001);
       });
 
