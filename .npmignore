@@ -4,6 +4,7 @@
 node_modules
 typings/tsd.d.ts
 npm-debug.log
+coverage.html
 test/build
 build
 docs
