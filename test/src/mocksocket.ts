@@ -13,6 +13,9 @@ import * as utils from './utils';
 declare var global: any;
 
 
+const CLOSE_NORMAL = 1000;
+
+
 /**
  * Base class for a mock socket implementation.
  */
@@ -75,12 +78,12 @@ class SocketBase {
   /**
    * Trigger a close event on the next event loop run.
    */
-  triggerClose() {
+  triggerClose(evt: any) {
     this._readyState = SocketBase.CLOSING;
     utils.doLater(() => {
       this._readyState = SocketBase.CLOSED;
       var onClose = this._onClose;
-      if (onClose) onClose();
+      if (onClose) onClose(evt);
     });
   }
 
@@ -108,11 +111,13 @@ class SocketBase {
     });
   }
 
-  private _onOpen: () => void = null;
-  private _onClose: () => void = null;
+  protected _clean = true;
+  
+  private _readyState = SocketBase.CLOSED;
+  private _onClose: (evt?: any) => void = null;
   private _onMessage: (evt?: any) => void = null;
   private _onError: (evt?: any) => void = null;
-  private _readyState = SocketBase.CLOSED;
+  private _onOpen: () => void = null;
 }
 
 
@@ -162,8 +167,19 @@ class MockWebSocket extends SocketBase {
   /**
    * Close the connection to the server.
    */
-  close() {
-    this._server.closeSocket(this);
+  close(code?: number, reason?: string) {
+    if (this.readyState === SocketBase.CLOSED) {
+      return;
+    }
+    if (code === void 0) {
+      code = CLOSE_NORMAL;
+    }
+    if (reason === void 0) {
+      reason = '';
+    }
+    var evt = { code: code, reason: reason, wasClean: code === CLOSE_NORMAL };
+    this.triggerClose(evt);
+    this._server.closeSocket(this, evt); 
   }
 
   private _binaryType = 'arraybuffer';
@@ -197,6 +213,13 @@ class MockWebSocketServer extends SocketBase {
     this._onConnect = cb;
   }
 
+    /**
+   * Assign a callback for the websocket closing.
+   */
+  set onWSClose(cb: (ws: MockWebSocket) => void) {
+    this._onWSClose = cb;
+  }
+
   /**
    * Handle a connection from a mock websocket.
    */
@@ -212,10 +235,15 @@ class MockWebSocketServer extends SocketBase {
   /**
    * Handle a closing websocket.
    */
-  closeSocket(ws: MockWebSocket) {
-    ws.triggerClose();
+  closeSocket(ws: MockWebSocket, evt: any) {
     var i = this._connections.indexOf(ws);
-    if (i !== -1) this._connections.splice(i, 1);
+    if (i !== -1) {
+      this._connections.splice(i, 1);
+      utils.doLater(() => {
+        var onClose = this._onWSClose;
+        if (onClose) onClose(ws, evt);
+      });
+    }
   }
 
   /**
@@ -226,7 +254,7 @@ class MockWebSocketServer extends SocketBase {
       if (ws.readyState == SocketBase.OPEN) ws.triggerMessage(msg);
     });
   }
-
+  private _onWSClose: (ws: MockWebSocket, evt: any) => void = null;
   private _connections: MockWebSocket[] = [];
   private _onConnect: (ws: MockWebSocket) => void = null;
 }
