@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import { IKernelId, Kernel } from '../../lib/kernel';
 
-import { MockWebSocketServer } from './mocksocket';
+import { MockWebSocketServer, MockWebSocket } from './mocksocket';
 
 import { RequestHandler, expectFailure } from './utils';
 
@@ -29,7 +29,7 @@ class KernelTester extends RequestHandler {
   /**
    * Register a connection callback with the websocket server.
    */
-  onConnection(cb: () => void) {
+  onConnect(cb: (ws: MockWebSocket) => void) {
     this._server.onconnect = cb;
   }
 
@@ -43,12 +43,12 @@ class KernelTester extends RequestHandler {
   /**
    * Register a close with the websocket server.
    */
-  onClose(cb: () => void) {
-    this._server.close = cb;
+  onClose(cb: (ws: MockWebSocket) => void) {
+    this._server.onWSClose = cb;
   }
 
   private _kernel: Kernel = null;
-  private _server: any = null;
+  private _server: MockWebSocketServer = null;
 }
 
 
@@ -148,7 +148,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnection(() => {
+      tester.onConnect(() => {
         expect(kernel.isConnected).to.be(true);
         expect(kernel.name).to.be("test");
         expect(kernel.id).to.be("1234");
@@ -167,6 +167,107 @@ describe('jupyter.services - Kernel', () => {
       expect(kernel.connect).to.throwError(/You must set the kernel id before starting/);
     });
 
+    it('should call the early close method cleanly', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      tester.onConnect((ws: MockWebSocket) => {
+        ws.close();
+        ws.close();  // second call should have no effect
+      });
+
+      tester.onClose((ws: MockWebSocket) => {
+        expect(kernel.isConnected).to.be(false);
+        done();
+      })
+
+      kernel.connect();
+    });
+
+    it('should trigger a reconnect', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      tester.onConnect((ws: MockWebSocket) => {
+        ws.kill();
+        ws.kill();  // should have no effect
+      });
+
+      tester.onClose((ws: MockWebSocket) => {
+        // respond to the getInfo call
+        var data = { id: "1234", name: "test" };
+        tester.respond(200, data);
+        // wait for another connnection to be made
+        tester.onConnect((ws: MockWebSocket) => {
+          done();
+        });
+      });
+
+      kernel.connect();
+    });
+
+    it('should trigger a dead kernel', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      tester.onConnect((ws: MockWebSocket) => {
+        ws.kill();
+        ws.kill();  // second one has no effect
+      });
+
+      tester.onClose((ws: MockWebSocket) => {
+        // respond to the getInfo call with an error response
+        tester.respond(400, {});
+        setTimeout(() => {
+          expect(kernel.status).to.be('dead');
+          done();
+        }, 10);
+      });
+
+      kernel.connect();
+    });
+
+    it('should use a late binding restart', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      tester.onConnect((ws: MockWebSocket) => {
+        // trigger a late error close
+        setTimeout(() => { 
+           ws.kill(); 
+           ws.kill();  // second one has no effect
+         }, 1001);
+      });
+
+      tester.onClose((ws: MockWebSocket) => {
+        // wait for another connnection to be made
+        tester.onConnect((ws: MockWebSocket) => {
+          done();
+        });
+      });
+
+      kernel.connect();
+    });
+
+    it('should trigger an error-based restart', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      tester.onConnect((ws: MockWebSocket) => {
+        // trigger an error
+        ws.triggerError('forced restart');
+      });
+
+      tester.onClose((ws: MockWebSocket) => {
+        // wait for another connnection to be made
+        tester.onConnect((ws: MockWebSocket) => {
+          done();
+        });
+      });
+
+      kernel.connect();
+    });
+
   });
 
   describe('#start()', () => {
@@ -175,7 +276,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnection(() => {
+      tester.onConnect(() => {
         expect(kernel.isConnected).to.be(true);
         expect(kernel.name).to.be("test");
         expect(kernel.id).to.be("1234");
@@ -222,7 +323,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnection(() => {
+      tester.onConnect(() => {
         var interrupt = kernel.interrupt();
         tester.respond(204, data);
         interrupt.then((id: any) => {
@@ -256,7 +357,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnection(() => {
+      tester.onConnect(() => {
         var shutdown = kernel.shutdown();
         tester.respond(204, data);
         shutdown.then((id: any) => {
@@ -290,7 +391,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnection(() => {
+      tester.onConnect(() => {
         expect(kernel.isConnected).to.be(true);
         kernel.disconnect();
         setTimeout(() => {

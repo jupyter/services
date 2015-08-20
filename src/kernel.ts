@@ -625,10 +625,10 @@ class Kernel {
         // if that fails, then assume the kernel is dead,
         // otherwise just follow the typical websocket closed
         // protocol.
-        this.getInfo().then(function() {
-          this._ws_closed(ws_host_url, false);
-        }, function() {
-          this._kernel_dead();
+        this.getInfo().then(() => {
+          this._wsClosed(ws_host_url, false);
+        }, () => {
+          this._kernelDead();
         });
       }
     };
@@ -695,8 +695,8 @@ class Kernel {
    * open.
    */
   private _kernelDead(): void {
-    this._handleStatus('dead');
     this.disconnect();
+    this._handleStatus('dead');
   }
 
   /**
