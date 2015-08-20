@@ -12,5 +12,6 @@ script:
   - npm run clean
   - npm run build
   - npm test
+  - npm docs
 after_success:
   - npm run docs:publish
