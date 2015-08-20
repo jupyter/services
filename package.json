@@ -7,11 +7,10 @@
     "phosphor-signaling": "^0.9.7"
   },
   "devDependencies": {
-    "blanket": "^1.1.7",
     "dts-generator": "^1.5.0",
     "expect.js": "^0.3.1",
+    "istanbul": "^0.3.18",
     "mocha": "^2.2.5",
-    "mocha-multi": "^0.7.1",
     "rimraf": "^2.4.2",
     "typedoc": "^0.3.8",
     "typescript": "^1.5.3"
@@ -26,7 +25,7 @@
     "docs:publish": "bash ./scripts/travis_after_success.sh",
     "prepublish": "npm run build",
     "test": "mocha test/build/test*.js --timeout 3000",
-    "coverage": "multi='dot=- html-cov=coverage.html' mocha -r blanket --reporter mocha-multi --no-colors test/build/test*.js --timeout 3000"
+    "coverage": "istanbul cover _mocha -- test/build/test*.js --timeout 3000"
   },
   "config": {
     "blanket": {
