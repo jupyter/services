@@ -176,15 +176,17 @@ class NotebookSession {
    * Restart the session by deleting it and then starting it fresh.
    */
   restart(options?: ISessionOptions): Promise<void> {
-    return this.delete().then(() => this.start()).catch(
-        () => this.start()).then(() => {
+    var start = () => {
       if (options && options.notebookPath) {
         this._notebookPath = options.notebookPath;
       }
       if (options && options.kernelName) {
         this._kernel.name = options.kernelName;
       }
-    })
+      this._kernel.id = null;
+      return this.start();
+    }
+    return this.delete().then(start, start);
   }
 
   /**
