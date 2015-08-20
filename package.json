@@ -25,11 +25,15 @@
     "docs": "typedoc --options scripts/tdoptions.json",
     "docs:publish": "bash ./scripts/travis_after_success.sh",
     "prepublish": "npm run build",
-    "test": "multi='dot=- html-cov=coverage.html' mocha -r blanket --reporter mocha-multi --no-colors test/build/test*.js --timeout 3000"
+    "test": "mocha test/build/test*.js --timeout 3000",
+    "coverage": "multi='dot=- html-cov=coverage.html' mocha -r blanket --reporter mocha-multi --no-colors test/build/test*.js --timeout 3000"
   },
   "config": {
     "blanket": {
-      "pattern": "lib"
+      "pattern": "lib",
+      "data-cover-never": [
+        "node_modules"
+      ]
     }
   },
   "repository": {
