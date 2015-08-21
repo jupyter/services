@@ -45,10 +45,10 @@ describe('jupyter.services - Session', () => {
       ];
       handler.respond(200, data);
       return list.then((response: ISessionId[]) => {
-        expect(response[0].kernel.id).to.be("1234"); 
-        expect(response[0].kernel.name).to.be("test1"); 
-        expect(response[0].notebook.path).to.be("test1");
-        expect(response[0].id).to.be("1234");
+        expect(response[0].kernel.id).to.be(DEFAULT_ID.kernel.id); 
+        expect(response[0].kernel.name).to.be(DEFAULT_ID.kernel.name); 
+        expect(response[0].notebook.path).to.be(DEFAULT_ID.notebook.path);
+        expect(response[0].id).to.be(DEFAULT_ID.id);
 
         expect(response[1].kernel.id).to.be("5678"); 
         expect(response[1].kernel.name).to.be("test2");
@@ -124,6 +124,44 @@ describe('jupyter.services - Session', () => {
       var start = session.start();
       handler.respond(200, DEFAULT_ID);
       return expectFailure(start, done, "Invalid response");
+    });
+
+  });
+
+
+  describe('#getInfo()', () => {
+
+    it('should get information about a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+
+      var info = session.getInfo();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(200, data);
+      return info.then((id: ISessionId) => {
+        expect(id.kernel.id).to.be(DEFAULT_ID.kernel.id); 
+        expect(id.kernel.name).to.be(DEFAULT_ID.kernel.name); 
+        expect(id.notebook.path).to.be(DEFAULT_ID.notebook.path);
+        expect(id.id).to.be(DEFAULT_ID.id);
+        done();
+      });
+    });
+
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var info = session.getInfo();
+      var data = { id: "1234" };
+      handler.respond(200, data);
+      return expectFailure(info, done, "Invalid Session Model");
+    });
+
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var info = session.getInfo();
+      handler.respond(201, DEFAULT_ID);
+      return expectFailure(info, done, "Invalid response");
     });
 
   });
