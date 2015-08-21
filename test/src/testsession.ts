@@ -257,4 +257,41 @@ describe('jupyter.services - Session', () => {
       });
     });
   });
+
+  describe('#renameNotebook()', () => {
+
+    it('should rename the notebook', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+
+      var path = 'new path';
+      var rename = session.renameNotebook(path);
+
+      var id = DEFAULT_ID;
+      id.notebook.path = path;
+      handler.respond(200, JSON.stringify(id));
+      return rename.then(() => {
+        expect(session.notebookPath).to.be(path);
+        done();
+      });
+    });
+
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var rename = session.renameNotebook('new path');
+      var data = { id: "1234" };
+      handler.respond(200, data);
+      return expectFailure(rename, done, "Invalid Session Model");
+    });
+
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var rename = session.renameNotebook('new path');
+      handler.respond(201, DEFAULT_ID);
+      return expectFailure(rename, done, "Invalid response");
+    });
+
+  });
 });
