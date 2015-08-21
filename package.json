@@ -12,6 +12,7 @@
     "istanbul": "^0.3.18",
     "mocha": "^2.2.5",
     "rimraf": "^2.4.2",
+    "text-encoding": "^0.5.2",
     "typedoc": "^0.3.8",
     "typescript": "^1.5.3"
   },
