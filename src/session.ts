@@ -92,6 +92,7 @@ class NotebookSession {
     this._baseUrl = options.baseUrl;
     this._wsUrl = options.wsUrl;
     this._kernel = new Kernel(this._baseUrl, this._wsUrl);
+    this._kernel.name = options.kernelName;
     this._sessionUrl = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL,
                                            this._id);
   }
@@ -175,7 +176,7 @@ class NotebookSession {
   /**
    * Restart the session by deleting it and then starting it fresh.
    */
-  restart(options?: ISessionOptions): Promise<void> {
+  restart(options?: ISessionOptions): Promise<ISessionId> {
     var start = () => {
       if (options && options.notebookPath) {
         this._notebookPath = options.notebookPath;
