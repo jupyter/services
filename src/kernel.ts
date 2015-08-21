@@ -683,7 +683,6 @@ class Kernel {
     this._reconnectAttempt = 0;
     // get kernel info so we know what state the kernel is in
     this.kernelInfo().onReply((reply?: IKernelMsg) => {
-      console.log('****got kernel info reply');
       this._infoReply = reply.content;
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
@@ -758,7 +757,6 @@ class Kernel {
     }
     if (msg.parentHeader) {
       var header = (<IKernelMsgHeader>msg.parentHeader);
-      console.log('****got a parent header');
       var future = this._handlerMap.get(header.msgId);
       if (future) {
         future.handleMsg(msg);
