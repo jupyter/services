@@ -4,9 +4,13 @@
 
 import expect = require('expect.js');
 
-import { IKernelId, Kernel, IKernelInfo, IKernelExecute} from '../../lib/kernel';
+import { 
+  IKernelExecute, IKernelId, IKernelInfo, Kernel 
+} from '../../lib/kernel';
 
-import { MockWebSocketServer, MockWebSocket } from './mocksocket';
+import { deserialize, serialize } from '../../lib/serialize';
+
+import { MockWebSocket, MockWebSocketServer } from './mocksocket';
 
 import { RequestHandler, expectFailure } from './utils';
 
@@ -647,7 +651,7 @@ describe('jupyter.services - Kernel', () => {
       var tester = new KernelTester(kernel);
 
       var onFullyConnect = () => {
-        var future = kernel.sendShellMessage('shell', {});
+        var future = kernel.sendShellMessage('shell', {}, { test: 1 });
         future.autoDispose = false;
         expect(future.autoDispose).to.be(false);
 
@@ -687,6 +691,29 @@ describe('jupyter.services - Kernel', () => {
         kernel.sendShellMessage('shell', {});
       }
       expect(testFunc).to.throwError();
+    });
+
+    it('should send a binary message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        var encoder = new TextEncoder('utf8');
+        var data = encoder.encode('hello');
+        var future = kernel.sendShellMessage('shell', {}, {}, [data, data.buffer]);
+
+        tester.onMessage((msg: any) => {
+          expect(msg.data instanceof ArrayBuffer).to.be(true);
+          var data = deserialize(msg.data);
+          var decoder = new TextDecoder('utf8');
+          var item = <DataView>data.buffers[0];
+          expect(decoder.decode(item)).to.be('hello');
+          done();
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
     });
   });
 

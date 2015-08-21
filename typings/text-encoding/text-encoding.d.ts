@@ -43,3 +43,8 @@ declare var TextEncoder: {
     (utfLabel?: string, options?: TextEncoding.TextEncoderOptions): TextEncoding.TextEncoder;
     new (utfLabel?: string, options?: TextEncoding.TextEncoderOptions): TextEncoding.TextEncoder;
 };
+
+
+declare module 'text-encoding' {
+    export = { TextDecoder, TextEncoder} ;
+}

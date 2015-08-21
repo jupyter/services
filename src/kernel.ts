@@ -46,7 +46,7 @@ interface IKernelMsg {
   msgId?: string;
   msgType?: string;
   channel?: string;
-  buffers?: string[] | ArrayBuffer[];
+  buffers?: (ArrayBuffer | ArrayBufferView)[]
 }
 
 
@@ -445,7 +445,7 @@ class Kernel {
   /**
    * Send a message on the kernel's shell channel.
    */
-  sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: string[] = []): IKernelFuture {
+  sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelFuture {
     if (!this.isConnected) {
       throw new Error("kernel is not connected");
     }
@@ -556,7 +556,7 @@ class Kernel {
    * Create a kernel message given input attributes.
    */
   private _createMsg(msg_type: string, content: any,
-    metadata = {}, buffers: string[] = []): IKernelMsg {
+    metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelMsg {
     var msg: IKernelMsg = {
       header: {
         msgId: utils.uuid(),
