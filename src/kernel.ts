@@ -827,6 +827,12 @@ enum KernelFutureFlag {
  * Implementation of a kernel future.
  */
 class KernelFutureHandler extends Disposable implements IKernelFuture {
+
+  constructor(callback: () => void) {
+    super(callback);
+    this.autoDispose = true;
+  }
+
   /**
    * Get the current autoDispose status of the future.
    */

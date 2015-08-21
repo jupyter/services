@@ -561,7 +561,7 @@ describe('jupyter.services - Kernel', () => {
           store_history: true
         }
         var execute = kernel.execute('hello', options);
-        execute.onReply(() => { done(); });
+        execute.onDone(() => { done(); });
         tester.onMessage((msg: any) => {
           var data = JSON.parse(msg.data);
           data.parentHeader = data.header;
@@ -570,6 +570,11 @@ describe('jupyter.services - Kernel', () => {
           expect(data.content.silent).to.be(false);
           expect(data.content.user_expressions.hello).to.be(1);
           expect(data.content.allow_stdin).to.be(true);
+          tester.send(JSON.stringify(data));
+
+          data.channel = 'iopub';
+          data.msgType = 'status';
+          data.content.execution_state = 'idle';
           tester.send(JSON.stringify(data));
         });
       }
