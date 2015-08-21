@@ -180,7 +180,7 @@ describe('jupyter.services - Session', () => {
       return start.then(() => {
         var del = session.delete();
         handler.respond(204, DEFAULT_ID);
-        setImmediate(() => {
+        del.then(() => {
           expect(session.kernel.status).to.be('disconnected');
           done();
         });
@@ -206,4 +206,55 @@ describe('jupyter.services - Session', () => {
 
   });
 
+  describe('#restart()', () => {
+
+    it('should restart a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then(() => {
+        var restart = session.restart();
+        handler.respond(204, DEFAULT_ID);
+        setImmediate(() => {
+          handler.respond(201, DEFAULT_ID);
+          restart.then(() => { done(); });
+        });
+      });
+    });
+
+    it('should restart a session with different options', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then((msg: ISessionId) => {
+        var options: ISessionOptions = {
+          kernelName: 'R',
+          notebookPath: 'test2'
+        }
+        var restart = session.restart(options);
+        handler.respond(204, DEFAULT_ID);
+        setImmediate(() => {
+          var newID: ISessionId = DEFAULT_ID;
+          newID.kernel.name = 'R';
+          newID.notebook.path = 'test2';
+          handler.respond(201, newID);
+          restart.then(() => { 
+            expect(session.kernel.name).to.be('R');
+            expect(session.notebookPath).to.be('test2');
+            done(); 
+          });
+        });
+      });
+    });
+  });
 });

@@ -39,10 +39,10 @@ interface ISessionId {
  */
 export
 interface ISessionOptions {
-  notebookPath: string;
-  kernelName: string;
-  baseUrl: string;
-  wsUrl: string;
+  notebookPath?: string;
+  kernelName?: string;
+  baseUrl?: string;
+  wsUrl?: string;
 };
 
 /**
@@ -102,6 +102,13 @@ class NotebookSession {
   */
   get kernel() : Kernel {
     return this._kernel;
+  }
+
+  /**
+   * Get the notebook path.
+   */
+  get notebookPath(): string {
+    return this._notebookPath;
   }
 
   /**
