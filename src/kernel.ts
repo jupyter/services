@@ -190,7 +190,7 @@ class Kernel {
   /**
    * Construct a new kernel.
    */
-  constructor(baseUrl: string, wsUrl: string) {
+  constructor(baseUrl: string, wsUrl?: string) {
     this._status = 'unknown';
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
@@ -429,7 +429,7 @@ class Kernel {
   }
 
  /**
-   * Reconnect to a disconnected kernel. This is not actually a
+   *  to a disconnected kernel. This is not actually a
    * standard HTTP request, but useful function nonetheless for
    * reconnecting to the kernel if the connection is somehow lost.
    */
@@ -683,6 +683,7 @@ class Kernel {
     this._reconnectAttempt = 0;
     // get kernel info so we know what state the kernel is in
     this.kernelInfo().onReply((reply?: IKernelMsg) => {
+      console.log('****got kernel info reply');
       this._infoReply = reply.content;
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
@@ -757,6 +758,7 @@ class Kernel {
     }
     if (msg.parentHeader) {
       var header = (<IKernelMsgHeader>msg.parentHeader);
+      console.log('****got a parent header');
       var future = this._handlerMap.get(header.msgId);
       if (future) {
         future.handleMsg(msg);
@@ -900,7 +902,7 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
         }
       }
     } else if (msg.channel === 'shell') {
-      var reply = this._output;
+      var reply = this._reply;
       if (reply) reply(msg);
       this._setFlag(KernelFutureFlag.GotReply)
       if (this._testFlag(KernelFutureFlag.GotIdle)) {
