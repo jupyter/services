@@ -114,8 +114,8 @@ describe('jupyter.services - Session', () => {
       var session = new NotebookSession(DEFAULTS);
       var start = session.start();
       var data = { id: "1234" };
-      handler.respond(200, data);
-      return expectFailure(start, done, "Invalid response");
+      handler.respond(201, data);
+      return expectFailure(start, done, "Invalid Session Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -162,6 +162,46 @@ describe('jupyter.services - Session', () => {
       var info = session.getInfo();
       handler.respond(201, DEFAULT_ID);
       return expectFailure(info, done, "Invalid response");
+    });
+
+  });
+
+  describe('#delete()', () => {
+
+    it('should kill a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then(() => {
+        var del = session.delete();
+        handler.respond(204, DEFAULT_ID);
+        setImmediate(() => {
+          expect(session.kernel.status).to.be('disconnected');
+          done();
+        });
+      });
+    });
+
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      var data = { id: "1234" };
+      handler.respond(204, data);
+      return expectFailure(del, done, "Invalid Session Model");
+    });
+
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      handler.respond(200, DEFAULT_ID);
+      return expectFailure(del, done, "Invalid response");
     });
 
   });
