@@ -603,6 +603,28 @@ describe('jupyter.services - Kernel', () => {
     });
   });
 
+  describe('#sendInputReply()', () => {
+
+    it('should send an input reply message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        kernel.sendInputReply({ hello: 'world', foo: 100 });
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          expect(data.channel).to.be('stdin');
+          expect(data.content.value.hello).to.be('world');
+          expect(data.content.value.foo).to.be(100);
+          done();
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+  });
+
 });
 
 
