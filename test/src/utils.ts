@@ -4,6 +4,8 @@
 
 import expect = require('expect.js');
 
+import encoding = require('text-encoding');
+
 import { MockXMLHttpRequest } from './mockxhr';
 
 
@@ -19,6 +21,8 @@ class RequestHandler {
   constructor() {
     if (typeof window === 'undefined') {
       global.XMLHttpRequest = MockXMLHttpRequest;
+      global.TextEncoder = encoding.TextEncoder;
+      global.TextDecoder = encoding.TextDecoder;
     } else {
       (<any>window).XMLHttpRequest = MockXMLHttpRequest;
     }

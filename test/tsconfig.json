@@ -12,6 +12,7 @@
     "../typings/mocha/mocha.d.ts",
     "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
+    "../typings/text-encoding/text-encoding.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
     "src/mocksocket.ts",
     "src/mockxhr.ts",

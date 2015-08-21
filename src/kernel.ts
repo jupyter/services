@@ -46,7 +46,7 @@ interface IKernelMsg {
   msgId?: string;
   msgType?: string;
   channel?: string;
-  buffers?: string[] | ArrayBuffer[];
+  buffers?: (ArrayBuffer | ArrayBufferView)[]
 }
 
 
@@ -190,7 +190,7 @@ class Kernel {
   /**
    * Construct a new kernel.
    */
-  constructor(baseUrl: string, wsUrl: string) {
+  constructor(baseUrl: string, wsUrl?: string) {
     this._status = 'unknown';
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
@@ -445,7 +445,7 @@ class Kernel {
   /**
    * Send a message on the kernel's shell channel.
    */
-  sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: string[] = []): IKernelFuture {
+  sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelFuture {
     if (!this.isConnected) {
       throw new Error("kernel is not connected");
     }
@@ -556,7 +556,7 @@ class Kernel {
    * Create a kernel message given input attributes.
    */
   private _createMsg(msg_type: string, content: any,
-    metadata = {}, buffers: string[] = []): IKernelMsg {
+    metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelMsg {
     var msg: IKernelMsg = {
       header: {
         msgId: utils.uuid(),
@@ -827,6 +827,12 @@ enum KernelFutureFlag {
  * Implementation of a kernel future.
  */
 class KernelFutureHandler extends Disposable implements IKernelFuture {
+
+  constructor(callback: () => void) {
+    super(callback);
+    this.autoDispose = true;
+  }
+
   /**
    * Get the current autoDispose status of the future.
    */
@@ -900,7 +906,7 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
         }
       }
     } else if (msg.channel === 'shell') {
-      var reply = this._output;
+      var reply = this._reply;
       if (reply) reply(msg);
       this._setFlag(KernelFutureFlag.GotReply)
       if (this._testFlag(KernelFutureFlag.GotIdle)) {
@@ -930,10 +936,7 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
     this._setFlag(KernelFutureFlag.IsDone);
     var done = this._done;
     if (done) done(msg);
-    // clear the other callbacks
-    this._reply = null;
     this._done = null;
-    this._input = null;
     if (this._testFlag(KernelFutureFlag.AutoDispose)) {
       this.dispose();
     }

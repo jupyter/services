@@ -81,26 +81,6 @@ function urlJoinEncode(...args: string[]): string {
 
 
 /**
- * Properly detect the current browser.
- * http://stackoverflow.com/questions/2400935/browser-detection-in-javascript
- */
-export
-var browser: string[] = (() => {
-  if (typeof navigator === 'undefined') {
-    // navigator undefined in node
-    return ['None'];
-  }
-  var N: string = navigator.appName;
-  var ua: string = navigator.userAgent
-  var tem: RegExpMatchArray;
-  var M: RegExpMatchArray = ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
-  if (M && (tem = ua.match(/version\/([\.\d]+)/i)) !== null) M[2] = tem[1];
-  M = M ? [M[1], M[2]] : [N, navigator.appVersion, '-?'];
-  return M;
-})();
-
-
-/**
  * Return a serialized object string suitable for a query.
  *
  * http://stackoverflow.com/a/30707423

@@ -43,21 +43,21 @@ class SocketBase {
   /**
    * Assign a callback for the websocket closing.
    */
-  set onclose(cb: () => void) {
+  set onclose(cb: (evt: any) => void) {
     this._onClose = cb;
   }
 
   /**
    * Assign a callback for the websocket error condition.
    */
-  set onerror(cb: () => void) {
+  set onerror(cb: (evt: any) => void) {
     this._onError = cb;
   }
 
   /**
    * Assign a callback for the websocket incoming message.
    */
-  set onmessage(cb: () => void) {
+  set onmessage(cb: (evt: any) => void) {
     this._onMessage = cb;
   }
 
@@ -111,8 +111,6 @@ class SocketBase {
     });
   }
 
-  protected _clean = true;
-  
   private _readyState = SocketBase.CLOSED;
   private _onClose: (evt?: any) => void = null;
   private _onMessage: (evt?: any) => void = null;
