@@ -719,7 +719,7 @@ describe('jupyter.services - Kernel', () => {
 
   describe('#_handleStatusMessage()', () => {
 
-    it('should send handle incoming status messages', (done) => {
+    it('should send handle a starting message', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
@@ -737,17 +737,58 @@ describe('jupyter.services - Kernel', () => {
 
           var onDone = () => {
             expect(kernel.status).to.be('ready');
-            data.content.execution_state = 'restarting';
-            tester.send(JSON.stringify(data));
-            setImmediate(() => {
-              expect(kernel.status).to.be('autorestarting');
-               
-              // trigger a dead kernel
-              data.content.execution_state = 'dead';
-              tester.send(JSON.stringify(data));
-            });
+            done();
           }
           expectKernelInfo(tester, onDone);
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+
+    it('should send handle a restarting message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+
+        var future = kernel.sendShellMessage('shell', {});
+
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          data.parentHeader = data.header;
+          data.channel = 'iopub';
+          data.msgType = 'status';
+          data.content.execution_state = 'restarting';
+          tester.send(JSON.stringify(data));
+
+          setImmediate(() => {
+            expect(kernel.status).to.be('autorestarting');
+            done();
+          });
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+
+    it('should send handle a dead kernel message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+
+        var future = kernel.sendShellMessage('shell', {});
+
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          data.parentHeader = data.header;
+          data.channel = 'iopub';
+          data.msgType = 'status';
+          data.content.execution_state = 'dead';
+          tester.send(JSON.stringify(data));
         });
       }
 
@@ -763,6 +804,9 @@ describe('jupyter.services - Kernel', () => {
 });
 
 
+/**
+ * Handle a KernelInfo request with a response.
+ */
 function expectKernelInfo(tester: KernelTester, done: () => void) {
   var kernel = tester.kernel;
   // get the kernelinfo message
