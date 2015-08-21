@@ -936,10 +936,7 @@ class KernelFutureHandler extends Disposable implements IKernelFuture {
     this._setFlag(KernelFutureFlag.IsDone);
     var done = this._done;
     if (done) done(msg);
-    // clear the other callbacks
-    this._reply = null;
     this._done = null;
-    this._input = null;
     if (this._testFlag(KernelFutureFlag.AutoDispose)) {
       this.dispose();
     }
