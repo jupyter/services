@@ -429,7 +429,7 @@ class Kernel {
   }
 
  /**
-   *  to a disconnected kernel. This is not actually a
+   * Reconnect to a disconnected kernel. This is not actually a
    * standard HTTP request, but useful function nonetheless for
    * reconnecting to the kernel if the connection is somehow lost.
    */
