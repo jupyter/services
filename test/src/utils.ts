@@ -44,7 +44,6 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
   return promise.then(() => {
     throw Error('Should not reach this point');
   }).catch((err) => {
-    console.log('caught that error')
     expect(err.message).to.be(message);
     done();
   });

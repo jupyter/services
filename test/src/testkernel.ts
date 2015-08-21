@@ -4,7 +4,7 @@
 
 import expect = require('expect.js');
 
-import { IKernelId, Kernel, IKernelInfo } from '../../lib/kernel';
+import { IKernelId, Kernel, IKernelInfo, IKernelExecute} from '../../lib/kernel';
 
 import { MockWebSocketServer, MockWebSocket } from './mocksocket';
 
@@ -46,6 +46,13 @@ class KernelTester extends RequestHandler {
     kernel.name = "test";
     kernel.id = "1234";
     this._server = new MockWebSocketServer(this._kernel.wsUrl);
+  }
+
+  /**
+   * Get the kernel for the tester.
+   */
+  get kernel(): Kernel {
+    return this._kernel;
   }
 
   /**
@@ -181,10 +188,7 @@ describe('jupyter.services - Kernel', () => {
         expect(kernel.isConnected).to.be(true);
         expect(kernel.name).to.be("test");
         expect(kernel.id).to.be("1234");
-        setImmediate(() => {
-          expect(kernel.status).to.be('connected');
-          done();
-        });
+        expectKernelInfo(tester, done);
       });
 
       kernel.connect();
@@ -310,22 +314,7 @@ describe('jupyter.services - Kernel', () => {
         expect(kernel.isConnected).to.be(true);
         expect(kernel.name).to.be("test");
         expect(kernel.id).to.be("1234");
-        // get the kernelinfo message
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          expect(data.header.msgType).to.be('kernel_info_request');
-          expect(kernel.status).to.be('connected');
-          data.parentHeader = data.header;
-          data.header.msgType = 'kernel_info_reply';
-          data.channel = 'shell';
-          data.content = EXAMPLE_KERNEL_INFO;
-          tester.send(JSON.stringify(data));
-          setImmediate(() => {
-            expect(kernel.status).to.be('ready');
-            expect(kernel.infoReply.language_info.name).to.be("test");
-            done();
-          });
-        });
+        expectKernelInfo(tester, done);
       });
 
       var start = kernel.start();
@@ -462,11 +451,7 @@ describe('jupyter.services - Kernel', () => {
         var restart = kernel.restart();
         tester.respond(200, data);
         restart.then((id: any) => {
-          setImmediate(() => {
-            expect(kernel.isConnected).to.be(true);
-            expect(kernel.id).to.be("1234");
-            done();
-          });
+          expectKernelInfo(tester, done);
         });
       });
     });
@@ -513,11 +498,7 @@ describe('jupyter.services - Kernel', () => {
         expect(kernel.isConnected).to.be(true);
         expect(kernel.name).to.be("test");
         expect(kernel.id).to.be("1234");
-        setImmediate(() => {
-          expect(kernel.status).to.be('connected');
-          kernel.reconnect();  // has no effect
-          done();
-        });
+        expectKernelInfo(tester, done);
       });
 
       kernel.reconnect();
@@ -525,4 +506,122 @@ describe('jupyter.services - Kernel', () => {
     });
   });
 
+  describe('#kernelInfo()', () => {
+
+    it('should get the kernelInfo', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        var info = kernel.kernelInfo();
+        info.onReply(() => { done(); });
+        expectKernelInfo(tester, () => { });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+  });
+
+  describe('#inspect()', () => {
+
+    it('should send an inspect message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        var inspect = kernel.inspect('hello', 2);
+        inspect.onReply(() => { done(); });
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          data.parentHeader = data.header;
+          expect(data.channel).to.be('shell');
+          expect(data.content.code).to.be('hello');
+          expect(data.content.cursor_pos).to.be(2);
+          tester.send(JSON.stringify(data));
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+  });
+
+  describe('#execute()', () => {
+
+    it('should send an execute message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        var options: IKernelExecute = {
+          silent: false,
+          user_expressions: { hello: 1 },
+          allow_stdin: true,
+          store_history: true
+        }
+        var execute = kernel.execute('hello', options);
+        execute.onReply(() => { done(); });
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          data.parentHeader = data.header;
+          expect(data.channel).to.be('shell');
+          expect(data.content.code).to.be('hello');
+          expect(data.content.silent).to.be(false);
+          expect(data.content.user_expressions.hello).to.be(1);
+          expect(data.content.allow_stdin).to.be(true);
+          tester.send(JSON.stringify(data));
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+  });
+
+  describe('#complete()', () => {
+
+    it('should send a complete message', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var onFullyConnect = () => {
+        var complete = kernel.complete('hello', 2);
+        complete.onReply(() => { done(); });
+        tester.onMessage((msg: any) => {
+          var data = JSON.parse(msg.data);
+          data.parentHeader = data.header;
+          expect(data.channel).to.be('shell');
+          expect(data.content.code).to.be('hello');
+          expect(data.content.cursor_pos).to.be(2);
+          tester.send(JSON.stringify(data));
+        });
+      }
+
+      kernel.connect();
+      expectKernelInfo(tester, onFullyConnect); 
+    });
+  });
+
 });
+
+
+function expectKernelInfo(tester: KernelTester, done: () => void) {
+  var kernel = tester.kernel;
+  // get the kernelinfo message
+  tester.onMessage((msg: any) => {
+    expect(kernel.isConnected).to.be(true);
+    var data = JSON.parse(msg.data);
+    expect(data.header.msgType).to.be('kernel_info_request');
+    data.parentHeader = data.header;
+    data.header.msgType = 'kernel_info_reply';
+    expect(data.channel).to.be('shell');
+    data.content = EXAMPLE_KERNEL_INFO;
+    tester.send(JSON.stringify(data));
+    setImmediate(() => {
+      expect(kernel.status).to.be('ready');
+      expect(kernel.infoReply.language_info.name).to.be("test");
+      done();
+    });
+  });
+}
