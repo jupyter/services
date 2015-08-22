@@ -175,8 +175,7 @@ describe('jupyter.services - Session', () => {
       var server = new MockWebSocketServer(session.kernel.wsUrl);
 
       var start = session.start();
-      var data = JSON.stringify(DEFAULT_ID);
-      handler.respond(201, data);
+      handler.respond(201, DEFAULT_ID);
       return start.then(() => {
         var del = session.delete();
         handler.respond(204, DEFAULT_ID);
@@ -191,7 +190,8 @@ describe('jupyter.services - Session', () => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
       var del = session.delete();
-      var data = { id: "1234" };
+      var data = JSON.parse(JSON.stringify(DEFAULT_ID));
+      (<any>data).id = 11;
       handler.respond(204, data);
       return expectFailure(del, done, "Invalid Session Model");
     });
@@ -202,6 +202,14 @@ describe('jupyter.services - Session', () => {
       var del = session.delete();
       handler.respond(200, DEFAULT_ID);
       return expectFailure(del, done, "Invalid response");
+    });
+
+    it('should throw a specific error for 410 response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      handler.respond(410, DEFAULT_ID);
+      return expectFailure(del, done, "The kernel was deleted but the session was not");
     });
 
   });
@@ -267,7 +275,7 @@ describe('jupyter.services - Session', () => {
       var path = 'new path';
       var rename = session.renameNotebook(path);
 
-      var id = DEFAULT_ID;
+      var id = JSON.parse(JSON.stringify(DEFAULT_ID));
       id.notebook.path = path;
       handler.respond(200, JSON.stringify(id));
       return rename.then(() => {
@@ -280,9 +288,10 @@ describe('jupyter.services - Session', () => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
       var rename = session.renameNotebook('new path');
-      var data = { id: "1234" };
+      var data = JSON.parse(JSON.stringify(DEFAULT_ID));
+      (<any>data.notebook).path = 11;
       handler.respond(200, data);
-      return expectFailure(rename, done, "Invalid Session Model");
+      return expectFailure(rename, done, "Invalid Notebook Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -293,5 +302,23 @@ describe('jupyter.services - Session', () => {
       return expectFailure(rename, done, "Invalid response");
     });
 
+  });
+
+  describe('#statusChanged', () => {
+
+    it('should emit a status changed', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      session.statusChanged.connect((status: string) => {
+        expect(status).to.be('kernelCreated');
+        done();
+      });
+      session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+    });
   });
 });
