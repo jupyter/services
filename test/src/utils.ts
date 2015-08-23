@@ -46,8 +46,12 @@ class RequestHandler {
 export
 function expectFailure(promise: Promise<any>, done: () => void, message: string): Promise<any> {
   return promise.then(() => {
+    console.error('should not reach this point');
     throw Error('Should not reach this point');
   }).catch((err) => {
+    if (err.message !== message) {
+      console.error(err.message, ' != ', message);
+    }
     expect(err.message).to.be(message);
     done();
   });

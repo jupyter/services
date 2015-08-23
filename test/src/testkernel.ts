@@ -801,6 +801,23 @@ describe('jupyter.services - Kernel', () => {
       expectKernelInfo(tester, onFullyConnect); 
     });
   });
+
+  describe('#statusChanged', () => {
+
+    it('should emit a status changed', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      kernel.connect();
+      expect(kernel.status).to.be('created');
+
+      kernel.statusChanged.connect((status: string) => {
+        expect(status).to.be('connected');
+        done();
+      });
+    });
+  });
+
 });
 
 
