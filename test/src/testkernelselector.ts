@@ -124,20 +124,6 @@ describe('jupyter.services - KernelSelector', () => {
         done();
       });
     });
-
-    it('should select by kernel spec', (done) => {
-      var handler = new RequestHandler();
-      var selector = new KernelSelector('localhost');
-
-      var load = selector.load();
-      handler.respond(200, { 'default': PYTHON_SPEC.name,
-                             'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
-      return load.then((names: string[]) => {
-        var spec = selector.select(PYTHON_SPEC);
-        expect(spec.spec.display_name).to.be(PYTHON_SPEC.spec.display_name);
-        done();
-      });
-    });
   });
 
   describe('#findByLanguage()', () => {
