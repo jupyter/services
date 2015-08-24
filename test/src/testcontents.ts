@@ -90,4 +90,80 @@ describe('jupyter.services - Contents', () => {
     });
 
   });
+
+  describe('#newUntitled()', () => {
+
+    it('should create a file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var newFile = contents.newUntitled("/foo");
+      handler.respond(201, DEFAULT_FILE);
+      return newFile.then((model: IContentsModel) => {
+        expect(model.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+    });
+
+    it('should create a directory', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var newDir = contents.newUntitled("/foo", { type: "directory", 
+                                                  ext: "" });
+      handler.respond(201, DEFAULT_DIR);
+      return newDir.then((model: IContentsModel) => {
+        expect(model.content).to.be(DEFAULT_DIR.content);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var newFile = contents.newUntitled("/foo", { type: "file", ext: "py" });
+      var dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
+      dir.name = 1
+      handler.respond(201, dir);
+      expectFailure(newFile, done, 'Invalid Contents Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var newDir = contents.newUntitled("/foo", { name: "bar" });
+      handler.respond(200, DEFAULT_DIR);
+      expectFailure(newDir, done, 'Invalid Status: 200');
+    });
+
+  });
+
+
+  describe('#delete()', () => {
+
+    it('should delete a file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var del = contents.delete("/foo/bar.txt");
+      handler.respond(204, { });
+      return del.then(() => {
+        done();
+      });
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var del = contents.delete("/foo/bar.txt");
+      handler.respond(200, { });
+      expectFailure(del, done, 'Invalid Status: 200');
+    });
+
+    it('should throw a specific error', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var del = contents.delete("/foo/");
+      handler.respond(400, { });
+      expectFailure(del, done, 'Directory not found');
+    });
+
+  });
 });

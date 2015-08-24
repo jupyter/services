@@ -145,9 +145,8 @@ class Contents implements IContents {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-    }).catch(
-      // Translate certain errors to more specific ones.
-      function(error) {
+    }, // Translate certain errors to more specific ones.
+      (error: utils.IAjaxError) => {
         // TODO: update IPEP27 to specify errors more precisely, so
         // that error types can be detected here with certainty.
         if (error.xhr.status === 400) {
