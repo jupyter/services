@@ -87,7 +87,6 @@ class Contents implements IContents {
    * Get a file or directory.
    */
   get(path: string, options: IContentsOpts): Promise<IContentsModel> {
-     // We do the call with settings so we can set cache to false.
     var settings = {
       method : "GET",
       dataType : "json",
