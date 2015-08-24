@@ -94,7 +94,7 @@ class ConfigSection {
   }
 
   private _url = "unknown";
-  private _data: any = null;
+  private _data: any = { };
   private _loaded: Promise<any> = null;
   private _oneLoadFinished = false;
   private _finishFirstLoad: (data: any) => void = null;
@@ -111,7 +111,7 @@ class ConfigWithDefaults {
   /**
    * Create a new config with defaults.
    */
-  constructor(section: ConfigSection, defaults: any, classname: string) {
+  constructor(section: ConfigSection, defaults: any, classname?: string) {
     this._section = section;
     this._defaults = defaults;
     this._className = classname;
@@ -119,11 +119,13 @@ class ConfigWithDefaults {
   
   /**
    * Wait for config to have loaded, then get a value or the default.
+   *
+   * Note: section.load() must be called somewhere else.
    */
-  get(key: string): any {
+  get(key: string): Promise<any> {
     var that = this;
-    return this._section.onLoaded.then(function() {
-      return this._class_data()[key] || this._defaults[key]
+    return this._section.onLoaded.then(() => {
+      return this._classData()[key] || this._defaults[key]
     });
   }
   

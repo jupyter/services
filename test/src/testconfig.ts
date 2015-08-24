@@ -95,4 +95,117 @@ describe('jupyter.services - ConfigSection', () => {
 
 describe('jupyter.services - ConfigWithDefaults', () => {
 
+  describe('#constructor()', () => {
+
+    it('should complete properly', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                          'testclass');
+      done();
+    });
+
+  });
+
+  describe('#get()', () => {
+
+    it('should get a new config value', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                          'testclass');
+      var handler = new RequestHandler();
+
+      var get = config.get('foo');
+      section.load();
+      handler.respond(200, { testclass: { foo: 'bar' } });
+
+      return get.then((data: any) => {
+        expect(data).to.be('bar');
+        done();
+      });
+    });
+
+    it('should get a default config value', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                          'testclass');
+      var handler = new RequestHandler();
+
+      var get = config.get('spam');
+      section.load();
+      handler.respond(200, { testclass: { foo: 'bar' } });
+
+      return get.then((data: any) => {
+        expect(data).to.be('eggs');
+        done();
+      });
+    });
+
+    it('should get a default config value with no class', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { spam: 'eggs' });
+      var handler = new RequestHandler();
+
+      var get = config.get('spam');
+      section.load();
+      handler.respond(200, { foo: 'bar' });
+
+      return get.then((data: any) => {
+        expect(data).to.be('eggs');
+        done();
+      });
+    });
+
+  });
+
+  describe('#getSync()', () => {
+
+    it('should get a default value', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { foo: 'eggs' },
+                                          'testclass');
+      var handler = new RequestHandler();
+
+      var foo = config.getSync('foo');
+      expect(foo).to.be('eggs');
+      done();
+    });
+
+    it('should get a new config value', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                          'testclass');
+      var handler = new RequestHandler();
+      section.load();
+      handler.respond(200, { testclass: { foo: 'bar' } });
+
+      return section.onLoaded.then(() => {
+        var foo = config.getSync('foo');
+        expect(foo).to.be('bar');
+        done();
+      });
+    });
+  });
+
+  describe('#set()', () => {
+
+    it('should set a value in a class', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { },
+                                          'testclass');
+
+      var set = config.set('foo', 'bar');
+      expect(section.data.testclass.foo).to.be('bar');
+      done();
+    });
+
+    it('should set a top level value', (done) => {
+      var section = new ConfigSection("test", "localhost");
+      var config = new ConfigWithDefaults(section, { });
+
+      var set = config.set('foo', 'bar');
+      expect(section.data.foo).to.be('bar');
+      done();
+    });
+  });
+
 });
