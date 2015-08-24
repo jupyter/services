@@ -4,6 +4,7 @@
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "dependencies": {
+    "phosphor-disposable": "^0.9.0",
     "phosphor-signaling": "^0.9.7"
   },
   "devDependencies": {

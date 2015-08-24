@@ -4,8 +4,10 @@
 
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import { IDisposable, Disposable } from './disposable';
+import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
+
 import { serialize, deserialize } from './serialize';
+
 import * as utils from './utils';
 
 
@@ -826,7 +828,7 @@ enum KernelFutureFlag {
 /**
  * Implementation of a kernel future.
  */
-class KernelFutureHandler extends Disposable implements IKernelFuture {
+class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
 
   constructor(callback: () => void) {
     super(callback);
