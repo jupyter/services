@@ -61,6 +61,13 @@ class KernelSelector {
   }
 
   /**
+   * Get the list of kernelspec names.
+   */
+  get names(): string[] {
+    return this._names;
+  }
+
+  /**
    * Request kernelspecs and return a list of kernel names.
    */
   load(): Promise<string[]> {
