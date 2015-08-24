@@ -15,7 +15,7 @@
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/es6-dataview.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
-    "disposable.ts",
+    "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "index.ts",
     "kernel.ts",
     "serialize.ts",

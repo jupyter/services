@@ -14,6 +14,7 @@
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/text-encoding/text-encoding.d.ts",
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
+    "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "src/mocksocket.ts",
     "src/mockxhr.ts",
     "src/testkernel.ts",
