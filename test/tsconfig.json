@@ -18,6 +18,7 @@
     "src/mocksocket.ts",
     "src/mockxhr.ts",
     "src/testkernel.ts",
+    "src/testkernelselector.ts",
     "src/testsession.ts",
     "src/testmocksocket.ts",
     "src/testmockxhr.ts",

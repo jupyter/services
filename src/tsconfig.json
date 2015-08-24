@@ -18,6 +18,7 @@
     "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "index.ts",
     "kernel.ts",
+    "kernelselector.ts",
     "serialize.ts",
     "session.ts",
     "utils.ts"
