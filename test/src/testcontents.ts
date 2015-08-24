@@ -34,6 +34,11 @@ var DEFAULT_DIR: IContentsModel = {
   format: "json"
 }
 
+var DEFAULT_CP: ICheckpointModel = {
+  id: "1234",
+  last_modified: "yesterday"
+}
+
 
 describe('jupyter.services - Contents', () => {
 
@@ -272,6 +277,79 @@ describe('jupyter.services - Contents', () => {
       var copy = contents.copy("/foo/bar.txt", "/baz");
       handler.respond(200, DEFAULT_FILE);
       expectFailure(copy, done, 'Invalid Status: 200');
+    });
+
+  });
+
+  describe('#createCheckpoint()', () => {
+
+    it('should create a checkpoint', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
+      handler.respond(201, DEFAULT_CP);
+      return checkpoint.then((obj: ICheckpointModel) => {
+        expect(obj.last_modified).to.be(DEFAULT_CP.last_modified);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
+      var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
+      delete cp.last_modified;
+      handler.respond(201, cp);
+      expectFailure(checkpoint, done, 'Invalid Checkpoint Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
+      handler.respond(200, DEFAULT_CP);
+      expectFailure(checkpoint, done, 'Invalid Status: 200');
+    });
+
+  });
+
+  describe('#listCheckpoints()', () => {
+
+    it('should list the checkpoints', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
+      return checkpoints.then((obj: ICheckpointModel[]) => {
+        expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
+      delete cp.id;
+      handler.respond(200, [cp, DEFAULT_CP]);
+
+      var second = () => {
+        var checkpoints = contents.listCheckpoints("/foo/bar.txt");
+        handler.respond(200, DEFAULT_CP);
+        expectFailure(checkpoints, done, 'Invalid Checkpoint list');
+      }
+
+      expectFailure(checkpoints, second, 'Invalid Checkpoint Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      handler.respond(201, [DEFAULT_CP]);
+      expectFailure(checkpoints, done, 'Invalid Status: 201');
     });
 
   });
