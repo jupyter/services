@@ -50,7 +50,7 @@ class ConfigSection {
       dataType: "json",
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid response');
+        throw Error('Invalid Status: ' + success.xhr.status);
       }
       this._data = success.data;
       this._loadDone();
@@ -64,8 +64,8 @@ class ConfigSection {
    * when the reply comes.
    */
   update(newdata: any): Promise<any> {
-    utils.extend(this._data, newdata);  // true -> recursive update
-    
+    this._data = utils.extend(this._data, newdata);
+
     return utils.ajaxRequest(this._url, {
       method : "PATCH",
       data: JSON.stringify(newdata),
@@ -73,8 +73,9 @@ class ConfigSection {
       contentType: 'application/json',
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid response');
+        throw Error('Invalid Status: ' + success.xhr.status);
       }
+
       this._data = success.data;
       this._loadDone();
       return this._data;
@@ -88,7 +89,7 @@ class ConfigSection {
   private _loadDone(): void {
     if (!this._oneLoadFinished) {
       this._oneLoadFinished = true;
-      this._finishFirstLoad();
+      this._finishFirstLoad(this._data);
     }
   }
 
@@ -96,7 +97,7 @@ class ConfigSection {
   private _data: any = null;
   private _loaded: Promise<any> = null;
   private _oneLoadFinished = false;
-  private _finishFirstLoad: () => void = null;
+  private _finishFirstLoad: (data: any) => void = null;
 
 }
 
