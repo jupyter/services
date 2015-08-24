@@ -2,7 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 
 import utils = require('./utils');
-import Token = phosphor.di.Token;
 
 import IAjaxSuccess = utils.IAjaxSuccess;
 
@@ -317,13 +316,6 @@ class Contents implements IContents {
 
   private _apiUrl = "unknown";
 }
-
-
-/**
- * The interface token for IContents.
- */
-export
-var IContents = new Token<IContents>('IContents');
 
 
 /**
