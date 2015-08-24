@@ -94,14 +94,10 @@ class KernelSelector {
   }
 
   /**
-   * Select a kernel.
+   * Select a kernel by name.
    */
-  select(kernel: string | IKernelSpecId): IKernelSpecId {
-    if (typeof kernel === 'string') {
-      kernel = <IKernelSpecId>{name: kernel};
-    }
-    var selected = <IKernelSpecId>kernel;
-    return this._kernelspecs.get(selected.name);
+  select(name: string): IKernelSpecId {
+    return this._kernelspecs.get(name);
   }
 
   /**
@@ -128,7 +124,7 @@ class KernelSelector {
 
 
 /**
- * Sort kernel names.
+ * Sort kernel names by display name.
  */
 function _sortedNames(kernelspecs: Map<string, IKernelSpecId>): string[] {
   var names: string[] = [];
@@ -136,7 +132,6 @@ function _sortedNames(kernelspecs: Map<string, IKernelSpecId>): string[] {
     names.push(spec.name);
   });
   return names.sort((a, b) => {
-    // sort by display_name
     var da = kernelspecs.get(a).spec.display_name;
     var db = kernelspecs.get(b).spec.display_name;
     if (da === db) {
