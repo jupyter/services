@@ -53,6 +53,8 @@ describe('jupyter.services - KernelSelector', () => {
       return load.then((names: string[]) => {
         expect(names[0]).to.be(PYTHON_SPEC.name);
         expect(names[1]).to.be(PYTHON3_SPEC.name);
+        expect(selector.names[0]).to.be(PYTHON_SPEC.name);
+        expect(selector.names[1]).to.be(PYTHON3_SPEC.name);
         done();
       });
     });
