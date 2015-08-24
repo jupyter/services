@@ -348,9 +348,71 @@ describe('jupyter.services - Contents', () => {
       var contents = new Contents("localhost");
       var handler = new RequestHandler();
       var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      handler.respond(201, [DEFAULT_CP]);
+      handler.respond(201, { });
       expectFailure(checkpoints, done, 'Invalid Status: 201');
     });
 
+  });
+
+  describe('#restoreCheckpoint()', () => {
+
+    it('should create a checkpoint', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
+                                                  DEFAULT_CP.id);
+      handler.respond(204, { });
+      return checkpoint.then(() => {
+        done();
+      });
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
+                                                  DEFAULT_CP.id);
+      handler.respond(200, { });
+      expectFailure(checkpoint, done, 'Invalid Status: 200');
+    });
+
+  });
+
+  describe('#deleteCheckpoint()', () => {
+
+    it('should delete a checkpoint', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
+                                                  DEFAULT_CP.id);
+      handler.respond(204, { });
+      return checkpoint.then(() => {
+        done();
+      });
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
+                                                  DEFAULT_CP.id);
+      handler.respond(200, { });
+      expectFailure(checkpoint, done, 'Invalid Status: 200');
+    });
+
+  });
+
+  describe('#listContents()', () => {
+
+    it('should get a directory', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var dir = contents.listContents("/foo");
+      handler.respond(200, DEFAULT_FILE);
+      return dir.then((model: IContentsModel) => {
+        expect(model.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+    });
   });
 });
