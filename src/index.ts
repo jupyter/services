@@ -4,4 +4,5 @@
 
 
 export * from './kernel';
+export * from './kernelselector';
 export * from './session';
