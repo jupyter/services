@@ -189,7 +189,7 @@ describe('jupyter.services - Contents', () => {
       var handler = new RequestHandler();
       var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       var dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
-      delete dir.name;
+      delete dir.path;
       handler.respond(200, dir);
       expectFailure(rename, done, 'Invalid Contents Model');
     });
@@ -370,7 +370,7 @@ describe('jupyter.services - Contents', () => {
     it('should fail for an incorrect response', (done) => {
       var contents = new Contents("localhost");
       var handler = new RequestHandler();
-      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
+      var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
       handler.respond(200, { });
       expectFailure(checkpoint, done, 'Invalid Status: 200');
