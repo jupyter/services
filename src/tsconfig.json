@@ -17,6 +17,7 @@
     "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
     "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "index.ts",
+    "config.ts",
     "kernel.ts",
     "serialize.ts",
     "session.ts",

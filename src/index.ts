@@ -2,6 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-
+export * from './config';
 export * from './kernel';
 export * from './session';
