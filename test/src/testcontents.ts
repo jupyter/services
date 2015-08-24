@@ -136,7 +136,6 @@ describe('jupyter.services - Contents', () => {
 
   });
 
-
   describe('#delete()', () => {
 
     it('should delete a file', (done) => {
@@ -163,6 +162,116 @@ describe('jupyter.services - Contents', () => {
       var del = contents.delete("/foo/");
       handler.respond(400, { });
       expectFailure(del, done, 'Directory not found');
+    });
+
+  });
+
+  describe('#rename()', () => {
+
+    it('should rename a file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
+      handler.respond(200, DEFAULT_FILE);
+      return rename.then((obj: IContentsModel) => {
+        expect(obj.created).to.be(DEFAULT_FILE.created);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
+      var dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      delete dir.name;
+      handler.respond(200, dir);
+      expectFailure(rename, done, 'Invalid Contents Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
+      handler.respond(201, DEFAULT_FILE);
+      expectFailure(rename, done, 'Invalid Status: 201');
+    });
+
+  });
+
+  describe('#save()', () => {
+
+    it('should save a file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var save = contents.save("/foo", { type: "file", name: "test" });
+      handler.respond(200, DEFAULT_FILE);
+      return save.then((obj: IContentsModel) => {
+        expect(obj.created).to.be(DEFAULT_FILE.created);
+        done();
+      });
+    });
+
+    it('should create a new file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var save = contents.save("/foo", { type: "file", name: "test" });
+      handler.respond(201, DEFAULT_FILE);
+      return save.then((obj: IContentsModel) => {
+        expect(obj.created).to.be(DEFAULT_FILE.created);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var save = contents.save("/foo", { type: "file", name: "test" });
+      var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      delete file.format;
+      handler.respond(200, file);
+      expectFailure(save, done, 'Invalid Contents Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var save = contents.save("/foo", { type: "file", name: "test" });
+      handler.respond(204, DEFAULT_FILE);
+      expectFailure(save, done, 'Invalid Status: 204');
+    });
+
+  });
+
+  describe('#copy()', () => {
+
+    it('should copy a file', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var copy = contents.copy("/foo/bar.txt", "/baz");
+      handler.respond(201, DEFAULT_FILE);
+      return copy.then((obj: IContentsModel) => {
+        expect(obj.created).to.be(DEFAULT_FILE.created);
+        done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var copy = contents.copy("/foo/bar.txt", "/baz");
+      var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      delete file.type;
+      handler.respond(201, file);
+      expectFailure(copy, done, 'Invalid Contents Model');
+    });
+
+    it('should fail for an incorrect response', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var copy = contents.copy("/foo/bar.txt", "/baz");
+      handler.respond(200, DEFAULT_FILE);
+      expectFailure(copy, done, 'Invalid Status: 200');
     });
 
   });
