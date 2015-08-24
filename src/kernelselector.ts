@@ -70,9 +70,9 @@ class KernelSelector {
     }
     return utils.ajaxRequest(this._url, settings).then(
       (success: utils.IAjaxSuccess) => {
-          var err = new Error('Invalid KernelSpec info');
+          var err = new Error('Invalid KernelSpecs info');
           if (success.xhr.status !== 200) {
-            throw err;
+            throw new Error('Invalid Response: ' + success.xhr.status);
           }
           var data = success.data;
           if (!data.hasOwnProperty('default') || 
@@ -83,14 +83,13 @@ class KernelSelector {
               !Array.isArray(data.kernelspecs)) {
             throw err;
           }
-          var names: string[] = [];
-          for (var i = 0; i < data.kernelspecslength; i++) {
+          for (var i = 0; i < data.kernelspecs.length; i++) {
             var ks = data.kernelspecs[i]
             validateKernelSpec(ks);
             this._kernelspecs.set(ks.name, ks);
-            names.push(ks.name);
           }
-          return names;
+          this._names = _sortedNames(this._kernelspecs);
+          return this._names;
       });
   }
 
@@ -110,19 +109,20 @@ class KernelSelector {
    */
   findByLanguage(language: string): string[] {
     var kernelspecs = this._kernelspecs;
-    var available = _sortedNames(kernelspecs);
     var matches: string[] = [];
     if (language && language.length > 0) {
-      available.map((name: string) => {
+      for (var i = 0; i < this._names.length; i++ ) {
+        var name = this._names[i];
         if (kernelspecs.get(name).spec.language.toLowerCase() === language.toLowerCase()) {
             matches.push(name);
         }
-      });
+      }
     }
     return matches;
   }
 
   private _kernelspecs: Map<string, IKernelSpecId>;
+  private _names: string[] = [];
   private _url = "unknown";
 }
 
@@ -131,7 +131,11 @@ class KernelSelector {
  * Sort kernel names.
  */
 function _sortedNames(kernelspecs: Map<string, IKernelSpecId>): string[] {
-  return Object.keys(kernelspecs).sort((a, b) => {
+  var names: string[] = [];
+  kernelspecs.forEach( (spec: IKernelSpecId) => {
+    names.push(spec.name);
+  });
+  return names.sort((a, b) => {
     // sort by display_name
     var da = kernelspecs.get(a).spec.display_name;
     var db = kernelspecs.get(b).spec.display_name;
@@ -150,7 +154,7 @@ function _sortedNames(kernelspecs: Map<string, IKernelSpecId>): string[] {
  * Validate an object as being of IKernelSpecID type.
  */
 function validateKernelSpec(info: IKernelSpecId): void {
-  var err = new Error("Invalid IKernelSpecId");
+  var err = new Error("Invalid KernelSpec Model");
   if (!info.hasOwnProperty('name') || typeof info.name !== 'string') {
     throw err;
   }
