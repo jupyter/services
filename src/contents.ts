@@ -1,9 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import utils = require('./utils');
-
-import IAjaxSuccess = utils.IAjaxSuccess;
+import * as utils from './utils';
 
 
 /**
@@ -100,7 +98,7 @@ class Contents implements IContents {
     if (options.format) { params.format = options.format; }
     if (options.content === false) { params.content = '0'; }
     url = url + utils.jsonToQueryString(params);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -126,7 +124,7 @@ class Contents implements IContents {
       settings.contentType = 'application/json';
     }
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -144,7 +142,7 @@ class Contents implements IContents {
       dataType : "json",
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -173,7 +171,7 @@ class Contents implements IContents {
       contentType: 'application/json',
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -193,7 +191,7 @@ class Contents implements IContents {
       contentType: 'application/json',
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
       // will return 200 for an existing file and 201 for a new file
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
@@ -215,7 +213,7 @@ class Contents implements IContents {
       dataType : "json",
     };
     var url = this._getUrl(toDir);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -233,7 +231,7 @@ class Contents implements IContents {
       dataType : "json",
     };
     var url = this._getUrl(path, 'checkpoints');
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): ICheckpointModel => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): ICheckpointModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -251,7 +249,7 @@ class Contents implements IContents {
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints');
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): ICheckpointModel[] => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): ICheckpointModel[] => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -274,7 +272,7 @@ class Contents implements IContents {
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints', checkpointID);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -291,7 +289,7 @@ class Contents implements IContents {
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints', checkpointID);
-    return utils.ajaxRequest(url, settings).then((success: IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
