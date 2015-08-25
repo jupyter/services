@@ -162,7 +162,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
 
 
 /**
- * A class that fulfills a Promise the first time it is fully initialized.
+ * A class that fulfills a Promise when it is initialized.
  */
 export
 class ReadyPromise {
