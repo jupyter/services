@@ -134,7 +134,6 @@ contents.listCheckpoints("/foo/bar.txt").then((models: ICheckpointModel[]) => {
 
 **Configuration**
 
-```
 ```typescript
 import {
   ConfigSection, ConfigWithDefaults;
