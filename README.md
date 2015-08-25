@@ -131,3 +131,40 @@ contents.listCheckpoints("/foo/bar.txt").then((models: ICheckpointModel[]) => {
     console.log(models[0].id);
 });
 ```
+
+**Configuration**
+
+```
+```typescript
+import {
+  ConfigSection, ConfigWithDefaults;
+} from 'jupyter-js-services';
+
+var section = new ConfigSection('mySection', 'http://localhost:8000');
+
+// load from the server
+section.load().then((data: any) => {
+    console.log(data);
+});
+
+// update contents
+section.update({ mySubSection: { 'fizz': 'buzz', spam: 'eggs' } });
+
+console.log(section.data.mySubSection.fizz);  // 'buzz'
+
+// create a config object based on our section with default values and a
+// class of data
+var config = new ConfigWithDefaults(section, { bar: 'baz' }, 'mySubSection');
+
+// get the current value of fizz regardless of whether the section is loaded
+config.getSync('bar');  // defaults to 'baz' if section is not loaded
+
+// wait for the section to load and get our data
+console.log(config.get('bar'));
+
+// set a config value
+config.set('fizz', 'bazz');  // sets section.data.mySubSection.fizz = 'bazz'
+
+```
+
+
