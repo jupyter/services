@@ -792,6 +792,34 @@ describe('jupyter.services - Kernel', () => {
     });
   });
 
+  describe('#onReady', () => {
+
+    it('should fulfill the Promise', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var connect = kernel.connect();
+
+      kernel.onReady.then((info: IKernelInfo) => {
+        expectReady(kernel, info);
+        done();
+      });
+      
+    });
+
+    it('should reject the Promise', (done) => {
+      var kernel = new Kernel('/localhost', 'ws://');
+      var tester = new KernelTester(kernel);
+
+      var start = kernel.start();
+      tester.respond(500, { });
+
+      kernel.onReady.catch(() => {
+        done();
+      });
+      
+    });
+  });
 });
 
 
