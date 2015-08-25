@@ -18,12 +18,6 @@ var KERNEL_SERVICE_URL = 'api/kernel';
 
 
 /**
- * Stub for Mozilla web socket type.
- */
-declare var MozWebSocket: any;
-
-
-/**
  * Kernel message header content.
  */
 export
