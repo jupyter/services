@@ -159,3 +159,74 @@ function ajaxRequest(url: string, settings: IAjaxSetttings): Promise<any> {
     }
   });
 }
+
+
+/**
+ * A class that fulfills a Promise the first time it is fully initialized.
+ */
+export
+class ReadyPromise {
+
+  /**
+   * Create a ReadyPromise object.
+   */
+  constructor() {
+    this._createReadyPromise();
+  }
+
+  /**
+   * Get a Promise that is fulfilled with the object is ready.
+   */
+  get onReady(): Promise<any> {
+    return this._onReady;
+  }
+
+  /**
+   * Create a new ready Promise object if there is not a previous one.
+   */
+  protected _createReadyPromise() {
+    if (this._fulfiller) {
+      return;
+    }
+    this._onReady = new Promise((resolve, reject) => {
+      this._fulfiller = resolve;
+      this._rejecter = reject;
+    });
+  }
+
+  /**
+   * Fulfill the _onReady Promise, if it has not already been fulfilled.
+   */
+  protected _fulfillReady(data?: any) {
+    var fulfiller = this._fulfiller;
+    if (fulfiller) {
+      this._fulfiller = null;
+      this._rejecter = null;
+      if (data !== void 0) {
+         fulfiller(data);
+      } else {
+        fulfiller();
+      }
+    }
+  }
+
+  /**
+   * Fulfill the _onReady Promise, if it has not already been fulfilled.
+   */
+  protected _rejectReady(data?: any) {
+    var rejecter = this._rejecter;
+    if (rejecter) {
+      this._fulfiller = null;
+      this._rejecter = null;
+      if (data !== void 0) {
+         rejecter(data);
+      } else {
+        rejecter();
+      }
+    }
+  }
+
+  private _onReady: Promise<any>;
+  private _fulfiller: (data?: any) => void = null;
+  private _rejecter: (data?: any) => void = null;
+}

@@ -50,6 +50,18 @@ class KernelTester extends RequestHandler {
     kernel.name = "test";
     kernel.id = "1234";
     this._server = new MockWebSocketServer(this._kernel.wsUrl);
+    this._server.onmessage = (msg: any) => {
+      var data = deserialize(msg.data);
+      if (data.header.msgType === 'kernel_info_request') {
+        data.parentHeader = data.header;
+        data.header.msgType = 'kernel_info_reply';
+        data.content = EXAMPLE_KERNEL_INFO;
+        this.send(serialize(data));
+      } else {
+        var onMessage = this._onMessage;
+        if (onMessage) onMessage(msg);
+      }
+    }
   }
 
   /**
@@ -70,7 +82,7 @@ class KernelTester extends RequestHandler {
    * Register a message callback with the websocket server.
    */
   onMessage(cb: (msg: any) => void) {
-    this._server.onmessage = cb;
+    this._onMessage = cb;
   }
 
   /**
@@ -89,6 +101,7 @@ class KernelTester extends RequestHandler {
 
   private _kernel: Kernel = null;
   private _server: MockWebSocketServer = null;
+  private _onMessage: (msg: any) => void = null;
 }
 
 
@@ -188,15 +201,14 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnect(() => {
-        expect(kernel.isConnected).to.be(true);
-        expect(kernel.name).to.be("test");
-        expect(kernel.id).to.be("1234");
-        expectKernelInfo(tester, done);
-      });
-
-      kernel.connect();
+      var connect = kernel.connect();
       expect(kernel.status).to.be('created');
+
+      connect.then((info: IKernelInfo) => {
+        expectReady(kernel, info);
+        done();
+      });
+      
     });
 
     it('should throw an error for an uninitialized kernel id', () => {
@@ -314,16 +326,15 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnect(() => {
-        expect(kernel.isConnected).to.be(true);
-        expect(kernel.name).to.be("test");
-        expect(kernel.id).to.be("1234");
-        expectKernelInfo(tester, done);
-      });
-
       var start = kernel.start();
       var data = { id: "1234", name: "test" };
       tester.respond(200, data);
+
+      start.then((info: IKernelInfo) => {
+        expectReady(kernel, info);
+        done();
+      });
+      
     });
 
     it('should throw an error for an invalid kernel id', (done) => {
@@ -345,9 +356,12 @@ describe('jupyter.services - Kernel', () => {
     });
 
     it('should throw an error for an uninitialized kernel id', () => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      kernel.name = "test";
-      expect(kernel.start).to.throwError(/You must set the kernel id before starting/);
+      var testFunc = () => {
+        var kernel = new Kernel('/localhost', 'ws://');
+        kernel.name = "test";
+        kernel.start();
+      }
+      expect(testFunc).to.throwError(/You must set the kernel id before starting/);
     });
 
   });
@@ -358,7 +372,11 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnect(() => {
+      var start = kernel.start();
+      var data = { id: "1234", name: "test" };
+      tester.respond(200, data);
+
+      start.then(() => {
         var interrupt = kernel.interrupt();
         tester.respond(204, data);
         interrupt.then((id: any) => {
@@ -369,10 +387,6 @@ describe('jupyter.services - Kernel', () => {
           });
         });
       });
-
-      var start = kernel.start();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -392,8 +406,9 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
       var data = { id: "1234", name: "test" };
-
-      tester.onConnect(() => {
+      var start = kernel.start();
+      tester.respond(200, data);
+      start.then(() => {
         var shutdown = kernel.shutdown();
         tester.respond(204, data);
         shutdown.then((id: any) => {
@@ -404,9 +419,6 @@ describe('jupyter.services - Kernel', () => {
           });
         });
       });
-
-      var start = kernel.start();
-      tester.respond(200, data);
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -425,18 +437,16 @@ describe('jupyter.services - Kernel', () => {
     it('should disconnect the websocket', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
+      var connect = kernel.connect();
+      expect(kernel.status).to.be('created');
 
-      tester.onConnect(() => {
-        expect(kernel.isConnected).to.be(true);
+      connect.then(() => {
         kernel.disconnect();
         setImmediate(() => {
           expect(kernel.isConnected).to.be(false);
           done();
         });
       });
-
-      kernel.connect();
-      expect(kernel.status).to.be('created');
     });
 
   });
@@ -447,15 +457,15 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
       var data = { id: "1234", name: "test" };
-      kernel.start();
+      var start = kernel.start();
       tester.respond(200, data);
 
-      tester.onConnect(() => {
-        tester.onConnect(() => {});
+      start.then(() => {
         var restart = kernel.restart();
         tester.respond(200, data);
-        restart.then((id: any) => {
-          expectKernelInfo(tester, done);
+        restart.then((info: IKernelInfo) => {
+          expectReady(kernel, info);
+          done();
         });
       });
     });
@@ -463,12 +473,11 @@ describe('jupyter.services - Kernel', () => {
     it('should throw an error for an invalid kernel id', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
-      kernel.start();
+      var start = kernel.start();
       var data = { id: "1234", name: "test" };
       tester.respond(200, data);
       
-      tester.onConnect(() => {
-        tester.onConnect(() => {});
+      start.then(() => {
         var restart = kernel.restart();
         tester.respond(200, { name: "test" });
         return expectFailure(restart, done, "Invalid kernel id");
@@ -478,12 +487,11 @@ describe('jupyter.services - Kernel', () => {
     it('should throw an error for an invalid response', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
-      kernel.start();
+      var start = kernel.start();
       var data = { id: "1234", name: "test" };
       tester.respond(200, data);
 
-      tester.onConnect(() => {
-        tester.onConnect(() => {});
+      start.then(() => {
         var restart = kernel.restart();
         tester.respond(201, data);
         return expectFailure(restart, done, "Invalid Status: 201");
@@ -498,16 +506,15 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      tester.onConnect(() => {
-        expect(kernel.isConnected).to.be(true);
-        expect(kernel.name).to.be("test");
-        expect(kernel.id).to.be("1234");
+      var reconnect = kernel.reconnect();
+      expect(kernel.status).to.be('reconnecting');
+
+      reconnect.then((info: IKernelInfo) => {
+        expectReady(kernel, info);
         kernel.reconnect();  // should have no effect
-        expectKernelInfo(tester, done);
+        done();
       });
 
-      kernel.reconnect();
-      expect(kernel.status).to.be('reconnecting');
     });
   });
 
@@ -517,14 +524,10 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var info = kernel.kernelInfo();
         info.onReply(() => { done(); });
-        expectKernelInfo(tester, () => { });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
   });
 
@@ -534,7 +537,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var inspect = kernel.inspect('hello', 2);
         inspect.onReply(() => { done(); });
         tester.onMessage((msg: any) => {
@@ -545,10 +548,7 @@ describe('jupyter.services - Kernel', () => {
           expect(data.content.cursor_pos).to.be(2);
           tester.send(JSON.stringify(data));
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
   });
 
@@ -558,7 +558,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var options: IKernelExecute = {
           silent: false,
           user_expressions: { hello: 1 },
@@ -575,17 +575,14 @@ describe('jupyter.services - Kernel', () => {
           expect(data.content.silent).to.be(false);
           expect(data.content.user_expressions.hello).to.be(1);
           expect(data.content.allow_stdin).to.be(true);
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
 
           data.channel = 'iopub';
           data.msgType = 'status';
           data.content.execution_state = 'idle';
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
 
   });
@@ -596,7 +593,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var complete = kernel.complete('hello', 2);
         complete.onReply(() => { done(); });
         tester.onMessage((msg: any) => {
@@ -605,12 +602,9 @@ describe('jupyter.services - Kernel', () => {
           expect(data.channel).to.be('shell');
           expect(data.content.code).to.be('hello');
           expect(data.content.cursor_pos).to.be(2);
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
   });
 
@@ -620,7 +614,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         kernel.sendInputReply({ hello: 'world', foo: 100 });
         tester.onMessage((msg: any) => {
           var data = JSON.parse(msg.data);
@@ -629,10 +623,7 @@ describe('jupyter.services - Kernel', () => {
           expect(data.content.value.foo).to.be(100);
           done();
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
 
     it('should send fail if not connected', () => {
@@ -650,7 +641,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var future = kernel.sendShellMessage('shell', {}, { test: 1 });
         future.autoDispose = false;
         expect(future.autoDispose).to.be(false);
@@ -666,23 +657,20 @@ describe('jupyter.services - Kernel', () => {
           tester.send(JSON.stringify(data));
 
           data.channel = 'shell';
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
 
           future.onInput(() => {
             expect(future.isDone).to.be(true);
             future.onOutput(() => { done(); });
             data.channel = 'iopub';
-            tester.send(JSON.stringify(data));
+            tester.send(serialize(data));
           });
 
           data.channel = 'stdin';
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
 
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
 
     it('should send fail if not connected', () => {
@@ -697,7 +685,7 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
         var encoder = new TextEncoder('utf8');
         var data = encoder.encode('hello');
         var future = kernel.sendShellMessage('shell', {}, {}, [data, data.buffer]);
@@ -710,10 +698,7 @@ describe('jupyter.services - Kernel', () => {
           expect(decoder.decode(item)).to.be('hello');
           done();
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
   });
 
@@ -723,9 +708,13 @@ describe('jupyter.services - Kernel', () => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
 
         var future = kernel.sendShellMessage('shell', {});
+        future.onOutput(() => {
+          expect(kernel.status).to.be('starting');
+          done();
+        });
 
         tester.onMessage((msg: any) => {
           var data = JSON.parse(msg.data);
@@ -733,27 +722,22 @@ describe('jupyter.services - Kernel', () => {
           data.channel = 'iopub';
           data.msgType = 'status';
           data.content.execution_state = 'starting';
-          tester.send(JSON.stringify(data));
-
-          var onDone = () => {
-            expect(kernel.status).to.be('ready');
-            done();
-          }
-          expectKernelInfo(tester, onDone);
+          tester.send(serialize(data));
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
 
     it('should send handle a restarting message', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
 
         var future = kernel.sendShellMessage('shell', {});
+        future.onOutput(() => {
+            expect(kernel.status).to.be('autorestarting');
+            done();
+        });
 
         tester.onMessage((msg: any) => {
           var data = JSON.parse(msg.data);
@@ -761,24 +745,16 @@ describe('jupyter.services - Kernel', () => {
           data.channel = 'iopub';
           data.msgType = 'status';
           data.content.execution_state = 'restarting';
-          tester.send(JSON.stringify(data));
-
-          setImmediate(() => {
-            expect(kernel.status).to.be('autorestarting');
-            done();
-          });
+          tester.send(serialize(data));
         });
-      }
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
+      });
     });
 
     it('should send handle a dead kernel message', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
 
-      var onFullyConnect = () => {
+      kernel.connect().then(() => {
 
         var future = kernel.sendShellMessage('shell', {});
 
@@ -788,17 +764,14 @@ describe('jupyter.services - Kernel', () => {
           data.channel = 'iopub';
           data.msgType = 'status';
           data.content.execution_state = 'dead';
-          tester.send(JSON.stringify(data));
+          tester.send(serialize(data));
         });
-      }
+      });
 
       tester.onClose((ws: MockWebSocket) => {
         expect(kernel.status).to.be('disconnected');
         done();
       });
-
-      kernel.connect();
-      expectKernelInfo(tester, onFullyConnect); 
     });
   });
 
@@ -822,24 +795,12 @@ describe('jupyter.services - Kernel', () => {
 
 
 /**
- * Handle a KernelInfo request with a response.
+ * Handle an onReady Promise.
  */
-function expectKernelInfo(tester: KernelTester, done: () => void) {
-  var kernel = tester.kernel;
-  // get the kernelinfo message
-  tester.onMessage((msg: any) => {
-    expect(kernel.isConnected).to.be(true);
-    var data = JSON.parse(msg.data);
-    expect(data.header.msgType).to.be('kernel_info_request');
-    data.parentHeader = data.header;
-    data.header.msgType = 'kernel_info_reply';
-    expect(data.channel).to.be('shell');
-    data.content = EXAMPLE_KERNEL_INFO;
-    tester.send(JSON.stringify(data));
-    setImmediate(() => {
-      expect(kernel.status).to.be('ready');
-      expect(kernel.infoReply.language_info.name).to.be("test");
-      done();
-    });
-  });
+function expectReady(kernel: Kernel, info: IKernelInfo) {
+  expect(kernel.isConnected).to.be(true);
+  expect(kernel.name).to.be("test");
+  expect(kernel.id).to.be("1234");
+  var expectedName = EXAMPLE_KERNEL_INFO.language_info.name
+  expect(info.language_info.name).to.be(expectedName);
 }
