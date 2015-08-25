@@ -173,7 +173,7 @@ import {
   IKernelSpecId, KernelSelector
 } from 'jupyter-js-services';
 
-var selector = KernelSelector('http://localhost:8000');
+var selector = new KernelSelector('http://localhost:8000');
 selector.load().then((kernelNames: string[]) => {
     var spec: IKernelSpecId = selector.select(kernelNames[0]);
     var pythonSpecs: string[] = selector.findByLanguage('python');
