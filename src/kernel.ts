@@ -157,7 +157,7 @@ interface IKernelFuture extends IDisposable {
  * used to communicate with the kernel.
  */
 export
-class Kernel {
+class Kernel extends utils.ReadyPromise {
 
   /**
    * A signal emitted when the kernel changes state.
@@ -193,6 +193,7 @@ class Kernel {
    * Construct a new kernel.
    */
   constructor(baseUrl: string, wsUrl?: string) {
+    super();
     this._status = 'unknown';
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
@@ -311,7 +312,7 @@ class Kernel {
     this._handleStatus('interrupting');
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
-    return utils.ajaxRequest(url, {
+    utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -320,7 +321,10 @@ class Kernel {
       }
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+    }).catch((data?: any) => {
+      this._rejectReady(data);
     });
+    return this.onReady;
   }
 
   /**
@@ -328,12 +332,13 @@ class Kernel {
    *
    * Restart the kernel.
    */
-  restart(): Promise<IKernelId> {
+  restart(): Promise<IKernelInfo> {
+    this._createReadyPromise();
     this._handleStatus('restarting');
     this.disconnect();
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'restart');
-    return utils.ajaxRequest(url, {
+    utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -342,10 +347,12 @@ class Kernel {
       }
       validateKernelId(success.data);
       this.connect();
-      return success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+    }).catch((data?: any) => {
+      this._rejectReady(data);
     });
+    return this.onReady;
   }
 
 
@@ -355,16 +362,19 @@ class Kernel {
    * Start a kernel.  Note: if using a session, Session.start()
    * should be used instead.
    */
-  start(id?: IKernelId): Promise<IKernelId> {
+  start(id?: IKernelId): Promise<IKernelInfo> {
+    this._createReadyPromise();
     if (id !== void 0) {
       this.id = id.id;
       this.name = id.name;
     }
     if (!this._kernelUrl) {
+      console.log('***throwing the error');
       throw Error('You must set the kernel id before starting.');
     }
+
     this._handleStatus('starting');
-    return utils.ajaxRequest(this._kernelUrl, {
+    utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -373,10 +383,12 @@ class Kernel {
       }
       validateKernelId(success.data);
       this.connect(success.data);
-      return success.data;
     }, (error: utils.IAjaxError) => {
       this._onError(error);
+    }).catch((data?: any) => {
+      this._rejectReady(data);
     });
+    return this.onReady;
   }
 
 
@@ -404,7 +416,7 @@ class Kernel {
    *
    * This should only be called directly by a session.
    */
-  connect(id?: IKernelId): void {
+  connect(id?: IKernelId): Promise<IKernelInfo> {
     if (id !== void 0) {
       this.id = id.id;
       this.name = id.name;
@@ -414,6 +426,7 @@ class Kernel {
     }
     this._startChannels();
     this._handleStatus('created');
+    return this.onReady;
   }
 
   /**
@@ -435,13 +448,14 @@ class Kernel {
    * standard HTTP request, but useful function nonetheless for
    * reconnecting to the kernel if the connection is somehow lost.
    */
-  reconnect(): void {
+  reconnect(): Promise<IKernelInfo> {
     if (this.isConnected) {
       return;
     }
     this._reconnectAttempt = this._reconnectAttempt + 1;
     this._handleStatus('reconnecting');
     this._startChannels();
+    return this.onReady;
   }
 
   /**
@@ -604,6 +618,8 @@ class Kernel {
    * Will stop and restart them if they already exist.
    */
   private _startChannels(): void {
+    // create a new Ready Promise if it has already been fulfilled.
+    this._createReadyPromise();
     this.disconnect();
     var ws_host_url = this._wsUrl + this._kernelUrl;
 
@@ -678,7 +694,7 @@ class Kernel {
   /**
    * Perform necessary tasks once the connection to the kernel has
    * been established. This includes requesting information about
-   * the kernel.
+   * the kernel.  When we get the response, fulfill the onReady Promise.
    */
   private _kernelConnected(): void {
     this._handleStatus('connected');
@@ -688,6 +704,7 @@ class Kernel {
       this._infoReply = reply.content;
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
+      this._fulfillReady(this._infoReply);
     });
   }
 
