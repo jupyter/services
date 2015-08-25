@@ -40,6 +40,7 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
 /**
  * Kernel class test rig.
  */
+export
 class KernelTester extends RequestHandler {
   /**
    * Create a new Kernel tester.
