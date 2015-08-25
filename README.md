@@ -73,6 +73,9 @@ Earlier versions may also work, but come with no guarantees.
 Usage Examples
 --------------
 
+**Note:** This module is fully compatible with Node/Babel/ES6/ES5. Simply
+omit the type declarations when using a language other than TypeScript.
+
 **KernelSelector**
 
 ```typescript
@@ -80,7 +83,7 @@ import {
   IKernelSpecId, KernelSelector
 } from 'jupyter-js-services';
 
-var selector = KernelSelector('http://localhost:8000');
+var selector = new KernelSelector('http://localhost:8000');
 selector.load().then((kernelNames: string[]) => {
     var spec: IKernelSpecId = selector.select(kernelNames[0]);
     var pythonSpecs: string[] = selector.findByLanguage('python');
