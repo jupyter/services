@@ -310,4 +310,35 @@ describe('jupyter.services - Session', () => {
       handler.respond(201, data);
     });
   });
+
+  describe('#onReady', () => {
+
+    it('should fulfill the Promise', (done) => {
+      var session = new NotebookSession(DEFAULTS);
+      var handler = new KernelTester(session.kernel);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+
+      session.onReady.then(() => {
+        done();
+      });
+      
+    });
+
+    it('should reject the Promise', (done) => {
+      var session = new NotebookSession(DEFAULTS);
+      var handler = new KernelTester(session.kernel);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(204, data);
+
+      session.onReady.catch(() => {
+        done();
+      });
+      
+    });
+  });
 });
