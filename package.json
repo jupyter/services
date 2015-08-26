@@ -4,8 +4,8 @@
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "dependencies": {
-    "phosphor-disposable": "^0.9.0",
-    "phosphor-signaling": "^0.9.7"
+    "phosphor-disposable": "^1.0",
+    "phosphor-signaling": "^1.0"
   },
   "devDependencies": {
     "dts-generator": "^1.5.0",
@@ -37,6 +37,10 @@
     "jupyter",
     "services",
     "notebook"
+  ],
+  "files": [
+    "lib/index.js",
+    "lib/jupyter-js-services.d.ts"
   ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",
