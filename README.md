@@ -79,26 +79,23 @@ omit the type declarations when using a language other than TypeScript.
 **Kernel**
 
 ```typescript
-import {
-  IKernelFuture, IKernelId, IKernelInfo, IKernelMsg, Kernel
-} from 'jupyter-js-services';
 
-// get a list of available sessions
+// get a list of available kernels
 var listPromise = Kernel.list('http://localhost:8000');
 
-// start a specific session
-var kernel = NotebookSession('http://localhost:8000');
-listPromise.then((kernelList: IKernelId[]) => {
+// start a specific kernel
+var kernel = new Kernel('http://localhost:8000');
+listPromise.then((kernelList) => {
   kernel.start(kernelList[0]);
 });
 
 // send a message and get replies
 kernel.onReady.then(() => {
-  var future: IKernelFuture = kernel.execute('a = 1');
+  var future = kernel.execute('a = 1');
   future.onDone(() => {
     console.log('Future is fulfilled');
   });
-  future.onOutput((msg: IKernelMsg) => {
+  future.onOutput((msg) => {
     console.log(msg.content);  // rich output data
   });
 });
@@ -106,7 +103,7 @@ kernel.onReady.then(() => {
 // restart the kernel and send an inspect message
 kernel.restart().then(() => {
   var future = kernel.inspect('hello', 5);
-  future.onReply((msg: IKernelMsg) => {
+  future.onReply((msg) => {
     console.log(msg.content);
   });
 });
@@ -114,18 +111,19 @@ kernel.restart().then(() => {
 // interrupt the kernel and send a complete message
 kernel.interrupt().then(() => {
   var future = kernel.complete('impor', 4);
-  future.onReply((msg: IKernelMsg) => {
+  future.onReply((msg) => {
     console.log(msg.content);
   });
 });
 
 // register a callback for when the kernel changes state
-kernel.statusChanged.connect((status: string) => {
+kernel.statusChanged.connect((status) => {
   console.log('status', status);
 });
 
 // kill the kernel
-kernel.delete();
+kernel.dispose();
+
 
 ```
 
@@ -133,35 +131,35 @@ kernel.delete();
 
 ```typescript
 import {
-  ISessionId, ISessionOptions, NotebookSession
+  NotebookSession
 } from 'jupyter-js-services';
 
 // get a list of available sessions
 var listPromise = NotebookSession.list('http://localhost:8000');
 
 // start a specific session
-var session = NotebookSession('http://localhost:8000');
-listPromise.then((sessionList: ISessionId[]) => {
+var session = new NotebookSession('http://localhost:8000');
+listPromise.then((sessionList) => {
   session.start(sessionList[0]);
 });
 
 // restart a session and send a complete message to the kernel
 session.restart().then(() => {
   var future = session.kernel.complete('impor', 4);
-  future.onReply((msg: IKernelMsg) => {
+  future.onReply((msg) => {
     console.log(msg.content);
   });
 });
 
 // rename the notebook
-session.renameNotbook('/path/to/notebook.ipynb');
+session.renameNotebook('/path/to/notebook.ipynb');
 
 // register a callback for when the session changes state
-session.statusChanged.connect((status: string) => {
+session.statusChanged.connect((status) => {
   console.log('status', status);
 });
 
 // kill the session
-session.delete();
+session.dispose();
 
 ```
