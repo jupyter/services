@@ -151,7 +151,7 @@ interface IKernelFuture extends IDisposable {
  * used to communicate with the kernel.
  */
 export
-class Kernel extends utils.ReadyPromise {
+class Kernel {
 
   /**
    * A signal emitted when the kernel changes state.
@@ -187,10 +187,10 @@ class Kernel extends utils.ReadyPromise {
    * Construct a new kernel.
    */
   constructor(baseUrl: string, wsUrl?: string) {
-    super();
     this._status = 'unknown';
     this._baseUrl = baseUrl;
     this._wsUrl = wsUrl;
+    this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
     if (!this._wsUrl) {
       // trailing 's' in https will become wss for secure web sockets
       this._wsUrl = location.protocol.replace('http', 'ws') + "//" + location.host;
@@ -277,6 +277,13 @@ class Kernel extends utils.ReadyPromise {
     ].join('')
   }
 
+  /** 
+   * Get a Promise that is fulfilled with the Kernel is ready.
+   */
+  get onReady(): Promise<IKernelInfo> {
+    return this._promiseDelegate.promise;
+  }
+
   /**
    * GET /api/kernels/[:kernel_id]
    *
@@ -306,7 +313,7 @@ class Kernel extends utils.ReadyPromise {
     this._handleStatus('interrupting');
 
     var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
-    utils.ajaxRequest(url, {
+    return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -315,10 +322,7 @@ class Kernel extends utils.ReadyPromise {
       }
     }, (error: utils.IAjaxError) => {
       this._onError(error);
-    }).catch((data?: any) => {
-      this._rejectReady(data);
     });
-    return this.onReady;
   }
 
   /**
@@ -327,7 +331,10 @@ class Kernel extends utils.ReadyPromise {
    * Restart the kernel.
    */
   restart(): Promise<IKernelInfo> {
-    this._createReadyPromise();
+    if (this._promiseDelegate.settled) {
+      console.log("***created a new delegate");
+      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
+    }
     this._handleStatus('restarting');
     this.disconnect();
 
@@ -344,7 +351,7 @@ class Kernel extends utils.ReadyPromise {
     }, (error: utils.IAjaxError) => {
       this._onError(error);
     }).catch((data?: any) => {
-      this._rejectReady(data);
+      this._promiseDelegate.reject(data);
     });
     return this.onReady;
   }
@@ -357,17 +364,17 @@ class Kernel extends utils.ReadyPromise {
    * should be used instead.
    */
   start(id?: IKernelId): Promise<IKernelInfo> {
-    this._createReadyPromise();
     if (id !== void 0) {
       this.id = id.id;
       this.name = id.name;
     }
     if (!this._kernelUrl) {
-      console.log('***throwing the error');
       throw Error('You must set the kernel id before starting.');
     }
-
     this._handleStatus('starting');
+    if (this._promiseDelegate.settled) {
+      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
+    }
     utils.ajaxRequest(this._kernelUrl, {
       method: "POST",
       dataType: "json"
@@ -380,7 +387,7 @@ class Kernel extends utils.ReadyPromise {
     }, (error: utils.IAjaxError) => {
       this._onError(error);
     }).catch((data?: any) => {
-      this._rejectReady(data);
+      this._promiseDelegate.reject(data);
     });
     return this.onReady;
   }
@@ -389,10 +396,10 @@ class Kernel extends utils.ReadyPromise {
   /**
    * DELETE /api/kernels/[:kernel_id]
    *
-   * Shut down a kernel. Note: if useing a session, Session.shutdown()
+   * Shut down a kernel. Note: if using a session, Session.dispose()
    * should be used instead.
    */
-  shutdown(): Promise<void> {
+  dispose(): Promise<void> {
     this._handleStatus('shutdown');
     this.disconnect();
     return utils.ajaxRequest(this._kernelUrl, {
@@ -612,8 +619,9 @@ class Kernel extends utils.ReadyPromise {
    * Will stop and restart them if they already exist.
    */
   private _startChannels(): void {
-    // create a new Ready Promise if it has already been fulfilled.
-    this._createReadyPromise();
+    if (this._promiseDelegate.settled) {
+      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
+    }
     this.disconnect();
     var ws_host_url = this._wsUrl + this._kernelUrl;
 
@@ -698,7 +706,7 @@ class Kernel extends utils.ReadyPromise {
       this._infoReply = reply.content;
       this._handleStatus('ready');
       this._autorestartAttempt = 0;
-      this._fulfillReady(this._infoReply);
+      this._promiseDelegate.resolve(this._infoReply);
     });
   }
 
@@ -821,6 +829,7 @@ class Kernel extends utils.ReadyPromise {
   private _reconnectAttempt = 0;
   private _handlerMap: Map<string, KernelFutureHandler> = null;
   private _iopubHandlers: Map<string, (msg: IKernelMsg) => void> = null;
+  private _promiseDelegate: utils.PromiseDelegate<IKernelInfo> = null;
   private _status = '';
 }
 
