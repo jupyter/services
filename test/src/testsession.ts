@@ -163,7 +163,7 @@ describe('jupyter.services - Session', () => {
 
   });
 
-  describe('#delete()', () => {
+  describe('#dispose()', () => {
 
     it('should kill a session', (done) => {
       var session = new NotebookSession(DEFAULTS);
@@ -172,9 +172,9 @@ describe('jupyter.services - Session', () => {
       var start = session.start();
       handler.respond(201, DEFAULT_ID);
       return start.then(() => {
-        var del = session.delete();
+        var dispose = session.dispose();
         handler.respond(204, DEFAULT_ID);
-        del.then(() => {
+        dispose.then(() => {
           expect(session.kernel.status).to.be('disconnected');
           done();
         });
@@ -184,27 +184,28 @@ describe('jupyter.services - Session', () => {
     it('should throw an error for an invalid session id', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var dispose = session.dispose();
       var data = JSON.parse(JSON.stringify(DEFAULT_ID));
       (<any>data).id = 11;
       handler.respond(204, data);
-      return expectFailure(del, done, "Invalid Session Model");
+      return expectFailure(dispose, done, "Invalid Session Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var dispose = session.dispose();
       handler.respond(200, DEFAULT_ID);
-      return expectFailure(del, done, "Invalid response");
+      return expectFailure(dispose, done, "Invalid response");
     });
 
     it('should throw a specific error for 410 response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var dispose = session.dispose();
       handler.respond(410, DEFAULT_ID);
-      return expectFailure(del, done, "The kernel was deleted but the session was not");
+      return expectFailure(dispose, done, 
+                           "The kernel was deleted but the session was not");
     });
 
   });
