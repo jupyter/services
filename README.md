@@ -226,7 +226,7 @@ kernel.statusChanged.connect((status) => {
 });
 
 // kill the kernel
-kernel.dispose();
+kernel.shutdown();
 
 
 ```
@@ -264,6 +264,6 @@ session.statusChanged.connect((status) => {
 });
 
 // kill the session
-session.dispose();
+session.shutdown();
 
 ```
