@@ -176,7 +176,7 @@ class NotebookSession {
    *
    * Kill the kernel and shutdown the session.
    */
-  dispose(): Promise<void> {
+  shutdown(): Promise<void> {
     if (this._kernel) {
       this._handleStatus('kernelKilled');
       this._kernel.disconnect();
@@ -214,7 +214,7 @@ class NotebookSession {
       this._kernel.id = null;
       this.start();
     }
-    this.dispose().then(start, start);
+    this.shutdown().then(start, start);
     return this.onReady;
   }
 
