@@ -51,7 +51,7 @@ interface ISessionOptions {
  * all other operations, the kernel object should be used.
  **/
 export
-class NotebookSession extends utils.ReadyPromise {
+class NotebookSession {
 
   /**
    * A signal emitted when the session changes state.
@@ -87,7 +87,6 @@ class NotebookSession extends utils.ReadyPromise {
    * Construct a new session.
    */
   constructor(options: ISessionOptions) {
-    super();
     this._id = utils.uuid();
     this._notebookPath = options.notebookPath;
     this._baseUrl = options.baseUrl;
@@ -96,6 +95,7 @@ class NotebookSession extends utils.ReadyPromise {
     this._kernel.name = options.kernelName;
     this._sessionUrl = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL,
                                            this._id);
+    this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
   }
 
   /**
@@ -112,12 +112,22 @@ class NotebookSession extends utils.ReadyPromise {
     return this._notebookPath;
   }
 
+  /** 
+   * Get a Promise that is fulfilled with the Session is ready.
+   */
+  get onReady(): Promise<ISessionId> {
+    return this._promiseDelegate.promise;
+  }
+
   /**
    * POST /api/sessions
    *
    * Start a new session. This function can only be successfully executed once.
    */
   start(): Promise<ISessionId> {
+    if (this._promiseDelegate.settled) {
+      this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
+    }
     var url = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL);
     utils.ajaxRequest(url, {
       method: "POST",
@@ -130,15 +140,15 @@ class NotebookSession extends utils.ReadyPromise {
       }
       validateSessionId(success.data);
       this._kernel.connect(success.data.kernel).then(() => {
-        this._fulfillReady(success.data);
+        this._promiseDelegate.resolve(success.data);
       });
       this._handleStatus('kernelCreated');
       return success.data;
     }, (error: utils.IAjaxError) => {
       this._handleStatus('kernelDead');
-      this._rejectReady(error.statusText);
+      this._promiseDelegate.reject(error.statusText);
     }).catch((data?: any) => {
-      this._rejectReady(data);
+      this._promiseDelegate.reject(data);
     });
     return this.onReady;
   }
@@ -166,7 +176,7 @@ class NotebookSession extends utils.ReadyPromise {
    *
    * Kill the kernel and shutdown the session.
    */
-  delete(): Promise<void> {
+  dispose(): Promise<void> {
     if (this._kernel) {
       this._handleStatus('kernelKilled');
       this._kernel.disconnect();
@@ -191,6 +201,9 @@ class NotebookSession extends utils.ReadyPromise {
    * Restart the session by deleting it and then starting it fresh.
    */
   restart(options?: ISessionOptions): Promise<ISessionId> {
+    if (this._promiseDelegate.settled) {
+      this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
+    }
     var start = () => {
       if (options && options.notebookPath) {
         this._notebookPath = options.notebookPath;
@@ -201,7 +214,7 @@ class NotebookSession extends utils.ReadyPromise {
       this._kernel.id = null;
       this.start();
     }
-    this.delete().then(start, start);
+    this.dispose().then(start, start);
     return this.onReady;
   }
 
@@ -251,6 +264,7 @@ class NotebookSession extends utils.ReadyPromise {
   private _sessionUrl = "unknown";
   private _wsUrl = "unknown";
   private _kernel: Kernel = null;
+  private _promiseDelegate: utils.PromiseDelegate<ISessionId> = null;
 }
 
 
