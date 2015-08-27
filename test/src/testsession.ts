@@ -163,7 +163,7 @@ describe('jupyter.services - Session', () => {
 
   });
 
-  describe('#dispose()', () => {
+  describe('#shutdown()', () => {
 
     it('should kill a session', (done) => {
       var session = new NotebookSession(DEFAULTS);
@@ -172,9 +172,9 @@ describe('jupyter.services - Session', () => {
       var start = session.start();
       handler.respond(201, DEFAULT_ID);
       return start.then(() => {
-        var dispose = session.dispose();
+        var shutdown = session.shutdown();
         handler.respond(204, DEFAULT_ID);
-        dispose.then(() => {
+        shutdown.then(() => {
           expect(session.kernel.status).to.be('disconnected');
           done();
         });
@@ -184,27 +184,27 @@ describe('jupyter.services - Session', () => {
     it('should throw an error for an invalid session id', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var dispose = session.dispose();
+      var shutdown = session.shutdown();
       var data = JSON.parse(JSON.stringify(DEFAULT_ID));
       (<any>data).id = 11;
       handler.respond(204, data);
-      return expectFailure(dispose, done, "Invalid Session Model");
+      return expectFailure(shutdown, done, "Invalid Session Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var dispose = session.dispose();
+      var shutdown = session.shutdown();
       handler.respond(200, DEFAULT_ID);
-      return expectFailure(dispose, done, "Invalid response");
+      return expectFailure(shutdown, done, "Invalid response");
     });
 
     it('should throw a specific error for 410 response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var dispose = session.dispose();
+      var shutdown = session.shutdown();
       handler.respond(410, DEFAULT_ID);
-      return expectFailure(dispose, done, 
+      return expectFailure(shutdown, done, 
                            "The kernel was deleted but the session was not");
     });
 

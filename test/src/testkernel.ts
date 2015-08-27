@@ -401,7 +401,7 @@ describe('jupyter.services - Kernel', () => {
 
   });
 
-  describe('#dispose()', () => {
+  describe('#shutdown()', () => {
 
     it('should delete the kernel', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
@@ -410,9 +410,9 @@ describe('jupyter.services - Kernel', () => {
       var start = kernel.start();
       tester.respond(200, data);
       start.then(() => {
-        var dispose = kernel.dispose();
+        var shutdown = kernel.shutdown();
         tester.respond(204, data);
-        dispose.then((id: any) => {
+        shutdown.then((id: any) => {
           setImmediate(() => {
             expect(kernel.isConnected).to.be(false);
             expect(kernel.id).to.be("1234");
@@ -425,10 +425,10 @@ describe('jupyter.services - Kernel', () => {
     it('should throw an error for an invalid response', (done) => {
       var kernel = new Kernel('/localhost', 'ws://');
       var tester = new KernelTester(kernel);
-      var dispose = kernel.dispose();
+      var shutdown = kernel.shutdown();
       var data = { id: "1234", name: "test" };
       tester.respond(200, data);
-      return expectFailure(dispose, done, "Invalid response");
+      return expectFailure(shutdown, done, "Invalid response");
     });
 
   });

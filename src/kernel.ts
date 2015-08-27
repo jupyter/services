@@ -332,7 +332,6 @@ class Kernel {
    */
   restart(): Promise<IKernelInfo> {
     if (this._promiseDelegate.settled) {
-      console.log("***created a new delegate");
       this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
     }
     this._handleStatus('restarting');
@@ -399,7 +398,7 @@ class Kernel {
    * Shut down a kernel. Note: if using a session, Session.dispose()
    * should be used instead.
    */
-  dispose(): Promise<void> {
+  shutdown(): Promise<void> {
     this._handleStatus('shutdown');
     this.disconnect();
     return utils.ajaxRequest(this._kernelUrl, {
