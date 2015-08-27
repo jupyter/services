@@ -162,71 +162,57 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
 
 
 /**
- * A class that fulfills a Promise when it is initialized.
+ * A Promise that can be resolved or rejected by another object.
  */
 export
-class ReadyPromise {
+class PromiseDelegate<T> {
 
   /**
-   * Create a ReadyPromise object.
+   * Construct a new Promise delegate.
    */
   constructor() {
-    this._createReadyPromise();
-  }
-
-  /**
-   * Get a Promise that is fulfilled with the object is ready.
-   */
-  get onReady(): Promise<any> {
-    return this._onReady;
-  }
-
-  /**
-   * Create a new ready Promise object if there is not a previous one.
-   */
-  protected _createReadyPromise() {
-    if (this._fulfiller) {
-      return;
-    }
-    this._onReady = new Promise((resolve, reject) => {
-      this._fulfiller = resolve;
-      this._rejecter = reject;
+    this._promise = new Promise<T>((resolve, reject) => {
+      this._resolve = resolve;
+      this._reject = reject;
     });
   }
 
   /**
-   * Fulfill the _onReady Promise, if it has not already been fulfilled.
+   * Get the underlying Promise.
    */
-  protected _fulfillReady(data?: any) {
-    var fulfiller = this._fulfiller;
-    if (fulfiller) {
-      this._fulfiller = null;
-      this._rejecter = null;
-      if (data !== void 0) {
-         fulfiller(data);
-      } else {
-        fulfiller();
-      }
-    }
+  get promise(): Promise<T> {
+    return this._promise;
   }
 
   /**
-   * Fulfill the _onReady Promise, if it has not already been fulfilled.
+   * Test whether the Promise has been settled.
    */
-  protected _rejectReady(data?: any) {
-    var rejecter = this._rejecter;
-    if (rejecter) {
-      this._fulfiller = null;
-      this._rejecter = null;
-      if (data !== void 0) {
-         rejecter(data);
-      } else {
-        rejecter();
-      }
-    }
+  get settled(): boolean {
+    return this._settled;
   }
 
-  private _onReady: Promise<any>;
-  private _fulfiller: (data?: any) => void = null;
-  private _rejecter: (data?: any) => void = null;
+  /**
+   * Resolve the underlying Promise with an optional value or another Promise.
+   */
+  resolve(value?: T | Thenable<T>): void {
+    // Note: according to the Promise spec, and the `this` context for resolve 
+    // and reject are ignored
+    this._resolve(value);
+    this._settled = true;
+  }
+
+  /**
+   * Reject the underlying Promise with an optional reason.
+   */
+  reject(reason?: any): void {
+    // Note: according to the Promise spec, and the `this` context for resolve 
+    // and reject are ignored
+    this._reject(reason);
+    this._settled = true;
+  }
+
+  private _promise: Promise<T>;
+  private _resolve: (value?: T | Thenable<T>) => void;
+  private _reject: (reason?: any) => void;
+  private _settled = false;
 }
