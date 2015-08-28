@@ -45,6 +45,7 @@ interface ISessionOptions {
   wsUrl?: string;
 };
 
+
 /**
  * Session object for accessing the session REST api. The session
  * should be used to start kernels and then shut them down -- for
@@ -52,13 +53,6 @@ interface ISessionOptions {
  **/
 export
 class NotebookSession {
-
-  /**
-   * A signal emitted when the session changes state.
-   */
-  @defineSignal
-  statusChanged: ISignal<string>;
-
   /**
    * GET /api/sessions
    *
@@ -82,6 +76,12 @@ class NotebookSession {
       return success.data;
     });
   }
+
+  /**
+   * A signal emitted when the session changes state.
+   */
+  @defineSignal
+  statusChanged: ISignal<string>;
 
   /**
    * Construct a new session.
@@ -112,7 +112,7 @@ class NotebookSession {
     return this._notebookPath;
   }
 
-  /** 
+  /**
    * Get a Promise that is fulfilled with the Session is ready.
    */
   get onReady(): Promise<ISessionId> {
