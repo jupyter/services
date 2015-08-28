@@ -152,13 +152,6 @@ interface IKernelFuture extends IDisposable {
  */
 export
 class Kernel {
-
-  /**
-   * A signal emitted when the kernel changes state.
-   */
-  @defineSignal
-  statusChanged: ISignal<string>;
-
   /**
    * GET /api/kernels
    *
@@ -182,6 +175,12 @@ class Kernel {
       throw Error('Invalid Status: ' + success.xhr.status);
     });
   }
+
+  /**
+   * A signal emitted when the kernel changes state.
+   */
+  @defineSignal
+  statusChanged: ISignal<string>;
 
   /**
    * Construct a new kernel.
@@ -277,7 +276,7 @@ class Kernel {
     ].join('')
   }
 
-  /** 
+  /**
    * Get a Promise that is fulfilled with the Kernel is ready.
    */
   get onReady(): Promise<IKernelInfo> {
