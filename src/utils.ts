@@ -159,3 +159,60 @@ function ajaxRequest(url: string, settings: IAjaxSetttings): Promise<any> {
     }
   });
 }
+
+
+/**
+ * A Promise that can be resolved or rejected by another object.
+ */
+export
+class PromiseDelegate<T> {
+
+  /**
+   * Construct a new Promise delegate.
+   */
+  constructor() {
+    this._promise = new Promise<T>((resolve, reject) => {
+      this._resolve = resolve;
+      this._reject = reject;
+    });
+  }
+
+  /**
+   * Get the underlying Promise.
+   */
+  get promise(): Promise<T> {
+    return this._promise;
+  }
+
+  /**
+   * Test whether the Promise has been settled.
+   */
+  get settled(): boolean {
+    return this._settled;
+  }
+
+  /**
+   * Resolve the underlying Promise with an optional value or another Promise.
+   */
+  resolve(value?: T | Thenable<T>): void {
+    // Note: according to the Promise spec, and the `this` context for resolve 
+    // and reject are ignored
+    this._resolve(value);
+    this._settled = true;
+  }
+
+  /**
+   * Reject the underlying Promise with an optional reason.
+   */
+  reject(reason?: any): void {
+    // Note: according to the Promise spec, and the `this` context for resolve 
+    // and reject are ignored
+    this._reject(reason);
+    this._settled = true;
+  }
+
+  private _promise: Promise<T>;
+  private _resolve: (value?: T | Thenable<T>) => void;
+  private _reject: (reason?: any) => void;
+  private _settled = false;
+}

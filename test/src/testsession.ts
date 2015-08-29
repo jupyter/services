@@ -10,7 +10,7 @@ import {
 
 import { deserialize, serialize } from '../../lib/serialize';
 
-import { MockWebSocket, MockWebSocketServer } from './mocksocket';
+import { KernelTester } from './testkernel';
 
 import { RequestHandler, expectFailure } from './utils';
 
@@ -94,17 +94,14 @@ describe('jupyter.services - Session', () => {
   describe('#start()', () => {
 
     it('should start a session', (done) => {
-      var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      session.kernel.id = DEFAULT_ID.kernel.id;
-      var server = new MockWebSocketServer(session.kernel.wsUrl);
+      var handler = new KernelTester(session.kernel);
 
       var start = session.start();
       var data = JSON.stringify(DEFAULT_ID);
       handler.respond(201, data);
       return start.then(() => {
-        expect(session.kernel.id).to.be(DEFAULT_ID.kernel.id);
-        expect(session.kernel.status).to.be('connected');
+        expect(session.kernel.status).to.be('ready');
         done();
       });
     });
@@ -166,20 +163,18 @@ describe('jupyter.services - Session', () => {
 
   });
 
-  describe('#delete()', () => {
+  describe('#shutdown()', () => {
 
     it('should kill a session', (done) => {
-      var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      session.kernel.id = DEFAULT_ID.kernel.id;
-      var server = new MockWebSocketServer(session.kernel.wsUrl);
+      var handler = new KernelTester(session.kernel);
 
       var start = session.start();
       handler.respond(201, DEFAULT_ID);
       return start.then(() => {
-        var del = session.delete();
+        var shutdown = session.shutdown();
         handler.respond(204, DEFAULT_ID);
-        del.then(() => {
+        shutdown.then(() => {
           expect(session.kernel.status).to.be('disconnected');
           done();
         });
@@ -189,27 +184,28 @@ describe('jupyter.services - Session', () => {
     it('should throw an error for an invalid session id', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var shutdown = session.shutdown();
       var data = JSON.parse(JSON.stringify(DEFAULT_ID));
       (<any>data).id = 11;
       handler.respond(204, data);
-      return expectFailure(del, done, "Invalid Session Model");
+      return expectFailure(shutdown, done, "Invalid Session Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var shutdown = session.shutdown();
       handler.respond(200, DEFAULT_ID);
-      return expectFailure(del, done, "Invalid response");
+      return expectFailure(shutdown, done, "Invalid response");
     });
 
     it('should throw a specific error for 410 response', (done) => {
       var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      var del = session.delete();
+      var shutdown = session.shutdown();
       handler.respond(410, DEFAULT_ID);
-      return expectFailure(del, done, "The kernel was deleted but the session was not");
+      return expectFailure(shutdown, done, 
+                           "The kernel was deleted but the session was not");
     });
 
   });
@@ -217,10 +213,8 @@ describe('jupyter.services - Session', () => {
   describe('#restart()', () => {
 
     it('should restart a session', (done) => {
-      var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      session.kernel.id = DEFAULT_ID.kernel.id;
-      var server = new MockWebSocketServer(session.kernel.wsUrl);
+      var handler = new KernelTester(session.kernel);
 
       var start = session.start();
       var data = JSON.stringify(DEFAULT_ID);
@@ -236,10 +230,8 @@ describe('jupyter.services - Session', () => {
     });
 
     it('should restart a session with different options', (done) => {
-      var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      session.kernel.id = DEFAULT_ID.kernel.id;
-      var server = new MockWebSocketServer(session.kernel.wsUrl);
+      var handler = new KernelTester(session.kernel);
 
       var start = session.start();
       var data = JSON.stringify(DEFAULT_ID);
@@ -307,10 +299,8 @@ describe('jupyter.services - Session', () => {
   describe('#statusChanged', () => {
 
     it('should emit a status changed', (done) => {
-      var handler = new RequestHandler();
       var session = new NotebookSession(DEFAULTS);
-      session.kernel.id = DEFAULT_ID.kernel.id;
-      var server = new MockWebSocketServer(session.kernel.wsUrl);
+      var handler = new KernelTester(session.kernel);
 
       session.statusChanged.connect((status: string) => {
         expect(status).to.be('kernelCreated');
@@ -319,6 +309,37 @@ describe('jupyter.services - Session', () => {
       session.start();
       var data = JSON.stringify(DEFAULT_ID);
       handler.respond(201, data);
+    });
+  });
+
+  describe('#onReady', () => {
+
+    it('should fulfill the Promise', (done) => {
+      var session = new NotebookSession(DEFAULTS);
+      var handler = new KernelTester(session.kernel);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+
+      session.onReady.then(() => {
+        done();
+      });
+      
+    });
+
+    it('should reject the Promise', (done) => {
+      var session = new NotebookSession(DEFAULTS);
+      var handler = new KernelTester(session.kernel);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(204, data);
+
+      session.onReady.catch(() => {
+        done();
+      });
+      
     });
   });
 });
