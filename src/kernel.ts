@@ -63,6 +63,13 @@ interface IKernel {
   id: string;
 
   /**
+   * The information about the kernel.
+   *
+   * Read-only.
+   */
+  info: IKernelInfo;
+
+  /**
    * The name of the server-side kernel.
    *
    * Read-only
@@ -255,8 +262,6 @@ class Kernel implements IKernel {
 
   /**
    * The id of the server-side kernel.
-   *
-   * Read-only
    */
   get id(): string {
     return this._id;
@@ -264,8 +269,6 @@ class Kernel implements IKernel {
 
   /**
    * The name of the server-side kernel.
-   *
-   * Read-only
    */
   get name(): string {
     return this._options.name;
@@ -273,8 +276,6 @@ class Kernel implements IKernel {
 
   /**
    * The current status of the kernel.
-   *
-   * Read-only.
    */
   get status(): KernelStatus {
     return this._status;
@@ -282,8 +283,6 @@ class Kernel implements IKernel {
 
   /**
    * The information about the kernel.
-   *
-   * Read-only.
    */
   get info(): IKernelInfo {
     return this._info;
