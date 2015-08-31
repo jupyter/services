@@ -4,9 +4,7 @@
 
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import { IKernel } from './kernel';
-
-import { IKernelId } from './kernelhelpers';
+import { IKernel, IKernelId } from './ikernel';
 
 import * as utils from './utils';
 

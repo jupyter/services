@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IKernelId } from './kernelhelpers';
+import { IKernelId } from './ikernel';
 
 import { INotebookId, ISessionId } from './session';
 
