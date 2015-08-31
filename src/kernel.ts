@@ -6,9 +6,13 @@ import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
 
-import { serialize, deserialize } from './serialize';
+import { IKernelId, IKernelInfo, IKernelMessage } from './kernelhelpers';
+
+import * as serialize from './serialize';
 
 import * as utils from './utils';
+
+import * as validate from './validate';
 
 
 /**
@@ -17,91 +21,95 @@ import * as utils from './utils';
 var KERNEL_SERVICE_URL = 'api/kernel';
 
 
-/**
- * Kernel message header content.
- */
 export
-interface IKernelMsgHeader {
-  username: string;
-  version: string;
-  session: string;
-  msgId: string;
-  msgType: string;
-}
-
-
-/**
- * Kernel message specification.
- */
-export
-interface IKernelMsg {
-  header: IKernelMsgHeader;
-  metadata: any;
-  content: any;
-  parentHeader: {} | IKernelMsgHeader;
-  msgId?: string;
-  msgType?: string;
-  channel?: string;
-  buffers?: (ArrayBuffer | ArrayBufferView)[]
-}
-
-
-/**
- * Settings for a kernel execute command.
- */
-export
-interface IKernelExecute {
-  silent?: boolean;
-  user_expressions?: any;
-  allow_stdin?: boolean;
-  store_history?: boolean;
-}
-
-
-/**
- * Kernel identification specification.
- */
-export
-interface IKernelId {
-    id: string;
-    name: string;
-}
-
-
-/**
- * Kernel information specification.
- * http://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
- */
-export
-interface IKernelInfo {
-  protocol_version: string;
-  implementation: string;
-  implementation_version: string;
-  language_info: IKernelLanguageInfo;
-  banner: string;
-  help_links: { [key: string]: string; };
-}
-
-
-/**
- * Kernel language information specification.
- */
-export
-interface IKernelLanguageInfo {
+interface IKernelOptions {
   name: string;
-  version: string;
-  mimetype: string;
-  file_extension: string;
-  pygments_lexer: string;
-  codemirror_mode: string | {};
-  nbconverter_exporter: string;
+  baseUrl: string;
+  wsUrl?: string;
+  websocket?: WebSocket;
 }
 
+
+export
+interface IKernelSpecs {
+  // whatever
+}
+
+
+export
+enum KernelStatus {
+  connecting = 0,
+  open = 1,
+  closing = 2,
+  closed = 3
+}
+
+
+/**
+ * A class to communicate with the server-side kernel.
+ */
+export
+interface IKernel {
+  /**
+   * A signal emitted when the kernel status changes.
+   */
+  statusChanged: ISignal<KernelStatus>;
+
+  /**
+   * The id of the server-side kernel.
+   *
+   * Read-only
+   */
+  id: string;
+
+  /**
+   * The name of the server-side kernel.
+   *
+   * Read-only
+   */
+  name: string;
+
+  /**
+   * The current status of the kernel.
+   *
+   * Read-only.
+   */
+  status: KernelStatus;
+
+  /**
+   * Send a message to the kernel.
+   *
+   * The future object will yield the result when available.
+   */
+  sendMessage(msg: IKernelMessage): IKernelFuture;
+
+  /**
+   * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
+   */
+  interrupt(): Promise<void>;
+
+  /**
+   * Restart a kernel via API: POST /kernels/{kernel_id}/restart
+   *
+   * It is assumed that the API call does not mutate the kernel id or name.
+   */
+  restart(): Promise<void>;
+
+  /**
+   * Delete a kernel via API: DELETE /kernels/{kernel_id}
+   *
+   * If the given kernel id corresponds to an IKernel object, that
+   * object is disposed and its websocket connection is cleared.
+   *
+   * Any further calls to `sendMessage` for that IKernel will throw
+   * an exception.
+   */
+  shutdown(): Promise<void>;
+}
 
 /**
  * Object providing a Future interface for message callbacks.
  *
- * Only one callback can be registered per type.
  * If `autoDispose` is set, the future will self-dispose after `isDone` is
  * set and the registered `onDone` handler is called.
  *
@@ -111,208 +119,212 @@ interface IKernelLanguageInfo {
 export
 interface IKernelFuture extends IDisposable {
   /**
-   * The autoDispose behavior of the future.
+   * Whether the future disposes itself when done.
    *
-   * If True, it will self-dispose() after onDone() is called.
+   * The default is `true`. This can be set to `false` if the consumer
+   * expects addition output messages to arrive after the reply. In
+   * this case, the consumer must call `dispose()` when finished.
    */
   autoDispose: boolean;
 
   /**
-   * Set when the message is done.
+   * Test whether the future is done.
+   *
+   * Read-only.
    */
   isDone: boolean;
 
   /**
-   * Register a reply handler. Returns `this`.
+   * The reply handler for the kernel future.
    */
-  onReply(cb: (msg: IKernelMsg) => void): IKernelFuture;
+  onReply: (msg: IKernelMessage) => void;
 
   /**
-   * Register an output handler. Returns `this`.
+   * The input handler for the kernel future.
    */
-  onOutput(cb: (msg: IKernelMsg) => void): IKernelFuture;
+  onInput: (msg: IKernelMessage) => void;
 
   /**
-   * Register a done handler. Returns `this`.
+   * The output handler for the kernel future.
    */
-  onDone(cb: (msg: IKernelMsg) => void): IKernelFuture;
+  onOutput: (msg: IKernelMessage) => void;
 
   /**
-   * Register an input handler. Returns `this`.
+   * The done handler for the kernel future.
    */
-  onInput(cb: (msg: IKernelMsg) => void): IKernelFuture;
+  onDone: (msg: IKernelMessage) => void;
 }
 
 
 /**
- * A class to communicate with the Python kernel. This
- * should generally not be constructed directly, but be created
- * by the `Session` object. Once created, this object should be
- * used to communicate with the kernel.
+ * Fetch the running kernels via API: GET /kernels
  */
 export
-class Kernel {
-
-  /**
-   * A signal emitted when the kernel changes state.
-   */
-  @defineSignal
-  statusChanged: ISignal<string>;
-
-  /**
-   * GET /api/kernels
-   *
-   * Get the list of running kernels.
-   */
-  static list(baseUrl: string): Promise<IKernelId[]> {
-    var kernelServiceUrl = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL)
-    return utils.ajaxRequest(kernelServiceUrl, {
-      method: "GET",
-      dataType: "json"
-    }).then((success: utils.IAjaxSuccess): IKernelId[] => {
-      if (success.xhr.status === 200) {
-        if (!Array.isArray(success.data)) {
-          throw Error('Invalid kernel list');
-        }
-        for (var i = 0; i < success.data.length; i++) {
-          validateKernelId(success.data[i]);
-        }
-        return success.data;
-      }
+function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
+  var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL);
+  return utils.ajaxRequest(url, {
+    method: "GET",
+    dataType: "json"
+  }).then((success: utils.IAjaxSuccess): IKernelId[] => {
+    if (success.xhr.status !== 200) {
       throw Error('Invalid Status: ' + success.xhr.status);
-    });
-  }
+    }
+    if (!Array.isArray(success.data)) {
+      throw Error('Invalid kernel list');
+    }
+    for (var i = 0; i < success.data.length; i++) {
+      validate.validateKernelId(success.data[i]);
+    }
+    return <IKernelId[]>success.data;
+  });
+}
+
+
+/**
+ * Fetch the kernel specs via API: GET /kernelspecs
+ */
+export
+function listKernelSpecs(): Promise<IKernelSpecs> {
+  return null;
+}
+
+
+/**
+ * Start a new kernel via API: POST /kernels
+ *
+ * Wrap the result in an IKernel object. The promise is fulfilled
+ * when the kernel is fully ready to send the first message. If
+ * the kernel fails to become ready, the promise is rejected.
+ */
+export
+function startNewKernel(options: IKernelOptions): Promise<IKernel> {
+  var url = utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL);
+  return utils.ajaxRequest(url, {
+    method: "POST",
+    dataType: "json"
+  }).then((success: utils.IAjaxSuccess) => {
+    if (success.xhr.status !== 200) {
+      throw Error('Invalid Status: ' + success.xhr.status);
+    }
+    validate.validateKernelId(success.data);
+    var kernel = new Kernel(options, success.data.id);
+    return kernel.connect();
+  });
+}
+
+
+/**
+ * Connect to a running kernel.
+ *
+ * Wrap the result in an IKernel object. The promise is fulfilled
+ * when the kernel is fully ready to send the first message. If
+ * the kernel fails to become ready, the promise is rejected.
+ */
+export
+function connectToKernel(options: IKernelOptions, id: string): Promise<IKernel> {
+  var kernel = new Kernel(options, id);
+  return kernel.connect();
+}
+
+
+/**
+ * Implementation of the Kernel object
+ */
+class Kernel implements IKernel {
 
   /**
-   * Construct a new kernel.
+   * A signal emitted when the kernel status changes.
    */
-  constructor(baseUrl: string, wsUrl?: string) {
-    this._status = 'unknown';
-    this._baseUrl = baseUrl;
-    this._wsUrl = wsUrl;
-    this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
-    if (!this._wsUrl) {
-      // trailing 's' in https will become wss for secure web sockets
-      this._wsUrl = location.protocol.replace('http', 'ws') + "//" + location.host;
-    }
-    this._staticId = utils.uuid();
+  statusChanged: ISignal<KernelStatus>;
+
+  /**
+   * Construct a new kernel object.
+   */
+  constructor(options: IKernelOptions, id: string) {
+    this._id = id;
+    this._clientId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
-  }
-
-  /**
-   * Get the name of the kernel.
-   */
-  get name() : string {
-    return this._name;
-  }
-
-  /**
-   * Set the name of the kernel.
-   */
-  set name(value: string) {
-    this._name = value;
-  }
-
-  /**
-   * Check whether there is a connection to the kernel. This
-   * function only returns true if websocket has been
-   * created and has a state of WebSocket.OPEN.
-   */
-  get isConnected(): boolean {
-    if (this._ws === null) {
-      return false;
+    if (!options.wsUrl) {
+      // trailing 's' in https will become wss for secure web sockets
+      options.wsUrl = (
+        location.protocol.replace('http', 'ws') + "//" + location.host
+      );
     }
-    if (this._ws.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-    return true;
+    this._options = options;
   }
 
   /**
-   * Check whether the connection to the kernel has been completely
-   * severed. This function only returns true if the websocket is null.
-   */
-  get isFullyDisconnected(): boolean {
-    return (this._ws === null);
-  }
-
-  /**
-   * Get the Info Reply Message from the kernel.
-   */
-  get infoReply(): IKernelInfo {
-    return this._infoReply;
-  }
-
-  /**
-   * Get the current status of the kernel.
-   */
-  get status() : string {
-    return this._status;
-  }
-
-  /**
-   * Get the current id of the kernel.
+   * The id of the server-side kernel.
+   *
+   * Read-only
    */
   get id(): string {
     return this._id;
   }
 
   /**
-   * Set the current id of the kernel.
+   * The name of the server-side kernel.
+   *
+   * Read-only
    */
-  set id(value: string) {
-    this._id = value;
-    this._kernelUrl = utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL,
-                                          this._id);
+  get name(): string {
+    return this._options.name;
   }
 
   /**
-   * Get the full websocket url.
+   * The current status of the kernel.
+   *
+   * Read-only.
    */
-  get wsUrl(): string {
-    return [
-      this._wsUrl,
-      utils.urlJoinEncode(this._kernelUrl, 'channels'),
-      "?session_id=" + this._staticId
-    ].join('')
+  get status(): KernelStatus {
+    return this._status;
+  }
+
+  /**
+   * The information about the kernel.
+   *
+   * Read-only.
+   */
+  get info(): IKernelInfo {
+    return this._info;
   }
 
   /** 
-   * Get a Promise that is fulfilled with the Kernel is ready.
+   * Connect to the kernel.
    */
-  get onReady(): Promise<IKernelInfo> {
-    return this._promiseDelegate.promise;
+  connect(): Promise<IKernel> {
+    return Promise.resolve(this);
   }
 
   /**
-   * GET /api/kernels/[:kernel_id]
+   * Send a message to the kernel.
    *
-   * Get information about the kernel.
+   * The future object will yield the result when available.
    */
-  getInfo(): Promise<IKernelId> {
-    return utils.ajaxRequest(this._kernelUrl, {
-      method: "GET",
-      dataType: "json"
-    }).then((success: utils.IAjaxSuccess) => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
-      validateKernelId(success.data);
-      return success.data;
-    }, (error: utils.IAjaxError) => {
-      this._onError(error);
+  sendMessage(msg: IKernelMessage): IKernelFuture {
+    if (this._status != KernelStatus.open) {
+      throw Error('Cannot send a message to a closed Kernel');
+    }
+    this._ws.send(serialize.serialize(msg));
+
+    var future = new KernelFutureHandler(() => {
+      this._handlerMap.delete(msg.header.msgId);
     });
+
+    this._handlerMap.set(msg.header.msgId, future);
+
+    return future;
   }
 
   /**
-   * POST /api/kernels/[:kernel_id]/interrupt
-   *
-   * Interrupt the kernel.
+   * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
    */
   interrupt(): Promise<void> {
-    this._handleStatus('interrupting');
+    this._log('interrupting');
 
-    var url = utils.urlJoinEncode(this._kernelUrl, 'interrupt');
+    var url = utils.urlJoinEncode(
+      this._options.baseUrl, KERNEL_SERVICE_URL, this._id, 'interrupt'
+    );
     return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
@@ -326,82 +338,43 @@ class Kernel {
   }
 
   /**
-   * POST /api/kernels/[:kernel_id]/restart
+   * Restart a kernel via API: POST /kernels/{kernel_id}/restart
    *
-   * Restart the kernel.
+   * It is assumed that the API call does not mutate the kernel id or name.
    */
-  restart(): Promise<IKernelInfo> {
-    if (this._promiseDelegate.settled) {
-      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
-    }
-    this._handleStatus('restarting');
-    this.disconnect();
-
-    var url = utils.urlJoinEncode(this._kernelUrl, 'restart');
-    utils.ajaxRequest(url, {
+  restart(): Promise<void> {
+    var url = utils.urlJoinEncode(
+      this._options.baseUrl, KERNEL_SERVICE_URL, this._id, 'restart'
+    );
+    return utils.ajaxRequest(url, {
       method: "POST",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateKernelId(success.data);
-      this.connect();
+      validate.validateKernelId(success.data);
     }, (error: utils.IAjaxError) => {
       this._onError(error);
-    }).catch((data?: any) => {
-      this._promiseDelegate.reject(data);
     });
-    return this.onReady;
   }
 
-
   /**
-   * POST /api/kernels/[:kernel_id]
+   * Delete a kernel via API: DELETE /kernels/{kernel_id}
    *
-   * Start a kernel.  Note: if using a session, Session.start()
-   * should be used instead.
-   */
-  start(id?: IKernelId): Promise<IKernelInfo> {
-    if (id !== void 0) {
-      this.id = id.id;
-      this.name = id.name;
-    }
-    if (!this._kernelUrl) {
-      throw Error('You must set the kernel id before starting.');
-    }
-    this._handleStatus('starting');
-    if (this._promiseDelegate.settled) {
-      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
-    }
-    utils.ajaxRequest(this._kernelUrl, {
-      method: "POST",
-      dataType: "json"
-    }).then((success: utils.IAjaxSuccess) => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
-      validateKernelId(success.data);
-      this.connect(success.data);
-    }, (error: utils.IAjaxError) => {
-      this._onError(error);
-    }).catch((data?: any) => {
-      this._promiseDelegate.reject(data);
-    });
-    return this.onReady;
-  }
-
-
-  /**
-   * DELETE /api/kernels/[:kernel_id]
+   * If the given kernel id corresponds to an IKernel object, that
+   * object is disposed and its websocket connection is cleared.
    *
-   * Shut down a kernel. Note: if using a session, Session.dispose()
-   * should be used instead.
+   * Any further calls to `sendMessage` for that IKernel will throw
+   * an exception.
    */
   shutdown(): Promise<void> {
-    this._handleStatus('shutdown');
-    this.disconnect();
-    return utils.ajaxRequest(this._kernelUrl, {
+    this._log('shutdown');
+    this._disconnect();
+    var url = utils.urlJoinEncode(
+      this._options.baseUrl, KERNEL_SERVICE_URL, this._id
+    );
+    return utils.ajaxRequest(url, {
       method: "DELETE",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -411,191 +384,8 @@ class Kernel {
     });
   }
 
-  /**
-   * Connect to the server-side the kernel.
-   *
-   * This should only be called directly by a session.
-   */
-  connect(id?: IKernelId): Promise<IKernelInfo> {
-    if (id !== void 0) {
-      this.id = id.id;
-      this.name = id.name;
-    }
-    if (!this._kernelUrl) {
-      throw Error('You must set the kernel id before starting');
-    }
-    this._startChannels();
-    this._handleStatus('created');
-    return this.onReady;
-  }
-
-  /**
-   * Disconnect the kernel.
-   */
-  disconnect(): void {
-    if (this._ws !== null) {
-      if (this._ws.readyState === WebSocket.OPEN) {
-        this._ws.onclose = () => { this._clearSocket(); };
-        this._ws.close();
-      } else {
-        this._clearSocket();
-      }
-    }
-  }
-
- /**
-   * Reconnect to a disconnected kernel. This is not actually a
-   * standard HTTP request, but useful function nonetheless for
-   * reconnecting to the kernel if the connection is somehow lost.
-   */
-  reconnect(): Promise<IKernelInfo> {
-    if (this.isConnected) {
-      return;
-    }
-    this._reconnectAttempt = this._reconnectAttempt + 1;
-    this._handleStatus('reconnecting');
-    this._startChannels();
-    return this.onReady;
-  }
-
-  /**
-   * Send a message on the kernel's shell channel.
-   */
-  sendShellMessage(msg_type: string, content: any, metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelFuture {
-    if (!this.isConnected) {
-      throw new Error("kernel is not connected");
-    }
-    var msg = this._createMsg(msg_type, content, metadata, buffers);
-    msg.channel = 'shell';
-
-    this._ws.send(serialize(msg));
-
-    var future = new KernelFutureHandler(() => {
-      this._handlerMap.delete(msg.header.msgId);
-    });
-
-    this._handlerMap.set(msg.header.msgId, future);
-
-    return future;
-  }
-
-  /**
-   * Get kernel info.
-   *
-   * Returns a KernelFuture that will resolve to a `kernel_info_reply` message documented
-   * [here](http://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info)
-   */
-  kernelInfo(): IKernelFuture {
-    return this.sendShellMessage("kernel_info_request", {});
-  }
-
-  /**
-   * Get info on an object.
-   *
-   * Returns a KernelFuture that will resolve to a `inspect_reply` message documented
-   * [here](http://ipython.org/ipython-doc/dev/development/messaging.html#object-information)
-   */
-  inspect(code: string, cursor_pos: number): IKernelFuture {
-    var content = {
-      code: code,
-      cursor_pos: cursor_pos,
-      detail_level: 0
-    };
-    return this.sendShellMessage("inspect_request", content);
-  }
-
-  /**
-   * Execute given code into kernel, returning a KernelFuture.
-   *
-   * @example
-   *
-   * The options object should contain the options for the execute
-   * call. Its default values are:
-   *
-   *      options = {
-   *        silent : true,
-   *        user_expressions : {},
-   *        allow_stdin : false,
-            store_history: false
-   *      }
-   *
-   */
-  execute(code: string, options?: IKernelExecute): IKernelFuture {
-    var content = {
-      code: code,
-      silent: true,
-      store_history: false,
-      user_expressions: {},
-      allow_stdin: false
-    };
-    utils.extend(content, options);
-    return this.sendShellMessage("execute_request", content);
-  }
-
-  /**
-   * Request a code completion from the kernel.
-   *
-   * Returns a KernelFuture with will resolve to a `complete_reply` documented
-   * [here](http://ipython.org/ipython-doc/dev/development/messaging.html#complete)
-   */
-  complete(code: string, cursor_pos: number): IKernelFuture {
-    var content = {
-      code: code,
-      cursor_pos: cursor_pos
-    };
-    return this.sendShellMessage("complete_request", content);
-  }
-
-  /**
-   * Send an input reply message to the kernel.
-   *
-   * TODO: how to handle this?  Right now called by
-   * ./static/notebook/js/outputarea.js:827:
-   * this.events.trigger('send_input_reply.Kernel', value);
-   *
-   * which has no reference to the session or the kernel
-   */
-  sendInputReply(input: any): string {
-    if (!this.isConnected) {
-      throw new Error("kernel is not connected");
-    }
-    var content = {
-      value: input
-    };
-    var msg = this._createMsg("input_reply", content);
-    msg.channel = 'stdin';
-    this._ws.send(serialize(msg));
-    return msg.header.msgId;
-  }
-
-  /**
-   * Create a kernel message given input attributes.
-   */
-  private _createMsg(msg_type: string, content: any,
-    metadata = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []): IKernelMsg {
-    var msg: IKernelMsg = {
-      header: {
-        msgId: utils.uuid(),
-        username: this._username,
-        session: this._staticId,
-        msgType: msg_type,
-        version: "5.0"
-      },
-      metadata: metadata || {},
-      content: content,
-      buffers: buffers || [],
-      parentHeader: {}
-    };
-    return msg;
-  }
-
-  /**
-   * Handle a kernel status change message.
-   */
-  private _handleStatus(status: string) {
-    this.statusChanged.emit(status);
-    this._status = status;
-    var msg = 'Kernel: ' + status + ' (' + this._id + ')';
+  private _log(msg: string) {
+    var msg = 'Kernel: ' + msg + ' (' + this._id + ')';
     if (status === 'idle' || status === 'busy') {
       // console.log(msg);
     } else {
@@ -608,228 +398,22 @@ class Kernel {
    * another error.
    */
   private _onError(error: utils.IAjaxError): void {
-    var msg = "API request failed (" + error.statusText + "): ";
-    console.error(msg);
+    console.error("API request failed (" + error.statusText + "): ");
     throw Error(error.statusText);
   }
 
-  /**
-   * Start the Websocket channels.
-   * Will stop and restart them if they already exist.
-   */
-  private _startChannels(): void {
-    if (this._promiseDelegate.settled) {
-      this._promiseDelegate = new utils.PromiseDelegate<IKernelInfo>();
-    }
-    this.disconnect();
-    var ws_host_url = this._wsUrl + this._kernelUrl;
-
-    console.info("Starting WebSockets:", ws_host_url);
-
-    this._ws = new WebSocket(this.wsUrl);
-
-    // Ensure incoming binary messages are not Blobs
-    this._ws.binaryType = 'arraybuffer';
-
-    var already_called_onclose = false; // only alert once
-    this._ws.onclose = (evt: CloseEvent) => {
-      if (already_called_onclose) {
-        return;
-      }
-      already_called_onclose = true;
-      if (!evt.wasClean) {
-        // If the websocket was closed early, that could mean
-        // that the kernel is actually dead. Try getting
-        // information about the kernel from the API call --
-        // if that fails, then assume the kernel is dead,
-        // otherwise just follow the typical websocket closed
-        // protocol.
-        this.getInfo().then(() => {
-          this._wsClosed(ws_host_url, false);
-        }, () => {
-          this._kernelDead();
-        });
-      }
-    };
-    this._ws.onerror = (evt: ErrorEvent) => {
-      if (already_called_onclose) {
-        return;
-      }
-      already_called_onclose = true;
-      this._wsClosed(ws_host_url, true);
-    };
-
-    this._ws.onopen = (evt: Event) => {
-      this._wsOpened(evt);
-    };
-    var ws_closed_late = (evt: CloseEvent) => {
-      if (already_called_onclose) {
-        return;
-      }
-      already_called_onclose = true;
-      if (!evt.wasClean) {
-        this._wsClosed(ws_host_url, false);
-      }
-    };
-    // switch from early-close to late-close message after 1s
-    setTimeout(() => {
-      if (this._ws !== null) {
-        this._ws.onclose = ws_closed_late;
-      }
-    }, 1000);
-    this._ws.onmessage = (evt: MessageEvent) => {
-      this._handleWSMessage(evt);
-    };
-  }
-
-  /**
-   * Clear the websocket if necessary.
-   */
-  private _clearSocket(): void {
-    if (this._ws && this._ws.readyState === WebSocket.CLOSED) {
-      this._ws = null;
-    }
-    this._handleStatus('disconnected');
-  }
-
-  /**
-   * Perform necessary tasks once the connection to the kernel has
-   * been established. This includes requesting information about
-   * the kernel.  When we get the response, fulfill the onReady Promise.
-   */
-  private _kernelConnected(): void {
-    this._handleStatus('connected');
-    this._reconnectAttempt = 0;
-    // get kernel info so we know what state the kernel is in
-    this.kernelInfo().onReply((reply?: IKernelMsg) => {
-      this._infoReply = reply.content;
-      this._handleStatus('ready');
-      this._autorestartAttempt = 0;
-      this._promiseDelegate.resolve(this._infoReply);
-    });
-  }
-
-  /**
-   * Perform necessary tasks after the kernel has died. This closes
-   * communication channels to the kernel if they are still somehow
-   * open.
-   */
-  private _kernelDead(): void {
-    this.disconnect();
-    this._handleStatus('dead');
-  }
-
-  /**
-   * Handle a websocket entering the open state,
-   * signaling that the kernel is connected when websocket is open.
-   */
-  private _wsOpened(evt: Event): void {
-    if (this.isConnected) {
-      // all events ready, trigger started event.
-      this._kernelConnected();
-    }
-  }
-
-  /**
-   * Handle a websocket entering the closed state.  If the websocket
-   * was not closed due to an error, try to reconnect to the kernel.
-   *
-   * @param {string} ws_url - the websocket url
-   * @param {bool} error - whether the connection was closed due to an error
-   */
-  private _wsClosed(ws_url: string, error: boolean): void {
-    this.disconnect();
-    this._handleStatus('disconnected');
-    if (error) {
-      console.error('WebSocket connection failed: ', ws_url);
-      this._handleStatus('connectionFailed');
-    }
-    this._scheduleReconnect();
-  }
-
-  /**
-   * Function to call when kernel connection is lost.
-   * schedules reconnect, or fires 'connection_dead' if reconnect limit is hit.
-   */
-  private _scheduleReconnect(): void {
-    if (this._reconnectAttempt < this._reconnectLimit) {
-      var timeout = Math.pow(2, this._reconnectAttempt);
-      console.error("Connection lost, reconnecting in " + timeout + " seconds.");
-      setTimeout(() => { this.reconnect(); }, 1e3 * timeout);
-    } else {
-      this._handleStatus('connectionDead');
-      console.error("Failed to reconnect, giving up.");
-    }
-  }
-
-  /**
-   * Handle an incoming Websocket message.
-   */
-  private _handleWSMessage(e: MessageEvent): void {
-    try {
-      var msg = deserialize(e.data);
-    } catch (error) {
-      console.error(error.message);
-      return;
-    }
-    if (msg.channel === 'iopub' && msg.msgType === 'status') {
-      this._handleStatusMessage(msg);
-    }
-    if (msg.parentHeader) {
-      var header = (<IKernelMsgHeader>msg.parentHeader);
-      var future = this._handlerMap.get(header.msgId);
-      if (future) {
-        future.handleMsg(msg);
-      }
-    }
-  }
-
-  /**
-   * Handle status iopub messages from the kernel.
-   */
-  private _handleStatusMessage(msg: IKernelMsg): void {
-    var execution_state = msg.content.execution_state;
-
-    if (execution_state !== 'dead') {
-      this._handleStatus(execution_state);
-    }
-
-    if (execution_state === 'starting') {
-      this.kernelInfo().onReply((reply: IKernelMsg) => {
-        this._infoReply = reply.content;
-        this._handleStatus('ready');
-        this._autorestartAttempt = 0;
-      });
-
-    } else if (execution_state === 'restarting') {
-      // autorestarting is distinct from restarting,
-      // in that it means the kernel died and the server is restarting it.
-      // kernel_restarting sets the notification widget,
-      // autorestart shows the more prominent dialog.
-      this._autorestartAttempt = this._autorestartAttempt + 1;
-      this._handleStatus('autorestarting');
-
-    } else if (execution_state === 'dead') {
-      this._kernelDead();
-    }
+  private _disconnect() {
+    this._status = KernelStatus.closing;
+    this.statusChanged.emit(this._status);
   }
 
   private _id = '';
-  private _name = '';
-  private _baseUrl = '';
-  private _kernelUrl = '';
-  private _wsUrl = '';
-  private _username = '';
-  private _staticId = '';
+  private _options: IKernelOptions = null;
+  private _status = KernelStatus.closed;
+  private _clientId = '';
+  private _info: IKernelInfo = null;
   private _ws: WebSocket = null;
-  private _infoReply: IKernelInfo = null;
-  private _reconnectLimit = 7;
-  private _autorestartAttempt = 0;
-  private _reconnectAttempt = 0;
   private _handlerMap: Map<string, KernelFutureHandler> = null;
-  private _iopubHandlers: Map<string, (msg: IKernelMsg) => void> = null;
-  private _promiseDelegate: utils.PromiseDelegate<IKernelInfo> = null;
-  private _status = '';
 }
 
 
@@ -884,39 +468,35 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Register a reply handler. Returns `this`.
    */
-  onReply(cb: (msg: IKernelMsg) => void): IKernelFuture {
+  set onReply(cb: (msg: IKernelMessage) => void) {
     this._reply = cb;
-    return this;
   }
 
   /**
    * Register an output handler. Returns `this`.
    */
-  onOutput(cb: (msg: IKernelMsg) => void): IKernelFuture {
+  set onOutput(cb: (msg: IKernelMessage) => void) {
     this._output = cb;
-    return this;
   }
 
   /**
    * Register a done handler. Returns `this`.
    */
-  onDone(cb: (msg: IKernelMsg) => void): IKernelFuture {
+  set onDone(cb: (msg: IKernelMessage) => void) {
     this._done = cb;
-    return this;
   }
 
   /**
    * Register an input handler. Returns `this`.
    */
-  onInput(cb: (msg: IKernelMsg) => void): IKernelFuture {
+  set onInput(cb: (msg: IKernelMessage) => void) {
     this._input = cb;
-    return this;
   }
 
   /**
    * Handle an incoming message from the kernel belonging to this future.
    */
-  handleMsg(msg: IKernelMsg): void {
+  handleMsg(msg: IKernelMessage): void {
     if (msg.channel === 'iopub') {
       var output = this._output;
       if (output) output(msg);
@@ -929,7 +509,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     } else if (msg.channel === 'shell') {
       var reply = this._reply;
       if (reply) reply(msg);
-      this._setFlag(KernelFutureFlag.GotReply)
+      this._setFlag(KernelFutureFlag.GotReply);
       if (this._testFlag(KernelFutureFlag.GotIdle)) {
         this._handleDone(msg);
       }
@@ -953,7 +533,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Handle a message done status.
    */
-  private _handleDone(msg: IKernelMsg): void {
+  private _handleDone(msg: IKernelMessage): void {
     this._setFlag(KernelFutureFlag.IsDone);
     var done = this._done;
     if (done) done(msg);
@@ -985,22 +565,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   private _status = 0;
-  private _input: (msg: IKernelMsg) => void = null;
-  private _output: (msg: IKernelMsg) => void = null;
-  private _reply: (msg: IKernelMsg) => void = null;
-  private _done: (msg: IKernelMsg) => void = null;
-}
-
-
-/**
- * Validate an object as being of IKernelID type
- */
-export
-function validateKernelId(info: IKernelId) : void {
-   if (!info.hasOwnProperty('name') || !info.hasOwnProperty('id')) {
-     throw Error('Invalid kernel id');
-   }
-   if ((typeof info.id !== 'string') || (typeof info.name !== 'string')) {
-     throw Error('Invalid kernel id');
-   }
+  private _input: (msg: IKernelMessage) => void = null;
+  private _output: (msg: IKernelMessage) => void = null;
+  private _reply: (msg: IKernelMessage) => void = null;
+  private _done: (msg: IKernelMessage) => void = null;
 }
