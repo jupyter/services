@@ -8,7 +8,7 @@ import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { 
   IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
-  IKernelOptions, IKernelSpecs, KernelStatus
+  IKernelMessageHeader, IKernelOptions, IKernelSpecs, KernelStatus
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -100,15 +100,41 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
 }
 
 
-
 function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
-  if (!options.wsUrl) {
+  var wsUrl = options.wsUrl;
+  if (!wsUrl) {
     // trailing 's' in https will become wss for secure web sockets
-    options.wsUrl = (
-      location.protocol.replace('http', 'ws') + "//" + location.host
-    );
+    wsUrl = location.protocol.replace('http', 'ws') + "//" + location.host;
   }
-  return Promise.resolve();
+  var clientId = utils.uuid();
+  var baseUrl = options.baseUrl;
+  var ws = options.websocket;
+  if (!ws) {
+    var url = (wsUrl + 
+      utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL, id, 'channels') +
+      '?session_id=' + clientId
+    );
+    ws = new WebSocket(wsUrl);
+  }
+  
+  var resolver = (kernel: IKernel) => { };
+  var rejecter = (kernel: IKernel) => { };
+
+  // Ensure incoming binary messages are not Blobs
+  ws.binaryType = 'arraybuffer';
+
+  ws.onerror = (evt: ErrorEvent) => {
+    rejecter(<IKernel>void 0);
+  };
+
+  ws.onopen = (evt: Event) => {
+    resolver(new Kernel(options.name, id, ws, baseUrl, clientId));
+  };
+
+  return new Promise<IKernel>((resolve, reject) => {
+      resolver = resolve;
+      rejecter = reject;
+  });
 }
 
 
@@ -123,13 +149,17 @@ class Kernel implements IKernel {
   statusChanged: ISignal<KernelStatus>;
 
 
-  constructor(name: string, id: string, ws: WebSocket, baseUrl: string) {
+  constructor(name: string, id: string, ws: WebSocket, baseUrl: string, clientId: string) {
     this._name = name;
     this._id = id;
     this._ws = ws;
+    this._clientId = clientId;
     this._baseUrl = baseUrl;
     this._clientId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
+    this._ws.onmessage = (evt: MessageEvent) => {
+      this._handleMessage(evt);
+    };
   }
 
   /**
@@ -210,6 +240,60 @@ class Kernel implements IKernel {
     return shutdownKernel(this, this._baseUrl);
   }
 
+  /**
+   * Handle an incoming Websocket message.
+   */
+  private _handleMessage(evt: MessageEvent): void {
+    try {
+      var msg = serialize.deserialize(evt.data);
+    } catch (error) {
+      console.error(error.message);
+      return;
+    }
+    if (msg.channel === 'iopub' && msg.msgType === 'status') {
+      this._handleStatusMessage(msg);
+    }
+    if (msg.parentHeader) {
+      var header = (<IKernelMessageHeader>msg.parentHeader);
+      var future = this._handlerMap.get(header.msgId);
+      if (future) {
+        future.handleMsg(msg);
+      }
+    }
+  }
+
+  /**
+   * Handle status iopub messages from the kernel.
+   */
+  private _handleStatusMessage(msg: IKernelMessage): void {
+    var execution_state = msg.content.execution_state;
+
+    if (execution_state !== 'dead') {
+      //this._handleStatus(execution_state);
+    }
+
+    if (execution_state === 'starting') {
+      /*
+      this.kernelInfo().onReply((reply: IKernelMessage) => {
+        this._info = reply.content;
+        this._handleStatus('ready');
+        this._autorestartAttempt = 0;
+      });
+      */
+
+    } else if (execution_state === 'restarting') {
+      // autorestarting is distinct from restarting,
+      // in that it means the kernel died and the server is restarting it.
+      // kernel_restarting sets the notification widget,
+      // autorestart shows the more prominent dialog.
+      this._autorestartAttempt = this._autorestartAttempt + 1;
+      //this._handleStatus('autorestarting');
+
+    } else if (execution_state === 'dead') {
+      //this._kernelDead();
+    }
+  }
+
   private _id = '';
   private _name = '';
   private _baseUrl = '';
@@ -218,6 +302,7 @@ class Kernel implements IKernel {
   private _info: IKernelInfo = null;
   private _ws: WebSocket = null;
   private _handlerMap: Map<string, KernelFutureHandler> = null;
+  private _autorestartAttempt = 0;
 }
 
 
