@@ -87,11 +87,9 @@ function urlJoinEncode(...args: string[]): string {
  */
 export
 function jsonToQueryString(json: any): string {
-  return '?' +
-    Object.keys(json).map((key: string): any => {
-      return encodeURIComponent(key) + '=' +
-        encodeURIComponent(json[key]);
-    }).join('&');
+  return '?' + Object.keys(json).map(key =>
+    encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
+  ).join('&');
 }
 
 
@@ -147,11 +145,11 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
       if (settings.dataType === 'json') {
         response = JSON.parse(req.response);
       }
-      resolve({data: response, statusText: req.statusText, xhr: req});
-    }
+      resolve({ data: response, statusText: req.statusText, xhr: req });
+    };
     req.onerror = (err: ErrorEvent) => {
-      reject({xhr: req, statusText: req.statusText, error: err});
-    }
+      reject({ xhr: req, statusText: req.statusText, error: err });
+    };
     if (settings.data) {
       req.send(settings.data);
     } else {
