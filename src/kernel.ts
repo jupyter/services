@@ -147,6 +147,7 @@ class Kernel implements IKernel {
     this._id = id;
     this._baseUrl = options.baseUrl;
     this._clientId = utils.uuid();
+    this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
     if (!options.wsUrl) {
       // trailing 's' in https will become wss for secure web sockets
@@ -183,17 +184,31 @@ class Kernel implements IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msg: IKernelMessage): IKernelFuture {
+  sendMessage(msg_type: string, channel: string, content: any, metadata = {}, buffers: ArrayBuffer[] = []): IKernelFuture {
     if (this._status != KernelStatus.Idle) {
       throw Error('Cannot send a message to a closed Kernel');
+    }
+    var msg: IKernelMessage = {
+      header : {
+        msg_id : utils.uuid(),
+        username : this._username,
+        session : this._clientId,
+        msg_type : msg_type,
+        version : "5.0"
+      },
+      channel: channel,
+      metadata : metadata,
+      content : content,
+      buffers : buffers,
+      parent_header : {}
     }
     this._ws.send(serialize.serialize(msg));
 
     var future = new KernelFutureHandler(() => {
-      this._handlerMap.delete(msg.header.msgId);
+      this._handlerMap.delete(msg.header.msg_id);
     });
 
-    this._handlerMap.set(msg.header.msgId, future);
+    this._handlerMap.set(msg.header.msg_id, future);
 
     return future;
   }
@@ -252,12 +267,12 @@ class Kernel implements IKernel {
         console.error(error.message);
         return;
       }
-      if (msg.channel === 'iopub' && msg.msgType === 'status') {
+      if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
         this._handleStatusMessage(msg.content.executionstate);
       }
-      if (msg.parentHeader) {
-        var header = (<IKernelMessageHeader>msg.parentHeader);
-        var future = this._handlerMap.get(header.msgId);
+      if (msg.parent_header) {
+        var header = (<IKernelMessageHeader>msg.parent_header);
+        var future = this._handlerMap.get(header.msg_type);
         if (future) {
           future.handleMsg(msg);
         }
@@ -305,6 +320,7 @@ class Kernel implements IKernel {
   private _status = KernelStatus.Unknown;
   private _clientId = '';
   private _ws: WebSocket = null;
+  private _username = '';
   private _handlerMap: Map<string, KernelFutureHandler> = null;
 }
 
@@ -486,7 +502,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     if (msg.channel === 'iopub') {
       var output = this._output;
       if (output) output(msg);
-      if (msg.msgType === 'status' && msg.content.execution_state === 'idle') {
+      if (msg.header.msg_type === 'status' &&
+          msg.content.execution_state === 'idle') {
         this._setFlag(KernelFutureFlag.GotIdle);
         if (this._testFlag(KernelFutureFlag.GotReply)) {
           this._handleDone(msg);
