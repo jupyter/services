@@ -283,6 +283,7 @@ class Kernel implements IKernel {
       this._status = KernelStatus.Dead;
       this.statusChanged.emit(this._status);
       logKernelStatus(this);
+      runningKernels.delete(this._id);
     }
 
     this._ws.onerror = this._ws.onclose;
