@@ -241,7 +241,7 @@ class Kernel implements IKernel {
       return;
     }
     if (msg.channel === 'iopub' && msg.msgType === 'status') {
-      this._handleStatusMessage(msg);
+      this._handleStatusMessage(msg.content.executionstate);
     }
     if (msg.parentHeader) {
       var header = (<IKernelMessageHeader>msg.parentHeader);
@@ -255,15 +255,12 @@ class Kernel implements IKernel {
   /**
    * Handle status iopub messages from the kernel.
    */
-  private _handleStatusMessage(msg: IKernelMessage): void {
-    var execution_state = msg.content.execution_state;
-
-    if (execution_state === 'dead') {
+  private _handleStatusMessage(state: string): void {
+    if (state === 'dead') {
       this._ws.close();
       return;
     }
-
-    switch(execution_state) {
+    switch(state) {
       case 'starting':
         this._status = KernelStatus.Starting;
         break;
