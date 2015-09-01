@@ -99,6 +99,17 @@ interface IExecuteReply {
 
 
 /**
+ * Callbacks for a kernel message.
+ */
+export
+interface IKernelCallbacks {
+  onInput?: (msg: IKernelMessage) => void;
+  onOutput?: (msg: IKernelMessage) => void;
+  onDone?: (msg: IKernelMessage) => void;
+}
+
+
+/**
  * Send a "kernel_info_request" message.
  *
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
@@ -155,11 +166,14 @@ function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IIn
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
  */
 export
-function executeRequest(kernel: IKernel, contents: IExecuteRequest, onInput?: (msg: IKernelMessage) => void, onOutput?: (msg: IKernelMessage) => void): Promise<IExecuteReply> {
+function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: IKernelCallbacks): Promise<IExecuteReply> {
   var msg = createMessage(kernel, 'execute_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
-  if (onInput) future.onInput = onInput;
-  if (onOutput) future.onOutput = onOutput;
+  if (callbacks) {
+    if (callbacks.onInput) future.onInput = callbacks.onInput;
+    if (callbacks.onOutput) future.onOutput = callbacks.onOutput;
+    if (callbacks.onDone) future.onDone = callbacks.onDone;
+  }
   return new Promise<IExecuteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
       resolve(<IExecuteReply>msg.content);
