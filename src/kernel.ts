@@ -101,39 +101,18 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
 
 
 function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
-  var wsUrl = options.wsUrl;
-  if (!wsUrl) {
-    // trailing 's' in https will become wss for secure web sockets
-    wsUrl = location.protocol.replace('http', 'ws') + "//" + location.host;
-  }
-  var clientId = utils.uuid();
-  var baseUrl = options.baseUrl;
-  var ws = options.websocket;
-  if (!ws) {
-    var url = (wsUrl + 
-      utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL, id, 'channels') +
-      '?session_id=' + clientId
-    );
-    ws = new WebSocket(wsUrl);
-  }
-  
-  var resolver = (kernel: IKernel) => { };
-  var rejecter = (kernel: IKernel) => { };
-
-  // Ensure incoming binary messages are not Blobs
-  ws.binaryType = 'arraybuffer';
-
-  ws.onerror = (evt: ErrorEvent) => {
-    rejecter(<IKernel>void 0);
-  };
-
-  ws.onopen = (evt: Event) => {
-    resolver(new Kernel(options.name, id, ws, baseUrl, clientId));
-  };
-
   return new Promise<IKernel>((resolve, reject) => {
-      resolver = resolve;
-      rejecter = reject;
+    var kernel = new Kernel(options, id);
+    var callback = (status: KernelStatus) => {
+      if (status === KernelStatus.Starting) {
+        kernel.statusChanged.disconnect(callback);
+        resolve(kernel);
+      } else if (status === KernelStatus.Dead) {
+        kernel.statusChanged.disconnect(callback);
+        reject(<IKernel>void 0);
+      }
+    }
+    kernel.statusChanged.connect(callback);
   });
 }
 
@@ -149,17 +128,20 @@ class Kernel implements IKernel {
   statusChanged: ISignal<KernelStatus>;
 
 
-  constructor(name: string, id: string, ws: WebSocket, baseUrl: string, clientId: string) {
-    this._name = name;
+  constructor(options: IKernelOptions, id: string) {
+    this._name = options.name;
     this._id = id;
-    this._ws = ws;
-    this._clientId = clientId;
-    this._baseUrl = baseUrl;
+    this._baseUrl = options.baseUrl;
     this._clientId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
-    this._ws.onmessage = (evt: MessageEvent) => {
-      this._handleMessage(evt);
-    };
+    this._wsUrl = options.wsUrl;
+    if (!this._wsUrl) {
+      // trailing 's' in https will become wss for secure web sockets
+      this._wsUrl = (
+        location.protocol.replace('http', 'ws') + "//" + location.host
+      );
+    }
+    this._createSocket();
   }
 
   /**
@@ -184,19 +166,12 @@ class Kernel implements IKernel {
   }
 
   /**
-   * The information about the kernel.
-   */
-  get info(): IKernelInfo {
-    return this._info;
-  }
-
-  /**
    * Send a message to the kernel.
    *
    * The future object will yield the result when available.
    */
   sendMessage(msg: IKernelMessage): IKernelFuture {
-    if (this._status != KernelStatus.Open) {
+    if (this._status != KernelStatus.Idle) {
       throw Error('Cannot send a message to a closed Kernel');
     }
     this._ws.send(serialize.serialize(msg));
@@ -236,8 +211,9 @@ class Kernel implements IKernel {
    * an exception.
    */
   shutdown(): Promise<void> {
-    this._status = KernelStatus.Closing;
-    return shutdownKernel(this, this._baseUrl);
+    return shutdownKernel(this, this._baseUrl).then(() => {
+      this._ws.close();
+    });
   }
 
   /**
@@ -268,46 +244,63 @@ class Kernel implements IKernel {
   private _handleStatusMessage(msg: IKernelMessage): void {
     var execution_state = msg.content.execution_state;
 
-    if (execution_state !== 'dead') {
-      //this._handleStatus(execution_state);
+    if (execution_state === 'dead') {
+      this._ws.close();
+      return;
     }
 
-    if (execution_state === 'starting') {
-      /*
-      this.kernelInfo().onReply((reply: IKernelMessage) => {
-        this._info = reply.content;
-        this._handleStatus('ready');
-        this._autorestartAttempt = 0;
-      });
-      */
+    switch(execution_state) {
+      case 'starting':
+        this._status = KernelStatus.Starting;
+        break;
+      case 'idle':
+        this._status = KernelStatus.Idle;
+        break;
+      case 'busy':
+        this._status = KernelStatus.Busy;
+        break;
+      case 'restarting':
+        this._status = KernelStatus.Restarting;
+        break;
+    }
+    this.statusChanged.emit(this._status);
+    logKernelStatus(this);
+  }
 
-    } else if (execution_state === 'restarting') {
-      // autorestarting is distinct from restarting,
-      // in that it means the kernel died and the server is restarting it.
-      // kernel_restarting sets the notification widget,
-      // autorestart shows the more prominent dialog.
-      this._autorestartAttempt = this._autorestartAttempt + 1;
-      //this._handleStatus('autorestarting');
+  private _createSocket() {
+    var url = (this._wsUrl + 
+      utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL, this._id, 'channels') +
+      '?session_id=' + this._clientId
+    );
 
-    } else if (execution_state === 'dead') {
-      //this._kernelDead();
+    this._ws = new WebSocket(url);
+    // Ensure incoming binary messages are not Blobs
+    this._ws.binaryType = 'arraybuffer';
+
+    this._ws.onmessage = (evt: MessageEvent) => {
+      this._handleMessage(evt);
+    };
+
+    this._ws.onclose = () => {
+      this._status = KernelStatus.Dead;
+      this.statusChanged.emit(this._status);
+      logKernelStatus(this);
     }
   }
 
   private _id = '';
   private _name = '';
   private _baseUrl = '';
-  private _status = KernelStatus.Closed;
+  private _wsUrl = '';
+  private _status = KernelStatus.Unknown;
   private _clientId = '';
-  private _info: IKernelInfo = null;
   private _ws: WebSocket = null;
   private _handlerMap: Map<string, KernelFutureHandler> = null;
-  private _autorestartAttempt = 0;
 }
 
 
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  if (kernel.status != KernelStatus.Open) {
+  if (kernel.status != KernelStatus.Idle) {
     return Promise.reject(void 0);
   }
   var url = utils.urlJoinEncode(
@@ -326,7 +319,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 
 
 function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  if (kernel.status != KernelStatus.Open) {
+  if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(void 0);
   }
   var url = utils.urlJoinEncode(
@@ -353,6 +346,16 @@ function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
       throw Error('Invalid response');
     }
   }, onKernelError);
+}
+
+
+function logKernelStatus(kernel: Kernel) {
+  var msg = 'Kernel: ' + status + ' (' + kernel.id + ')';
+  if (status === 'idle' || status === 'busy') {
+    // console.log(msg);
+  } else {
+    console.log(msg);
+  }
 }
 
 
