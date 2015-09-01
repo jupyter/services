@@ -331,6 +331,7 @@ class Kernel implements IKernel {
   private _handlerMap: Map<string, KernelFutureHandler> = null;
 }
 
+
 /**
  * A module private store for running kernels.
  */
