@@ -147,7 +147,7 @@ class Kernel implements IKernel {
     this._name = options.name;
     this._id = id;
     this._baseUrl = options.baseUrl;
-    this._clientId = utils.uuid();
+    this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
     if (!options.wsUrl) {
@@ -174,6 +174,24 @@ class Kernel implements IKernel {
   }
 
   /**
+   * The client username.
+   *
+   * Read-only
+   */
+   get username(): string {
+     return this._username;
+   }
+
+  /**
+   * The client unique id.
+   *
+   * Read-only
+   */
+  get clientId(): string {
+    return this._clientId;
+  }
+
+  /**
    * The current status of the kernel.
    */
   get status(): KernelStatus {
@@ -185,24 +203,11 @@ class Kernel implements IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msgType: string, channel: string, content: any, metadata = {}, buffers: ArrayBuffer[] = []): IKernelFuture {
+  sendMessage(msg: IKernelMessage): IKernelFuture {
     if (this._status != KernelStatus.Idle) {
       throw Error('Cannot send a message to a closed Kernel');
     }
-    var msg: IKernelMessage = {
-      header : {
-        msg_id : utils.uuid(),
-        username : this._username,
-        session : this._clientId,
-        msg_type : msgType,
-        version : "5.0"
-      },
-      channel: channel,
-      metadata : metadata,
-      content : content,
-      buffers : buffers,
-      parent_header : {}
-    }
+
     this._ws.send(serialize.serialize(msg));
 
     var future = new KernelFutureHandler(() => {

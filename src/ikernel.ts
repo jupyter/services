@@ -13,6 +13,7 @@ interface IKernelOptions {
   baseUrl: string;
   wsUrl?: string;
   username?: string;
+  clientId?: string;
 }
 
 export
@@ -123,6 +124,20 @@ interface IKernel {
   name: string;
 
   /**
+   * The client username.
+   *
+   * Read-only
+   */
+  username: string;
+
+  /**
+   * The client unique id.
+   *
+   * Read-only
+   */
+  clientId: string;
+
+  /**
    * The current status of the kernel.
    *
    * Read-only.
@@ -134,7 +149,7 @@ interface IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msgType: string, channel: string, content: any, metadata: any, buffers: ArrayBuffer[]): IKernelFuture;
+  sendMessage(msg: IKernelMessage): IKernelFuture;
 
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
