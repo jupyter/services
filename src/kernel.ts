@@ -83,9 +83,16 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
 /**
  * Connect to a running kernel.
  *
- * Wrap the result in an IKernel object. The promise is fulfilled
- * when the kernel is fully ready to send the first message. If
- * the kernel fails to become ready, the promise is rejected.
+ * If the kernel was already started via `startNewKernel`, the existing
+ * IKernel object is used as the fulfillment value.
+ *
+ * Otherwise, if `options` are given, we attempt to connect to the existing
+ * kernel.  The promise is fulfilled when the kernel is fully ready to send 
+ * the first message. If the kernel fails to become ready, the promise is 
+ * rejected.
+ *
+ * If the kernel was not already started and no `options` are given,
+ * the promise is rejected.
  */
 export
 function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
@@ -100,6 +107,11 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
 }
 
 
+/**
+ * Create a Promise for a Kernel object.
+ * 
+ * Fulfilled when the Kernel is Starting, or rejected if Dead.
+ */
 function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
   return new Promise<IKernel>((resolve, reject) => {
     var kernel = new Kernel(options, id);
@@ -127,7 +139,9 @@ class Kernel implements IKernel {
    */
   statusChanged: ISignal<KernelStatus>;
 
-
+  /**
+   * Construct a kernel object.
+   */
   constructor(options: IKernelOptions, id: string) {
     this._name = options.name;
     this._id = id;
@@ -267,6 +281,9 @@ class Kernel implements IKernel {
     logKernelStatus(this);
   }
 
+  /**
+   * Create the kernel websocket connection and add socket status handlers.
+   */
   private _createSocket() {
     var url = (this._wsUrl + 
       utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL, this._id, 'channels') +
@@ -298,7 +315,17 @@ class Kernel implements IKernel {
   private _handlerMap: Map<string, KernelFutureHandler> = null;
 }
 
+/**
+ * A module private store for running kernels.
+ */
+var runningKernels = new Map<string, IKernel>();
 
+
+/**
+ * Restart a kernel via API: POST /kernels/{kernel_id}/restart
+ *
+ * It is assumed that the API call does not mutate the kernel id or name.
+ */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status != KernelStatus.Idle) {
     return Promise.reject(void 0);
@@ -318,6 +345,9 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 }
 
 
+/**
+ * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
+ */
 function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(void 0);
@@ -336,6 +366,15 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 }
 
 
+/**
+ * Delete a kernel via API: DELETE /kernels/{kernel_id}
+ *
+ * If the given kernel id corresponds to an IKernel object, that
+ * object is disposed and its websocket connection is cleared.
+ *
+ * Any further calls to `sendMessage` for that IKernel will throw
+ * an exception.
+ */
 function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL, kernel.id);
   return utils.ajaxRequest(url, {
@@ -349,6 +388,9 @@ function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 }
 
 
+/**
+ * Log the current kernel status.
+ */
 function logKernelStatus(kernel: Kernel) {
   var msg = 'Kernel: ' + status + ' (' + kernel.id + ')';
   if (status === 'idle' || status === 'busy') {
@@ -359,6 +401,9 @@ function logKernelStatus(kernel: Kernel) {
 }
 
 
+/**
+ * Handle an error on a kernel Ajax call.
+ */
 function onKernelError(error: utils.IAjaxError) {
   console.error("API request failed (" + error.statusText + "): ");
   throw Error(error.statusText);
@@ -518,6 +563,3 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   private _reply: (msg: IKernelMessage) => void = null;
   private _done: (msg: IKernelMessage) => void = null;
 }
-
-
-var runningKernels = new Map<string, IKernel>();
