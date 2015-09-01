@@ -185,7 +185,7 @@ class Kernel implements IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msg_type: string, channel: string, content: any, metadata = {}, buffers: ArrayBuffer[] = []): IKernelFuture {
+  sendMessage(msgType: string, channel: string, content: any, metadata = {}, buffers: ArrayBuffer[] = []): IKernelFuture {
     if (this._status != KernelStatus.Idle) {
       throw Error('Cannot send a message to a closed Kernel');
     }
@@ -194,7 +194,7 @@ class Kernel implements IKernel {
         msg_id : utils.uuid(),
         username : this._username,
         session : this._clientId,
-        msg_type : msg_type,
+        msg_type : msgType,
         version : "5.0"
       },
       channel: channel,

@@ -134,7 +134,7 @@ interface IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msg_type: string, channel: string, content: any, metadata: any, buffers: ArrayBuffer[]): IKernelFuture;
+  sendMessage(msgType: string, channel: string, content: any, metadata: any, buffers: ArrayBuffer[]): IKernelFuture;
 
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
