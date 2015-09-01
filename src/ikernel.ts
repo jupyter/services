@@ -12,6 +12,7 @@ interface IKernelOptions {
   name: string;
   baseUrl: string;
   wsUrl?: string;
+  username?: string;
 }
 
 export
@@ -38,8 +39,8 @@ interface IKernelMessageHeader {
   username: string;
   version: string;
   session: string;
-  msgId: string;
-  msgType: string;
+  msg_id: string;
+  msg_type: string;
 }
 
 
@@ -49,16 +50,12 @@ interface IKernelMessageHeader {
 export
 interface IKernelMessage {
   header: IKernelMessageHeader;
-  parentHeader: IKernelMessageHeader | {};
+  parent_header: IKernelMessageHeader | {};
   metadata: any;
   content: any;
-  msgId?: string;
-  msgType?: string;
   channel?: string;
   buffers?: (ArrayBuffer | ArrayBufferView)[]
 }
-
-
 
 /**
  * Kernel information specification.
@@ -137,7 +134,7 @@ interface IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msg: IKernelMessage): IKernelFuture;
+  sendMessage(msg_type: string, channel: string, content: any, metadata: any, buffers: ArrayBuffer[]): IKernelFuture;
 
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
