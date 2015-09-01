@@ -2,16 +2,41 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IKernel, IKernelInfo, IKernelMessage } from './ikernel';
+import { 
+  IKernel, IKernelFuture, IKernelInfo, IKernelMessage 
+} from './ikernel';
 
 import * as utils from './utils';
+
+
+/**
+ * Contents of a 'complete_request' message.
+ */
+export
+interface ICompleteRequest {
+  code: string;
+  cursor_pos: string;
+}
+
+
+/**
+ * Contents of a 'complete_reply' message.
+ */
+export 
+interface ICompleteReply {
+  matches: string[];
+  cursor_start: number;
+  cursor_end: number;
+  metadata: any;
+  status: string;
+}
 
 
 /**
  * Contents of an 'inspect_request' message.
  */
 export
-interface IInspectOptions {
+interface IInspectRequest {
   code: string;
   cursor_pos: number;
   detail_level: number;
@@ -22,7 +47,7 @@ interface IInspectOptions {
  * Contents of an 'inspect_reply' message.
  */
 export
-interface IInspectResult {
+interface IInspectReply {
   status: string;
   data: any;
   metadata: any;
@@ -30,10 +55,20 @@ interface IInspectResult {
 
 
 /**
+ * Content of an 'is_complete_reply' message.
+ */
+export 
+interface IIsCompleteReply {
+  status: string;
+  indent: string;
+}
+
+
+/**
  * Contents of an 'execute_request' message.
  */
 export
-interface IExecuteOptions {
+interface IExecuteRequest {
   code: string;
   silent: boolean;
   store_history: boolean;
@@ -47,7 +82,7 @@ interface IExecuteOptions {
  * Contents of an 'execute_reply' message.
  */
 export
-interface IExecuteResult {
+interface IExecuteReply {
   execution_count: number;
   data: any;
   metadata: any;
@@ -72,17 +107,34 @@ function infoRequest(kernel: IKernel): Promise<IKernelInfo> {
 
 
 /**
+ * Send an "complete_request" message.
+ *
+ * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
+ */
+export
+function completeRequest(kernel: IKernel, options: ICompleteRequest): Promise<ICompleteReply> {
+  var msg = createMessage(kernel, 'complete_request', 'shell', options);
+  var future = kernel.sendMessage(msg);
+  return new Promise<ICompleteReply>((resolve, reject) => {
+    future.onReply = (msg: IKernelMessage) => {
+      resolve(<ICompleteReply>msg.content);
+    }
+  });
+}
+
+
+/**
  * Send an "inspect_request" message.
  *
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
  */
 export
-function inspectRequest(kernel: IKernel, options: IInspectOptions): Promise<IInspectResult> {
+function inspectRequest(kernel: IKernel, options: IInspectRequest): Promise<IInspectReply> {
   var msg = createMessage(kernel, 'inspect_request', 'shell', options);
   var future = kernel.sendMessage(msg);
-  return new Promise<IInspectResult>((resolve, reject) => {
+  return new Promise<IInspectReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
-      resolve(<IInspectResult>msg.content);
+      resolve(<IInspectReply>msg.content);
     }
   });
 }
@@ -93,12 +145,25 @@ function inspectRequest(kernel: IKernel, options: IInspectOptions): Promise<IIns
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
  */
 export
-function executeRequest(kernel: IKernel, options: IExecuteOptions): Promise<IExecuteResult> {
+function executeRequest(kernel: IKernel, options: IExecuteRequest): IKernelFuture {
   var msg = createMessage(kernel, 'execute_request', 'shell', options);
+  return kernel.sendMessage(msg);
+}
+
+
+/**
+ * Send an "is_complete_request" message.
+ *
+ * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
+ */
+export
+function isCompleteRequest(kernel: IKernel, code: string): Promise<IIsCompleteReply> {
+  var content = { code: code };
+  var msg = createMessage(kernel, 'is_complete_request', 'shell', content);
   var future = kernel.sendMessage(msg);
-  return new Promise<IExecuteResult>((resolve, reject) => {
+  return new Promise<IIsCompleteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
-      resolve(<IExecuteResult>msg.content);
+      resolve(<IIsCompleteReply>msg.content);
     }
   });
 }
