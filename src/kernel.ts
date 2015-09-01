@@ -148,14 +148,13 @@ class Kernel implements IKernel {
     this._baseUrl = options.baseUrl;
     this._clientId = utils.uuid();
     this._handlerMap = new Map<string, KernelFutureHandler>();
-    this._wsUrl = options.wsUrl;
-    if (!this._wsUrl) {
+    if (!options.wsUrl) {
       // trailing 's' in https will become wss for secure web sockets
-      this._wsUrl = (
+      options.wsUrl = (
         location.protocol.replace('http', 'ws') + "//" + location.host
       );
     }
-    this._createSocket();
+    this._createSocket(options.wsUrl);
   }
 
   /**
@@ -231,25 +230,47 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Handle an incoming Websocket message.
+   * Create the kernel websocket connection and add socket status handlers.
    */
-  private _handleMessage(evt: MessageEvent): void {
-    try {
-      var msg = serialize.deserialize(evt.data);
-    } catch (error) {
-      console.error(error.message);
-      return;
-    }
-    if (msg.channel === 'iopub' && msg.msgType === 'status') {
-      this._handleStatusMessage(msg.content.executionstate);
-    }
-    if (msg.parentHeader) {
-      var header = (<IKernelMessageHeader>msg.parentHeader);
-      var future = this._handlerMap.get(header.msgId);
-      if (future) {
-        future.handleMsg(msg);
+  private _createSocket(wsUrl: string) {
+    var url = (
+      wsUrl + 
+      utils.urlJoinEncode(
+        this._baseUrl, KERNEL_SERVICE_URL, this._id, 'channels'
+      ) + 
+      '?session_id=' + this._clientId
+    );
+
+    this._ws = new WebSocket(url);
+    // Ensure incoming binary messages are not Blobs
+    this._ws.binaryType = 'arraybuffer';
+
+    this._ws.onmessage = (evt: MessageEvent) => {
+      try {
+        var msg = serialize.deserialize(evt.data);
+      } catch (error) {
+        console.error(error.message);
+        return;
+      }
+      if (msg.channel === 'iopub' && msg.msgType === 'status') {
+        this._handleStatusMessage(msg.content.executionstate);
+      }
+      if (msg.parentHeader) {
+        var header = (<IKernelMessageHeader>msg.parentHeader);
+        var future = this._handlerMap.get(header.msgId);
+        if (future) {
+          future.handleMsg(msg);
+        }
       }
     }
+
+    this._ws.onclose = () => {
+      this._status = KernelStatus.Dead;
+      this.statusChanged.emit(this._status);
+      logKernelStatus(this);
+    }
+
+    this._ws.onerror = this._ws.onclose;
   }
 
   /**
@@ -278,34 +299,9 @@ class Kernel implements IKernel {
     logKernelStatus(this);
   }
 
-  /**
-   * Create the kernel websocket connection and add socket status handlers.
-   */
-  private _createSocket() {
-    var url = (this._wsUrl + 
-      utils.urlJoinEncode(this._baseUrl, KERNEL_SERVICE_URL, this._id, 'channels') +
-      '?session_id=' + this._clientId
-    );
-
-    this._ws = new WebSocket(url);
-    // Ensure incoming binary messages are not Blobs
-    this._ws.binaryType = 'arraybuffer';
-
-    this._ws.onmessage = (evt: MessageEvent) => {
-      this._handleMessage(evt);
-    };
-
-    this._ws.onclose = () => {
-      this._status = KernelStatus.Dead;
-      this.statusChanged.emit(this._status);
-      logKernelStatus(this);
-    }
-  }
-
   private _id = '';
   private _name = '';
   private _baseUrl = '';
-  private _wsUrl = '';
   private _status = KernelStatus.Unknown;
   private _clientId = '';
   private _ws: WebSocket = null;
