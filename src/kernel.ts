@@ -118,6 +118,7 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
     var callback = (status: KernelStatus) => {
       if (status === KernelStatus.Starting) {
         kernel.statusChanged.disconnect(callback);
+        runningKernels.set(kernel.id, kernel);
         resolve(kernel);
       } else if (status === KernelStatus.Dead) {
         kernel.statusChanged.disconnect(callback);
