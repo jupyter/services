@@ -148,17 +148,24 @@ function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IIn
   });
 }
 
+
 /**
  * Send an "execute_request" message.
  *
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
  */
 export
-function executeRequest(kernel: IKernel, contents: IExecuteRequest): IKernelFuture {
+function executeRequest(kernel: IKernel, contents: IExecuteRequest, onInput?: (msg: IKernelMessage) => void, onOutput?: (msg: IKernelMessage) => void): Promise<IExecuteReply> {
   var msg = createMessage(kernel, 'execute_request', 'shell', contents);
-  return kernel.sendMessage(msg);
+  var future = kernel.sendMessage(msg);
+  if (onInput) future.onInput = onInput;
+  if (onOutput) future.onOutput = onOutput;
+  return new Promise<IExecuteReply>((resolve, reject) => {
+    future.onReply = (msg: IKernelMessage) => {
+      resolve(<IExecuteReply>msg.content);
+    }
+  });
 }
-
 
 /**
  * Send an "is_complete_request" message.
