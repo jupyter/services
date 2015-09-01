@@ -55,7 +55,16 @@ interface IInspectReply {
 
 
 /**
- * Content of an 'is_complete_reply' message.
+ * Contents of an 'is_complete_request' message.
+ */
+export 
+interface IIsCompleteRequest {
+  code: string;
+}
+
+
+/**
+ * Contents of an 'is_complete_reply' message.
  */
 export 
 interface IIsCompleteReply {
@@ -107,13 +116,13 @@ function infoRequest(kernel: IKernel): Promise<IKernelInfo> {
 
 
 /**
- * Send an "complete_request" message.
+ * Send a "complete_request" message.
  *
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
  */
 export
-function completeRequest(kernel: IKernel, options: ICompleteRequest): Promise<ICompleteReply> {
-  var msg = createMessage(kernel, 'complete_request', 'shell', options);
+function completeRequest(kernel: IKernel, contents: ICompleteRequest): Promise<ICompleteReply> {
+  var msg = createMessage(kernel, 'complete_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<ICompleteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -129,8 +138,8 @@ function completeRequest(kernel: IKernel, options: ICompleteRequest): Promise<IC
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
  */
 export
-function inspectRequest(kernel: IKernel, options: IInspectRequest): Promise<IInspectReply> {
-  var msg = createMessage(kernel, 'inspect_request', 'shell', options);
+function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IInspectReply> {
+  var msg = createMessage(kernel, 'inspect_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<IInspectReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -145,8 +154,8 @@ function inspectRequest(kernel: IKernel, options: IInspectRequest): Promise<IIns
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
  */
 export
-function executeRequest(kernel: IKernel, options: IExecuteRequest): IKernelFuture {
-  var msg = createMessage(kernel, 'execute_request', 'shell', options);
+function executeRequest(kernel: IKernel, contents: IExecuteRequest): IKernelFuture {
+  var msg = createMessage(kernel, 'execute_request', 'shell', contents);
   return kernel.sendMessage(msg);
 }
 
@@ -157,9 +166,8 @@ function executeRequest(kernel: IKernel, options: IExecuteRequest): IKernelFutur
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
  */
 export
-function isCompleteRequest(kernel: IKernel, code: string): Promise<IIsCompleteReply> {
-  var content = { code: code };
-  var msg = createMessage(kernel, 'is_complete_request', 'shell', content);
+function isCompleteRequest(kernel: IKernel, contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
+  var msg = createMessage(kernel, 'is_complete_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<IIsCompleteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
