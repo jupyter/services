@@ -12,7 +12,6 @@ interface IKernelOptions {
   name: string;
   baseUrl: string;
   wsUrl?: string;
-  websocket?: WebSocket;
 }
 
 export
@@ -93,10 +92,12 @@ interface IKernelLanguageInfo {
 
 export
 enum KernelStatus {
-  Connecting,
-  Open,
-  Closing,
-  Closed = 3
+  Unknown,
+  Starting,
+  Idle,
+  Busy,
+  Restarting,
+  Dead
 }
 
 
@@ -116,13 +117,6 @@ interface IKernel {
    * Read-only
    */
   id: string;
-
-  /**
-   * The information about the kernel.
-   *
-   * Read-only.
-   */
-  info: IKernelInfo;
 
   /**
    * The name of the server-side kernel.
