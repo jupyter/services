@@ -92,7 +92,7 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
     return Promise.resolve(kernel);
   }
   if (options === void 0) {
-    return Promise.reject(<IKernel>void 0);
+    return Promise.reject(new Error('Please specify kernel options'));
   }
   return createKernel(options, id);
 }
@@ -113,7 +113,7 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
         resolve(kernel);
       } else if (status === KernelStatus.Dead) {
         kernel.statusChanged.disconnect(callback);
-        reject(<IKernel>void 0);
+        reject(new Error('Kernel failed to start'));
       }
     }
     kernel.statusChanged.connect(callback);
@@ -129,6 +129,7 @@ class Kernel implements IKernel {
   /**
    * A signal emitted when the kernel status changes.
    */
+  @defineSignal
   statusChanged: ISignal<KernelStatus>;
 
   /**
@@ -141,12 +142,6 @@ class Kernel implements IKernel {
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
-    if (!options.wsUrl) {
-      // trailing 's' in https will become wss for secure web sockets
-      options.wsUrl = (
-        location.protocol.replace('http', 'ws') + "//" + location.host
-      );
-    }
     this._createSocket(options.wsUrl);
   }
 
@@ -195,7 +190,7 @@ class Kernel implements IKernel {
    * The future object will yield the result when available.
    */
   sendMessage(msg: IKernelMessage): IKernelFuture {
-    if (this._status != KernelStatus.Idle) {
+    if (this._status === KernelStatus.Dead) {
       throw Error('Cannot send a message to a closed Kernel');
     }
 
@@ -254,6 +249,12 @@ class Kernel implements IKernel {
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket(wsUrl: string) {
+    if (!wsUrl) {
+      // trailing 's' in https will become wss for secure web sockets
+      wsUrl = (
+        location.protocol.replace('http', 'ws') + "//" + location.host
+      );
+    }
     var url = (
       wsUrl + 
       utils.urlJoinEncode(
@@ -344,7 +345,7 @@ var runningKernels = new Map<string, IKernel>();
  * It is assumed that the API call does not mutate the kernel id or name.
  */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  if (kernel.status != KernelStatus.Idle) {
+  if (kernel.status !== KernelStatus.Idle) {
     return Promise.reject(void 0);
   }
   var url = utils.urlJoinEncode(
