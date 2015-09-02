@@ -7,7 +7,9 @@ import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { 
-  IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
+  ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
+  IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
+  IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
   IKernelMessageHeader, IKernelOptions, KernelStatus
 } from './ikernel';
 
@@ -21,7 +23,7 @@ import * as validate from './validate';
 /**
  * The url for the kernel service.
  */
-var KERNEL_SERVICE_URL = 'api/kernel';
+var KERNEL_SERVICE_URL = 'api/kernels';
 
 
 /**
@@ -51,12 +53,12 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
 /**
  * Start a new kernel via API: POST /kernels
  *
- * Wrap the result in an IKernel object. The promise is fulfilled
+ * Wrap the result in an Kernel object. The promise is fulfilled
  * when the kernel is fully ready to send the first message. If
  * the kernel fails to become ready, the promise is rejected.
  */
 export
-function startNewKernel(options: IKernelOptions): Promise<IKernel> {
+function startNewKernel(options: IKernelOptions): Promise<Kernel> {
   var url = utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
@@ -75,7 +77,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  * Connect to a running kernel.
  *
  * If the kernel was already started via `startNewKernel`, the existing
- * IKernel object is used as the fulfillment value.
+ * Kernel object is used as the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * kernel.  The promise is fulfilled when the kernel is fully ready to send 
@@ -86,7 +88,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  * the promise is rejected.
  */
 export
-function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
+function connectToKernel(id: string, options?: IKernelOptions): Promise<Kernel> {
   var kernel = runningKernels.get(id);
   if (kernel) {
     return Promise.resolve(kernel);
@@ -108,8 +110,8 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
  * 
  * Fulfilled when the Kernel is Starting, or rejected if Dead.
  */
-function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
-  return new Promise<IKernel>((resolve, reject) => {
+function createKernel(options: IKernelOptions, id: string): Promise<Kernel> {
+  return new Promise<Kernel>((resolve, reject) => {
     var kernel = new Kernel(options, id);
     var callback = (status: KernelStatus) => {
       if (status === KernelStatus.Starting) {
@@ -129,7 +131,8 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
 /**
  * Implementation of the Kernel object
  */
-class Kernel implements IKernel {
+export
+class Kernel {
 
   /**
    * A signal emitted when the kernel status changes.
@@ -229,16 +232,68 @@ class Kernel implements IKernel {
   /**
    * Delete a kernel via API: DELETE /kernels/{kernel_id}
    *
-   * If the given kernel id corresponds to an IKernel object, that
+   * If the given kernel id corresponds to an Kernel object, that
    * object is disposed and its websocket connection is cleared.
    *
-   * Any further calls to `sendMessage` for that IKernel will throw
+   * Any further calls to `sendMessage` for that Kernel will throw
    * an exception.
    */
   shutdown(): Promise<void> {
     return shutdownKernel(this, this._baseUrl).then(() => {
       this._ws.close();
     });
+  }
+
+  /**
+   * Send a "kernel_info_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
+   */
+  infoRequest(): Promise<IKernelInfo> {
+    var msg = createKernelMessage(this, 'kernel_info_request', 'shell');
+    return sendKernelMessage(this, msg);
+  }
+
+  /**
+   * Send a "complete_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
+   */
+  completeRequest(contents: ICompleteRequest): Promise<ICompleteReply> {
+    var msg = createKernelMessage(this, 'complete_request', 'shell', contents);
+    return sendKernelMessage(this, msg);
+  }
+
+  /**
+   * Send an "inspect_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
+   */
+  inspectRequest(contents: IInspectRequest): Promise<IInspectReply> {
+    var msg = createKernelMessage(this, 'inspect_request', 'shell', contents);
+    return sendKernelMessage(this, msg);
+  }
+
+  /**
+   * Send an "execute_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
+   */
+  executeRequest(contents: IExecuteRequest): IKernelFuture {
+    var msg = createKernelMessage(this, 'execute_request', 'shell', contents);
+    return this.sendMessage(msg);
+  }
+
+  /**
+   * Send an "is_complete_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
+   */
+  isCompleteRequest(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
+    var msg = createKernelMessage(
+      this, 'is_complete_request', 'shell', contents
+    );
+    return sendKernelMessage(this, msg);
   }
 
   /**
@@ -336,7 +391,7 @@ class Kernel implements IKernel {
 /**
  * A module private store for running kernels.
  */
-var runningKernels = new Map<string, IKernel>();
+var runningKernels = new Map<string, Kernel>();
 
 
 /**
@@ -344,7 +399,7 @@ var runningKernels = new Map<string, IKernel>();
  *
  * It is assumed that the API call does not mutate the kernel id or name.
  */
-function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+function restartKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -366,7 +421,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 /**
  * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
  */
-function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+function interruptKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -387,13 +442,13 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 /**
  * Delete a kernel via API: DELETE /kernels/{kernel_id}
  *
- * If the given kernel id corresponds to an IKernel object, that
+ * If the given kernel id corresponds to an Kernel object, that
  * object is disposed and its websocket connection is cleared.
  *
- * Any further calls to `sendMessage` for that IKernel will throw
+ * Any further calls to `sendMessage` for that Kernel will throw
  * an exception.
  */
-function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -412,7 +467,7 @@ function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 /**
  * Log the current kernel status.
  */
-function logKernelStatus(kernel: IKernel): void {
+function logKernelStatus(kernel: Kernel): void {
   if (kernel.status == KernelStatus.Idle || 
       kernel.status === KernelStatus.Busy ||
       kernel.status === KernelStatus.Unknown) {
@@ -440,6 +495,41 @@ function logKernelStatus(kernel: IKernel): void {
 function onKernelError(error: utils.IAjaxError): any {
   console.error("API request failed (" + error.statusText + "): ");
   throw Error(error.statusText);
+}
+
+
+/**
+ * Create a well-formed Kernel Message.
+ */
+export
+function createKernelMessage(kernel: Kernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
+  return {
+    header: {
+      username: kernel.username,
+      version: '5.0',
+      session: kernel.clientId,
+      msg_id: utils.uuid(),
+      msg_type: msgType
+    },
+    parent_header: { },
+    channel: channel,
+    content: content,
+    metadata: metadata,
+    buffers: buffers
+  }
+}
+
+
+/**
+ * Send a kernel message to the kernel and return the contents of the response.
+ */
+function sendKernelMessage(kernel: Kernel, msg: IKernelMessage): Promise<any> {
+  var future = kernel.sendMessage(msg);
+  return new Promise<IKernelInfo>((resolve, reject) => {
+    future.onReply = (msg: IKernelMessage) => {
+      resolve(<IKernelInfo>msg.content);
+    }
+  });
 }
 
 
