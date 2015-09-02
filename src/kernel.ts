@@ -267,14 +267,14 @@ class Kernel implements IKernel {
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
 
-    this._ws.onmessage = (evt: MessageEvent) => {
-      try {
-        var msg = serialize.deserialize(evt.data);
-      } catch (error) {
-        console.error(error.message);
-        return;
-      }
-      if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
+    this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
+    this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
+    this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
+  }
+
+  private _onWSMessage(evt: MessageEvent) {
+    var msg = serialize.deserialize(evt.data);
+          if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
         this._handleStatusMessage(msg.content.executionstate);
       }
       if (msg.parent_header) {
@@ -284,23 +284,21 @@ class Kernel implements IKernel {
           future.handleMsg(msg);
         }
       }
-    }
+  }
 
-    this._ws.onclose = () => {
-      this._status = KernelStatus.Dead;
-      this.statusChanged.emit(this._status);
-      logKernelStatus(this);
-      runningKernels.delete(this._id);
-    }
-
-    this._ws.onerror = this._ws.onclose;
+  private _onWSClose(evt: Event) {
+    this._status = KernelStatus.Dead;
+    this.statusChanged.emit(this._status);
+    logKernelStatus(this);
+    runningKernels.delete(this._id);
   }
 
   /**
    * Handle status iopub messages from the kernel.
    */
   private _handleStatusMessage(state: string): void {
-    if (state === 'dead') {
+    var prevStatus = this._status;
+    if (state === 'dead' && prevStatus !== KernelStatus.Dead) {
       this._ws.close();
       return;
     }
@@ -318,8 +316,10 @@ class Kernel implements IKernel {
         this._status = KernelStatus.Restarting;
         break;
     }
-    this.statusChanged.emit(this._status);
-    logKernelStatus(this);
+    if (this._status !== prevStatus) {
+      this.statusChanged.emit(this._status);
+      logKernelStatus(this);
+    }
   }
 
   private _id = '';
@@ -345,8 +345,8 @@ var runningKernels = new Map<string, IKernel>();
  * It is assumed that the API call does not mutate the kernel id or name.
  */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  if (kernel.status !== KernelStatus.Idle) {
-    return Promise.reject(void 0);
+  if (kernel.status === KernelStatus.Dead) {
+    return Promise.reject(new Error('Kernel is dead'));
   }
   var url = utils.urlJoinEncode(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'restart'
@@ -368,7 +368,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
  */
 function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
-    return Promise.reject(void 0);
+    return Promise.reject(new Error('Kernel is dead'));
   }
   var url = utils.urlJoinEncode(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'interrupt'
@@ -394,6 +394,9 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
  * an exception.
  */
 function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+  if (kernel.status === KernelStatus.Dead) {
+    return Promise.reject(new Error('Kernel is dead'));
+  }
   var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL, kernel.id);
   return utils.ajaxRequest(url, {
     method: "DELETE",
@@ -429,13 +432,25 @@ function getKernelInfo(kernel: IKernel, baseUrl: string): Promise<IKernelInfo> {
 /**
  * Log the current kernel status.
  */
-function logKernelStatus(kernel: Kernel) {
-  var msg = 'Kernel: ' + status + ' (' + kernel.id + ')';
-  if (status === 'idle' || status === 'busy') {
-    // console.log(msg);
-  } else {
-    console.log(msg);
+function logKernelStatus(kernel: IKernel): void {
+  if (kernel.status == KernelStatus.Idle || 
+      kernel.status === KernelStatus.Busy ||
+      kernel.status === KernelStatus.Unknown) {
+    return;
   }
+  var status = '';
+  switch (kernel.status) {
+    case KernelStatus.Starting:
+      status = 'starting';
+      break;
+    case KernelStatus.Restarting:
+      status = 'restarting';
+      break;
+    case KernelStatus.Dead:
+      status = 'dead';
+      break;
+  }
+  var msg = 'Kernel: ' + status + ' (' + kernel.id + ')';
 }
 
 
@@ -497,28 +512,56 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   /**
-   * Register a reply handler. Returns `this`.
+   * Get the reply handler.
+   */
+  get onReply(): (msg: IKernelMessage) => void {
+    return this._reply;
+  }
+
+  /**
+   * Set the reply handler.
    */
   set onReply(cb: (msg: IKernelMessage) => void) {
     this._reply = cb;
   }
 
+  /** 
+   * Get the output handler.
+   */
+  get onOutput(): (msg: IKernelMessage) => void {
+    return this._output;
+  }
+
   /**
-   * Register an output handler. Returns `this`.
+   * Set the output handler.
    */
   set onOutput(cb: (msg: IKernelMessage) => void) {
     this._output = cb;
   }
 
   /**
-   * Register a done handler. Returns `this`.
+   * Get the done handler.
+   */
+  get onDone(): (msg: IKernelMessage) => void  {
+    return this._done;
+  }
+
+  /**
+   * Set the done handler.
    */
   set onDone(cb: (msg: IKernelMessage) => void) {
     this._done = cb;
   }
 
   /**
-   * Register an input handler. Returns `this`.
+   * Get the input handler.
+   */
+  get onInput(): (msg: IKernelMessage) => void {
+    return this._input;
+  }
+
+  /**
+   * Set the input handler.
    */
   set onInput(cb: (msg: IKernelMessage) => void) {
     this._input = cb;
@@ -566,6 +609,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
    * Handle a message done status.
    */
   private _handleDone(msg: IKernelMessage): void {
+    if (this.isDone) {
+      return;
+    }
     this._setFlag(KernelFutureFlag.IsDone);
     var done = this._done;
     if (done) done(msg);
