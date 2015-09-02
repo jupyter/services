@@ -82,21 +82,21 @@ omit the type declarations when using a language other than TypeScript.
 
 ```typescript
 import {
-  IContentsModel, ICheckpointModel, Contents
+  Contents
 } from 'jupyter-js-services';
 
 var contents = new Contents('http://localhost:8000');
 
 // create a new python file
 contents.newUntitled("/foo", { type: "file", ext: "py" }).then(
-  (model: IContentsModel) => {
+  (model) => {
     console.log(model.path);
   }
 );
 
 // get the contents of a directory
 contents.get("/foo", { type: "directory", name: "bar" }).then(
-  (model: IContentsModel) => {
+  (model) => {
     var files = model.content;
   }
 )
@@ -111,23 +111,23 @@ contents.save("/foo", { type: "file", name: "test.py" });
 contents.delete("/foo/bar.txt");
 
 // copy a file
-contents.copy("/foo/bar.txt", "/baz").then((model: IContentsModel) => {
+contents.copy("/foo/bar.txt", "/baz").then((model) => {
     var newPath = model.path;
 });
 
 // create a checkpoint
-contents.createCheckpoint("/foo/bar.ipynb").then((model: ICheckpointModel) => {
-    var checkpoint = model;
-}
+contents.createCheckpoint("/foo/bar.ipynb").then((model) => {
+  var checkpoint = model;
 
-// restore a checkpoint
-contents.restoreCheckpoint("/foo/bar.ipynb", checkpoint.id);
+  // restore a checkpoint
+  contents.restoreCheckpoint("/foo/bar.ipynb", checkpoint.id);
 
-// delete a checkpoint
-contents.deleteCheckpoint("/foo/bar.ipynb", checkpoint.id);
+  // delete a checkpoint
+  contents.deleteCheckpoint("/foo/bar.ipynb", checkpoint.id);
+});
 
 // list checkpoints for a file
-contents.listCheckpoints("/foo/bar.txt").then((models: ICheckpointModel[]) => {
+contents.listCheckpoints("/foo/bar.txt").then((models) => {
     console.log(models[0].id);
 });
 ```
@@ -136,7 +136,7 @@ contents.listCheckpoints("/foo/bar.txt").then((models: ICheckpointModel[]) => {
 
 ```typescript
 import {
-  ConfigSection, ConfigWithDefaults;
+  ConfigSection, ConfigWithDefaults
 } from 'jupyter-js-services';
 
 var section = new ConfigSection('mySection', 'http://localhost:8000');
