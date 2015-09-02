@@ -15,7 +15,7 @@ import * as utils from './utils';
 export
 interface ICompleteRequest {
   code: string;
-  cursor_pos: string;
+  cursor_pos: number;
 }
 
 

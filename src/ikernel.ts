@@ -168,13 +168,6 @@ interface IKernel {
    * an exception.
    */
   shutdown(): Promise<void>;
-
-  /**
-   * Get kernel info by id via: GET /api/kernels/[:kernel_id]
-   *
-   * Get information about the kernel.
-   */
-  getInfo(): Promise<IKernelInfo>;
 }
 
 

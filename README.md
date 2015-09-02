@@ -231,7 +231,7 @@ kernel.shutdown();
 
 ```
 
-**NoteBookSession**
+**NotebookSession**
 
 ```typescript
 import {
