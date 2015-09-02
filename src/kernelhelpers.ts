@@ -120,7 +120,7 @@ interface IKernelCallbacks {
  */
 export
 function infoRequest(kernel: IKernel): Promise<IKernelInfo> {
-  var msg = createMessage(kernel, 'kernel_info_request', 'shell');
+  var msg = createKernelMessage(kernel, 'kernel_info_request', 'shell');
   var future = kernel.sendMessage(msg);
   return new Promise<IKernelInfo>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -137,7 +137,7 @@ function infoRequest(kernel: IKernel): Promise<IKernelInfo> {
  */
 export
 function completeRequest(kernel: IKernel, contents: ICompleteRequest): Promise<ICompleteReply> {
-  var msg = createMessage(kernel, 'complete_request', 'shell', contents);
+  var msg = createKernelMessage(kernel, 'complete_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<ICompleteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -154,7 +154,7 @@ function completeRequest(kernel: IKernel, contents: ICompleteRequest): Promise<I
  */
 export
 function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IInspectReply> {
-  var msg = createMessage(kernel, 'inspect_request', 'shell', contents);
+  var msg = createKernelMessage(kernel, 'inspect_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<IInspectReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -171,7 +171,7 @@ function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IIn
  */
 export
 function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: IKernelCallbacks): Promise<IExecuteReply> {
-  var msg = createMessage(kernel, 'execute_request', 'shell', contents);
+  var msg = createKernelMessage(kernel, 'execute_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   if (callbacks) {
     if (callbacks.onInput) future.onInput = callbacks.onInput;
@@ -186,6 +186,7 @@ function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: 
   });
 }
 
+
 /**
  * Send an "is_complete_request" message.
  *
@@ -193,7 +194,7 @@ function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: 
  */
 export
 function isCompleteRequest(kernel: IKernel, contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
-  var msg = createMessage(kernel, 'is_complete_request', 'shell', contents);
+  var msg = createKernelMessage(kernel, 'is_complete_request', 'shell', contents);
   var future = kernel.sendMessage(msg);
   return new Promise<IIsCompleteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
@@ -206,7 +207,8 @@ function isCompleteRequest(kernel: IKernel, contents: IIsCompleteRequest): Promi
 /**
  * Create a well-formed Kernel Message.
  */
-function createMessage(kernel: IKernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
+export
+function createKernelMessage(kernel: IKernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
   return {
     header: {
       username: kernel.username,
