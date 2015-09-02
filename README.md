@@ -78,6 +78,7 @@ Usage Examples
 **Note:** This module is fully compatible with Node/Babel/ES6/ES5. Simply
 omit the type declarations when using a language other than TypeScript.
 
+
 **Contents**
 
 ```typescript
@@ -166,4 +167,92 @@ config.set('fizz', 'bazz');  // sets section.data.mySubSection.fizz = 'bazz'
 
 ```
 
+**Kernel**
 
+```typescript
+import {
+  IKernelFuture, IKernelId, IKernelInfo, IKernelMsg, Kernel
+} from 'jupyter-js-services';
+
+// get a list of available sessions
+var listPromise = Kernel.list('http://localhost:8000');
+
+// start a specific session
+var kernel = NotebookSession('http://localhost:8000');
+listPromise.then((kernelList: IKernelId[]) => {
+  kernel.start(kernelList[0]);
+});
+
+// send a message and get replies
+kernel.onReady.then(() => {
+  var future: IKernelFuture = kernel.execute('a = 1');
+  future.onDone(() => {
+    console.log('Future is fulfilled');
+  });
+  future.onOutput((msg: IKernelMsg) => {
+    console.log(msg.content);  // rich output data
+  });
+});
+
+// restart the kernel and send an inspect message
+kernel.restart().then(() => {
+  var future = kernel.inspect('hello', 5);
+  future.onReply((msg: IKernelMsg) => {
+    console.log(msg.content);
+  });
+});
+
+// interrupt the kernel and send a complete message
+kernel.interrupt().then(() => {
+  var future = kernel.complete('impor', 4);
+  future.onReply((msg: IKernelMsg) => {
+    console.log(msg.content);
+  });
+});
+
+// register a callback for when the kernel changes state
+kernel.statusChanged.connect((status: string) => {
+  console.log('status', status);
+});
+
+// kill the kernel
+kernel.delete();
+
+```
+
+**NoteBookSession**
+
+```typescript
+import {
+  ISessionId, ISessionOptions, NotebookSession
+} from 'jupyter-js-services';
+
+// get a list of available sessions
+var listPromise = NotebookSession.list('http://localhost:8000');
+
+// start a specific session
+var session = NotebookSession('http://localhost:8000');
+listPromise.then((sessionList: ISessionId[]) => {
+  session.start(sessionList[0]);
+});
+
+// restart a session and send a complete message to the kernel
+session.restart().then(() => {
+  var future = session.kernel.complete('impor', 4);
+  future.onReply((msg: IKernelMsg) => {
+    console.log(msg.content);
+  });
+});
+
+// rename the notebook
+session.renameNotbook('/path/to/notebook.ipynb');
+
+// register a callback for when the session changes state
+session.statusChanged.connect((status: string) => {
+  console.log('status', status);
+});
+
+// kill the session
+session.delete();
+
+```
