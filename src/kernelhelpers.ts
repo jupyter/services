@@ -100,12 +100,16 @@ interface IExecuteReply {
 
 /**
  * Callbacks for a kernel message.
+ *
+ * 'autoDispose' defaults to true, which means that no further callbacks
+ * for the message will trigger after 'onDone'.
  */
 export
 interface IKernelCallbacks {
   onInput?: (msg: IKernelMessage) => void;
   onOutput?: (msg: IKernelMessage) => void;
   onDone?: (msg: IKernelMessage) => void;
+  autoDispose?: boolean;
 }
 
 
@@ -173,6 +177,7 @@ function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: 
     if (callbacks.onInput) future.onInput = callbacks.onInput;
     if (callbacks.onOutput) future.onOutput = callbacks.onOutput;
     if (callbacks.onDone) future.onDone = callbacks.onDone;
+    if (callbacks.autoDispose === false) callbacks.autoDispose = false;
   }
   return new Promise<IExecuteReply>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {

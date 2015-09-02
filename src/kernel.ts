@@ -8,7 +8,7 @@ import { ISignal, defineSignal } from 'phosphor-signaling';
 
 import { 
   IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
-  IKernelMessageHeader, IKernelOptions, IKernelSpecs, KernelStatus
+  IKernelMessageHeader, IKernelOptions, KernelStatus
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -45,15 +45,6 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
     }
     return <IKernelId[]>success.data;
   });
-}
-
-
-/**
- * Fetch the kernel specs via API: GET /kernelspecs
- */
-export
-function listKernelSpecs(): Promise<IKernelSpecs> {
-  return null;
 }
 
 
@@ -251,6 +242,15 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Get kernel info via: GET /kernels/{kernel_id}
+   *
+   * Get information about the kernel.
+   */
+  getInfo(): Promise<IKernelInfo> {
+    return getKernelInfo(this, this._baseUrl);
+  }
+
+  /**
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket(wsUrl: string) {
@@ -406,6 +406,26 @@ function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 
 
 /**
+ * Get kernel info by id via: GET /api/kernels/[:kernel_id]
+ *
+ * Get information about the kernel.
+ */
+function getKernelInfo(kernel: IKernel, baseUrl: string): Promise<IKernelInfo> {
+  var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL, kernel.id);
+  return utils.ajaxRequest(url, {
+    method: "GET",
+    dataType: "json"
+  }).then((success: utils.IAjaxSuccess) => {
+    if (success.xhr.status !== 200) {
+      throw Error('Invalid Status: ' + success.xhr.status);
+    }
+    validate.validateKernelId(success.data);
+    return <IKernelInfo>success.data;
+  }, onKernelError);
+}
+
+
+/**
  * Log the current kernel status.
  */
 function logKernelStatus(kernel: Kernel) {
@@ -421,7 +441,7 @@ function logKernelStatus(kernel: Kernel) {
 /**
  * Handle an error on a kernel Ajax call.
  */
-function onKernelError(error: utils.IAjaxError) {
+function onKernelError(error: utils.IAjaxError): any {
   console.error("API request failed (" + error.statusText + "): ");
   throw Error(error.statusText);
 }
