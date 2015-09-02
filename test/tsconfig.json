@@ -17,6 +17,8 @@
     "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "src/mocksocket.ts",
     "src/mockxhr.ts",
+    "src/testconfig.ts",
+    "src/testcontents.ts",
     "src/testkernel.ts",
     "src/testsession.ts",
     "src/testmocksocket.ts",
