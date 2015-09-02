@@ -95,12 +95,10 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
     return Promise.reject(new Error('Please specify kernel options'));
   }
   return listRunningKernels(options.baseUrl).then((kernelIds) => {
-    for (var i = 0; i < kernelIds.length; i++) {
-      if (kernelIds[i].id === id) {
-        return createKernel(options, id);
-      }
+    if (!kernelIds.some(k => k.id === id)) {
+      throw new Error('No running kernel with id: ' + id);
     }
-    throw new Error('No running kernel with id: ' + id);
+    return createKernel(options, id);
   });
 }
 
@@ -244,15 +242,6 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Get kernel info via: GET /kernels/{kernel_id}
-   *
-   * Get information about the kernel.
-   */
-  getInfo(): Promise<IKernelInfo> {
-    return getKernelInfo(this, this._baseUrl);
-  }
-
-  /**
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket(wsUrl: string) {
@@ -282,7 +271,7 @@ class Kernel implements IKernel {
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
     if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
-      this._handleStatusMessage(msg.content.executionstate);
+      this._updateStatus(msg.content.executionstate);
     }
     if (msg.parent_header) {
       var header = (<IKernelMessageHeader>msg.parent_header);
@@ -294,18 +283,13 @@ class Kernel implements IKernel {
   }
 
   private _onWSClose(evt: Event) {
-    if (this._status !== KernelStatus.Dead) {
-      this._status = KernelStatus.Dead;
-      this.statusChanged.emit(this._status);
-      logKernelStatus(this);
-    }
-    runningKernels.delete(this._id);
+    this._updateStatus('dead');
   }
 
   /**
    * Handle status iopub messages from the kernel.
    */
-  private _handleStatusMessage(state: string): void {
+  private _updateStatus(state: string): void {
     var status: KernelStatus;
     switch(state) {
       case 'starting':
@@ -330,6 +314,7 @@ class Kernel implements IKernel {
     if (status !== this._status) {
       this._status = status;
       if (status === KernelStatus.Dead) {
+        runningKernels.delete(this._id);
         this._ws.close();
       }
       logKernelStatus(this);
@@ -420,26 +405,6 @@ function shutdownKernel(kernel: IKernel, baseUrl: string): Promise<void> {
     if (success.xhr.status !== 204) {
       throw Error('Invalid response');
     }
-  }, onKernelError);
-}
-
-
-/**
- * Get kernel info by id via: GET /api/kernels/[:kernel_id]
- *
- * Get information about the kernel.
- */
-function getKernelInfo(kernel: IKernel, baseUrl: string): Promise<IKernelInfo> {
-  var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL, kernel.id);
-  return utils.ajaxRequest(url, {
-    method: "GET",
-    dataType: "json"
-  }).then((success: utils.IAjaxSuccess) => {
-    if (success.xhr.status !== 200) {
-      throw Error('Invalid Status: ' + success.xhr.status);
-    }
-    validate.validateKernelId(success.data);
-    return <IKernelInfo>success.data;
   }, onKernelError);
 }
 
