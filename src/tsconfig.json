@@ -21,6 +21,8 @@
     "contents.ts",
     "kernel.ts",
     "kernelselector.ts",
+    "ikernel.ts",
+    "isession.ts",
     "serialize.ts",
     "session.ts",
     "utils.ts",

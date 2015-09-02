@@ -9,7 +9,7 @@ import { ISignal, defineSignal } from 'phosphor-signaling';
 import { 
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
   IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
-  IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
+  IInputReply, IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
   IKernelMessageHeader, IKernelOptions, KernelStatus
 } from './ikernel';
 
@@ -58,7 +58,7 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
  * the kernel fails to become ready, the promise is rejected.
  */
 export
-function startNewKernel(options: IKernelOptions): Promise<Kernel> {
+function startNewKernel(options: IKernelOptions): Promise<IKernel> {
   var url = utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
@@ -88,7 +88,7 @@ function startNewKernel(options: IKernelOptions): Promise<Kernel> {
  * the promise is rejected.
  */
 export
-function connectToKernel(id: string, options?: IKernelOptions): Promise<Kernel> {
+function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
   var kernel = runningKernels.get(id);
   if (kernel) {
     return Promise.resolve(kernel);
@@ -110,8 +110,8 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<Kernel> 
  * 
  * Fulfilled when the Kernel is Starting, or rejected if Dead.
  */
-function createKernel(options: IKernelOptions, id: string): Promise<Kernel> {
-  return new Promise<Kernel>((resolve, reject) => {
+function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
+  return new Promise<IKernel>((resolve, reject) => {
     var kernel = new Kernel(options, id);
     var callback = (status: KernelStatus) => {
       if (status === KernelStatus.Starting) {
@@ -131,8 +131,7 @@ function createKernel(options: IKernelOptions, id: string): Promise<Kernel> {
 /**
  * Implementation of the Kernel object
  */
-export
-class Kernel {
+class Kernel implements IKernel {
 
   /**
    * A signal emitted when the kernel status changes.
@@ -197,7 +196,7 @@ class Kernel {
    *
    * The future object will yield the result when available.
    */
-  sendMessage(msg: IKernelMessage): IKernelFuture {
+  sendShellMessage(msg: IKernelMessage): IKernelFuture {
     if (this._status === KernelStatus.Dead) {
       throw Error('Cannot send a message to a closed Kernel');
     }
@@ -281,7 +280,7 @@ class Kernel {
    */
   execute(contents: IExecuteRequest): IKernelFuture {
     var msg = createKernelMessage(this, 'execute_request', 'shell', contents);
-    return this.sendMessage(msg);
+    return this.sendShellMessage(msg);
   }
 
   /**
@@ -294,6 +293,19 @@ class Kernel {
       this, 'is_complete_request', 'shell', contents
     );
     return sendKernelMessage(this, msg);
+  }
+
+  /**
+   * Send an "input_reply" message.
+   *
+   * https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets
+   */
+  sendInputReply(contents: IInputReply): void {
+    if (this._status === KernelStatus.Dead) {
+      throw Error('Cannot send a message to a closed Kernel');
+    }
+    var msg = createKernelMessage(this, 'input_reply', 'stdin', contents);
+    this._ws.send(serialize.serialize(msg));
   }
 
   /**
@@ -399,7 +411,7 @@ var runningKernels = new Map<string, Kernel>();
  *
  * It is assumed that the API call does not mutate the kernel id or name.
  */
-function restartKernel(kernel: Kernel, baseUrl: string): Promise<void> {
+function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -421,7 +433,7 @@ function restartKernel(kernel: Kernel, baseUrl: string): Promise<void> {
 /**
  * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
  */
-function interruptKernel(kernel: Kernel, baseUrl: string): Promise<void> {
+function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -467,7 +479,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
 /**
  * Log the current kernel status.
  */
-function logKernelStatus(kernel: Kernel): void {
+function logKernelStatus(kernel: IKernel): void {
   if (kernel.status == KernelStatus.Idle || 
       kernel.status === KernelStatus.Busy ||
       kernel.status === KernelStatus.Unknown) {
@@ -502,7 +514,7 @@ function onKernelError(error: utils.IAjaxError): any {
  * Create a well-formed Kernel Message.
  */
 export
-function createKernelMessage(kernel: Kernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
+function createKernelMessage(kernel: IKernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
   return {
     header: {
       username: kernel.username,
@@ -523,8 +535,8 @@ function createKernelMessage(kernel: Kernel, msgType: string, channel: string, c
 /**
  * Send a kernel message to the kernel and return the contents of the response.
  */
-function sendKernelMessage(kernel: Kernel, msg: IKernelMessage): Promise<any> {
-  var future = kernel.sendMessage(msg);
+function sendKernelMessage(kernel: IKernel, msg: IKernelMessage): Promise<any> {
+  var future = kernel.sendShellMessage(msg);
   return new Promise<IKernelInfo>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
       resolve(<IKernelInfo>msg.content);
@@ -596,17 +608,17 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   /** 
-   * Get the output handler.
+   * Get the iopub handler.
    */
-  get onOutput(): (msg: IKernelMessage) => void {
-    return this._output;
+  get onIOPub(): (msg: IKernelMessage) => void {
+    return this._iopub;
   }
 
   /**
-   * Set the output handler.
+   * Set the iopub handler.
    */
-  set onOutput(cb: (msg: IKernelMessage) => void) {
-    this._output = cb;
+  set onIOPub(cb: (msg: IKernelMessage) => void) {
+    this._iopub = cb;
   }
 
   /**
@@ -624,17 +636,17 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   /**
-   * Get the input handler.
+   * Get the stdin handler.
    */
-  get onInput(): (msg: IKernelMessage) => void {
-    return this._input;
+  get onStdin(): (msg: IKernelMessage) => void {
+    return this._stdin;
   }
 
   /**
-   * Set the input handler.
+   * Set the stdin handler.
    */
-  set onInput(cb: (msg: IKernelMessage) => void) {
-    this._input = cb;
+  set onStdin(cb: (msg: IKernelMessage) => void) {
+    this._stdin = cb;
   }
 
   /**
@@ -642,8 +654,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
    */
   handleMsg(msg: IKernelMessage): void {
     if (msg.channel === 'iopub') {
-      var output = this._output;
-      if (output) output(msg);
+      var iopub = this._iopub;
+      if (iopub) iopub(msg);
       if (msg.header.msg_type === 'status' &&
           msg.content.execution_state === 'idle') {
         this._setFlag(KernelFutureFlag.GotIdle);
@@ -659,8 +671,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
         this._handleDone(msg);
       }
     } else if (msg.channel === 'stdin') {
-      var input = this._input;
-      if (input) input(msg);
+      var stdin = this._stdin;
+      if (stdin) stdin(msg);
     }
   }
 
@@ -668,8 +680,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
    * Dispose and unregister the future.
    */
   dispose(): void {
-    this._input = null;
-    this._output = null;
+    this._stdin = null;
+    this._iopub = null;
     this._reply = null;
     this._done = null;
     super.dispose();
@@ -713,8 +725,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   private _status = 0;
-  private _input: (msg: IKernelMessage) => void = null;
-  private _output: (msg: IKernelMessage) => void = null;
+  private _stdin: (msg: IKernelMessage) => void = null;
+  private _iopub: (msg: IKernelMessage) => void = null;
   private _reply: (msg: IKernelMessage) => void = null;
   private _done: (msg: IKernelMessage) => void = null;
 }
