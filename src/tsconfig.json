@@ -20,6 +20,8 @@
     "config.ts",
     "contents.ts",
     "kernel.ts",
+    "ikernel.ts",
+    "isession.ts",
     "serialize.ts",
     "session.ts",
     "utils.ts",

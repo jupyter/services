@@ -4,9 +4,11 @@
 
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import { Kernel } from './kernel';
+import { KernelStatus, IKernel, IKernelOptions } from './ikernel';
 
-import { IKernelId } from './ikernel';
+import { INotebookSession, ISessionId, ISessionOptions } from './isession';
+
+import { connectToKernel } from './kernel';
 
 import * as utils from './utils';
 
@@ -20,35 +22,119 @@ var SESSION_SERVICE_URL = 'api/sessions';
 
 
 /**
- * Notebook Identification specification.
+ * Fetch the running sessions via API: GET /sessions
  */
 export
-interface INotebookId {
-  path: string;
+function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
+  var url = utils.urlJoinEncode(baseUrl, SESSION_SERVICE_URL);
+  return utils.ajaxRequest(url, {
+    method: "GET",
+    dataType: "json"
+  }).then((success: utils.IAjaxSuccess) => {
+    if (success.xhr.status !== 200) {
+      throw Error('Invalid Status: ' + success.xhr.status);
+    }
+    if (!Array.isArray(success.data)) {
+      throw Error('Invalid Session list');
+    }
+    for (var i = 0; i < success.data.length; i++) {
+      validate.validateSessionId(success.data[i]);
+    }
+    return <ISessionId[]>success.data;
+  });
 }
 
 
 /**
- * Session Identification specification.
+ * Start a new session via API: POST /kernels
+ *
+ * Wrap the result in an NotebookSession object. The promise is fulfilled
+ * when the session is fully ready to send the first message. If
+ * the session fails to become ready, the promise is rejected.
  */
 export
-interface ISessionId {
-  id: string;
-  notebook: INotebookId;
-  kernel: IKernelId;
+function startNewSession(options: ISessionOptions): Promise<NotebookSession> {
+  var url = utils.urlJoinEncode(options.baseUrl, SESSION_SERVICE_URL);
+  var model = {
+    kernel: { name: options.kernelName },
+    notebook: { path: options.notebookPath }
+  }
+  return utils.ajaxRequest(url, {
+    method: "POST",
+    dataType: "json",
+    data: JSON.stringify(model),
+    contentType: 'application/json'
+  }).then((success: utils.IAjaxSuccess) => {
+    if (success.xhr.status !== 201) {
+      throw Error('Invalid response');
+    }
+    var sessionId = <ISessionId>success.data;
+    validate.validateSessionId(success.data);
+    return createSession(sessionId, options);
+  });
 }
 
 
 /**
- * Session initialization options.
+ * Connect to a running notebook session.
+ *
+ * If the session was already started via `startNewSession`, the existing
+ * NotebookSession object is used as the fulfillment value.
+ *
+ * Otherwise, if `options` are given, we attempt to connect to the existing
+ * session.  The promise is fulfilled when the session is fully ready to send 
+ * the first message. If the session fails to become ready, the promise is 
+ * rejected.
+ *
+ * If the session was not already started and no `options` are given,
+ * the promise is rejected.
  */
 export
-interface ISessionOptions {
-  notebookPath?: string;
-  kernelName?: string;
-  baseUrl?: string;
-  wsUrl?: string;
+function connectToSession(id: string, options?: ISessionOptions): Promise<NotebookSession> {
+  var session = runningSessions.get(id);
+  if (session) {
+    return Promise.resolve(session);
+  }
+  if (options === void 0) {
+    return Promise.reject(new Error('Please specify session options'));
+  }
+  return listRunningSessions(options.baseUrl).then((sessionIds) => {
+    var sessionIds = sessionIds.filter(k => k.id === id);
+    if (!sessionIds.length) {
+      throw new Error('No running session with id: ' + id);
+    }
+    return createSession(sessionIds[0], options);
+  });
 }
+
+
+/**
+ * Create a Promise for a NotebookSession object.
+ * 
+ * Fulfilled when the NotebookSession is Starting, or rejected if Dead.
+ */
+function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
+  return new Promise<NotebookSession>((resolve, reject) => {
+    options.notebookPath = sessionId.notebook.path;
+    var kernelOptions: IKernelOptions = {
+      name: sessionId.kernel.name,
+      baseUrl: options.baseUrl,
+      wsUrl: options.wsUrl,
+      username: options.username,
+      clientId: options.clientId
+    }
+    var kernelPromise = connectToKernel(sessionId.kernel.id, kernelOptions);
+    kernelPromise.then((kernel: IKernel) => {
+      resolve(new NotebookSession(options, sessionId.id, kernel));
+    });
+  });
+}
+
+/**
+ * A module private store for running sessions.
+ */
+var runningSessions = new Map<string, NotebookSession>();
+
 
 /**
  * Session object for accessing the session REST api. The session
@@ -56,58 +142,38 @@ interface ISessionOptions {
  * all other operations, the kernel object should be used.
  **/
 export
-class NotebookSession {
+class NotebookSession implements INotebookSession {
 
   /**
-   * A signal emitted when the session changes state.
+   * A signal emitted when the session dies.
    */
   @defineSignal
-  statusChanged: ISignal<string>;
-
-  /**
-   * GET /api/sessions
-   *
-   * Get a list of the current sessions.
-   */
-  static list(baseUrl: string): Promise<ISessionId[]> {
-    var sessionUrl = utils.urlJoinEncode(baseUrl, SESSION_SERVICE_URL);
-    return utils.ajaxRequest(sessionUrl, {
-      method: "GET",
-      dataType: "json"
-    }).then((success: utils.IAjaxSuccess) => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
-      if (!Array.isArray(success.data)) {
-        throw Error('Invalid Session list');
-      }
-      for (var i = 0; i < success.data.length; i++) {
-        validate.validateSessionId(success.data[i]);
-      }
-      return <ISessionId[]>success.data;
-    });
-  }
+  sessionDied: ISignal<void>;
 
   /**
    * Construct a new session.
    */
-  constructor(options: ISessionOptions) {
-    this._id = utils.uuid();
+  constructor(options: ISessionOptions, id: string, kernel: IKernel) {
+    this._id = id;
     this._notebookPath = options.notebookPath;
-    this._baseUrl = options.baseUrl;
-    this._wsUrl = options.wsUrl;
-    //this._kernel = new Kernel(this._baseUrl, this._wsUrl);
-    this._kernel.name = options.kernelName;
-    this._sessionUrl = utils.urlJoinEncode(
-      this._baseUrl, SESSION_SERVICE_URL, this._id
+    this._kernel = kernel;
+    this._url = utils.urlJoinEncode(
+      options.baseUrl, SESSION_SERVICE_URL, this._id
     );
-    this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
+    this._kernel.statusChanged.connect(this._kernelStatusChanged);
+  }
+
+  /**
+   * Get the session id.
+   */
+  get id(): string {
+    return this.id;
   }
 
   /**
    * Get the session kernel object.
   */
-  get kernel() : Kernel {
+  get kernel() : IKernel {
     return this._kernel;
   }
 
@@ -118,61 +184,25 @@ class NotebookSession {
     return this._notebookPath;
   }
 
-  /** 
-   * Get a Promise that is fulfilled with the Session is ready.
-   */
-  get onReady(): Promise<ISessionId> {
-    return this._promiseDelegate.promise;
-  }
-
   /**
-   * POST /api/sessions
-   *
-   * Start a new session. This function can only be successfully executed once.
+   * Rename the notebook.
    */
-  start(): Promise<ISessionId> {
-    if (this._promiseDelegate.settled) {
-      this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
+  renameNotebook(path: string): Promise<void> {
+    if (this._isDead) {
+      throw new Error('Session is dead');
     }
-    var url = utils.urlJoinEncode(this._baseUrl, SESSION_SERVICE_URL);
-    utils.ajaxRequest(url, {
-      method: "POST",
+    return utils.ajaxRequest(this._url, {
+      method: "PATCH",
       dataType: "json",
-      data: JSON.stringify(this._model),
+      data: JSON.stringify({ notebook: { path: path } }),
       contentType: 'application/json'
     }).then((success: utils.IAjaxSuccess) => {
-      if (success.xhr.status !== 201) {
-        throw Error('Invalid response');
-      }
-      validate.validateSessionId(success.data);
-      //this._kernel.connect(success.data.kernel).then(() => {
-      //  this._promiseDelegate.resolve(success.data);
-      //});
-      this._handleStatus('kernelCreated');
-    }, (error: utils.IAjaxError) => {
-      this._handleStatus('kernelDead');
-      this._promiseDelegate.reject(error.statusText);
-    }).catch((data?: any) => {
-      this._promiseDelegate.reject(data);
-    });
-    return this.onReady;
-  }
-
-  /**
-   * GET /api/sessions/[:session_id]
-   *
-   * Get information about a session.
-   */
-  getInfo(): Promise<ISessionId> {
-    return utils.ajaxRequest(this._sessionUrl, {
-      method: "GET",
-      dataType: "json"
-    }).then((success: utils.IAjaxSuccess): ISessionId => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid response');
       }
-      validate.validateSessionId(success.data);
-      return success.data;
+      var data = <ISessionId>success.data;
+      validate.validateSessionId(data);
+      this._notebookPath = data.notebook.path;
     });
   }
 
@@ -182,11 +212,12 @@ class NotebookSession {
    * Kill the kernel and shutdown the session.
    */
   shutdown(): Promise<void> {
-    if (this._kernel) {
-      this._handleStatus('kernelKilled');
-      //this._kernel.disconnect();
+    if (this._isDead) {
+      throw new Error('Session is dead');
     }
-    return utils.ajaxRequest(this._sessionUrl, {
+    this._isDead = true;
+    this.sessionDied.emit(void 0);
+    return utils.ajaxRequest(this._url, {
       method: "DELETE",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
@@ -203,70 +234,17 @@ class NotebookSession {
   }
 
   /**
-   * Restart the session by deleting it and then starting it fresh.
+   * React to changes in the Kernel status.
    */
-  restart(options?: ISessionOptions): Promise<ISessionId> {
-    if (this._promiseDelegate.settled) {
-      this._promiseDelegate = new utils.PromiseDelegate<ISessionId>();
+  _kernelStatusChanged(state: KernelStatus) {
+    if (state == KernelStatus.Dead) {
+      this.shutdown();
     }
-    var start = () => {
-      if (options && options.notebookPath) {
-        this._notebookPath = options.notebookPath;
-      }
-      if (options && options.kernelName) {
-        this._kernel.name = options.kernelName;
-      }
-      this._kernel.id = null;
-      this.start();
-    }
-    this.shutdown().then(start, start);
-    return this.onReady;
   }
 
-  /**
-   * Rename the notebook.
-   */
-  renameNotebook(path: string): Promise<ISessionId> {
-    this._notebookPath = path;
-    return utils.ajaxRequest(this._sessionUrl, {
-      method: "PATCH",
-      dataType: "json",
-      data: JSON.stringify(this._model),
-      contentType: 'application/json'
-    }).then((success: utils.IAjaxSuccess): ISessionId => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid response');
-      }
-      validate.validateSessionId(success.data);
-      return <ISessionId>success.data;
-    });
-  }
-
-  /**
-   * Get the data model for the session, which includes the notebook path
-   * and kernel (name and id).
-   */
-  private get _model(): ISessionId {
-    return {
-      id: this._id,
-      notebook: { path: this._notebookPath },
-      kernel: { name: this._kernel.name, id: this._kernel.id }
-    };
-  }
-
-  /**
-   * Handle a session status change.
-   */
-  private _handleStatus(status: string) {
-    this.statusChanged.emit(status);
-    console.error('Session: ' + status + ' (' + this._id + ')');
-  }
-
-  private _id = "unknown";
-  private _notebookPath = "unknown";
-  private _baseUrl = "unknown";
-  private _sessionUrl = "unknown";
-  private _wsUrl = "unknown";
-  private _kernel: Kernel = null;
-  private _promiseDelegate: utils.PromiseDelegate<ISessionId> = null;
+  private _id = "";
+  private _notebookPath = "";
+  private _kernel: IKernel = null;
+  private _url = '';
+  private _isDead = false;
 }

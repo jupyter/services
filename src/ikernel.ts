@@ -184,6 +184,129 @@ interface IExecuteReply {
 
 
 /**
+ * Contents of an 'input_reply' message.
+ */
+export
+interface IInputReply {
+    value: string;
+}
+
+
+/**
+ * Interface of a kernel object.
+ */
+export 
+interface IKernel {
+  /**
+   * A signal emitted when the kernel status changes.
+   */
+  statusChanged: ISignal<KernelStatus>;
+
+  /**
+   * The id of the server-side kernel.
+   */
+  id: string;
+
+  /**
+   * The name of the server-side kernel.
+   */
+  name: string;
+
+  /**
+   * The client username.
+   *
+   * Read-only
+   */
+   username: string;
+
+  /**
+   * The client unique id.
+   *
+   * Read-only
+   */
+  clientId: string;
+
+  /**
+   * The current status of the kernel.
+   *
+   * Read-only
+   */
+  status: KernelStatus;
+
+  /**
+   * Send a shell message to the kernel.
+   *
+   * The future object will yield the result when available.
+   */
+  sendShellMessage(msg: IKernelMessage): IKernelFuture;
+
+  /**
+   * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
+   */
+  interrupt(): Promise<void>;
+
+  /**
+   * Restart a kernel via API: POST /kernels/{kernel_id}/restart
+   *
+   * It is assumed that the API call does not mutate the kernel id or name.
+   */
+  restart(): Promise<void>;
+
+  /**
+   * Delete a kernel via API: DELETE /kernels/{kernel_id}
+   *
+   * If the given kernel id corresponds to an Kernel object, that
+   * object is disposed and its websocket connection is cleared.
+   *
+   * Any further calls to `sendMessage` for that Kernel will throw
+   * an exception.
+   */
+  shutdown(): Promise<void>;
+
+  /**
+   * Send a "kernel_info_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
+   */
+  kernelInfo(): Promise<IKernelInfo>;
+
+  /**
+   * Send a "complete_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
+   */
+  complete(contents: ICompleteRequest): Promise<ICompleteReply>;
+
+  /**
+   * Send an "inspect_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
+   */
+  inspect(contents: IInspectRequest): Promise<IInspectReply>;
+
+  /**
+   * Send an "execute_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
+   */
+  execute(contents: IExecuteRequest): IKernelFuture;
+
+  /**
+   * Send an "is_complete_request" message.
+   *
+   * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
+   */
+  isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
+
+  /**
+   * Send an "input_reply" message.
+   *
+   * https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets
+   */
+  sendInputReply(contents: IInputReply): void;
+}
+
+/**
  * Object providing a Future interface for message callbacks.
  *
  * If `autoDispose` is set, the future will self-dispose after `isDone` is
@@ -216,14 +339,14 @@ interface IKernelFuture extends IDisposable {
   onReply: (msg: IKernelMessage) => void;
 
   /**
-   * The input handler for the kernel future.
+   * The stdin handler for the kernel future.
    */
-  onInput: (msg: IKernelMessage) => void;
+  onStdin: (msg: IKernelMessage) => void;
 
   /**
-   * The output handler for the kernel future.
+   * The iopub handler for the kernel future.
    */
-  onOutput: (msg: IKernelMessage) => void;
+  onIOPub: (msg: IKernelMessage) => void;
 
   /**
    * The done handler for the kernel future.

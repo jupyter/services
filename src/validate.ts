@@ -4,7 +4,7 @@
 
 import { IKernelId } from './ikernel';
 
-import { INotebookId, ISessionId } from './session';
+import { INotebookId, ISessionId } from './isession';
 
 
 /**
