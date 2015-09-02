@@ -99,21 +99,6 @@ interface IExecuteReply {
 
 
 /**
- * Callbacks for a kernel message.
- *
- * 'autoDispose' defaults to true, which means that no further callbacks
- * for the message will trigger after 'onDone'.
- */
-export
-interface IKernelCallbacks {
-  onInput?: (msg: IKernelMessage) => void;
-  onOutput?: (msg: IKernelMessage) => void;
-  onDone?: (msg: IKernelMessage) => void;
-  autoDispose?: boolean;
-}
-
-
-/**
  * Send a "kernel_info_request" message.
  *
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
@@ -170,20 +155,9 @@ function inspectRequest(kernel: IKernel, contents: IInspectRequest): Promise<IIn
  * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
  */
 export
-function executeRequest(kernel: IKernel, contents: IExecuteRequest, callbacks?: IKernelCallbacks): Promise<IExecuteReply> {
+function executeRequest(kernel: IKernel, contents: IExecuteRequest): IKernelFuture {
   var msg = createKernelMessage(kernel, 'execute_request', 'shell', contents);
-  var future = kernel.sendMessage(msg);
-  if (callbacks) {
-    if (callbacks.onInput) future.onInput = callbacks.onInput;
-    if (callbacks.onOutput) future.onOutput = callbacks.onOutput;
-    if (callbacks.onDone) future.onDone = callbacks.onDone;
-    if (callbacks.autoDispose === false) callbacks.autoDispose = false;
-  }
-  return new Promise<IExecuteReply>((resolve, reject) => {
-    future.onReply = (msg: IKernelMessage) => {
-      resolve(<IExecuteReply>msg.content);
-    }
-  });
+  return kernel.sendMessage(msg);
 }
 
 
