@@ -249,7 +249,7 @@ class Kernel {
    *
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
    */
-  infoRequest(): Promise<IKernelInfo> {
+  kernelInfo(): Promise<IKernelInfo> {
     var msg = createKernelMessage(this, 'kernel_info_request', 'shell');
     return sendKernelMessage(this, msg);
   }
@@ -259,7 +259,7 @@ class Kernel {
    *
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
    */
-  completeRequest(contents: ICompleteRequest): Promise<ICompleteReply> {
+  complete(contents: ICompleteRequest): Promise<ICompleteReply> {
     var msg = createKernelMessage(this, 'complete_request', 'shell', contents);
     return sendKernelMessage(this, msg);
   }
@@ -269,7 +269,7 @@ class Kernel {
    *
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
    */
-  inspectRequest(contents: IInspectRequest): Promise<IInspectReply> {
+  inspect(contents: IInspectRequest): Promise<IInspectReply> {
     var msg = createKernelMessage(this, 'inspect_request', 'shell', contents);
     return sendKernelMessage(this, msg);
   }
@@ -279,7 +279,7 @@ class Kernel {
    *
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
    */
-  executeRequest(contents: IExecuteRequest): IKernelFuture {
+  execute(contents: IExecuteRequest): IKernelFuture {
     var msg = createKernelMessage(this, 'execute_request', 'shell', contents);
     return this.sendMessage(msg);
   }
@@ -289,7 +289,7 @@ class Kernel {
    *
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
    */
-  isCompleteRequest(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
+  isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
     var msg = createKernelMessage(
       this, 'is_complete_request', 'shell', contents
     );
