@@ -94,7 +94,14 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
   if (options === void 0) {
     return Promise.reject(new Error('Please specify kernel options'));
   }
-  return createKernel(options, id);
+  return listRunningKernels(options.baseUrl).then((kernelIds) => {
+    for (var i = 0; i < kernelIds.length; i++) {
+      if (kernelIds[i].id === id) {
+        return createKernel(options, id);
+      }
+    }
+    throw new Error('No running kernel with id: ' + id);
+  });
 }
 
 
@@ -274,22 +281,24 @@ class Kernel implements IKernel {
 
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
-          if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
-        this._handleStatusMessage(msg.content.executionstate);
+    if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
+      this._handleStatusMessage(msg.content.executionstate);
+    }
+    if (msg.parent_header) {
+      var header = (<IKernelMessageHeader>msg.parent_header);
+      var future = this._handlerMap.get(header.msg_type);
+      if (future) {
+        future.handleMsg(msg);
       }
-      if (msg.parent_header) {
-        var header = (<IKernelMessageHeader>msg.parent_header);
-        var future = this._handlerMap.get(header.msg_type);
-        if (future) {
-          future.handleMsg(msg);
-        }
-      }
+    }
   }
 
   private _onWSClose(evt: Event) {
-    this._status = KernelStatus.Dead;
-    this.statusChanged.emit(this._status);
-    logKernelStatus(this);
+    if (this._status !== KernelStatus.Dead) {
+      this._status = KernelStatus.Dead;
+      this.statusChanged.emit(this._status);
+      logKernelStatus(this);
+    }
     runningKernels.delete(this._id);
   }
 
@@ -297,28 +306,34 @@ class Kernel implements IKernel {
    * Handle status iopub messages from the kernel.
    */
   private _handleStatusMessage(state: string): void {
-    var prevStatus = this._status;
-    if (state === 'dead' && prevStatus !== KernelStatus.Dead) {
-      this._ws.close();
-      return;
-    }
+    var status: KernelStatus;
     switch(state) {
       case 'starting':
-        this._status = KernelStatus.Starting;
+        status = KernelStatus.Starting;
         break;
       case 'idle':
-        this._status = KernelStatus.Idle;
+        status = KernelStatus.Idle;
         break;
       case 'busy':
-        this._status = KernelStatus.Busy;
+        status = KernelStatus.Busy;
         break;
       case 'restarting':
-        this._status = KernelStatus.Restarting;
+        status = KernelStatus.Restarting;
         break;
+      case 'dead':
+        status = KernelStatus.Dead;
+        break;
+      default:
+        console.error('invalid kernel status:', state);
+        return;
     }
-    if (this._status !== prevStatus) {
-      this.statusChanged.emit(this._status);
+    if (status !== this._status) {
+      this._status = status;
+      if (status === KernelStatus.Dead) {
+        this._ws.close();
+      }
       logKernelStatus(this);
+      this.statusChanged.emit(status);
     }
   }
 
