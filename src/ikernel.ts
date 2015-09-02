@@ -95,79 +95,91 @@ enum KernelStatus {
 
 
 /**
- * A class to communicate with the server-side kernel.
+ * Contents of a 'complete_request' message.
  */
 export
-interface IKernel {
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  statusChanged: ISignal<KernelStatus>;
+interface ICompleteRequest {
+  code: string;
+  cursor_pos: number;
+}
 
-  /**
-   * The id of the server-side kernel.
-   *
-   * Read-only
-   */
-  id: string;
 
-  /**
-   * The name of the server-side kernel.
-   *
-   * Read-only
-   */
-  name: string;
+/**
+ * Contents of a 'complete_reply' message.
+ */
+export 
+interface ICompleteReply {
+  matches: string[];
+  cursor_start: number;
+  cursor_end: number;
+  metadata: any;
+  status: string;
+}
 
-  /**
-   * The client username.
-   *
-   * Read-only
-   */
-  username: string;
 
-  /**
-   * The client unique id.
-   *
-   * Read-only
-   */
-  clientId: string;
+/**
+ * Contents of an 'inspect_request' message.
+ */
+export
+interface IInspectRequest {
+  code: string;
+  cursor_pos: number;
+  detail_level: number;
+}
 
-  /**
-   * The current status of the kernel.
-   *
-   * Read-only.
-   */
-  status: KernelStatus;
 
-  /**
-   * Send a message to the kernel.
-   *
-   * The future object will yield the result when available.
-   */
-  sendMessage(msg: IKernelMessage): IKernelFuture;
+/**
+ * Contents of an 'inspect_reply' message.
+ */
+export
+interface IInspectReply {
+  status: string;
+  data: any;
+  metadata: any;
+}
 
-  /**
-   * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
-   */
-  interrupt(): Promise<void>;
 
-  /**
-   * Restart a kernel via API: POST /kernels/{kernel_id}/restart
-   *
-   * It is assumed that the API call does not mutate the kernel id or name.
-   */
-  restart(): Promise<void>;
+/**
+ * Contents of an 'is_complete_request' message.
+ */
+export 
+interface IIsCompleteRequest {
+  code: string;
+}
 
-  /**
-   * Delete a kernel via API: DELETE /kernels/{kernel_id}
-   *
-   * If the given kernel id corresponds to an IKernel object, that
-   * object is disposed and its websocket connection is cleared.
-   *
-   * Any further calls to `sendMessage` for that IKernel will throw
-   * an exception.
-   */
-  shutdown(): Promise<void>;
+
+/**
+ * Contents of an 'is_complete_reply' message.
+ */
+export 
+interface IIsCompleteReply {
+  status: string;
+  indent: string;
+}
+
+
+/**
+ * Contents of an 'execute_request' message.
+ */
+export
+interface IExecuteRequest {
+  code: string;
+  silent: boolean;
+  store_history: boolean;
+  user_expressions: any;
+  allow_stdin: boolean;
+  stop_on_error: boolean;
+}
+
+
+/**
+ * Contents of an 'execute_reply' message.
+ */
+export
+interface IExecuteReply {
+  execution_count: number;
+  data: any;
+  metadata: any;
 }
 
 

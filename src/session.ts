@@ -4,7 +4,9 @@
 
 import { ISignal, defineSignal } from 'phosphor-signaling';
 
-import { IKernel, IKernelId } from './ikernel';
+import { Kernel } from './kernel';
+
+import { IKernelId } from './ikernel';
 
 import * as utils from './utils';
 
@@ -105,7 +107,7 @@ class NotebookSession {
   /**
    * Get the session kernel object.
   */
-  get kernel() : IKernel {
+  get kernel() : Kernel {
     return this._kernel;
   }
 
@@ -265,6 +267,6 @@ class NotebookSession {
   private _baseUrl = "unknown";
   private _sessionUrl = "unknown";
   private _wsUrl = "unknown";
-  private _kernel: IKernel = null;
+  private _kernel: Kernel = null;
   private _promiseDelegate: utils.PromiseDelegate<ISessionId> = null;
 }
