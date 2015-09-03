@@ -188,7 +188,20 @@ interface IExecuteReply {
  */
 export
 interface IInputReply {
-    value: string;
+  value: string;
+}
+
+
+/**
+ * Options for an IKernelMessage.
+ */
+export
+interface IKernelMessageOptions {
+  msgType: string;
+  channel: string;
+  session: string;
+  username?: string;
+  msgId?: string;
 }
 
 
@@ -305,6 +318,7 @@ interface IKernel {
    */
   sendInputReply(contents: IInputReply): void;
 }
+
 
 /**
  * Object providing a Future interface for message callbacks.

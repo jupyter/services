@@ -5,18 +5,29 @@
 import expect = require('expect.js');
 
 import { 
-  IKernelExecute, IKernelId, IKernelInfo, Kernel 
+  listRunningKernels, connectToKernel, startNewKernel, createKernelMessage
 } from '../../lib/kernel';
+
+import { 
+  ICompleteRequest, IExecuteRequest, IInspectRequest, IIsCompleteRequest, 
+  IKernel, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageOptions, 
+  IKernelOptions, KernelStatus
+} from '../../lib/ikernel';
 
 import { deserialize, serialize } from '../../lib/serialize';
 
-import { MockWebSocket, MockWebSocketServer } from './mocksocket';
+import { PromiseDelegate, uuid } from '../../lib/utils';
 
-import { RequestHandler, expectFailure } from './utils';
+import { MockSocket, MockSocketServer, overrideWebSocket } from './mocksocket';
+
+import { RequestHandler, expectFailure, doLater } from './utils';
 
 
 // Abnormal websocket close.
 const CLOSE_ABNORMAL = 1006;
+
+
+overrideWebSocket();
 
 
 const EXAMPLE_KERNEL_INFO: IKernelInfo = {
@@ -37,6 +48,15 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
   }
 }
 
+
+const KERNEL_OPTIONS: IKernelOptions = {
+  baseUrl: 'baseUrl',
+  wsUrl: 'ws://',
+  name: 'test',
+  username: 'testUser'
+}
+
+
 /**
  * Kernel class test rig.
  */
@@ -45,74 +65,85 @@ class KernelTester extends RequestHandler {
   /**
    * Create a new Kernel tester.
    */
-  constructor(kernel: Kernel) {
+  constructor(initial_status='starting') {
     super();
-    this._kernel = kernel;
-    kernel.name = "test";
-    kernel.id = "1234";
-    this._server = new MockWebSocketServer(this._kernel.wsUrl);
-    this._server.onmessage = (msg: any) => {
-      var data = deserialize(msg.data);
-      if (data.header.msgType === 'kernel_info_request') {
-        data.parentHeader = data.header;
-        data.header.msgType = 'kernel_info_reply';
-        data.content = EXAMPLE_KERNEL_INFO;
-        this.send(serialize(data));
-      } else {
-        var onMessage = this._onMessage;
-        if (onMessage) onMessage(msg);
+    this._promiseDelegate = new PromiseDelegate<void>();
+    MockSocketServer.onConnect = (server: MockSocketServer) => {
+      this._server = server;
+      this.sendStatus(initial_status);
+      this._promiseDelegate.resolve();
+      this._server.onmessage = (msg: any) => {
+        var data = deserialize(msg.data);
+        if (data.header.msg_type === 'kernel_info_request') {
+          data.parent_header = data.header;
+          data.header.msg_type = 'kernel_info_reply';
+          data.content = EXAMPLE_KERNEL_INFO;
+          this.send(data);
+        } else {
+          var onMessage = this._onMessage;
+          if (onMessage) onMessage(data);
+        }
       }
     }
   }
 
-  /**
-   * Get the kernel for the tester.
-   */
-  get kernel(): Kernel {
-    return this._kernel;
+  sendStatus(status: string) {
+    var options: IKernelMessageOptions = {
+      msgType: 'status',
+      channel: 'iopub',
+      session: uuid(),
+    }
+    var msg = createKernelMessage(options, { execution_state: status } );
+    this.send(msg);
   }
 
   /**
    * Register a connection callback with the websocket server.
    */
-  onConnect(cb: (ws: MockWebSocket) => void) {
-    this._server.onconnect = cb;
+  onConnect(cb: (server: MockSocketServer) => void) {
+    this._promiseDelegate.promise.then(() => {
+      cb(this._server);
+    });
   }
 
   /**
    * Register a message callback with the websocket server.
    */
-  onMessage(cb: (msg: any) => void) {
+  onMessage(cb: (msg: IKernelMessage) => void) {
     this._onMessage = cb;
   }
 
   /**
    * Register a close with the websocket server.
    */
-  onClose(cb: (ws: MockWebSocket) => void) {
-    this._server.onWSClose = cb;
+  onClose(cb: (ws: MockSocket) => void) {
+    this._promiseDelegate.promise.then(() => {
+      this._server.onWSClose = cb;
+    });
   }
 
   /**
    * Send a message to the server.
    */
-  send(msg: string | ArrayBuffer) {
-    this._server.send(msg);
+  send(msg: IKernelMessage) {
+    this._promiseDelegate.promise.then(() => {
+      this._server.send(serialize(msg));
+    });
   }
 
-  private _kernel: Kernel = null;
-  private _server: MockWebSocketServer = null;
-  private _onMessage: (msg: any) => void = null;
+  private _server: MockSocketServer = null;
+  private _onMessage: (msg: IKernelMessage) => void = null;
+  private _promiseDelegate: PromiseDelegate<void> = null;
 }
 
 
-describe('jupyter.services - Kernel', () => {
+describe('jupyter.services - kernel', () => {
 
-  describe('#list()', () => {
+  describe('listRunningKernels()', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       var handler = new RequestHandler();
-      var list = Kernel.list('baseUrl');
+      var list = listRunningKernels('baseUrl');
       var data = [
         { id: "1234", name: "test" },
         { id: "5678", name: "test2" }
@@ -129,7 +160,7 @@ describe('jupyter.services - Kernel', () => {
 
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
-      var list = Kernel.list('baseUrl');
+      var list = listRunningKernels('baseUrl');
       var data = { id: "1234", name: "test" };
       handler.respond(200, data);
       expectFailure(list, done, "Invalid kernel list");
@@ -137,7 +168,7 @@ describe('jupyter.services - Kernel', () => {
 
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
-      var list = Kernel.list('baseUrl');
+      var list = listRunningKernels('baseUrl');
       var data = [
         { id: "1234", name: "test" },
         { id: "5678", name: "test2" }
@@ -148,689 +179,576 @@ describe('jupyter.services - Kernel', () => {
 
   });
 
-  describe('#constructor()', () => {
+  describe('startNewKernel()', () => {
 
-    it('should set initial conditions', () => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      expect(kernel.name).to.be("");
-      kernel.name = "test";
-      expect(kernel.name).to.be("test");
-      expect(kernel.status).to.be("unknown");
-      expect(kernel.isConnected).to.be(false);
-    });
-
-  });
-
-  describe('#getInfo()', () => {
-
-    it('should yield a valid kernel id', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var info = kernel.getInfo();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-      return info.then((response: IKernelId) => {
-        expect(response.name).to.be("test");
-        expect(response.id).to.be("1234");
+    it('should create an IKernel object', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      kernelPromise.then((kernel: IKernel) => {
+        expect(kernel.status).to.be(KernelStatus.Starting);
         done();
       });
+    });
+
+    it('should throw an error if the kernel dies', (done) => {
+      var tester = new KernelTester('dead');
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      expectFailure(kernelPromise, done, 'Kernel failed to start');
     });
 
     it('should throw an error for an invalid kernel id', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var info = kernel.getInfo();
-      var data = { id: "1234", name: 1 };
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: "1234" };
       tester.respond(200, data);
-      return expectFailure(info, done, "Invalid kernel id");
+      return expectFailure(kernelPromise, done, "Invalid kernel id");
     });
 
     it('should throw an error for an invalid response', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var info = kernel.getInfo();
-      var data = { id: "1234", name: "test" };
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: "1234", name: KERNEL_OPTIONS.name };
       tester.respond(201, data);
-      return expectFailure(info, done, "Invalid Status: 201");
+      return expectFailure(kernelPromise, done, "Invalid Status: 201");
     });
 
   });
 
-  describe('#connect()', () => {
+  describe('connectToKernel()', () => {
 
-    it('should start the websocket', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
+    it('should reuse an exisiting kernel', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      kernelPromise.then((kernel: IKernel) => {
+        connectToKernel(kernel.id).then((newKernel) => {
+          expect(newKernel.name).to.be(kernel.name);
+          expect(newKernel.id).to.be(kernel.id);
+          done();
+        });
+      });
+    });
 
-      var connect = kernel.connect();
-      expect(kernel.status).to.be('created');
-
-      connect.then((info: IKernelInfo) => {
-        expectReady(kernel, info);
+    it('should connect to a running kernel if given kernel options', (done) => {
+      var tester = new KernelTester();
+      var id = "5678";
+      var kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
+      tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+      kernelPromise.then((kernel: IKernel) => {
+        expect(kernel.name).to.be(KERNEL_OPTIONS.name);
+        expect(kernel.id).to.be(id);
         done();
       });
-      
     });
 
-    it('should throw an error for an uninitialized kernel id', () => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      expect(kernel.connect).to.throwError(/You must set the kernel id before starting/);
+    it('should fail if no existing kernel and no options', (done) => {
+      var tester = new KernelTester();
+      var id = "abcd";
+      var kernelPromise = connectToKernel(id);
+      expectFailure(kernelPromise, done, 'Please specify kernel options');
     });
 
-    it('should call the early close method cleanly', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      tester.onConnect((ws: MockWebSocket) => {
-        ws.close();
-        ws.close();  // second call should have no effect
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        expect(kernel.isConnected).to.be(false);
-        done();
-      })
-
-      kernel.connect();
-    });
-
-    it('should trigger a reconnect', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      tester.onConnect((ws: MockWebSocket) => {
-        ws.close(CLOSE_ABNORMAL);
-        ws.close(CLOSE_ABNORMAL);  // should have no effect
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        // respond to the getInfo call
-        var data = { id: "1234", name: "test" };
-        tester.respond(200, data);
-        // wait for another connnection to be made
-        tester.onConnect((ws: MockWebSocket) => {
-          done();
-        });
-      });
-
-      kernel.connect();
-    });
-
-    it('should trigger a dead kernel', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      tester.onConnect((ws: MockWebSocket) => {
-        ws.close(CLOSE_ABNORMAL);
-        ws.close(CLOSE_ABNORMAL);  // second one has no effect
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        // respond to the getInfo call with an error response
-        tester.respond(400, {});
-        setImmediate(() => {
-          expect(kernel.status).to.be('dead');
-          expect(kernel.isFullyDisconnected).to.be(true);
-          done();
-        });
-      });
-
-      kernel.connect();
-    });
-
-    it('should use a late binding restart', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      tester.onConnect((ws: MockWebSocket) => {
-        // trigger a late error close
-        setTimeout(() => { 
-           ws.close(CLOSE_ABNORMAL); 
-           ws.close(CLOSE_ABNORMAL);  // second one has no effect
-         }, 1001);
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        // wait for another connnection to be made
-        tester.onConnect((ws: MockWebSocket) => {
-          done();
-        });
-      });
-
-      kernel.connect();
-    });
-
-    it('should trigger an error-based restart', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      tester.onConnect((ws: MockWebSocket) => {
-        // trigger an error
-        ws.triggerError('forced restart');
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        // wait for another connnection to be made
-        tester.onConnect((ws: MockWebSocket) => {
-          done();
-        });
-      });
-
-      kernel.connect();
+    it('should fail if no running kernel available', (done) => {
+      var tester = new KernelTester();
+      var id = "aaaa";
+      var kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
+      tester.respond(200, [{ id: "bbbb", name: KERNEL_OPTIONS.name }]);
+      expectFailure(kernelPromise, done, 'No running kernel with id: aaaa');
     });
 
   });
 
-  describe('#start()', () => {
+  describe('IKernel', () => {
 
-    it('should start the kernel', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
+    describe('#statusChanged', () => {
 
-      var start = kernel.start();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-
-      start.then((info: IKernelInfo) => {
-        expectReady(kernel, info);
-        done();
+      it('should be be an signal following the Kernel status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            done();
+          });
+          tester.sendStatus('busy');
+        });
       });
-      
     });
 
-    it('should throw an error for an invalid kernel id', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var start = kernel.start( { name: "test", id: "1234" });
-      var data = { id: "1234" };
-      tester.respond(200, data);
-      return expectFailure(start, done, "Invalid kernel id");
+    describe('#id', () => {
+
+      it('should be a read only string', (done) => {
+        createKernel().then((kernel: IKernel) => {
+          expect(typeof kernel.id).to.be('string');
+          expect(() => { kernel.id = "1"; }).to.throwError();
+          done();
+        });
+      });
+
     });
 
-    it('should throw an error for an invalid response', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var start = kernel.start();
-      var data = { id: "1234" };
-      tester.respond(201, data);
-      return expectFailure(start, done, "Invalid Status: 201");
+    describe('#name', () => {
+
+      it('should be a read only string', (done) => {
+        createKernel().then((kernel: IKernel) => {
+          expect(typeof kernel.name).to.be('string');
+          expect(() => { kernel.name = "1"; }).to.throwError();
+          done();
+        });
+      });
+
     });
 
-    it('should throw an error for an uninitialized kernel id', () => {
-      var testFunc = () => {
-        var kernel = new Kernel('/localhost', 'ws://');
-        kernel.name = "test";
-        kernel.start();
-      }
-      expect(testFunc).to.throwError(/You must set the kernel id before starting/);
+    describe('#username', () => {
+
+      it('should be a read only string', (done) => {
+        createKernel().then((kernel: IKernel) => {
+          expect(typeof kernel.username).to.be('string');
+          expect(() => { kernel.username = "1"; }).to.throwError();
+          done();
+        });
+      });
+
     });
 
-  });
+    describe('#clientId', () => {
 
-  describe('#interrupt()', () => {
+      it('should be a read only string', (done) => {
+        createKernel().then((kernel: IKernel) => {
+          expect(typeof kernel.clientId).to.be('string');
+          expect(() => { kernel.clientId = "1"; }).to.throwError();
+          done();
+        });
+      });
+    });
 
-    it('should interrupt the kernel', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
+    describe('#status', () => {
 
-      var start = kernel.start();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
+      it('should get an idle status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Idle);
+            done();
+          });
+          tester.sendStatus('idle');
+        });
+      });
 
-      start.then(() => {
-        var interrupt = kernel.interrupt();
-        tester.respond(204, data);
-        interrupt.then((id: any) => {
-          setImmediate(() => {
-            expect(kernel.isConnected).to.be(true);
-            expect(kernel.id).to.be("1234");
+      it('should get an restarting status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Restarting);
+            done();
+          });
+          tester.sendStatus('restarting');
+        });
+      });
+
+      it('should get a busy status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Busy);
+            done();
+          });
+          tester.sendStatus('busy');
+        });
+      });
+
+      it('should get a dead status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Dead);
+            done();
+          });
+          tester.sendStatus('dead');
+        });
+      });
+    });
+
+    describe('#sendShellMessage', () => {
+
+      it('should send a message to the kernel', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IKernelMessageOptions = {
+            msgType: "custom",
+            channel: "shell",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var msg = createKernelMessage(options);
+          var future = kernel.sendShellMessage(msg);
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('custom');
+            done();
+          });
+        });
+      });
+
+      it('should send a binary message', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IKernelMessageOptions = {
+            msgType: "custom",
+            channel: "shell",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var encoder = new TextEncoder('utf8');
+          var data = encoder.encode('hello');
+          var msg = createKernelMessage(options, {}, {}, [data, data.buffer]);
+          var future = kernel.sendShellMessage(msg);
+
+          tester.onMessage((msg: any) => {
+            var decoder = new TextDecoder('utf8');
+            var item = <DataView>msg.buffers[0];
+            expect(decoder.decode(item)).to.be('hello');
             done();
           });
         });
       });
     });
 
-    it('should throw an error for an invalid response', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var interrupt = kernel.interrupt();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-      return expectFailure(interrupt, done, "Invalid Status: 200");
+    describe('#interrupt', () => {
+
+      it('should resolve the promise with a valid server response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var interrupt = kernel.interrupt();
+          tester.respond(204, data);
+          interrupt.then(() => { done(); });
+        });
+      });
+
+      it('should throw an error for an invalid response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var interrupt = kernel.interrupt();
+          tester.respond(200, data);
+          expectFailure(interrupt, done, "Invalid Status: 200");
+        });
+      });
     });
 
-  });
+    describe('#restart', () => {
 
-  describe('#shutdown()', () => {
+      it('should resolve the promise with a valid server response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(200, data);
+          restart.then(() => { done(); });
+        });
+      });
 
-    it('should delete the kernel', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var data = { id: "1234", name: "test" };
-      var start = kernel.start();
-      tester.respond(200, data);
-      start.then(() => {
-        var shutdown = kernel.shutdown();
-        tester.respond(204, data);
-        shutdown.then((id: any) => {
-          setImmediate(() => {
-            expect(kernel.isConnected).to.be(false);
-            expect(kernel.id).to.be("1234");
+      it('should throw an error for an invalid response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(204, data);
+          expectFailure(restart, done, "Invalid Status: 204");
+        });
+      });
+
+      it('should throw an error for an invalid id', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(200, { });
+          expectFailure(restart, done, "Invalid kernel id");
+        });
+      });
+    });
+
+    describe('#shutdown', () => {
+
+      it('should resolve the promise with a valid server response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var shutdown = kernel.shutdown();
+          tester.respond(204, data);
+          shutdown.then(() => { done(); });
+        });
+      });
+
+      it('should throw an error for an invalid response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var shutdown = kernel.shutdown();
+          tester.respond(200, data);
+          expectFailure(shutdown, done, "Invalid Status: 200");
+        });
+      });
+    });
+
+    describe('#kernelInfo', () => {
+
+      it('should resolve the promise', (done) => {
+        createKernel().then((kernel: IKernel) => {
+          // resolved by KernelTester
+          kernel.kernelInfo().then((info) => {
+            var name = info.language_info.name;
+            expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
             done();
           });
         });
       });
     });
 
-    it('should throw an error for an invalid response', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var shutdown = kernel.shutdown();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-      return expectFailure(shutdown, done, "Invalid response");
-    });
+    describe('#complete', () => {
 
-  });
-
-  describe('#disconnect()', () => {
-
-    it('should disconnect the websocket', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var connect = kernel.connect();
-      expect(kernel.status).to.be('created');
-
-      connect.then(() => {
-        kernel.disconnect();
-        setImmediate(() => {
-          expect(kernel.isConnected).to.be(false);
-          done();
-        });
-      });
-    });
-
-  });
-
-  describe('#restart()', () => {
-
-    it('should restart the kernel', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var data = { id: "1234", name: "test" };
-      var start = kernel.start();
-      tester.respond(200, data);
-
-      start.then(() => {
-        var restart = kernel.restart();
+      it('should resolve the promise', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
-        restart.then((info: IKernelInfo) => {
-          console.log('***got a restart');
-          expectReady(kernel, info);
-          done();
+        kernelPromise.then((kernel: IKernel) => {
+          var options: ICompleteRequest = {
+            code: 'hello',
+            cursor_pos: 4
+          }
+          var promise = kernel.complete(options);
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('complete_request');
+            msg.parent_header = msg.header;
+            tester.send(msg);
+          });
+          promise.then(() => { done(); });
         });
       });
     });
 
-    it('should throw an error for an invalid kernel id', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var start = kernel.start();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-      
-      start.then(() => {
-        var restart = kernel.restart();
-        tester.respond(200, { name: "test" });
-        return expectFailure(restart, done, "Invalid kernel id");
-      });
-    });
+    describe('#inspect', () => {
 
-    it('should throw an error for an invalid response', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-      var start = kernel.start();
-      var data = { id: "1234", name: "test" };
-      tester.respond(200, data);
-
-      start.then(() => {
-        var restart = kernel.restart();
-        tester.respond(201, data);
-        return expectFailure(restart, done, "Invalid Status: 201");
-      });
-    });
-
-  });
-
-  describe('#reconnect()', () => {
-
-    it('should restart the websocket', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      var reconnect = kernel.reconnect();
-      expect(kernel.status).to.be('reconnecting');
-
-      reconnect.then((info: IKernelInfo) => {
-        expectReady(kernel, info);
-        kernel.reconnect();  // should have no effect
-        done();
-      });
-
-    });
-  });
-
-  describe('#kernelInfo()', () => {
-
-    it('should get the kernelInfo', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        var info = kernel.kernelInfo();
-        info.onReply(() => { done(); });
-      });
-    });
-  });
-
-  describe('#inspect()', () => {
-
-    it('should send an inspect message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        var inspect = kernel.inspect('hello', 2);
-        inspect.onReply(() => { done(); });
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          expect(data.channel).to.be('shell');
-          expect(data.content.code).to.be('hello');
-          expect(data.content.cursor_pos).to.be(2);
-          tester.send(JSON.stringify(data));
+      it('should resolve the promise', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IInspectRequest = {
+            code: 'hello',
+            cursor_pos: 4,
+            detail_level: 0
+          }
+          var promise = kernel.inspect(options);
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('inspect_request');
+            msg.parent_header = msg.header;
+            tester.send(msg);
+          });
+          promise.then(() => { done(); });
         });
       });
     });
+
+    describe('#isComplete', () => {
+
+      it('should resolve the promise', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IIsCompleteRequest = {
+            code: 'hello'
+          }
+          var promise = kernel.isComplete(options);
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('is_complete_request');
+            msg.parent_header = msg.header;
+            tester.send(msg);
+          });
+          promise.then(() => { done(); });
+        });
+      });
+    });
+
+    describe('#sendInputReply', () => {
+
+      it('should resolve the promise', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          kernel.sendInputReply({ value: 'test' });
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('input_reply');
+            done();
+          });
+        });
+      });
+    });
+
   });
 
   describe('#execute()', () => {
 
-    it('should send an execute message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        var options: IKernelExecute = {
-          silent: false,
-          user_expressions: { hello: 1 },
-          allow_stdin: true,
-          store_history: true
-        }
-        var execute = kernel.execute('hello', options);
-        execute.onDone(() => { done(); });
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          expect(data.channel).to.be('shell');
-          expect(data.content.code).to.be('hello');
-          expect(data.content.silent).to.be(false);
-          expect(data.content.user_expressions.hello).to.be(1);
-          expect(data.content.allow_stdin).to.be(true);
-          tester.send(serialize(data));
-
-          data.channel = 'iopub';
-          data.msgType = 'status';
-          data.content.execution_state = 'idle';
-          tester.send(serialize(data));
-        });
-      });
-    });
-
-  });
-
-  describe('#complete()', () => {
-
-    it('should send a complete message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        var complete = kernel.complete('hello', 2);
-        complete.onReply(() => { done(); });
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          expect(data.channel).to.be('shell');
-          expect(data.content.code).to.be('hello');
-          expect(data.content.cursor_pos).to.be(2);
-          tester.send(serialize(data));
-        });
-      });
-    });
-  });
-
-  describe('#sendInputReply()', () => {
-
-    it('should send an input reply message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        kernel.sendInputReply({ hello: 'world', foo: 100 });
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          expect(data.channel).to.be('stdin');
-          expect(data.content.value.hello).to.be('world');
-          expect(data.content.value.foo).to.be(100);
-          done();
-        });
-      });
-    });
-
-    it('should send fail if not connected', () => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var testFunc = () => {
-        kernel.sendInputReply({ hello: 'world', foo: 100 });
-      }
-      expect(testFunc).to.throwError();
-    });
-  });
-
-  describe('#sendShellMessage()', () => {
-
     it('should send handle incoming messages', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: "1234", name: KERNEL_OPTIONS.name };
+      tester.respond(200, data);
 
-      kernel.connect().then(() => {
-        var future = kernel.sendShellMessage('shell', {}, { test: 1 });
+      kernelPromise.then((kernel) => {
+        var options: IExecuteRequest = {
+          code: 'test',
+          silent: false,
+          store_history: true,
+          user_expressions: {},
+          allow_stdin: false,
+          stop_on_error: false
+        }
+        var future = kernel.execute(options);
+        expect(future.autoDispose).to.be(true);
+
+        tester.onMessage((msg) => {
+
+          expect(msg.channel).to.be('shell');
+
+          // send a reply
+          msg.parent_header = msg.header;
+          msg.channel = 'shell';
+          tester.send(msg);
+
+          future.onReply = () => {
+            // trigger onStdin
+            msg.channel = 'stdin';
+            tester.send(msg);
+          }
+
+          future.onStdin = () => {
+            // trigger onIOPub with a 'stream' message
+            msg.channel = 'iopub';
+            msg.header.msg_type = 'stream';
+            tester.send(msg);
+          };
+
+          future.onIOPub = () => { 
+            if (msg.header.msg_type === 'stream') {
+              // trigger onDone
+              msg.channel = 'iopub';
+              msg.header.msg_type = 'status';
+              msg.content.execution_state = 'idle';
+              tester.send(msg);
+            }
+          }
+
+          future.onDone = () => {
+            doLater(() => {
+              expect(future.isDisposed).to.be(true);
+              done();
+            });
+          }
+
+        });
+      });
+
+    });
+
+    it('should not auto-dispose', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: "1234", name: KERNEL_OPTIONS.name };
+      tester.respond(200, data);
+
+      kernelPromise.then((kernel) => {
+        var options: IExecuteRequest = {
+          code: 'test',
+          silent: false,
+          store_history: true,
+          user_expressions: {},
+          allow_stdin: false,
+          stop_on_error: false
+        }
+        var future = kernel.execute(options);
         future.autoDispose = false;
         expect(future.autoDispose).to.be(false);
 
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          expect(data.channel).to.be('shell');
+        tester.onMessage((msg) => {
 
-          data.parentHeader = data.header;
-          data.channel = 'iopub';
-          data.msgType = 'status';
-          data.content.execution_state = 'idle';
-          tester.send(JSON.stringify(data));
+          expect(msg.channel).to.be('shell');
 
-          data.channel = 'shell';
-          tester.send(serialize(data));
+          // send a reply
+          msg.parent_header = msg.header;
+          msg.channel = 'shell';
+          tester.send(msg);
 
-          future.onInput(() => {
-            expect(future.isDone).to.be(true);
-            future.onOutput(() => { done(); });
-            data.channel = 'iopub';
-            tester.send(serialize(data));
-          });
+          future.onReply = () => {
+            // trigger onDone
+            msg.channel = 'iopub';
+            msg.header.msg_type = 'status';
+            msg.content.execution_state = 'idle';
+            tester.send(msg);
+          }
 
-          data.channel = 'stdin';
-          tester.send(serialize(data));
-
+          future.onDone = () => {
+            doLater(() => {
+              expect(future.isDisposed).to.be(false);
+              done();
+            });
+          }
         });
       });
-    });
 
-    it('should send fail if not connected', () => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var testFunc = () => {
-        kernel.sendShellMessage('shell', {});
-      }
-      expect(testFunc).to.throwError();
-    });
-
-    it('should send a binary message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-        var encoder = new TextEncoder('utf8');
-        var data = encoder.encode('hello');
-        var future = kernel.sendShellMessage('shell', {}, {}, [data, data.buffer]);
-
-        tester.onMessage((msg: any) => {
-          expect(msg.data instanceof ArrayBuffer).to.be(true);
-          var data = deserialize(msg.data);
-          var decoder = new TextDecoder('utf8');
-          var item = <DataView>data.buffers[0];
-          expect(decoder.decode(item)).to.be('hello');
-          done();
-        });
-      });
     });
   });
 
-  describe('#_handleStatusMessage()', () => {
-
-    it('should send handle a starting message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-
-        var future = kernel.sendShellMessage('shell', {});
-        future.onOutput(() => {
-          expect(kernel.status).to.be('starting');
-          done();
-        });
-
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          data.channel = 'iopub';
-          data.msgType = 'status';
-          data.content.execution_state = 'starting';
-          tester.send(serialize(data));
-        });
-      });
-    });
-
-    it('should send handle a restarting message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-
-        var future = kernel.sendShellMessage('shell', {});
-        future.onOutput(() => {
-            expect(kernel.status).to.be('autorestarting');
-            done();
-        });
-
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          data.channel = 'iopub';
-          data.msgType = 'status';
-          data.content.execution_state = 'restarting';
-          tester.send(serialize(data));
-        });
-      });
-    });
-
-    it('should send handle a dead kernel message', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect().then(() => {
-
-        var future = kernel.sendShellMessage('shell', {});
-
-        tester.onMessage((msg: any) => {
-          var data = JSON.parse(msg.data);
-          data.parentHeader = data.header;
-          data.channel = 'iopub';
-          data.msgType = 'status';
-          data.content.execution_state = 'dead';
-          tester.send(serialize(data));
-        });
-      });
-
-      tester.onClose((ws: MockWebSocket) => {
-        expect(kernel.status).to.be('disconnected');
-        done();
-      });
-    });
-  });
-
-  describe('#statusChanged', () => {
-
-    it('should emit a status changed', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      kernel.connect();
-      expect(kernel.status).to.be('created');
-
-      kernel.statusChanged.connect((status: string) => {
-        expect(status).to.be('connected');
-        done();
-      });
-    });
-  });
-
-  describe('#onReady', () => {
-
-    it('should fulfill the Promise', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      var connect = kernel.connect();
-
-      kernel.onReady.then((info: IKernelInfo) => {
-        expectReady(kernel, info);
-        done();
-      });
-      
-    });
-
-    it('should reject the Promise', (done) => {
-      var kernel = new Kernel('/localhost', 'ws://');
-      var tester = new KernelTester(kernel);
-
-      var start = kernel.start();
-      tester.respond(500, { });
-
-      kernel.onReady.catch(() => {
-        done();
-      });
-      
-    });
-  });
 });
 
 
 /**
- * Handle an onReady Promise.
+ * Convenience function to start a kernel fully.
  */
-function expectReady(kernel: Kernel, info: IKernelInfo) {
-  expect(kernel.isConnected).to.be(true);
-  expect(kernel.name).to.be("test");
-  expect(kernel.id).to.be("1234");
-  var expectedName = EXAMPLE_KERNEL_INFO.language_info.name
-  expect(info.language_info.name).to.be(expectedName);
+function createKernel(): Promise<IKernel> {
+  var tester = new KernelTester();
+  var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+  tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+  return kernelPromise;
 }
+
