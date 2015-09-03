@@ -19,7 +19,6 @@
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
-    "coverage": "istanbul cover _mocha -- test/build/test*.js --timeout 3000",
     "build:src": "tsc --project src",
     "build:dts": "node scripts/dtsbundle.js",
     "build:test": "tsc --project test",
@@ -27,7 +26,8 @@
     "docs": "typedoc --options scripts/tdoptions.json",
     "docs:publish": "bash ./scripts/travis_after_success.sh",
     "prepublish": "npm run build",
-    "test": "mocha test/build/test*.js --timeout 3000"
+    "test": "mocha test/build/test*.js",
+    "test:coverage": "istanbul cover _mocha -- test/build/test*.js"
   },
   "repository": {
     "type": "git",
