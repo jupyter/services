@@ -10,7 +10,7 @@ import {
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
   IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
   IInputReply, IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
-  IKernelMessageHeader, IKernelOptions, KernelStatus
+  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, KernelStatus
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -249,7 +249,13 @@ class Kernel implements IKernel {
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
    */
   kernelInfo(): Promise<IKernelInfo> {
-    var msg = createKernelMessage(this, 'kernel_info_request', 'shell');
+    var options: IKernelMessageOptions = {
+      msgType: 'kernel_info_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options);
     return sendKernelMessage(this, msg);
   }
 
@@ -259,7 +265,13 @@ class Kernel implements IKernel {
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
    */
   complete(contents: ICompleteRequest): Promise<ICompleteReply> {
-    var msg = createKernelMessage(this, 'complete_request', 'shell', contents);
+    var options: IKernelMessageOptions = {
+      msgType: 'complete_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options, contents);
     return sendKernelMessage(this, msg);
   }
 
@@ -269,7 +281,13 @@ class Kernel implements IKernel {
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
    */
   inspect(contents: IInspectRequest): Promise<IInspectReply> {
-    var msg = createKernelMessage(this, 'inspect_request', 'shell', contents);
+    var options: IKernelMessageOptions = {
+      msgType: 'inspect_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options, contents);
     return sendKernelMessage(this, msg);
   }
 
@@ -279,7 +297,13 @@ class Kernel implements IKernel {
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
    */
   execute(contents: IExecuteRequest): IKernelFuture {
-    var msg = createKernelMessage(this, 'execute_request', 'shell', contents);
+    var options: IKernelMessageOptions = {
+      msgType: 'execute_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options, contents);
     return this.sendShellMessage(msg);
   }
 
@@ -289,9 +313,13 @@ class Kernel implements IKernel {
    * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
    */
   isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
-    var msg = createKernelMessage(
-      this, 'is_complete_request', 'shell', contents
-    );
+    var options: IKernelMessageOptions = {
+      msgType: 'is_complete_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options, contents);
     return sendKernelMessage(this, msg);
   }
 
@@ -304,7 +332,13 @@ class Kernel implements IKernel {
     if (this._status === KernelStatus.Dead) {
       throw Error('Cannot send a message to a closed Kernel');
     }
-    var msg = createKernelMessage(this, 'input_reply', 'stdin', contents);
+    var options: IKernelMessageOptions = {
+      msgType: 'input_reply',
+      channel: 'stdin',
+      username: this._username,
+      session: this._clientId
+    }
+    var msg = createKernelMessage(options, contents);
     this._ws.send(serialize.serialize(msg));
   }
 
@@ -338,11 +372,11 @@ class Kernel implements IKernel {
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
     if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
-      this._updateStatus(msg.content.executionstate);
+      this._updateStatus(msg.content.execution_state);
     }
     if (msg.parent_header) {
       var header = (<IKernelMessageHeader>msg.parent_header);
-      var future = this._handlerMap.get(header.msg_type);
+      var future = this._handlerMap.get(header.msg_id);
       if (future) {
         future.handleMsg(msg);
       }
@@ -470,7 +504,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
     dataType: "json"
   }).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 204) {
-      throw Error('Invalid response');
+      throw Error('Invalid Status: ' + success.xhr.status);
     }
   }, onKernelError);
 }
@@ -514,17 +548,17 @@ function onKernelError(error: utils.IAjaxError): any {
  * Create a well-formed Kernel Message.
  */
 export
-function createKernelMessage(kernel: IKernel, msgType: string, channel: string, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
+function createKernelMessage(options: IKernelMessageOptions, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
   return {
     header: {
-      username: kernel.username,
+      username: options.username || '',
       version: '5.0',
-      session: kernel.clientId,
-      msg_id: utils.uuid(),
-      msg_type: msgType
+      session: options.session,
+      msg_id: options.msgId || utils.uuid(),
+      msg_type: options.msgType
     },
     parent_header: { },
-    channel: channel,
+    channel: options.channel,
     content: content,
     metadata: metadata,
     buffers: buffers

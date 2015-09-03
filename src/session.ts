@@ -53,7 +53,7 @@ function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
  * the session fails to become ready, the promise is rejected.
  */
 export
-function startNewSession(options: ISessionOptions): Promise<NotebookSession> {
+function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
   var url = utils.urlJoinEncode(options.baseUrl, SESSION_SERVICE_URL);
   var model = {
     kernel: { name: options.kernelName },
@@ -90,7 +90,7 @@ function startNewSession(options: ISessionOptions): Promise<NotebookSession> {
  * the promise is rejected.
  */
 export
-function connectToSession(id: string, options?: ISessionOptions): Promise<NotebookSession> {
+function connectToSession(id: string, options?: ISessionOptions): Promise<INotebookSession> {
   var session = runningSessions.get(id);
   if (session) {
     return Promise.resolve(session);

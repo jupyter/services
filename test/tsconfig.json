@@ -20,7 +20,6 @@
     "src/testconfig.ts",
     "src/testcontents.ts",
     "src/testkernel.ts",
-    "src/testsession.ts",
     "src/testmocksocket.ts",
     "src/testmockxhr.ts",
     "src/utils.ts"

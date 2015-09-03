@@ -170,51 +170,71 @@ config.set('fizz', 'bazz');  // sets section.data.mySubSection.fizz = 'bazz'
 **Kernel**
 
 ```typescript
+import { 
+  listRunningKernels, connectToKernel, startNewKernel
+} from '../../lib/kernel';
 
 // get a list of available kernels
-var listPromise = Kernel.list('http://localhost:8000');
-
-// start a specific kernel
-var kernel = new Kernel('http://localhost:8000');
-listPromise.then((kernelList) => {
-  kernel.start(kernelList[0]);
+listRunningKernels('http://localhost:8000').then((kernelModels) => {
+  console.log(kernelModels[0].name);
+  console.log(kernelModels[0].id);
 });
 
-// send a message and get replies
-kernel.onReady.then(() => {
+// start a kernel by name
+var options = {
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost',
+  name: 'python'
+}
+startNewKernel(options).then((kernel) => {
+  // execute and handle replies
   var future = kernel.execute('a = 1');
-  future.onDone(() => {
+  future.onDone = () => {
     console.log('Future is fulfilled');
   });
-  future.onOutput((msg) => {
+  future.onIOPub = (msg) => {
     console.log(msg.content);  // rich output data
   });
-});
 
-// restart the kernel and send an inspect message
-kernel.restart().then(() => {
-  var future = kernel.inspect('hello', 5);
-  future.onReply((msg) => {
-    console.log(msg.content);
+  // restart the kernel and then send an inspect message
+  kernel.restart().then(() => {
+    kernel.inspect('hello', 5).then((msg) => {
+      console.log(msg.content);
+    });
   });
-});
 
-// interrupt the kernel and send a complete message
-kernel.interrupt().then(() => {
-  var future = kernel.complete('impor', 4);
-  future.onReply((msg) => {
-    console.log(msg.content);
+  // interrupt the kernel and then send a complete message
+  kernel.interrupt().then(() => {
+    kernel.complete('impor', 4).then((msg) => {
+      console.log(msg.content);
+    });
   });
+
+  // register a callback for when the kernel changes state
+  kernel.statusChanged.connect((status) => {
+    console.log('status', status);
+  });
+
+  // kill the kernel
+  kernel.shutdown();
+}
+
+// connect to an existing kernel by id
+var uid = "DEADBEEF";  // pretend this is the id of the running kernel above
+connectToKernel(uid).then((kernel) => {
+  console.log(kernel.name);  // python
 });
 
-// register a callback for when the kernel changes state
-kernel.statusChanged.connect((status) => {
-  console.log('status', status);
+// connect to a kernel running on the server by id
+var options = {
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost',
+  name: 'python'
+}
+var uid = "ABBA";
+connectToKernel(uid).then((kernel) => {
+  console.log(kernel.name);  // some other kernel
 });
-
-// kill the kernel
-kernel.shutdown();
-
 
 ```
 
