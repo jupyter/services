@@ -24,6 +24,7 @@
     "serialize.ts",
     "session.ts",
     "utils.ts",
+    "test.ts",
     "validate.ts"
   ]
 }
