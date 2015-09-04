@@ -46,7 +46,7 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
       validate.validateKernelId(success.data[i]);
     }
     return <IKernelId[]>success.data;
-  });
+  }, onKernelError);
 }
 
 
@@ -69,7 +69,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
     }
     validate.validateKernelId(success.data);
     return createKernel(options, success.data.id);
-  });
+  }, onKernelError);
 }
 
 

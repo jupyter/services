@@ -4,6 +4,7 @@
     "noImplicitAny": true,
     "noEmitOnError": true,
     "module": "commonjs",
+    "moduleResolution": "node",
     "target": "ES5",
     "outDir": "build"
   },
@@ -13,13 +14,12 @@
     "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/text-encoding/text-encoding.d.ts",
-    "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
-    "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "src/mocksocket.ts",
     "src/mockxhr.ts",
     "src/testconfig.ts",
     "src/testcontents.ts",
     "src/testkernel.ts",
+    "src/testsession.ts",
     "src/testmocksocket.ts",
     "src/testmockxhr.ts",
     "src/utils.ts"

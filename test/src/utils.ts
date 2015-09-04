@@ -29,6 +29,10 @@ class RequestHandler {
     MockXMLHttpRequest.requests = [];
   }
 
+  set onRequest(cb: () => void) {
+    MockXMLHttpRequest.onRequest = cb;
+  }
+
   /**
    * Respond to the latest Ajax request.
    */

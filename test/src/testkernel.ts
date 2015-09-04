@@ -145,15 +145,13 @@ describe('jupyter.services - kernel', () => {
       var handler = new RequestHandler();
       var list = listRunningKernels('baseUrl');
       var data = [
-        { id: "1234", name: "test" },
-        { id: "5678", name: "test2" }
+        { id: uuid(), name: "test" },
+        { id: uuid(), name: "test2" }
       ];
       handler.respond(200, data);
       return list.then((response: IKernelId[]) => {
-        expect(response[0].name).to.be("test");
-        expect(response[0].id).to.be("1234");
-        expect(response[1].name).to.be("test2");
-        expect(response[1].id).to.be("5678");
+        expect(response[0]).to.eql(data[0]);
+        expect(response[1]).to.eql(data[1]);
         done();
       });
     });
@@ -161,7 +159,7 @@ describe('jupyter.services - kernel', () => {
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
       var list = listRunningKernels('baseUrl');
-      var data = { id: "1234", name: "test" };
+      var data = { id: uuid(), name: "test" };
       handler.respond(200, data);
       expectFailure(list, done, "Invalid kernel list");
     });
@@ -169,12 +167,15 @@ describe('jupyter.services - kernel', () => {
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
       var list = listRunningKernels('baseUrl');
-      var data = [
-        { id: "1234", name: "test" },
-        { id: "5678", name: "test2" }
-      ];
-      handler.respond(201, data);
+      handler.respond(201, { });
       expectFailure(list, done, "Invalid Status: 201");
+    });
+
+    it('should throw an error for an error response', (done) => {
+      var handler = new RequestHandler();
+      var list = listRunningKernels('baseUrl');
+      handler.respond(500, { });
+      expectFailure(list, done, "");
     });
 
   });
@@ -184,7 +185,7 @@ describe('jupyter.services - kernel', () => {
     it('should create an IKernel object', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
         expect(kernel.status).to.be(KernelStatus.Starting);
         done();
@@ -194,14 +195,14 @@ describe('jupyter.services - kernel', () => {
     it('should throw an error if the kernel dies', (done) => {
       var tester = new KernelTester('dead');
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
       expectFailure(kernelPromise, done, 'Kernel failed to start');
     });
 
     it('should throw an error for an invalid kernel id', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: "1234" };
+      var data = { id: uuid() };
       tester.respond(200, data);
       return expectFailure(kernelPromise, done, "Invalid kernel id");
     });
@@ -209,9 +210,17 @@ describe('jupyter.services - kernel', () => {
     it('should throw an error for an invalid response', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: "1234", name: KERNEL_OPTIONS.name };
+      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
       tester.respond(201, data);
       return expectFailure(kernelPromise, done, "Invalid Status: 201");
+    });
+
+    it('should throw an error for an error response', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+      tester.respond(500, { });
+      return expectFailure(kernelPromise, done, "");
     });
 
   });
@@ -221,9 +230,10 @@ describe('jupyter.services - kernel', () => {
     it('should reuse an exisiting kernel', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+      var id = uuid();
+      tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
-        connectToKernel(kernel.id).then((newKernel) => {
+        connectToKernel(id).then((newKernel) => {
           expect(newKernel.name).to.be(kernel.name);
           expect(newKernel.id).to.be(kernel.id);
           done();
@@ -233,7 +243,7 @@ describe('jupyter.services - kernel', () => {
 
     it('should connect to a running kernel if given kernel options', (done) => {
       var tester = new KernelTester();
-      var id = "5678";
+      var id = uuid();
       var kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
       tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
       kernelPromise.then((kernel: IKernel) => {
@@ -245,29 +255,29 @@ describe('jupyter.services - kernel', () => {
 
     it('should fail if no existing kernel and no options', (done) => {
       var tester = new KernelTester();
-      var id = "abcd";
+      var id = uuid();
       var kernelPromise = connectToKernel(id);
       expectFailure(kernelPromise, done, 'Please specify kernel options');
     });
 
     it('should fail if no running kernel available', (done) => {
       var tester = new KernelTester();
-      var id = "aaaa";
+      var id = uuid();
       var kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
-      tester.respond(200, [{ id: "bbbb", name: KERNEL_OPTIONS.name }]);
-      expectFailure(kernelPromise, done, 'No running kernel with id: aaaa');
+      tester.respond(200, [{ id: uuid(), name: KERNEL_OPTIONS.name }]);
+      expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
     });
 
   });
 
   describe('IKernel', () => {
 
-    describe('#statusChanged', () => {
+    context('#statusChanged', () => {
 
       it('should be be an signal following the Kernel status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -278,7 +288,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#id', () => {
+    context('#id', () => {
 
       it('should be a read only string', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -290,7 +300,7 @@ describe('jupyter.services - kernel', () => {
 
     });
 
-    describe('#name', () => {
+    context('#name', () => {
 
       it('should be a read only string', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -302,7 +312,7 @@ describe('jupyter.services - kernel', () => {
 
     });
 
-    describe('#username', () => {
+    context('#username', () => {
 
       it('should be a read only string', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -314,7 +324,7 @@ describe('jupyter.services - kernel', () => {
 
     });
 
-    describe('#clientId', () => {
+    context('#clientId', () => {
 
       it('should be a read only string', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -325,12 +335,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#status', () => {
+    context('#status', () => {
 
       it('should get an idle status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -344,7 +354,7 @@ describe('jupyter.services - kernel', () => {
       it('should get an restarting status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -358,7 +368,7 @@ describe('jupyter.services - kernel', () => {
       it('should get a busy status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -372,7 +382,7 @@ describe('jupyter.services - kernel', () => {
       it('should get a dead status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -384,12 +394,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#sendShellMessage', () => {
+    context('#sendShellMessage', () => {
 
       it('should send a message to the kernel', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           var options: IKernelMessageOptions = {
             msgType: "custom",
@@ -409,7 +419,7 @@ describe('jupyter.services - kernel', () => {
       it('should send a binary message', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           var options: IKernelMessageOptions = {
             msgType: "custom",
@@ -432,12 +442,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#interrupt', () => {
+    context('#interrupt', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var interrupt = kernel.interrupt();
@@ -449,7 +459,7 @@ describe('jupyter.services - kernel', () => {
       it('should throw an error for an invalid response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var interrupt = kernel.interrupt();
@@ -457,14 +467,26 @@ describe('jupyter.services - kernel', () => {
           expectFailure(interrupt, done, "Invalid Status: 200");
         });
       });
+
+      it('should throw an error for an error response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var interrupt = kernel.interrupt();
+          tester.respond(500, { });
+          expectFailure(interrupt, done, "");
+        });
+      });
     });
 
-    describe('#restart', () => {
+    context('#restart', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
@@ -476,7 +498,7 @@ describe('jupyter.services - kernel', () => {
       it('should throw an error for an invalid response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
@@ -485,10 +507,22 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should throw an error for an error response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(500, { });
+          expectFailure(restart, done, "");
+        });
+      });
+
       it('should throw an error for an invalid id', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
@@ -498,12 +532,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#shutdown', () => {
+    context('#shutdown', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
@@ -515,7 +549,7 @@ describe('jupyter.services - kernel', () => {
       it('should throw an error for an invalid response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
@@ -523,9 +557,21 @@ describe('jupyter.services - kernel', () => {
           expectFailure(shutdown, done, "Invalid Status: 200");
         });
       });
+
+      it('should throw an error for an error response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var shutdown = kernel.shutdown();
+          tester.respond(500, { });
+          expectFailure(shutdown, done, "");
+        });
+      });
     });
 
-    describe('#kernelInfo', () => {
+    context('#kernelInfo', () => {
 
       it('should resolve the promise', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -539,12 +585,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#complete', () => {
+    context('#complete', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: ICompleteRequest = {
@@ -562,12 +608,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#inspect', () => {
+    context('#inspect', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: IInspectRequest = {
@@ -586,12 +632,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#isComplete', () => {
+    context('#isComplete', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: IIsCompleteRequest = {
@@ -608,12 +654,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    describe('#sendInputReply', () => {
+    context('#sendInputReply', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        var data = { id: "1234", name: KERNEL_OPTIONS.name };
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
         kernelPromise.then((kernel: IKernel) => {
           kernel.sendInputReply({ value: 'test' });
@@ -627,12 +673,12 @@ describe('jupyter.services - kernel', () => {
 
   });
 
-  describe('#execute()', () => {
+  context('#execute()', () => {
 
     it('should send handle incoming messages', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: "1234", name: KERNEL_OPTIONS.name };
+      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
       tester.respond(200, data);
 
       kernelPromise.then((kernel) => {
@@ -694,7 +740,7 @@ describe('jupyter.services - kernel', () => {
     it('should not auto-dispose', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: "1234", name: KERNEL_OPTIONS.name };
+      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
       tester.respond(200, data);
 
       kernelPromise.then((kernel) => {
@@ -748,7 +794,7 @@ describe('jupyter.services - kernel', () => {
 function createKernel(): Promise<IKernel> {
   var tester = new KernelTester();
   var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-  tester.respond(200, { id: "1234", name: KERNEL_OPTIONS.name });
+  tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
   return kernelPromise;
 }
 
