@@ -183,20 +183,12 @@ class PromiseDelegate<T> {
   }
 
   /**
-   * Test whether the Promise has been settled.
-   */
-  get settled(): boolean {
-    return this._settled;
-  }
-
-  /**
    * Resolve the underlying Promise with an optional value or another Promise.
    */
   resolve(value?: T | Thenable<T>): void {
     // Note: according to the Promise spec, and the `this` context for resolve 
     // and reject are ignored
     this._resolve(value);
-    this._settled = true;
   }
 
   /**
@@ -206,11 +198,9 @@ class PromiseDelegate<T> {
     // Note: according to the Promise spec, and the `this` context for resolve 
     // and reject are ignored
     this._reject(reason);
-    this._settled = true;
   }
 
   private _promise: Promise<T>;
   private _resolve: (value?: T | Thenable<T>) => void;
   private _reject: (reason?: any) => void;
-  private _settled = false;
 }

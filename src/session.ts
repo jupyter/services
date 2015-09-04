@@ -196,10 +196,8 @@ class NotebookSession implements INotebookSession {
    * Rename the notebook.
    */
   renameNotebook(path: string): Promise<void> {
-    console.log('rename notebook');
     if (this._isDead) {
-      console.log('***DEAD');
-      throw new Error('Session is dead');
+      return Promise.reject(new Error('Session is dead'));
     }
     return utils.ajaxRequest(this._url, {
       method: "PATCH",
@@ -223,10 +221,9 @@ class NotebookSession implements INotebookSession {
    */
   shutdown(): Promise<void> {
     if (this._isDead) {
-      throw new Error('Session is dead');
+      return Promise.reject(new Error('Session is dead'));
     }
     this._isDead = true;
-    console.log('***isdead');
     return utils.ajaxRequest(this._url, {
       method: "DELETE",
       dataType: "json"
@@ -237,7 +234,6 @@ class NotebookSession implements INotebookSession {
       this.sessionDied.emit(void 0);
       this.kernel.shutdown();
     }, (rejected: utils.IAjaxError) => {
-      console.log('**not dead yet');
       this._isDead = false;
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
@@ -251,7 +247,6 @@ class NotebookSession implements INotebookSession {
    */
   private _kernelStatusChanged(state: KernelStatus) {
     if (state == KernelStatus.Dead) {
-      console.log('**shutting down');
       this.shutdown();
     }
   }
