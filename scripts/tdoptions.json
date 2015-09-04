@@ -11,7 +11,5 @@
     "typings/text-encoding/text-encoding.d.ts",
     "typings/es6-container-shim.d.ts",
     "typings/es6-dataview.d.ts",
-    "node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
-    "node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts"
   ]
 }

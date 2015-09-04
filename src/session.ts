@@ -41,7 +41,7 @@ function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
       validate.validateSessionId(success.data[i]);
     }
     return <ISessionId[]>success.data;
-  });
+  }, onSessionError);
 }
 
 
@@ -66,12 +66,12 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
     contentType: 'application/json'
   }).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 201) {
-      throw Error('Invalid response');
+      throw Error('Invalid Status: ' + success.xhr.status);
     }
     var sessionId = <ISessionId>success.data;
     validate.validateSessionId(success.data);
     return createSession(sessionId, options);
-  });
+  }, onSessionError);
 }
 
 
@@ -98,12 +98,16 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
   if (options === void 0) {
     return Promise.reject(new Error('Please specify session options'));
   }
-  return listRunningSessions(options.baseUrl).then((sessionIds) => {
-    var sessionIds = sessionIds.filter(k => k.id === id);
-    if (!sessionIds.length) {
-      throw new Error('No running session with id: ' + id);
-    }
-    return createSession(sessionIds[0], options);
+  return new Promise<NotebookSession>((resolve, reject) => {
+    listRunningSessions(options.baseUrl).then((sessionIds) => {
+      var sessionIds = sessionIds.filter(k => k.id === id);
+      if (!sessionIds.length) {
+        reject(new Error('No running session with id: ' + id));
+      }
+      createSession(sessionIds[0], options).then((session) => {
+        resolve(session);
+      });
+    });
   });
 }
 
@@ -125,10 +129,15 @@ function createSession(sessionId: ISessionId, options: ISessionOptions): Promise
     }
     var kernelPromise = connectToKernel(sessionId.kernel.id, kernelOptions);
     kernelPromise.then((kernel: IKernel) => {
-      resolve(new NotebookSession(options, sessionId.id, kernel));
-    });
+      var session = new NotebookSession(options, sessionId.id, kernel);
+      runningSessions.set(session.id, session);
+      resolve(session);
+    }).catch(() => {
+      reject(new Error('Session failed to start'));
+    })
   });
 }
+
 
 /**
  * A module private store for running sessions.
@@ -159,14 +168,14 @@ class NotebookSession implements INotebookSession {
     this._url = utils.urlJoinEncode(
       options.baseUrl, SESSION_SERVICE_URL, this._id
     );
-    this._kernel.statusChanged.connect(this._kernelStatusChanged);
+    this._kernel.statusChanged.connect(this._kernelStatusChanged, this);
   }
 
   /**
    * Get the session id.
    */
   get id(): string {
-    return this.id;
+    return this._id;
   }
 
   /**
@@ -187,7 +196,9 @@ class NotebookSession implements INotebookSession {
    * Rename the notebook.
    */
   renameNotebook(path: string): Promise<void> {
+    console.log('rename notebook');
     if (this._isDead) {
+      console.log('***DEAD');
       throw new Error('Session is dead');
     }
     return utils.ajaxRequest(this._url, {
@@ -197,12 +208,12 @@ class NotebookSession implements INotebookSession {
       contentType: 'application/json'
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid response');
+        throw Error('Invalid Status: ' + success.xhr.status);
       }
       var data = <ISessionId>success.data;
       validate.validateSessionId(data);
       this._notebookPath = data.notebook.path;
-    });
+    }, onSessionError);
   }
 
   /**
@@ -215,28 +226,32 @@ class NotebookSession implements INotebookSession {
       throw new Error('Session is dead');
     }
     this._isDead = true;
-    this.sessionDied.emit(void 0);
+    console.log('***isdead');
     return utils.ajaxRequest(this._url, {
       method: "DELETE",
       dataType: "json"
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid response');
+        throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validate.validateSessionId(success.data);
+      this.sessionDied.emit(void 0);
+      this.kernel.shutdown();
     }, (rejected: utils.IAjaxError) => {
-        if (rejected.xhr.status === 410) {
-          throw Error('The kernel was deleted but the session was not');
-        }
-        throw Error(rejected.statusText);
+      console.log('**not dead yet');
+      this._isDead = false;
+      if (rejected.xhr.status === 410) {
+        throw Error('The kernel was deleted but the session was not');
+      }
+      onSessionError(rejected);
     });
   }
 
   /**
    * React to changes in the Kernel status.
    */
-  _kernelStatusChanged(state: KernelStatus) {
+  private _kernelStatusChanged(state: KernelStatus) {
     if (state == KernelStatus.Dead) {
+      console.log('**shutting down');
       this.shutdown();
     }
   }
@@ -246,4 +261,12 @@ class NotebookSession implements INotebookSession {
   private _kernel: IKernel = null;
   private _url = '';
   private _isDead = false;
+}
+
+/**
+ * Handle an error on a session Ajax call.
+ */
+function onSessionError(error: utils.IAjaxError): any {
+  console.error("API request failed (" + error.statusText + "): ");
+  throw Error(error.statusText);
 }

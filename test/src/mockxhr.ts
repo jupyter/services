@@ -29,6 +29,13 @@ class MockXMLHttpRequest {
   static requests: MockXMLHttpRequest[] = [];
 
   /**
+   * Register a callback for the next request.
+   *
+   * It is automatically cleared after the request.
+   */
+  static onRequest: () => void = null;
+
+  /**
    * Ready state of the request.
    */
   get readyState(): number {
@@ -152,7 +159,10 @@ class MockXMLHttpRequest {
     if (data !== void 0) {
       this._data = data;
     }
-    MockXMLHttpRequest.requests.push(this);;
+    MockXMLHttpRequest.requests.push(this);
+    var onRequest = MockXMLHttpRequest.onRequest;
+    if (onRequest) onRequest();
+    MockXMLHttpRequest.onRequest = null;
   }
 
   /**
