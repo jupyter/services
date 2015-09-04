@@ -185,15 +185,21 @@ selector.load().then((kernelNames: string[]) => {
 ```typescript
 import { 
   listRunningKernels, connectToKernel, startNewKernel
-} from '../../lib/kernel';
+} from 'jupyter-js-sessions';
 
-// get a list of available kernels
+// get a list of available kernels and connect to one
 listRunningKernels('http://localhost:8000').then((kernelModels) => {
-  console.log(kernelModels[0].name);
-  console.log(kernelModels[0].id);
+  var options = {
+    baseUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost',
+    name: kernelmodels[0].name
+  }
+  connectToKernel(kernelModels[0].id, options).then((kernel) => {
+    console.log(kernel.name);
+  });
 });
 
-// start a kernel by name
+// start a new kernel
 var options = {
   baseUrl: 'http://localhost:8000',
   wsUrl: 'ws://localhost',
@@ -204,10 +210,10 @@ startNewKernel(options).then((kernel) => {
   var future = kernel.execute('a = 1');
   future.onDone = () => {
     console.log('Future is fulfilled');
-  });
+  }
   future.onIOPub = (msg) => {
     console.log(msg.content);  // rich output data
-  });
+  }
 
   // restart the kernel and then send an inspect message
   kernel.restart().then(() => {
@@ -229,24 +235,9 @@ startNewKernel(options).then((kernel) => {
   });
 
   // kill the kernel
-  kernel.shutdown();
-}
-
-// connect to an existing kernel by id
-var uid = "DEADBEEF";  // pretend this is the id of the running kernel above
-connectToKernel(uid).then((kernel) => {
-  console.log(kernel.name);  // python
-});
-
-// connect to a kernel running on the server by id
-var options = {
-  baseUrl: 'http://localhost:8000',
-  wsUrl: 'ws://localhost',
-  name: 'python'
-}
-var uid = "ABBA";
-connectToKernel(uid).then((kernel) => {
-  console.log(kernel.name);  // some other kernel
+  kernel.shutdown().then(() => {
+    console.log('Kernel shut down');
+  })
 });
 
 ```
@@ -255,35 +246,51 @@ connectToKernel(uid).then((kernel) => {
 
 ```typescript
 import {
-  NotebookSession
+  listRunningSessions, connectToSession, startNewSession
 } from 'jupyter-js-services';
 
-// get a list of available sessions
-var listPromise = NotebookSession.list('http://localhost:8000');
-
-// start a specific session
-var session = new NotebookSession('http://localhost:8000');
-listPromise.then((sessionList) => {
-  session.start(sessionList[0]);
-});
-
-// restart a session and send a complete message to the kernel
-session.restart().then(() => {
-  var future = session.kernel.complete('impor', 4);
-  future.onReply((msg) => {
-    console.log(msg.content);
+// get a list of available sessions and connect to one
+listRunningSessions('http://localhost:8000').then((sessionModels) => {
+  var options = {
+    baseUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost',
+    kernelName: sessionModels[0].kernel.name,
+    notebookPath: sessionModels[0].notebook.path
+  }
+  connectToSession(sessionModels[0].id, options).then((session) => {
+    console.log(session.kernel.name);
   });
 });
 
-// rename the notebook
-session.renameNotebook('/path/to/notebook.ipynb');
+// start a new session
+var options = {
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost',
+  kernelName: 'python',
+  notebookPath: '/tmp/foo.ipynb'
+}
+startNewSession(options).then((session) => {
+  // execute and handle replies on the kernel
+  var future = session.kernel.execute({ code: 'a = 1' });
+  future.onDone = () => {
+    console.log('Future is fulfilled');
+  }
 
-// register a callback for when the session changes state
-session.statusChanged.connect((status) => {
-  console.log('status', status);
+  // rename the notebook
+  session.renameNotebook('/local/bar.ipynb').then(() => {
+    console.log('Notebook renamed to', session.notebookPath);
+  });
+
+  // register a callback for when the session dies
+  session.sessionDied.connect(() => {
+    console.log('session died');
+  });
+
+  // kill the session
+  session.shutdown().then(() => {
+    console.log('session closed');
+  });
+
 });
-
-// kill the session
-session.shutdown();
 
 ```

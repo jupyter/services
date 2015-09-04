@@ -70,6 +70,14 @@ describe('jupyter.services - session', () => {
       expectFailure(list, done, "Invalid Session list");
     });
 
+    it('should throw an error for another invalid model', (done) => {
+      var handler = new RequestHandler();
+      var list = listRunningSessions('baseUrl');
+      var data = [{ id: "1234", kernel: { id: '', name: '' }, notebook: { } }];
+      handler.respond(200, data);
+      expectFailure(list, done, "Invalid Notebook Model");
+    });
+
     it('should fail for wrong response status', (done) => {
       var handler = new RequestHandler();
       var list = listRunningSessions('baseUrl');
@@ -140,7 +148,10 @@ describe('jupyter.services - session', () => {
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
       var sessionPromise = startNewSession(options);
-      tester.respond(201, {});
+      var data = { 
+        id: 1, kernel: { name: '', id: '' }, notebook: { path: ''}
+      };
+      tester.respond(201, data);
       expectFailure(sessionPromise, done, 'Invalid Session Model');
     });
 
