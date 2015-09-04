@@ -392,6 +392,21 @@ describe('jupyter.services - kernel', () => {
           tester.sendStatus('dead');
         });
       });
+
+      it('should handle an invalid status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Idle);
+            done();
+          });
+          tester.sendStatus('celebrating');
+          tester.sendStatus('idle');
+        });
+      });
     });
 
     context('#sendShellMessage', () => {
@@ -440,6 +455,32 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
+
+      it('should fail if the kernel is closed', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IKernelMessageOptions = {
+            msgType: "custom",
+            channel: "shell",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var msg = createKernelMessage(options);
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            try {
+              kernel.sendShellMessage(msg);
+            } catch(err) {
+              expect(err.message).to.be(
+                'Cannot send a message to a closed Kernel'
+              );
+              done();
+            }
+          });
+        });
+      });
     });
 
     context('#interrupt', () => {
@@ -477,6 +518,19 @@ describe('jupyter.services - kernel', () => {
           var interrupt = kernel.interrupt();
           tester.respond(500, { });
           expectFailure(interrupt, done, "");
+        });
+      });
+
+      it('should fail if the kernel is dead', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            expectFailure(kernel.interrupt(), done, 'Kernel is dead');
+          });
         });
       });
     });
@@ -530,6 +584,19 @@ describe('jupyter.services - kernel', () => {
           expectFailure(restart, done, "Invalid kernel id");
         });
       });
+
+      it('should fail if the kernel is dead', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            expectFailure(kernel.restart(), done, 'Kernel is dead');
+          });
+        });
+      });
     });
 
     context('#shutdown', () => {
@@ -567,6 +634,19 @@ describe('jupyter.services - kernel', () => {
           var shutdown = kernel.shutdown();
           tester.respond(500, { });
           expectFailure(shutdown, done, "");
+        });
+      });
+
+      it('should fail if the kernel is dead', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            expectFailure(kernel.shutdown(), done, 'Kernel is dead');
+          });
         });
       });
     });
@@ -669,6 +749,26 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
+
+     it('should fail if the kernel is dead', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
+        kernelPromise.then((kernel: IKernel) => {
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            try {
+              kernel.sendInputReply({ value: 'test' });
+            } catch(err) {
+              expect(err.message).to.be(
+                'Cannot send a message to a closed Kernel'
+              );
+              done();
+            }
+          });
+        });
+      });
     });
 
   });
@@ -692,6 +792,10 @@ describe('jupyter.services - kernel', () => {
         }
         var future = kernel.execute(options);
         expect(future.autoDispose).to.be(true);
+        expect(future.onDone).to.be(null);
+        expect(future.onStdin).to.be(null);
+        expect(future.onReply).to.be(null);
+        expect(future.onIOPub).to.be(null);
 
         tester.onMessage((msg) => {
 

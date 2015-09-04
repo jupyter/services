@@ -316,12 +316,7 @@ describe('jupyter.services - session', () => {
         var id = createSessionId();
         startSession(id, tester).then((session) => {
           var shutdown = session.shutdown();
-          try {
-            session.renameNotebook('');
-          } catch(err) {
-            expect(err.message).to.be('Session is dead');
-            done();
-          }
+          expectFailure(session.renameNotebook(''), done, 'Session is dead');
         });
       });
     });
@@ -391,12 +386,7 @@ describe('jupyter.services - session', () => {
           var shutdown = session.shutdown();
           tester.respond(204, { });
           shutdown.then(() => {
-            try {
-              session.shutdown();
-            } catch(err) {
-              expect(err.message).to.be('Session is dead');
-              done()
-            }
+            expectFailure(session.shutdown(), done, 'Session is dead');
           });
         });
       });
