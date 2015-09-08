@@ -2,8 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { ISignal, defineSignal } from 'phosphor-signaling';
-
 import * as utils from './utils';
 
 
