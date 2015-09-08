@@ -4,7 +4,7 @@
 
 import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
 
-import { ISignal, defineSignal } from 'phosphor-signaling';
+import { ISignal, Signal } from 'phosphor-signaling';
 
 import { 
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
@@ -113,7 +113,7 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
 function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
   return new Promise<IKernel>((resolve, reject) => {
     var kernel = new Kernel(options, id);
-    var callback = (status: KernelStatus) => {
+    var callback = (sender: IKernel, status: KernelStatus) => {
       if (status === KernelStatus.Starting) {
         kernel.statusChanged.disconnect(callback);
         runningKernels.set(kernel.id, kernel);
@@ -136,8 +136,7 @@ class Kernel implements IKernel {
   /**
    * A signal emitted when the kernel status changes.
    */
-  @defineSignal
-  statusChanged: ISignal<KernelStatus>;
+  static statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
    * Construct a kernel object.
@@ -150,6 +149,13 @@ class Kernel implements IKernel {
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
     this._createSocket(options.wsUrl);
+  }
+
+  /**
+   * The status changed signal for the kernel.
+   */
+  get statusChanged(): ISignal<IKernel, KernelStatus> {
+    return Kernel.statusChangedSignal.bind(this);
   }
 
   /**
@@ -225,6 +231,7 @@ class Kernel implements IKernel {
    * It is assumed that the API call does not mutate the kernel id or name.
    */
   restart(): Promise<void> {
+    this._status = KernelStatus.Restarting;
     return restartKernel(this, this._baseUrl);
   }
 
@@ -452,7 +459,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   var url = utils.urlJoinEncode(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'restart'
   );
-  return utils.ajaxRequest(url, {
+  utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
   }).then((success: utils.IAjaxSuccess) => {
@@ -461,6 +468,18 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
     }
     validate.validateKernelId(success.data);
   }, onKernelError);
+  return new Promise<void>((resolve, reject) => {
+    var waitForStart = () => {
+      if (kernel.status === KernelStatus.Starting) {
+        kernel.statusChanged.disconnect(waitForStart);
+        resolve();
+      } else if (kernel.status === KernelStatus.Dead) {
+        kernel.statusChanged.disconnect(waitForStart);
+        reject();
+      }
+    }
+    kernel.statusChanged.connect(waitForStart);
+  });
 }
 
 

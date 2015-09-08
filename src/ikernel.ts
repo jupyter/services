@@ -4,7 +4,7 @@
 
 import { IDisposable } from 'phosphor-disposable';
 
-import { ISignal } from 'phosphor-signaling';
+import { ISignal, Signal } from 'phosphor-signaling';
 
 
 export
@@ -211,9 +211,9 @@ interface IKernelMessageOptions {
 export 
 interface IKernel {
   /**
-   * A signal emitted when the kernel status changes.
+   * The status changed signal for the kernel.
    */
-  statusChanged: ISignal<KernelStatus>;
+  statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
    * The id of the server-side kernel.

@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { ISignal, defineSignal } from 'phosphor-signaling';
+import { ISignal, Signal } from 'phosphor-signaling';
 
 import { KernelStatus, IKernel, IKernelOptions } from './ikernel';
 
@@ -155,8 +155,7 @@ class NotebookSession implements INotebookSession {
   /**
    * A signal emitted when the session dies.
    */
-  @defineSignal
-  sessionDied: ISignal<void>;
+  static sessionDiedSignal = new Signal<INotebookSession, void>();
 
   /**
    * Construct a new session.
@@ -169,6 +168,13 @@ class NotebookSession implements INotebookSession {
       options.baseUrl, SESSION_SERVICE_URL, this._id
     );
     this._kernel.statusChanged.connect(this._kernelStatusChanged, this);
+  }
+
+  /**
+   * Get the session died signal.
+   */
+  get sessionDied(): ISignal<INotebookSession, void> {
+    return NotebookSession.sessionDiedSignal.bind(this);
   }
 
   /**
@@ -245,7 +251,7 @@ class NotebookSession implements INotebookSession {
   /**
    * React to changes in the Kernel status.
    */
-  private _kernelStatusChanged(state: KernelStatus) {
+  private _kernelStatusChanged(sender: IKernel, state: KernelStatus) {
     if (state == KernelStatus.Dead) {
       this.shutdown();
     }

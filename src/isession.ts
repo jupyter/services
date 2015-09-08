@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { ISignal } from 'phosphor-signaling';
+import { ISignal, Signal } from 'phosphor-signaling';
 
 import { IKernel, IKernelId, KernelStatus } from './ikernel';
 
@@ -47,9 +47,9 @@ interface ISessionOptions {
 export
 interface INotebookSession {
   /**
-   * A signal emitted when the session dies.
+   * Get the session died signal.
    */
-  sessionDied: ISignal<void>;
+  sessionDied: ISignal<INotebookSession, void>;
 
   /**
    * Unique id of the session.
