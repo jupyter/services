@@ -367,3 +367,38 @@ interface IKernelFuture extends IDisposable {
    */
   onDone: (msg: IKernelMessage) => void;
 }
+
+
+/**
+ * KernelSpec help link interface.
+ */
+export 
+interface IKernelSpecHelpLink {
+  text: string;
+  url: string;
+}
+
+
+/**
+ * KernelSpec interface.
+ */
+export
+interface IKernelSpec {
+  language: string;
+  argv: string[];
+  display_name: string;
+  codemirror_mode: string;
+  env: any;
+  help_links: IKernelSpecHelpLink[];
+}
+
+
+/**
+ * KernelSpecId interface.
+ */
+export
+interface IKernelSpecId {
+  name: string;
+  spec: IKernelSpec;
+  resources: { [key: string]: string; };
+}

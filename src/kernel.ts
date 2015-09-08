@@ -10,7 +10,8 @@ import {
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
   IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
   IInputReply, IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
-  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, KernelStatus
+  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecId,
+  KernelStatus
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -24,6 +25,44 @@ import * as validate from './validate';
  * The url for the kernel service.
  */
 var KERNEL_SERVICE_URL = 'api/kernels';
+
+
+/**
+ * The url for the kernelspec service.
+ */
+var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
+
+
+/**  
+ * Fetch the kernel specs via API: GET /kernelspecs
+ */
+export
+function listKernelSpecs(baseUrl: string): Promise<IKernelSpecId[]> {
+  var url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
+  return utils.ajaxRequest(url, {
+    method: "GET",
+    dataType: "json"   
+  }).then((success: utils.IAjaxSuccess) => {
+    var err = new Error('Invalid KernelSpecs info');
+    if (success.xhr.status !== 200) {
+      throw new Error('Invalid Response: ' + success.xhr.status);
+    }
+    var data = success.data;
+    if (!data.hasOwnProperty('default') || 
+        typeof data.default !== 'string') {
+      throw err;
+    }
+    if (!data.hasOwnProperty('kernelspecs') ||
+        !Array.isArray(data.kernelspecs)) {
+      throw err;
+    }
+    for (var i = 0; i < data.kernelspecs.length; i++) {
+      var ks = data.kernelspecs[i]
+      validate.validateKernelSpec(ks);
+    }
+    return data.kernelspecs;
+  });
+}
 
 
 /**
