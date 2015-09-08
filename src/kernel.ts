@@ -64,7 +64,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
     method: "POST",
     dataType: "json"
   }).then((success: utils.IAjaxSuccess) => {
-    if (success.xhr.status !== 200) {
+    if (success.xhr.status !== 201) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);

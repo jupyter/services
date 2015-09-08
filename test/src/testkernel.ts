@@ -185,7 +185,7 @@ describe('jupyter.services - kernel', () => {
     it('should create an IKernel object', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+      tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
         expect(kernel.status).to.be(KernelStatus.Starting);
         done();
@@ -195,7 +195,7 @@ describe('jupyter.services - kernel', () => {
     it('should throw an error if the kernel dies', (done) => {
       var tester = new KernelTester('dead');
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+      tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       expectFailure(kernelPromise, done, 'Kernel failed to start');
     });
 
@@ -203,7 +203,7 @@ describe('jupyter.services - kernel', () => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
       var data = { id: uuid() };
-      tester.respond(200, data);
+      tester.respond(201, data);
       return expectFailure(kernelPromise, done, "Invalid kernel id");
     });
 
@@ -211,8 +211,8 @@ describe('jupyter.services - kernel', () => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
       var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-      tester.respond(201, data);
-      return expectFailure(kernelPromise, done, "Invalid Status: 201");
+      tester.respond(200, data);
+      return expectFailure(kernelPromise, done, "Invalid Status: 200");
     });
 
     it('should throw an error for an error response', (done) => {
@@ -231,7 +231,7 @@ describe('jupyter.services - kernel', () => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
       var id = uuid();
-      tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
+      tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
         connectToKernel(id).then((newKernel) => {
           expect(newKernel.name).to.be(kernel.name);
@@ -277,7 +277,7 @@ describe('jupyter.services - kernel', () => {
       it('should be be an signal following the Kernel status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -340,7 +340,7 @@ describe('jupyter.services - kernel', () => {
       it('should get an idle status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -354,7 +354,7 @@ describe('jupyter.services - kernel', () => {
       it('should get an restarting status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -368,7 +368,7 @@ describe('jupyter.services - kernel', () => {
       it('should get a busy status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -382,7 +382,7 @@ describe('jupyter.services - kernel', () => {
       it('should get a dead status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -396,7 +396,7 @@ describe('jupyter.services - kernel', () => {
       it('should handle an invalid status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
@@ -414,7 +414,7 @@ describe('jupyter.services - kernel', () => {
       it('should send a message to the kernel', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           var options: IKernelMessageOptions = {
             msgType: "custom",
@@ -434,7 +434,7 @@ describe('jupyter.services - kernel', () => {
       it('should send a binary message', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           var options: IKernelMessageOptions = {
             msgType: "custom",
@@ -459,7 +459,7 @@ describe('jupyter.services - kernel', () => {
       it('should fail if the kernel is closed', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-        tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         kernelPromise.then((kernel: IKernel) => {
           var options: IKernelMessageOptions = {
             msgType: "custom",
@@ -489,7 +489,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var interrupt = kernel.interrupt();
           tester.respond(204, data);
@@ -501,7 +501,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var interrupt = kernel.interrupt();
           tester.respond(200, data);
@@ -513,7 +513,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var interrupt = kernel.interrupt();
           tester.respond(500, { });
@@ -525,7 +525,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
@@ -541,7 +541,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(200, data);
@@ -554,7 +554,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(204, data);
@@ -566,7 +566,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(500, { });
@@ -578,7 +578,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(200, { });
@@ -590,7 +590,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
@@ -606,7 +606,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
           tester.respond(204, data);
@@ -618,7 +618,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
           tester.respond(200, data);
@@ -630,7 +630,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
           tester.respond(500, { });
@@ -642,7 +642,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
@@ -672,7 +672,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: ICompleteRequest = {
             code: 'hello',
@@ -695,7 +695,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: IInspectRequest = {
             code: 'hello',
@@ -719,7 +719,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var options: IIsCompleteRequest = {
             code: 'hello'
@@ -741,7 +741,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           kernel.sendInputReply({ value: 'test' });
           tester.onMessage((msg) => {
@@ -755,7 +755,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
@@ -778,7 +778,7 @@ describe('jupyter.services - kernel', () => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-        tester.respond(200, data);
+        tester.respond(201, data);
 
         kernelPromise.then((kernel) => {
           var options: IExecuteRequest = {
@@ -844,7 +844,7 @@ describe('jupyter.services - kernel', () => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
       var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-      tester.respond(200, data);
+      tester.respond(201, data);
 
       kernelPromise.then((kernel) => {
         var options: IExecuteRequest = {
@@ -897,6 +897,6 @@ describe('jupyter.services - kernel', () => {
 function createKernel(): Promise<IKernel> {
   var tester = new KernelTester();
   var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-  tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
+  tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
   return kernelPromise;
 }
