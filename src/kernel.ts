@@ -115,7 +115,6 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
     var kernel = new Kernel(options, id);
     var callback = (sender: IKernel, status: KernelStatus) => {
       if (status === KernelStatus.Starting || status === KernelStatus.Idle) {
-        console.log('***got an idle status');
         kernel.statusChanged.disconnect(callback);
         runningKernels.set(kernel.id, kernel);
         resolve(kernel);

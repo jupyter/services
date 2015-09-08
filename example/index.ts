@@ -17,9 +17,8 @@ listRunningKernels('http://localhost:8888').then((kernelModels) => {
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
     console.log('Hello', kernel.name);
-     // execute and handle replies
     kernel.kernelInfo().then((info) => {
-      console.log('***info', info);
+      console.log('Got info', info);
     });
   });
 });
