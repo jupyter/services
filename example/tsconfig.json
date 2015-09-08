@@ -1,30 +1,16 @@
 {
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "declaration": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
-    "sourceMap": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES5",
-    "outDir": "../lib"
+    "target": "ES5"
   },
   "files": [
     "../typings/text-encoding/text-encoding.d.ts",
     "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/es6-dataview.d.ts",
-    "index.ts",
-    "config.ts",
-    "contents.ts",
-    "kernel.ts",
-    "kernelselector.ts",
-    "ikernel.ts",
-    "isession.ts",
-    "serialize.ts",
-    "session.ts",
-    "utils.ts",
-    "validate.ts"
+    "index.ts"
   ]
 }
