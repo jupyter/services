@@ -364,9 +364,7 @@ class Kernel implements IKernel {
     }
     var url = (
       wsUrl + 
-      utils.urlJoinEncode(
-        this._baseUrl, KERNEL_SERVICE_URL, this._id, 'channels'
-      ) + 
+      utils.urlJoinEncode(KERNEL_SERVICE_URL, this._id, 'channels') + 
       '?session_id=' + this._clientId
     );
 
