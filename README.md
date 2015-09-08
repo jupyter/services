@@ -78,6 +78,20 @@ Usage Examples
 **Note:** This module is fully compatible with Node/Babel/ES6/ES5. Simply
 omit the type declarations when using a language other than TypeScript.
 
+**KernelSelector**
+
+```typescript
+import {
+  IKernelSpecId, KernelSelector
+} from 'jupyter-js-services';
+
+var selector = new KernelSelector('http://localhost:8000');
+selector.load().then((kernelNames: string[]) => {
+    var spec: IKernelSpecId = selector.select(kernelNames[0]);
+    var pythonSpecs: string[] = selector.findByLanguage('python');
+}
+
+
 **Contents**
 
 ```typescript
@@ -166,4 +180,117 @@ config.set('fizz', 'bazz');  // sets section.data.mySubSection.fizz = 'bazz'
 
 ```
 
+**Kernel**
 
+```typescript
+import { 
+  listRunningKernels, connectToKernel, startNewKernel
+} from 'jupyter-js-sessions';
+
+// get a list of available kernels and connect to one
+listRunningKernels('http://localhost:8000').then((kernelModels) => {
+  var options = {
+    baseUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost',
+    name: kernelModels[0].name
+  }
+  connectToKernel(kernelModels[0].id, options).then((kernel) => {
+    console.log(kernel.name);
+  });
+});
+
+// start a new kernel
+var options = {
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost',
+  name: 'python'
+}
+startNewKernel(options).then((kernel) => {
+  // execute and handle replies
+  var future = kernel.execute('a = 1');
+  future.onDone = () => {
+    console.log('Future is fulfilled');
+  }
+  future.onIOPub = (msg) => {
+    console.log(msg.content);  // rich output data
+  }
+
+  // restart the kernel and then send an inspect message
+  kernel.restart().then(() => {
+    kernel.inspect('hello', 5).then((msg) => {
+      console.log(msg.content);
+    });
+  });
+
+  // interrupt the kernel and then send a complete message
+  kernel.interrupt().then(() => {
+    kernel.complete('impor', 4).then((msg) => {
+      console.log(msg.content);
+    });
+  });
+
+  // register a callback for when the kernel changes state
+  kernel.statusChanged.connect((status) => {
+    console.log('status', status);
+  });
+
+  // kill the kernel
+  kernel.shutdown().then(() => {
+    console.log('Kernel shut down');
+  })
+});
+
+```
+
+**NotebookSession**
+
+```typescript
+import {
+  listRunningSessions, connectToSession, startNewSession
+} from 'jupyter-js-services';
+
+// get a list of available sessions and connect to one
+listRunningSessions('http://localhost:8000').then((sessionModels) => {
+  var options = {
+    baseUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost:8000',
+    kernelName: sessionModels[0].kernel.name,
+    notebookPath: sessionModels[0].notebook.path
+  }
+  connectToSession(sessionModels[0].id, options).then((session) => {
+    console.log(session.kernel.name);
+  });
+});
+
+// start a new session
+var options = {
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost:8000',
+  kernelName: 'python',
+  notebookPath: '/tmp/foo.ipynb'
+}
+startNewSession(options).then((session) => {
+  // execute and handle replies on the kernel
+  var future = session.kernel.execute({ code: 'a = 1' });
+  future.onDone = () => {
+    console.log('Future is fulfilled');
+  }
+
+  // rename the notebook
+  session.renameNotebook('/local/bar.ipynb').then(() => {
+    console.log('Notebook renamed to', session.notebookPath);
+  });
+
+  // register a callback for when the session dies
+  session.sessionDied.connect(() => {
+    console.log('session died');
+  });
+
+  // kill the session
+  session.shutdown().then(() => {
+    console.log('session closed');
+  });
+
+});
+
+```
