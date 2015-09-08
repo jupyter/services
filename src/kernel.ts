@@ -31,7 +31,7 @@ var KERNEL_SERVICE_URL = 'api/kernels';
  */
 export
 function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
-  var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL);
+  var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
     dataType: "json"
@@ -59,7 +59,7 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
  */
 export
 function startNewKernel(options: IKernelOptions): Promise<IKernel> {
-  var url = utils.urlJoinEncode(options.baseUrl, KERNEL_SERVICE_URL);
+  var url = utils.urlPathJoin(options.baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
@@ -364,7 +364,7 @@ class Kernel implements IKernel {
     }
     var url = (
       wsUrl + 
-      utils.urlJoinEncode(KERNEL_SERVICE_URL, this._id, 'channels') + 
+      utils.urlPathJoin(KERNEL_SERVICE_URL, this._id, 'channels') + 
       '?session_id=' + this._clientId
     );
 
@@ -454,7 +454,7 @@ var runningKernels = new Map<string, Kernel>();
  * It is assumed that the API call does not mutate the kernel id or name.
  */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  var url = utils.urlJoinEncode(
+  var url = utils.urlPathJoin(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'restart'
   );
   return utils.ajaxRequest(url, {
@@ -488,7 +488,7 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
-  var url = utils.urlJoinEncode(
+  var url = utils.urlPathJoin(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'interrupt'
   );
   return utils.ajaxRequest(url, {
@@ -515,7 +515,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
-  var url = utils.urlJoinEncode(baseUrl, KERNEL_SERVICE_URL, kernel.id);
+  var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, kernel.id);
   return utils.ajaxRequest(url, {
     method: "DELETE",
     dataType: "json"

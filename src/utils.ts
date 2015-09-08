@@ -47,8 +47,12 @@ export
 function urlPathJoin(...paths: string[]): string {
   var url = '';
   for (var i = 0; i < paths.length; i++) {
-    if (paths[i] === '') {
+    var path = paths[i];
+    if (path === '') {
       continue;
+    }
+    if (i > 0) {
+      path = path.replace(/\/\/+/, '/');
     }
     if (url.length > 0 && url.charAt(url.length - 1) != '/') {
       url = url + '/' + paths[i];
@@ -56,7 +60,7 @@ function urlPathJoin(...paths: string[]): string {
       url = url + paths[i];
     }
   }
-  return url.replace(/\/\/+/, '/');
+  return url
 }
 
 

@@ -26,7 +26,7 @@ var SESSION_SERVICE_URL = 'api/sessions';
  */
 export
 function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
-  var url = utils.urlJoinEncode(baseUrl, SESSION_SERVICE_URL);
+  var url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
     dataType: "json"
@@ -54,7 +54,7 @@ function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
  */
 export
 function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
-  var url = utils.urlJoinEncode(options.baseUrl, SESSION_SERVICE_URL);
+  var url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL);
   var model = {
     kernel: { name: options.kernelName },
     notebook: { path: options.notebookPath }
@@ -164,9 +164,7 @@ class NotebookSession implements INotebookSession {
     this._id = id;
     this._notebookPath = options.notebookPath;
     this._kernel = kernel;
-    this._url = utils.urlJoinEncode(
-      options.baseUrl, SESSION_SERVICE_URL, this._id
-    );
+    this._url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL, this._id);
     this._kernel.statusChanged.connect(this._kernelStatusChanged, this);
   }
 
