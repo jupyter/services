@@ -231,6 +231,9 @@ class Kernel implements IKernel {
    * It is assumed that the API call does not mutate the kernel id or name.
    */
   restart(): Promise<void> {
+    if (this._status === KernelStatus.Dead) {
+      return Promise.reject(new Error('Kernel is dead'));
+    }
     this._status = KernelStatus.Restarting;
     return restartKernel(this, this._baseUrl);
   }
@@ -453,13 +456,10 @@ var runningKernels = new Map<string, Kernel>();
  * It is assumed that the API call does not mutate the kernel id or name.
  */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
-  if (kernel.status === KernelStatus.Dead) {
-    return Promise.reject(new Error('Kernel is dead'));
-  }
   var url = utils.urlJoinEncode(
     baseUrl, KERNEL_SERVICE_URL, kernel.id, 'restart'
   );
-  utils.ajaxRequest(url, {
+  return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
   }).then((success: utils.IAjaxSuccess) => {
@@ -467,19 +467,19 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-  }, onKernelError);
-  return new Promise<void>((resolve, reject) => {
-    var waitForStart = () => {
-      if (kernel.status === KernelStatus.Starting) {
-        kernel.statusChanged.disconnect(waitForStart);
-        resolve();
-      } else if (kernel.status === KernelStatus.Dead) {
-        kernel.statusChanged.disconnect(waitForStart);
-        reject();
+    return new Promise<void>((resolve, reject) => {
+      var waitForStart = () => {
+        if (kernel.status === KernelStatus.Starting) {
+          kernel.statusChanged.disconnect(waitForStart);
+          resolve();
+        } else if (kernel.status === KernelStatus.Dead) {
+          kernel.statusChanged.disconnect(waitForStart);
+          reject();
+        }
       }
-    }
-    kernel.statusChanged.connect(waitForStart);
-  });
+      kernel.statusChanged.connect(waitForStart);
+    });
+  }, onKernelError);
 }
 
 
