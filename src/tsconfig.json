@@ -19,6 +19,7 @@
     "config.ts",
     "contents.ts",
     "kernel.ts",
+    "kernelselector.ts",
     "ikernel.ts",
     "isession.ts",
     "serialize.ts",
