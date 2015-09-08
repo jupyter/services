@@ -3,20 +3,24 @@
 'use-strict';
 
 import { 
-  listRunningKernels, connectToKernel
+  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, connectToSession, startNewSession
 } from '../lib';
 
 
+var BASEURL = 'http://localhost:8888';
+var WSURL = 'ws://localhost:8888';
+
+
 // get a list of available kernels and connect to one
-listRunningKernels('http://localhost:8888').then((kernelModels) => {
+listRunningKernels(BASEURL).then((kernelModels) => {
   console.log('models:', kernelModels);
   var options = {
-    baseUrl: 'http://localhost:8888',
-    wsUrl: 'ws://localhost:8888',
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
     name: kernelModels[0].name
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
-    console.log('Hello', kernel.name);
+    console.log('Hello Kernel: ', kernel.name, kernel.id);
     kernel.restart().then(() => {
       console.log('Kernel restarted');
       kernel.kernelInfo().then((info) => {
@@ -38,3 +42,21 @@ listRunningKernels('http://localhost:8888').then((kernelModels) => {
     });
   });
 });
+
+
+// get a list of available sessions and connect to one
+listRunningSessions(BASEURL).then((sessionModels) => {
+  var options = {
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    kernelName: sessionModels[0].kernel.name,
+    notebookPath: sessionModels[0].notebook.path
+  }
+  connectToSession(sessionModels[0].id, options).then((session) => {
+    console.log('Hello Session: ', session.kernel.name);
+    session.renameNotebook('New Title.ipynb').then(() => {
+      console.log('Notebook renamed to: ', session.notebookPath);
+    });
+  });
+});
+
