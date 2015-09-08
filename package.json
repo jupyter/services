@@ -24,6 +24,7 @@
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
     "docs:publish": "bash ./scripts/travis_after_success.sh",
+    "build:example": "tsc --project example && browserify -g browserify-css example/index.js -o example/bundle.js",
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
     "test": "mocha test/build/test*.js",
