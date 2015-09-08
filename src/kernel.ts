@@ -114,7 +114,8 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
   return new Promise<IKernel>((resolve, reject) => {
     var kernel = new Kernel(options, id);
     var callback = (sender: IKernel, status: KernelStatus) => {
-      if (status === KernelStatus.Starting) {
+      if (status === KernelStatus.Starting || status === KernelStatus.Idle) {
+        console.log('***got an idle status');
         kernel.statusChanged.disconnect(callback);
         runningKernels.set(kernel.id, kernel);
         resolve(kernel);
@@ -363,18 +364,26 @@ class Kernel implements IKernel {
       );
     }
     var url = (
-      wsUrl + 
-      utils.urlPathJoin(KERNEL_SERVICE_URL, this._id, 'channels') + 
+      utils.urlPathJoin(wsUrl, KERNEL_SERVICE_URL, this._id, 'channels') + 
       '?session_id=' + this._clientId
     );
 
     this._ws = new WebSocket(url);
+
     // Ensure incoming binary messages are not Blobs
     this._ws.binaryType = 'arraybuffer';
 
     this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
+    this._ws.onopen = (evt: Event) => { 
+      
+    }
     this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
     this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
+  }
+
+  private _onWSOpen(evt: Event) {
+    // trigger a status response
+    this.kernelInfo();
   }
 
   private _onWSMessage(evt: MessageEvent) {
