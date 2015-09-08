@@ -1,7 +1,8 @@
 
-To run this example, start a Notebook server from this directory:
+To run this example, run the build command and start a Notebook server from this directory:
 
 ```bash
+npm run build:example
 jupyter notebook
 ```
 
