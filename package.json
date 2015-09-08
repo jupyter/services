@@ -11,6 +11,13 @@
   "devDependencies": {
     "expect.js": "^0.3.1",
     "istanbul": "^0.3.18",
+    "karma": "^0.13.9",
+    "karma-browserify": "^4.3.0",
+    "karma-chrome-launcher": "^0.2.0",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.0",
+    "karma-mocha-reporter": "^1.1.1",
     "mocha": "^2.2.5",
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
@@ -24,10 +31,10 @@
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
     "docs:publish": "bash ./scripts/travis_after_success.sh",
-    "build:example": "tsc --project example && browserify example/index.js -o example/bundle.js",
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
     "test": "mocha test/build/test*.js",
+    "test:integration": "python test/run_test.py",
     "test:coverage": "istanbul cover _mocha -- test/build/test*.js"
   },
   "repository": {

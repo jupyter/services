@@ -3,7 +3,8 @@
 'use-strict';
 
 import { 
-  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, connectToSession, startNewSession
+  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
+  connectToSession, startNewSession
 } from '../lib';
 
 
@@ -38,6 +39,13 @@ listRunningKernels(BASEURL).then((kernelModels) => {
       var future = kernel.execute({ code: 'a = 1\n' });
       future.onDone = () => {
         console.log('Execute finished');
+      }
+      var future2 = kernel.execute({ code: 'a = 2\n', allow_stdin: true });
+      future2.onStdin = () => {
+        console.log('Got a stdin request');
+      }
+      future2.onDone = () => {
+        console.log('Execute2 finished');
       }
     });
   });
