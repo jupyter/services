@@ -3,7 +3,7 @@
 'use-strict';
 
 import { 
-  listRunningKernels, connectToKernel, startNewKernel
+  listRunningKernels, connectToKernel
 } from '../lib';
 
 
