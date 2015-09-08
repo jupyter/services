@@ -409,7 +409,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#sendShellMessage', () => {
+    context('#sendShellMessage()', () => {
 
       it('should send a message to the kernel', (done) => {
         var tester = new KernelTester();
@@ -483,7 +483,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#interrupt', () => {
+    context('#interrupt()', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
@@ -535,7 +535,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#restart', () => {
+    context('#restart()', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
@@ -545,6 +545,7 @@ describe('jupyter.services - kernel', () => {
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(200, data);
+          tester.sendStatus('starting');
           restart.then(() => { done(); });
         });
       });
@@ -599,7 +600,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#shutdown', () => {
+    context('#shutdown()', () => {
 
       it('should resolve the promise with a valid server response', (done) => {
         var tester = new KernelTester();
@@ -651,7 +652,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#kernelInfo', () => {
+    context('#kernelInfo()', () => {
 
       it('should resolve the promise', (done) => {
         createKernel().then((kernel: IKernel) => {
@@ -665,7 +666,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#complete', () => {
+    context('#complete()', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
@@ -688,7 +689,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#inspect', () => {
+    context('#inspect()', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
@@ -712,7 +713,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#isComplete', () => {
+    context('#isComplete()', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
@@ -734,7 +735,7 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#sendInputReply', () => {
+    context('#sendInputReply()', () => {
 
       it('should resolve the promise', (done) => {
         var tester = new KernelTester();
@@ -771,74 +772,72 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-  });
+    context('#execute()', () => {
 
-  context('#execute()', () => {
+      it('should send handle incoming messages', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(200, data);
 
-    it('should send handle incoming messages', (done) => {
-      var tester = new KernelTester();
-      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-      tester.respond(200, data);
-
-      kernelPromise.then((kernel) => {
-        var options: IExecuteRequest = {
-          code: 'test',
-          silent: false,
-          store_history: true,
-          user_expressions: {},
-          allow_stdin: false,
-          stop_on_error: false
-        }
-        var future = kernel.execute(options);
-        expect(future.autoDispose).to.be(true);
-        expect(future.onDone).to.be(null);
-        expect(future.onStdin).to.be(null);
-        expect(future.onReply).to.be(null);
-        expect(future.onIOPub).to.be(null);
-
-        tester.onMessage((msg) => {
-
-          expect(msg.channel).to.be('shell');
-
-          // send a reply
-          msg.parent_header = msg.header;
-          msg.channel = 'shell';
-          tester.send(msg);
-
-          future.onReply = () => {
-            // trigger onStdin
-            msg.channel = 'stdin';
-            tester.send(msg);
+        kernelPromise.then((kernel) => {
+          var options: IExecuteRequest = {
+            code: 'test',
+            silent: false,
+            store_history: true,
+            user_expressions: {},
+            allow_stdin: false,
+            stop_on_error: false
           }
+          var future = kernel.execute(options);
+          expect(future.autoDispose).to.be(true);
+          expect(future.onDone).to.be(null);
+          expect(future.onStdin).to.be(null);
+          expect(future.onReply).to.be(null);
+          expect(future.onIOPub).to.be(null);
 
-          future.onStdin = () => {
-            // trigger onIOPub with a 'stream' message
-            msg.channel = 'iopub';
-            msg.header.msg_type = 'stream';
+          tester.onMessage((msg) => {
+
+            expect(msg.channel).to.be('shell');
+
+            // send a reply
+            msg.parent_header = msg.header;
+            msg.channel = 'shell';
             tester.send(msg);
-          };
 
-          future.onIOPub = () => { 
-            if (msg.header.msg_type === 'stream') {
-              // trigger onDone
-              msg.channel = 'iopub';
-              msg.header.msg_type = 'status';
-              msg.content.execution_state = 'idle';
+            future.onReply = () => {
+              // trigger onStdin
+              msg.channel = 'stdin';
               tester.send(msg);
             }
-          }
 
-          future.onDone = () => {
-            doLater(() => {
-              expect(future.isDisposed).to.be(true);
-              done();
-            });
-          }
+            future.onStdin = () => {
+              // trigger onIOPub with a 'stream' message
+              msg.channel = 'iopub';
+              msg.header.msg_type = 'stream';
+              tester.send(msg);
+            };
 
+            future.onIOPub = () => { 
+              if (msg.header.msg_type === 'stream') {
+                // trigger onDone
+                msg.channel = 'iopub';
+                msg.header.msg_type = 'status';
+                msg.content.execution_state = 'idle';
+                tester.send(msg);
+              }
+            }
+
+            future.onDone = () => {
+              doLater(() => {
+                expect(future.isDisposed).to.be(true);
+                done();
+              });
+            }
+
+          });
         });
       });
-
     });
 
     it('should not auto-dispose', (done) => {
