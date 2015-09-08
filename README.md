@@ -237,10 +237,10 @@ import {
 } from 'jupyter-js-services';
 
 // get a list of available sessions and connect to one
-listRunningSessions('localhost:8000').then((sessionModels) => {
+listRunningSessions('http://localhost:8000').then((sessionModels) => {
   var options = {
-    baseUrl: 'localhost:8000',
-    wsUrl: 'ws://',
+    baseUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost:8000',
     kernelName: sessionModels[0].kernel.name,
     notebookPath: sessionModels[0].notebook.path
   }
@@ -251,8 +251,8 @@ listRunningSessions('localhost:8000').then((sessionModels) => {
 
 // start a new session
 var options = {
-  baseUrl: 'localhost:8000',
-  wsUrl: 'ws://',
+  baseUrl: 'http://localhost:8000',
+  wsUrl: 'ws://localhost:8000',
   kernelName: 'python',
   notebookPath: '/tmp/foo.ipynb'
 }
