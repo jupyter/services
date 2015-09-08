@@ -7,7 +7,6 @@ import {
 } from '../lib';
 
 
-console.log('hello, world!');
 // get a list of available kernels and connect to one
 listRunningKernels('http://localhost:8888').then((kernelModels) => {
   console.log('models:', kernelModels);
@@ -17,6 +16,10 @@ listRunningKernels('http://localhost:8888').then((kernelModels) => {
     name: kernelModels[0].name
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
-    console.log(kernel.name);
+    console.log('Hello', kernel.name);
+     // execute and handle replies
+    kernel.kernelInfo().then((info) => {
+      console.log('***info', info);
+    });
   });
 });
