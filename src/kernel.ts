@@ -313,6 +313,13 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     }
+    var defaults = {
+      silent : true,
+      store_history : false,
+      user_expressions : {},
+      allow_stdin : false
+    };
+    contents = utils.extend(defaults, contents);
     var msg = createKernelMessage(options, contents);
     return this.sendShellMessage(msg);
   }
