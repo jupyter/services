@@ -192,7 +192,7 @@ listRunningKernels('http://localhost:8000').then((kernelModels) => {
   var options = {
     baseUrl: 'http://localhost:8000',
     wsUrl: 'ws://localhost',
-    name: kernelmodels[0].name
+    name: kernelModels[0].name
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
     console.log(kernel.name);
