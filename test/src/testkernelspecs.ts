@@ -74,11 +74,51 @@ describe('jupyter.services - Kernel', () => {
       return expectFailure(promise, done, "Invalid KernelSpecs Model");
     });
 
-    it('should throw an error for incorrect kernelspec id', (done) => {
+    it('should throw an error for improper name', (done) => {
       var handler = new RequestHandler();
       var promise = getKernelSpecs('localhost');
-      var R_SPEC: IKernelSpecId = JSON.parse(JSON.stringify(PYTHON_SPEC));
-      delete R_SPEC.spec.language;
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.name = 1;
+      handler.respond(200, { 'default': 'R', 
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper language', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.language = 1;
+      handler.respond(200, { 'default': 'R', 
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper argv', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.argv = 'hello';
+      handler.respond(200, { 'default': 'R', 
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper display_name', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.display_name = ['hello'];
+      handler.respond(200, { 'default': 'R', 
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for missing resources', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      delete R_SPEC.resources;
       handler.respond(200, { 'default': 'R', 
                              'kernelspecs': { 'R': R_SPEC } });
       return expectFailure(promise, done, "Invalid KernelSpec Model");

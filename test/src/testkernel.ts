@@ -207,6 +207,14 @@ describe('jupyter.services - kernel', () => {
       return expectFailure(kernelPromise, done, "Invalid kernel id");
     });
 
+    it('should throw an error for another invalid kernel id', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      var data = { id: uuid(), name: 1 };
+      tester.respond(201, data);
+      return expectFailure(kernelPromise, done, "Invalid kernel id");
+    });
+
     it('should throw an error for an invalid response', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
