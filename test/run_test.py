@@ -24,7 +24,9 @@ nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
 
 # wait for notebook server to start up
 while 1:
-    line = nb_server.stdout.readline().decode('utf-8')
+    line = nb_server.stdout.readline().decode('utf-8').strip()
+    if not line:
+        continue
     print(line)
     if 'The IPython Notebook is running at: http://localhost:8888/':
         break
@@ -37,7 +39,10 @@ while 1:
 def readlines():
     """Print the notebook server output."""
     while 1:
-        print(nb_server.stdout.readline().decode('utf-8'))
+        line = nb_server.stdout.readline().decode('utf-8').strip()
+        if line:
+            print(line)
+
 
 thread = threading.Thread(target=readlines)
 thread.setDaemon(True)
