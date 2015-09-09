@@ -142,11 +142,11 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
     var req = new XMLHttpRequest();
     req.open(settings.method, url);
     if (settings.contentType) {
-      req.overrideMimeType(settings.contentType);
+      req.setRequestHeader('Content-Type', settings.contentType);
     }
     req.onload = () => {
       var response = req.response;
-      if (settings.dataType === 'json') {
+      if (settings.dataType === 'json' && req.response) {
         response = JSON.parse(req.response);
       }
       resolve({ data: response, statusText: req.statusText, xhr: req });
