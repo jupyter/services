@@ -45,8 +45,23 @@ describe('jupyter.services - Karma', () => {
             var future = kernel.execute({ code: 'a = 1\n' });
             future.onDone = () => {
               console.log('Execute finished');
-              done();
             }
+            // should grab the same kernel object
+            connectToKernel(kernel.id, options).then((kernel2) => {
+              console.log('Should have gotten the same kernel');
+              if (kernel2.clientId !== kernel.clientId) {
+                throw Error('Did not reuse kernel');
+              }
+              listRunningKernels(BASEURL).then((kernels) => {
+                if (!kernels.length) {
+                  throw Error('Should be one at least one running kernel');
+                }
+                kernel2.kernelInfo().then(() => {
+                  console.log('Final request');
+                  done();
+                });
+              });
+            });
           });
         });
       });
