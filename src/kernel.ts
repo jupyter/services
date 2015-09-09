@@ -60,9 +60,6 @@ function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
     }
     var keys = Object.keys(data.kernelspecs);
     for (var i = 0; i < keys.length; i++) {
-      if (typeof keys[i] !== 'string') {
-        throw err;
-      }
       var ks = data.kernelspecs[keys[i]];
       validate.validateKernelSpec(ks);
     }
