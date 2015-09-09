@@ -10,7 +10,7 @@ import {
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
   IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
   IInputReply, IKernel, IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, 
-  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecId,
+  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
   KernelStatus
 } from './ikernel';
 
@@ -37,7 +37,7 @@ var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
  * Fetch the kernel specs via API: GET /kernelspecs
  */
 export
-function listKernelSpecs(baseUrl: string): Promise<IKernelSpecId[]> {
+function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
   var url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
@@ -53,14 +53,18 @@ function listKernelSpecs(baseUrl: string): Promise<IKernelSpecId[]> {
       throw err;
     }
     if (!data.hasOwnProperty('kernelspecs') ||
-        !Array.isArray(data.kernelspecs)) {
+        typeof data.kernelspecs !== 'object') {
       throw err;
     }
-    for (var i = 0; i < data.kernelspecs.length; i++) {
-      var ks = data.kernelspecs[i]
+    var keys = Object.keys(data.kernelspecs);
+    for (var i = 0; i < keys.length; i++) {
+      if (typeof keys[i] !== 'string') {
+        throw err;
+      }
+      var ks = data.kernelspecs[keys[i]];
       validate.validateKernelSpec(ks);
     }
-    return data.kernelspecs;
+    return data;
   });
 }
 
@@ -408,8 +412,11 @@ class Kernel implements IKernel {
         location.protocol.replace('http', 'ws') + "//" + location.host
       );
     }
+    var partialUrl = utils.urlPathJoin(wsUrl, KERNEL_SERVICE_URL, this._id);
+    console.log('Starting WebSocket:', partialUrl);
+
     var url = (
-      utils.urlPathJoin(wsUrl, KERNEL_SERVICE_URL, this._id, 'channels') + 
+      utils.urlPathJoin(partialUrl, 'channels') + 
       '?session_id=' + this._clientId
     );
 
@@ -419,9 +426,8 @@ class Kernel implements IKernel {
     this._ws.binaryType = 'arraybuffer';
 
     this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
-    this._ws.onopen = (evt: Event) => { 
-      
-    }
+    this._ws.onopen = (evt: Event) => { this._onWSOpen(evt); }
+
     this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
     this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
   }
@@ -602,7 +608,7 @@ function logKernelStatus(kernel: IKernel): void {
       status = 'dead';
       break;
   }
-  var msg = 'Kernel: ' + status + ' (' + kernel.id + ')';
+  console.log('Kernel: ' + status + ' (' + kernel.id + ')');
 }
 
 

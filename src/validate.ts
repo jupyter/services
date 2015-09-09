@@ -73,11 +73,4 @@ function validateKernelSpec(info: IKernelSpecId): void {
   if (!spec.hasOwnProperty('argv') || !Array.isArray(spec.argv)) {
     throw err;
   }
-  if (!spec.hasOwnProperty('codemirror_mode') ||
-      typeof spec.codemirror_mode !== 'string') {
-    throw err;
-  }
-  if (!spec.hasOwnProperty('env') || !spec.hasOwnProperty('help_links')) {
-    throw err;
-  }
 }

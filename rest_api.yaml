@@ -511,7 +511,7 @@ paths:
 
   /kernelspecs:
     get:
-      summary: List kernel specs
+      summary: Get kernel specs
       tags:
         - kernelspecs
       responses:
@@ -524,8 +524,8 @@ paths:
                 type: string
                 description: Default kernel name
               kernelspecs:
-                type: array
-                items:
+                type: object
+                additionalProperties:
                   $ref: '#/definitions/KernelSpec'
   /config/{section_name}:
     get:

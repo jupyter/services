@@ -4,19 +4,41 @@
 import subprocess
 import sys
 import argparse
+import threading
 
 KARMA_PORT = 9876
 
 argparser = argparse.ArgumentParser(
         description='Run Jupyter JS Sevices integration tests'
     )
-argparser.add_argument('-b', '--browsers', default='Firefox',
+argparser.add_argument('-b', '--browsers', default='Chrome',
                        help="Browsers to use for Karma test")
 options = argparser.parse_args(sys.argv[1:])
 
 nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
-              '--NotebookApp.allow_origin="http://localhost:%s"' % KARMA_PORT]
-nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT)
+              '--NotebookApp.allow_origin="*"']
+nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
+                             stdout=subprocess.PIPE)
+
+# wait for notebook server to start up
+while 1:
+    line = nb_server.stdout.readline().decode('utf-8')
+    print(line)
+    if 'The IPython Notebook is running at: http://localhost:8888/':
+        break
+    if 'Control-C' in line:
+        raise ValueError(
+            'The port 8888 was already taken, kill running notebook servers'
+        )
+
+
+def readlines():
+    """Print the notebook server output."""
+    while 1:
+        print(nb_server.stdout.readline().decode('utf-8'))
+
+thread = threading.Thread(target=readlines, daemon=True)
+thread.start()
 
 karma_command = ['karma', 'start', '--browsers=' + options.browsers,
                  'karma.conf.js', '--port=%s' % KARMA_PORT]
