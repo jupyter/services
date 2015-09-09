@@ -534,7 +534,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
           resolve();
         } else if (kernel.status === KernelStatus.Dead) {
           kernel.statusChanged.disconnect(waitForStart);
-          reject();
+          reject(new Error('Kernel is dead'));
         }
       }
       kernel.statusChanged.connect(waitForStart);

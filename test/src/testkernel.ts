@@ -550,6 +550,19 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should fail if the kernel does not restart', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(200, data);
+          tester.sendStatus('dead');
+          expectFailure(restart, done, 'Kernel is dead');
+        });
+      });
+
       it('should throw an error for an invalid response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
