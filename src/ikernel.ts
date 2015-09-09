@@ -387,9 +387,9 @@ interface IKernelSpec {
   language: string;
   argv: string[];
   display_name: string;
-  codemirror_mode: string;
   env: any;
-  help_links: IKernelSpecHelpLink[];
+  codemirror_mode?: string;
+  help_links?: IKernelSpecHelpLink[];
 }
 
 
@@ -401,4 +401,14 @@ interface IKernelSpecId {
   name: string;
   spec: IKernelSpec;
   resources: { [key: string]: string; };
+}
+
+
+/**
+ * KernelSpecInfo interface
+ */
+export 
+interface IKernelSpecIds {
+  default: string;
+  kernelspecs: { [key: string]: IKernelSpecId };
 }

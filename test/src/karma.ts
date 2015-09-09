@@ -4,7 +4,7 @@
 
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
-  connectToSession, startNewSession
+  connectToSession, startNewSession, getKernelSpecs
 } from '../../lib';
 
 
@@ -12,20 +12,21 @@ var BASEURL = 'http://localhost:8888';
 var WSURL = 'ws://localhost:8888';
 
 
-describe('jupyter.services - Kernel', () => {
+describe('jupyter.services - Karma', () => {
 
-  describe('listRunningKernels()', () => {
+  describe('Kernel', () => {
 
     it('should run through the demo', (done) => {
-      // get a list of available kernels and connect to one
-      listRunningKernels(BASEURL).then((kernelModels) => {
-        console.log('models:', kernelModels);
+      // get info about the available kernels and connect to one
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        console.log('default spec:', kernelSpecs.default);
+        console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
           baseUrl: BASEURL,
           wsUrl: WSURL,
-          name: kernelModels[0].name
+          name: kernelSpecs.default
         }
-        connectToKernel(kernelModels[0].id, options).then((kernel) => {
+        startNewKernel(options).then((kernel) => {
           console.log('Hello Kernel: ', kernel.name, kernel.id);
           kernel.restart().then(() => {
             console.log('Kernel restarted');
