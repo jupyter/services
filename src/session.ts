@@ -203,10 +203,14 @@ class NotebookSession implements INotebookSession {
     if (this._isDead) {
       return Promise.reject(new Error('Session is dead'));
     }
+    var model = {
+      kernel: { name: this._kernel.name, id: this._kernel.id },
+      notebook: { path: path }
+    }
     return utils.ajaxRequest(this._url, {
       method: "PATCH",
       dataType: "json",
-      data: JSON.stringify({ notebook: { path: path } }),
+      data: JSON.stringify(model),
       contentType: 'application/json'
     }).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
