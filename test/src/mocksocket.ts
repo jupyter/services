@@ -269,6 +269,16 @@ class MockSocketServer extends SocketBase {
     });
   }
 
+  /**
+   * Trigger an error for all connected web sockets.
+   */
+  triggerError(msg: string) {
+    super.triggerError(msg);
+    this._connections.forEach(ws => {
+      ws.triggerError(msg);
+    });
+  }
+
   private _onWSClose: (ws: MockSocket, evt: any) => void = null;
   private _connections: MockSocket[] = [];
   private _url = '';
