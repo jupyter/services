@@ -11,8 +11,10 @@ KARMA_PORT = 9876
 argparser = argparse.ArgumentParser(
         description='Run Jupyter JS Sevices integration tests'
     )
-argparser.add_argument('-b', '--browsers', default='Chrome',
+argparser.add_argument('-b', '--browsers', default='Firefox',
                        help="Browsers to use for Karma test")
+argparser.add_argument('-d', '--debug', action='store_true',
+                       help="Whether to enter debug mode in Karma")
 options = argparser.parse_args(sys.argv[1:])
 
 nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
@@ -40,8 +42,14 @@ def readlines():
 thread = threading.Thread(target=readlines, daemon=True)
 thread.start()
 
+if options.debug:
+    options.browsers = 'Chrome'
+
 karma_command = ['karma', 'start', '--browsers=' + options.browsers,
                  'karma.conf.js', '--port=%s' % KARMA_PORT]
+if options.debug:
+    karma_command += ['--singleRun=false', '--debug=true']
+print(' '.join(karma_command))
 try:
     resp = subprocess.check_call(karma_command, stderr=subprocess.STDOUT)
 except subprocess.CalledProcessError:
