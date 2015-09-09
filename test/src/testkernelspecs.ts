@@ -79,9 +79,9 @@ describe('jupyter.services - Kernel', () => {
       var promise = getKernelSpecs('localhost');
       var R_SPEC: IKernelSpecId = JSON.parse(JSON.stringify(PYTHON_SPEC));
       delete R_SPEC.spec.language;
-      handler.respond(200, { 'default': PYTHON_SPEC.name, 
-                             'kernelspecs': { R: R_SPEC } });
-      return expectFailure(promise, done, "Invalid KernelSpecs Model");
+      handler.respond(200, { 'default': 'R', 
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
     });
 
     it('should throw an error for an invalid response', (done) => {
