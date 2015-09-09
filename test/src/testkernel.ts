@@ -131,6 +131,15 @@ class KernelTester extends RequestHandler {
     });
   }
 
+  /**
+   * Trigger an error on the server.
+   */
+  triggerError(msg: string) {
+    this._promiseDelegate.promise.then(() => {
+      this._server.triggerError(msg);
+    })
+  }
+
   private _server: MockSocketServer = null;
   private _onMessage: (msg: IKernelMessage) => void = null;
   private _promiseDelegate: PromiseDelegate<void> = null;
@@ -397,7 +406,7 @@ describe('jupyter.services - kernel', () => {
             expect(kernel.status).to.be(KernelStatus.Dead);
             done();
           });
-          tester.sendStatus('dead');
+          tester.triggerError('Error event');
         });
       });
 
@@ -484,6 +493,39 @@ describe('jupyter.services - kernel', () => {
               expect(err.message).to.be(
                 'Cannot send a message to a closed Kernel'
               );
+              done();
+            }
+          });
+        });
+      });
+
+      it('should handle out of order messages', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IKernelMessageOptions = {
+            msgType: "custom",
+            channel: "shell",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var msg = createKernelMessage(options);
+          var future = kernel.sendShellMessage(msg);
+          tester.onMessage((msg) => {
+            // trigger onDone
+            msg.channel = 'iopub';
+            msg.header.msg_type = 'status';
+            msg.content.execution_state = 'idle';
+            msg.parent_header = msg.header
+            tester.send(msg);
+
+            future.onIOPub = () => {
+              msg.channel = 'shell';
+              tester.send(msg);
+            }
+
+            future.onDone = () => {
               done();
             }
           });
