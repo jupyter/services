@@ -50,8 +50,8 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
 
 
 const KERNEL_OPTIONS: IKernelOptions = {
-  baseUrl: 'baseUrl',
-  wsUrl: 'ws://',
+  baseUrl: 'http://localhost:8888',
+  wsUrl: 'ws://localhost:8888',
   name: 'test',
   username: 'testUser'
 }
@@ -143,7 +143,7 @@ describe('jupyter.services - kernel', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningKernels('baseUrl');
+      var list = listRunningKernels('http://localhost:8888');
       var data = [
         { id: uuid(), name: "test" },
         { id: uuid(), name: "test2" }
@@ -158,7 +158,7 @@ describe('jupyter.services - kernel', () => {
 
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningKernels('baseUrl');
+      var list = listRunningKernels('http://localhost:8888');
       var data = { id: uuid(), name: "test" };
       handler.respond(200, data);
       expectFailure(list, done, "Invalid kernel list");
@@ -166,14 +166,14 @@ describe('jupyter.services - kernel', () => {
 
     it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningKernels('baseUrl');
+      var list = listRunningKernels('http://localhost:8888');
       handler.respond(201, { });
       expectFailure(list, done, "Invalid Status: 201");
     });
 
     it('should throw an error for an error response', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningKernels('baseUrl');
+      var list = listRunningKernels('http://localhost:8888');
       handler.respond(500, { });
       expectFailure(list, done, "");
     });

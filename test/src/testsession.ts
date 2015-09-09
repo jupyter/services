@@ -40,8 +40,8 @@ function createSessionOptions(sessionId: ISessionId): ISessionOptions {
   return {
     notebookPath: sessionId.notebook.path,
     kernelName: sessionId.kernel.name,
-    baseUrl: "localhost",
-    wsUrl: "ws://"
+    baseUrl: "http://localhost:8888",
+    wsUrl: "ws://localhost:8888"
   }
 }
 
@@ -52,7 +52,7 @@ describe('jupyter.services - session', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('baseUrl');
+      var list = listRunningSessions('http://localhost:8888');
       var sessionIds = [createSessionId(), createSessionId()];
       handler.respond(200, sessionIds);
       return list.then((response: ISessionId[]) => {
@@ -64,7 +64,7 @@ describe('jupyter.services - session', () => {
 
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('baseUrl');
+      var list = listRunningSessions('http://localhost:8888');
       var data = { id: "1234", notebook: { path: "test" } };
       handler.respond(200, data);
       expectFailure(list, done, "Invalid Session list");
@@ -72,7 +72,7 @@ describe('jupyter.services - session', () => {
 
     it('should throw an error for another invalid model', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('baseUrl');
+      var list = listRunningSessions('http://localhost:8888');
       var data = [{ id: "1234", kernel: { id: '', name: '' }, notebook: { } }];
       handler.respond(200, data);
       expectFailure(list, done, "Invalid Notebook Model");
@@ -80,14 +80,14 @@ describe('jupyter.services - session', () => {
 
     it('should fail for wrong response status', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('baseUrl');
+      var list = listRunningSessions('http://localhost:8888');
       handler.respond(201, [createSessionId()]);
       expectFailure(list, done, "Invalid Status: 201");
     });
 
     it('should fail for error response status', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('baseUrl');
+      var list = listRunningSessions('http://localhost:8888');
       handler.respond(500, {});
       expectFailure(list, done, '');
     });

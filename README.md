@@ -90,7 +90,7 @@ import {
 listRunningKernels('http://localhost:8000').then((kernelModels) => {
   var options = {
     baseUrl: 'http://localhost:8000',
-    wsUrl: 'ws://localhost',
+    wsUrl: 'ws://localhost:8000',
     name: kernelModels[0].name
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
@@ -101,7 +101,7 @@ listRunningKernels('http://localhost:8000').then((kernelModels) => {
 // start a new kernel
 var options = {
   baseUrl: 'http://localhost:8000',
-  wsUrl: 'ws://localhost',
+  wsUrl: 'ws://localhost:8000',
   name: 'python'
 }
 startNewKernel(options).then((kernel) => {
