@@ -43,7 +43,7 @@ function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
     method: "GET",
     dataType: "json"   
   }).then((success: utils.IAjaxSuccess) => {
-    var err = new Error('Invalid KernelSpecs info');
+    var err = new Error('Invalid KernelSpecs Model');
     if (success.xhr.status !== 200) {
       throw new Error('Invalid Response: ' + success.xhr.status);
     }
@@ -52,9 +52,11 @@ function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
         typeof data.default !== 'string') {
       throw err;
     }
-    if (!data.hasOwnProperty('kernelspecs') ||
-        typeof data.kernelspecs !== 'object') {
+    if (!data.hasOwnProperty('kernelspecs')) {
       throw err;
+    }
+    if (!data.kernelspecs.hasOwnProperty(data.default)) {
+      throw err; 
     }
     var keys = Object.keys(data.kernelspecs);
     for (var i = 0; i < keys.length; i++) {
