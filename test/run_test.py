@@ -39,7 +39,8 @@ def readlines():
     while 1:
         print(nb_server.stdout.readline().decode('utf-8'))
 
-thread = threading.Thread(target=readlines, daemon=True)
+thread = threading.Thread(target=readlines)
+thread.setDaemon(True)
 thread.start()
 
 if options.debug:
