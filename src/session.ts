@@ -40,7 +40,7 @@ function listRunningSessions(baseUrl: string): Promise<ISessionId[]> {
     for (var i = 0; i < success.data.length; i++) {
       validate.validateSessionId(success.data[i]);
     }
-    return <ISessionId[]>success.data;
+    return success.data;
   }, onSessionError);
 }
 

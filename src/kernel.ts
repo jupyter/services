@@ -442,7 +442,7 @@ class Kernel implements IKernel {
       this._updateStatus(msg.content.execution_state);
     }
     if (msg.parent_header) {
-      var header = (<IKernelMessageHeader>msg.parent_header);
+      var header = msg.parent_header as IKernelMessageHeader;
       var future = this._handlerMap.get(header.msg_id);
       if (future) {
         future.handleMsg(msg);
@@ -649,7 +649,7 @@ function sendKernelMessage(kernel: IKernel, msg: IKernelMessage): Promise<any> {
   var future = kernel.sendShellMessage(msg);
   return new Promise<IKernelInfo>((resolve, reject) => {
     future.onReply = (msg: IKernelMessage) => {
-      resolve(<IKernelInfo>msg.content);
+      resolve(msg.content);
     }
   });
 }
