@@ -6,6 +6,10 @@ import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
 
 import { ISignal, Signal } from 'phosphor-signaling';
 
+import { CommManager } from './comm';
+
+import { ICommManager } from './icomm';
+
 import { 
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
   IInspectReply, IInspectRequest, IIsCompleteReply, IIsCompleteRequest,
@@ -191,6 +195,7 @@ class Kernel implements IKernel {
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
     this._createSocket(options.wsUrl);
+    this._commManager = new CommManager(this);
   }
 
   /**
@@ -237,6 +242,15 @@ class Kernel implements IKernel {
    */
   get status(): KernelStatus {
     return this._status;
+  }
+
+  /**
+   * The kernel comm manager.
+   *
+   * Read-only
+   */
+  get commManager(): ICommManager {
+    return this._commManager;
   }
 
   /**
@@ -438,14 +452,27 @@ class Kernel implements IKernel {
 
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
-    if (msg.channel === 'iopub' && msg.header.msg_type === 'status') {
-      this._updateStatus(msg.content.execution_state);
-    }
     if (msg.parent_header) {
       var header = msg.parent_header as IKernelMessageHeader;
       var future = this._handlerMap.get(header.msg_id);
       if (future) {
         future.handleMsg(msg);
+      }
+    }
+    if (msg.channel === 'iopub') {
+      switch(msg.header.msg_type) {
+        case 'status':
+          this._updateStatus(msg.content.execution_state);
+          break;
+        case 'comm_open':
+          this._commManager.handleOpen(msg);
+          break;
+        case 'comm_msg':
+          this._commManager.handleMsg(msg);
+          break;
+        case 'comm_close':
+          this._commManager.handleClose(msg);
+          break;
       }
     }
   }
@@ -498,6 +525,7 @@ class Kernel implements IKernel {
   private _ws: WebSocket = null;
   private _username = '';
   private _handlerMap: Map<string, KernelFutureHandler> = null;
+  private _commManager: CommManager = null;
 }
 
 
