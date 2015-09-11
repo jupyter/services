@@ -10,7 +10,7 @@ interface ICommManager {
   startNewComm(targetName: string, data: any, commId?: string): Promise<IComm>;
   connectToComm(targetName: string, commId: string): Promise<IComm>;
   registerTarget(targetName: string, cb: (comm: IComm, data: any) => any): void;
-  listRunningComms(targetName: string): Promise<ICommInfo[]>;
+  commInfo(targetName?: string): Promise<ICommInfo>
 }
 
 
@@ -29,9 +29,9 @@ interface IComm {
 
 
 /**
- * Contents of a `comm_info` message response.
+ * Contents of `comm_info` message, a mapping of comm ids to target names.
  */
 export
 interface ICommInfo {
-  // TBD
+  comms: Map<string, string>;
 }
