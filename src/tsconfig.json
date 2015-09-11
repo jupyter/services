@@ -6,6 +6,7 @@
     "noEmitOnError": true,
     "sourceMap": true,
     "module": "commonjs",
+    "moduleResolution": "node",
     "target": "ES5",
     "outDir": "../lib"
   },
@@ -14,14 +15,15 @@
     "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/es6-dataview.d.ts",
-    "../node_modules/phosphor-signaling/lib/phosphor-signaling.d.ts",
-    "../node_modules/phosphor-disposable/lib/phosphor-disposable.d.ts",
     "index.ts",
     "config.ts",
     "contents.ts",
     "kernel.ts",
+    "ikernel.ts",
+    "isession.ts",
     "serialize.ts",
     "session.ts",
-    "utils.ts"
+    "utils.ts",
+    "validate.ts"
   ]
 }
