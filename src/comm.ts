@@ -43,8 +43,9 @@ class CommManager implements ICommManager {
       data: data || {}
     }
     this.sendCommMessage('comm_open', contents);
-    this._comms.set(comm.commId, Promise.resolve(comm));
-    return this._comms.get(comm.commId);
+    var promise = Promise.resolve(comm)
+    this._comms.set(comm.commId, promise);
+    return promise;
   }
 
   /**
@@ -52,8 +53,9 @@ class CommManager implements ICommManager {
    */
   connectToComm(targetName: string, commId: string): Promise<IComm> {
     var comm = new Comm(targetName, commId, this);
-    this._comms.set(commId, Promise.resolve(comm));
-    return this._comms.get(commId);
+    var promise = Promise.resolve(comm);
+    this._comms.set(commId, promise);
+    return promise;
   }
 
   /**
@@ -72,7 +74,7 @@ class CommManager implements ICommManager {
     if (targetName !== void 0) {
       contents = { target_name: targetName };
     }
-    var future = this.sendCommMessage('comm_info_request', contents);
+    var future = this.sendCommMessage('comm_info', contents);
     return new Promise((resolve, reject) => {
       future.onReply = (msg) => {
         resolve(msg.content);
