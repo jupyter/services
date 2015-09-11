@@ -33,8 +33,16 @@ class CommManager implements ICommManager {
   /**
    * Start a new Comm, sending a "comm_open" message.
    *
+   * If commId is given, and a client-side comm with that id exists,
+   * that comm is returned.
    */
   startNewComm(targetName: string, data?: any, commId?: string): Promise<IComm> {
+    if (commId !== void 0) {
+      var promise = this._comms.get(commId);
+      if (promise) {
+        return promise;
+      }
+    }
     var comm = new Comm(targetName, commId, this);
     
     var contents = {
@@ -43,17 +51,23 @@ class CommManager implements ICommManager {
       data: data || {}
     }
     this.sendCommMessage('comm_open', contents);
-    var promise = Promise.resolve(comm)
+    var promise = Promise.resolve(comm as IComm)
     this._comms.set(comm.commId, promise);
     return promise;
   }
 
   /**
-   * Connect to an existing server side comm.
+   * Connect to an existing server side comm.  
+   *
+   * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId: string): Promise<IComm> {
+    var promise = this._comms.get(commId);
+    if (promise) {
+      return promise;
+    }
     var comm = new Comm(targetName, commId, this);
-    var promise = Promise.resolve(comm);
+    promise = Promise.resolve(comm);
     this._comms.set(commId, promise);
     return promise;
   }
@@ -203,7 +217,7 @@ class Comm implements IComm {
   /**
    * Get the uuid for the comm channel.
    *
-   * Read only.
+   * Read-only
    */
   get commId(): string {
     return this._id;
@@ -212,7 +226,7 @@ class Comm implements IComm {
   /** 
    * Get the target name for the comm channel.
    *
-   * Read only.
+   * Read-only
    */
   get targetName(): string {
     return this._target;
@@ -233,14 +247,14 @@ class Comm implements IComm {
   }
 
   /**
-   * Get the onMessage handler.
+   * Get the onMsg handler.
    */
   get onMsg(): (data: any) => void {
     return this._onMsg;
   }
 
   /**
-   * Set the onMessage handler.
+   * Set the onMsg handler.
    */
   set onMsg(cb: (data: any) => void) {
     this._onMsg = cb;
