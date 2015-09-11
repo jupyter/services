@@ -72,7 +72,7 @@ class CommManager implements ICommManager {
     if (targetName !== void 0) {
       contents = { target_name: targetName };
     }
-    var future = this.sendCommMessage('comm_info', contents);
+    var future = this.sendCommMessage('comm_info_request', contents);
     return new Promise((resolve, reject) => {
       future.onReply = (msg) => {
         resolve(msg.content);
