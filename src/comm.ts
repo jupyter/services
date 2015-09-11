@@ -64,14 +64,18 @@ class CommManager implements ICommManager {
   }
 
   /**
-   * List the comms running on the server.
+   * Send a 'comm_info_request', and return the contents of the
+   * 'comm_info_reply'.
    */
-  listRunningComms(targetName: string): Promise<ICommInfo[]> {
-    var contents = { target_name: targetName };
+  commInfo(targetName?: string): Promise<ICommInfo> {
+    var contents = {};
+    if (targetName !== void 0) {
+      contents = { target_name: targetName };
+    }
     var future = this.sendCommMessage('comm_info', contents);
     return new Promise((resolve, reject) => {
       future.onReply = (msg) => {
-        resolve((msg.content as any).comms);
+        resolve(msg.content);
       }
     });
   }
