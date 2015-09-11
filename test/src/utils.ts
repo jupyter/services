@@ -29,10 +29,6 @@ class RequestHandler {
     MockXMLHttpRequest.requests = [];
   }
 
-  set onRequest(cb: () => void) {
-    MockXMLHttpRequest.onRequest = cb;
-  }
-
   /**
    * Respond to the latest Ajax request.
    */
@@ -49,11 +45,10 @@ class RequestHandler {
  */
 export
 function expectFailure(promise: Promise<any>, done: () => void, message: string): Promise<any> {
-  return promise.then((msg: any) => {
-    console.error('***should not reach this point');
+  return promise.then(() => {
+    console.error('should not reach this point');
     throw Error('Should not reach this point');
   }).catch((err) => {
-    console.log('****in expect failure', err);
     if (err.message !== message) {
       console.error(err.message, ' != ', message);
     }

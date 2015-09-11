@@ -16,17 +16,6 @@ declare var global: any;
 const CLOSE_NORMAL = 1000;
 
 
-export 
-function overrideWebSocket() {
-  // Override the builtin websocket
-  if (typeof window === 'undefined') {
-    global.WebSocket = MockSocket;
-  } else {
-    (<any>window).WebSocket = MockSocket;
-  }
-}
-
-
 /**
  * Base class for a mock socket implementation.
  */
@@ -134,19 +123,21 @@ class SocketBase {
  * Mock Websocket class that talks to a mock server.
  */
 export
-class MockSocket extends SocketBase {
+class MockWebSocket extends SocketBase {
+  /**
+   * A map of available servers by url.
+   */
+  static servers = new Map<string, MockWebSocketServer>();
+
   /**
    * Create a new Mock Websocket.
    * Look for an connect to a server on the same url.
    */
   constructor(url: string) {
     super();
-    if (MockSocketServer.servers.has(url)) {
-      this._server = MockSocketServer.servers.get(url);
-    } else {
-      this._server = new MockSocketServer(url);
-      MockSocketServer.servers.set(url, this._server);
-    }
+    var server = MockWebSocket.servers.get(url);
+    if (!server) throw Error('No Server found on: ' + url);
+    this._server = server;
     this._server.connect(this);
   }
 
@@ -190,7 +181,7 @@ class MockSocket extends SocketBase {
   }
 
   private _binaryType = 'arraybuffer';
-  private _server: MockSocketServer;
+  private _server: MockWebSocketServer;
 }
 
 
@@ -198,58 +189,51 @@ class MockSocket extends SocketBase {
  * Mock Websocket server.
  */
 export
-class MockSocketServer extends SocketBase {
-  /**
-   * Map of running servers by url.
-   */
-  static servers = new Map<string, MockSocketServer>();
-
-  /**
-   * Callback for when a server is started.
-   */
-  static onConnect: (server: MockSocketServer) => void = null;
-
+class MockWebSocketServer extends SocketBase {
   /**
    * Create a new mock web socket server.
    */
   constructor(url: string) {
     super();
-    this._url = url;
+    if (typeof window === 'undefined') {
+      global.WebSocket = MockWebSocket;
+    } else {
+      (<any>window).WebSocket = MockWebSocket;
+    }
+    MockWebSocket.servers.set(url, this);
     this.triggerOpen();
   }
 
   /**
-   * Get the server url.
-   *
-   * Read-only.
+   * Assign a callback for a websocket connection.
    */
-  get url(): string {
-    return this._url;
+  set onconnect(cb: (ws: MockWebSocket) => void) {
+    this._onConnect = cb;
   }
 
     /**
    * Assign a callback for the websocket closing.
    */
-  set onWSClose(cb: (ws: MockSocket) => void) {
+  set onWSClose(cb: (ws: MockWebSocket) => void) {
     this._onWSClose = cb;
   }
 
   /**
    * Handle a connection from a mock websocket.
    */
-  connect(ws: MockSocket) {
+  connect(ws: MockWebSocket) {
     ws.triggerOpen();
     this._connections.push(ws);
     utils.doLater(() => {
-      var callback = MockSocketServer.onConnect;
-      if (callback) callback(this);
+      var onConnect = this._onConnect;
+      if (onConnect) onConnect(ws);
     });
   }
 
   /**
    * Handle a closing websocket.
    */
-  closeSocket(ws: MockSocket, evt: any) {
+  closeSocket(ws: MockWebSocket, evt: any) {
     var i = this._connections.indexOf(ws);
     if (i !== -1) {
       this._connections.splice(i, 1);
@@ -268,18 +252,7 @@ class MockSocketServer extends SocketBase {
       if (ws.readyState == SocketBase.OPEN) ws.triggerMessage(msg);
     });
   }
-
-  /**
-   * Trigger an error for all connected web sockets.
-   */
-  triggerError(msg: string) {
-    super.triggerError(msg);
-    this._connections.forEach(ws => {
-      ws.triggerError(msg);
-    });
-  }
-
-  private _onWSClose: (ws: MockSocket, evt: any) => void = null;
-  private _connections: MockSocket[] = [];
-  private _url = '';
+  private _onWSClose: (ws: MockWebSocket, evt: any) => void = null;
+  private _connections: MockWebSocket[] = [];
+  private _onConnect: (ws: MockWebSocket) => void = null;
 }

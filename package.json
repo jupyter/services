@@ -3,39 +3,31 @@
   "version": "0.0.1",
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
   "dependencies": {
-    "phosphor-disposable": "^1.0.2",
-    "phosphor-signaling": "^1.1.0"
+    "phosphor-disposable": "^0.9.0",
+    "phosphor-signaling": "^0.9.7"
   },
   "devDependencies": {
+    "dts-generator": "^1.5.0",
     "expect.js": "^0.3.1",
     "istanbul": "^0.3.18",
-    "karma": "^0.13.9",
-    "karma-browserify": "^4.3.0",
-    "karma-chrome-launcher": "^0.2.0",
-    "karma-firefox-launcher": "^0.1.6",
-    "karma-ie-launcher": "^0.2.0",
-    "karma-mocha": "^0.2.0",
-    "karma-mocha-reporter": "^1.1.1",
     "mocha": "^2.2.5",
-    "requirejs": "^2.1.20",
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
-    "typedoc": "git://github.com/phosphorjs/typedoc.git",
-    "typescript": "1.6.0-beta"
+    "typedoc": "^0.3.8",
+    "typescript": "^1.5.3"
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
+    "coverage": "istanbul cover _mocha -- test/build/test*.js --timeout 3000",
     "build:src": "tsc --project src",
+    "build:dts": "node scripts/dtsbundle.js",
     "build:test": "tsc --project test",
-    "build": "npm run build:src && npm run build:test",
+    "build": "npm run build:src && npm run build:dts && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
-    "postinstall": "npm dedupe",
+    "docs:publish": "bash ./scripts/travis_after_success.sh",
     "prepublish": "npm run build",
-    "test": "mocha test/build/test*.js",
-    "test:integration": "cd test && python run_test.py",
-    "test:coverage": "istanbul cover _mocha -- test/build/test*.js"
+    "test": "mocha test/build/test*.js --timeout 3000"
   },
   "repository": {
     "type": "git",
@@ -46,14 +38,13 @@
     "services",
     "notebook"
   ],
-  "files": [
-    "lib/index.js",
-    "lib/index.d.ts"
-  ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/jupyter/jupyter-js-services/issues"
+  },
+  "typescript": {
+    "definition": "lib/jupyter-js-services.d.ts"
   },
   "homepage": "https://github.com/jupyter/jupyter-js-services"
 }

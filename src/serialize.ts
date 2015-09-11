@@ -2,15 +2,15 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IKernelMessage } from './ikernel';
+import { IKernelMsg } from './kernel';
 
 
 /**
  * Deserialize and return the unpacked message.
  */
 export
-function deserialize(data: ArrayBuffer | string): IKernelMessage {
-  var value: IKernelMessage;
+function deserialize(data: ArrayBuffer | string): IKernelMsg {
+  var value: IKernelMsg;
   if (typeof data === "string") {
     value = JSON.parse(data);
   } else {
@@ -24,7 +24,7 @@ function deserialize(data: ArrayBuffer | string): IKernelMessage {
  * Serialize a kernel message for transport.
  */
 export
-function serialize(msg: IKernelMessage): string | ArrayBuffer {
+function serialize(msg: IKernelMsg): string | ArrayBuffer {
   var value: string | ArrayBuffer;
   if (msg.buffers && msg.buffers.length) {
     value = serializeBinary(msg);
@@ -38,7 +38,7 @@ function serialize(msg: IKernelMessage): string | ArrayBuffer {
 /**
  * Deserialize a binary message to a Kernel Message.
  */
-function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
+function deserializeBinary(buf: ArrayBuffer): IKernelMsg {
   var data = new DataView(buf);
   // read the header: 1 + nbufs 32b integers
   var nbufs = data.getUint32(0);
@@ -66,7 +66,7 @@ function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
  * Implement the binary serialization protocol.
  * Serialize Kernel message to ArrayBuffer.
  */
-function serializeBinary(msg: IKernelMessage): ArrayBuffer {
+function serializeBinary(msg: IKernelMsg): ArrayBuffer {
   var offsets: number[] = [];
   var buffers: ArrayBuffer[] = [];
   var encoder = new TextEncoder('utf8');
@@ -85,7 +85,7 @@ function serializeBinary(msg: IKernelMessage): ArrayBuffer {
   }
   var msg_buf = new Uint8Array(
     offsets[offsets.length - 1] + buffers[buffers.length - 1].byteLength
-  );
+    );
   // use DataView.setUint32 for network byte-order
   var view = new DataView(msg_buf.buffer);
   // write nbufs to first 4 bytes

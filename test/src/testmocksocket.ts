@@ -4,16 +4,14 @@
 
 import expect = require('expect.js');
 
-import { MockSocket, MockSocketServer, overrideWebSocket } from './mocksocket';
-
-
-overrideWebSocket();
+import { MockWebSocket, MockWebSocketServer } from './mocksocket';
 
 
 describe('jupyter.services - mocksocket', () => {
 
   it('should connect', (done) => {
-    var ws = new WebSocket('socket1');
+    var server = new MockWebSocketServer('hello');
+    var ws = new WebSocket('hello');
     expect(ws.readyState).to.be(WebSocket.CONNECTING);
     ws.onopen = () => {
       expect(ws.readyState).to.be(WebSocket.OPEN);
@@ -22,12 +20,10 @@ describe('jupyter.services - mocksocket', () => {
   });
 
   it('should send a message', (done) => {
-    var ws = new WebSocket('socket2');
-    MockSocketServer.onConnect = (server) => {
-      expect(server.url).to.be('socket2');
-      server.onmessage = () => {
-        done();
-      }
+    var server = new MockWebSocketServer('hello');
+    var ws = new WebSocket('hello');
+    server.onmessage = () => {
+      done();
     };
     ws.onopen = () => {
       ws.send('hi');
@@ -35,18 +31,19 @@ describe('jupyter.services - mocksocket', () => {
   });
 
   it('should receive a message', (done) => {
-    var ws = new WebSocket('socket3');
+    var server = new MockWebSocketServer('hello');
+    var ws = new WebSocket('hello');
     ws.onmessage = () => {
       done();
     };
-    MockSocketServer.onConnect = (server) => {
-      expect(server.url).to.be('socket3');
+    ws.onopen = () => {
       server.send('hi');
     };
   });
 
   it('should close the socket', (done) => {
-    var ws = new WebSocket('socket4');
+    var server = new MockWebSocketServer('hello');
+    var ws = new WebSocket('hello');
     ws.onclose = () => {
       expect(ws.readyState).to.be(WebSocket.CLOSED);
       done();
@@ -58,26 +55,24 @@ describe('jupyter.services - mocksocket', () => {
   });
 
   it('should handle multiple connections', (done) => {
-    var ws1 = new WebSocket('socket5');
-    var ws2 = new WebSocket('socket5');
+    var server = new MockWebSocketServer('hello');
+    var ws1 = new WebSocket('hello');
+    var ws2 = new WebSocket('hello');
     ws1.onmessage = () => {
       done();
     };
-    MockSocketServer.onConnect = (server) => {
-      expect(server.url).to.be('socket5');
-      ws2.onopen = () => {
-        server.send('hi');
-      }
-    };
+    ws2.onopen = () => {
+      server.send('hi');
+    }
   });
 
   it('should open in the right order', (done) => {
-    MockSocketServer.onConnect = (server) => {
-      expect(server.url).to.be('socket6');
+    var server = new MockWebSocketServer('hello');
+    server.onconnect = (ws: MockWebSocket) => {
       expect(ws.readyState).to.be(WebSocket.OPEN);
       done();
-    };
-    var ws = new WebSocket('socket6');
+    }
+    var ws = new WebSocket('hello');
   });
 
 });

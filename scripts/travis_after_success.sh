@@ -1,7 +1,8 @@
 #!/bin/bash
 if [[ $TRAVIS_PULL_REQUEST == false && $TRAVIS_BRANCH == "master" ]]
 then
-    echo "-- pushing docs --"
+    echo "-- building docs --"
+    npm run docs
 
     ( cd docs 
     git init
@@ -13,5 +14,5 @@ then
     git push --force --quiet "https://${GHTOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
     )
 else
-    echo "-- will only push docs from master --"
+    echo "-- will only build docs from master --"
 fi

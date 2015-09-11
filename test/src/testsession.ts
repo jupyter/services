@@ -5,419 +5,320 @@
 import expect = require('expect.js');
 
 import { 
-  listRunningSessions, connectToSession, startNewSession
+  ISessionId, ISessionOptions, NotebookSession
 } from '../../lib/session';
-
-import {
-  INotebookId, INotebookSession, ISessionId, ISessionOptions
-} from '../../lib/isession';
 
 import { deserialize, serialize } from '../../lib/serialize';
 
-import { uuid } from '../../lib/utils';
+import { MockWebSocket, MockWebSocketServer } from './mocksocket';
 
-import { KernelTester } from './testkernel';
-
-import { RequestHandler, expectFailure, doLater } from './utils';
+import { RequestHandler, expectFailure } from './utils';
 
 
-/**
- * Create a unique session id.
- */
-function createSessionId(): ISessionId {
-  return {
-    id: uuid(),
-    notebook: { path: uuid() },
-    kernel: { id: uuid(), name: uuid() }
-  }
+var DEFAULTS: ISessionOptions = {
+  notebookPath: "test",
+  kernelName: "python",
+  baseUrl: "localhost",
+  wsUrl: "ws://"
+}
+
+var DEFAULT_ID: ISessionId = {
+  id: "1234", 
+  notebook: { path: "test1" },
+  kernel: { id: "1234", name: "test1" }
 }
 
 
-/**
- * Create session options based on a sessionId.
- */
-function createSessionOptions(sessionId: ISessionId): ISessionOptions {
-  return {
-    notebookPath: sessionId.notebook.path,
-    kernelName: sessionId.kernel.name,
-    baseUrl: "http://localhost:8888",
-    wsUrl: "ws://localhost:8888"
-  }
-}
+describe('jupyter.services - Session', () => {
 
-
-describe('jupyter.services - session', () => {
-
-  describe('listRunningSessions()', () => {
+  describe('#list()', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888');
-      var sessionIds = [createSessionId(), createSessionId()];
-      handler.respond(200, sessionIds);
+      var list = NotebookSession.list('baseUrl');
+      var data: ISessionId[] = [
+        DEFAULT_ID,
+        { id: "5678", 
+          notebook: { path: "test2" },
+          kernel: { id: "5678", name: "test2" }
+        },
+      ];
+      handler.respond(200, data);
       return list.then((response: ISessionId[]) => {
-        expect(response[0]).to.eql(sessionIds[0]);
-        expect(response[1]).to.eql(sessionIds[1]);
+        expect(response[0].kernel.id).to.be(DEFAULT_ID.kernel.id); 
+        expect(response[0].kernel.name).to.be(DEFAULT_ID.kernel.name); 
+        expect(response[0].notebook.path).to.be(DEFAULT_ID.notebook.path);
+        expect(response[0].id).to.be(DEFAULT_ID.id);
+
+        expect(response[1].kernel.id).to.be("5678"); 
+        expect(response[1].kernel.name).to.be("test2");
+        expect(response[1].notebook.path).to.be("test2");
+        expect(response[1].id).to.be("5678");
         done();
       });
     });
 
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888');
+      var list = NotebookSession.list('baseUrl');
       var data = { id: "1234", notebook: { path: "test" } };
       handler.respond(200, data);
       expectFailure(list, done, "Invalid Session list");
     });
 
-    it('should throw an error for another invalid model', (done) => {
+    it('should throw an error for an invalid response', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888');
-      var data = [{ id: "1234", kernel: { id: '', name: '' }, notebook: { } }];
-      handler.respond(200, data);
-      expectFailure(list, done, "Invalid Notebook Model");
-    });
-
-    it('should fail for wrong response status', (done) => {
-      var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888');
-      handler.respond(201, [createSessionId()]);
+      var list = NotebookSession.list('baseUrl');
+      var data: ISessionId[] = [
+        DEFAULT_ID,
+        { id: "5678", 
+          notebook: { path: "test2" },
+          kernel: { id: "5678", name: "test2" }
+        },
+      ];
+      handler.respond(201, data);
       expectFailure(list, done, "Invalid Status: 201");
     });
 
-    it('should fail for error response status', (done) => {
-      var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888');
-      handler.respond(500, {});
-      expectFailure(list, done, '');
+  });
+
+  describe('#constructor()', () => {
+
+    it('should set initial conditions', () => {
+      var session = new NotebookSession(DEFAULTS);
+      expect(session.kernel.name).to.be("python");
     });
 
   });
 
-  describe('startNewSession()', () => {
+  describe('#start()', () => {
 
     it('should start a session', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      tester.respond(201, sessionId)
-      tester.onRequest = () => {
-        tester.respond(200, [ { name: sessionId.kernel.name,
-                                id: sessionId.kernel.id }]);
-      }
-      return sessionPromise.then((session) => {
-        expect(session.id).to.be(sessionId.id);
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then(() => {
+        expect(session.kernel.id).to.be(DEFAULT_ID.kernel.id);
+        expect(session.kernel.status).to.be('connected');
         done();
       });
     });
 
-    it('should fail if the websocket fails', (done) => {
-      var tester = new KernelTester('dead');
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      tester.respond(201, sessionId);
-      tester.onRequest = () => {
-        tester.respond(200, [ { name: sessionId.kernel.name,
-                                id: sessionId.kernel.id }]);
-      }
-      expectFailure(sessionPromise, done, 'Session failed to start');
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var start = session.start();
+      var data = { id: "1234" };
+      handler.respond(201, data);
+      return expectFailure(start, done, "Invalid Session Model");
     });
 
-    it('should fail for wrong response status', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      tester.respond(200, sessionId);
-      expectFailure(sessionPromise, done, 'Invalid Status: 200');
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var start = session.start();
+      handler.respond(200, DEFAULT_ID);
+      return expectFailure(start, done, "Invalid response");
     });
 
-    it('should fail for error response status', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      tester.respond(500, {});
-      expectFailure(sessionPromise, done, '');
-    });
-
-    it('should fail for wrong response model', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      var data = { 
-        id: 1, kernel: { name: '', id: '' }, notebook: { path: ''}
-      };
-      tester.respond(201, data);
-      expectFailure(sessionPromise, done, 'Invalid Session Model');
-    });
-
-    it('should fail if the kernel is not running', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options);
-      tester.respond(201, sessionId)
-      tester.onRequest = () => {
-        tester.respond(200, []);
-      }
-      expectFailure(sessionPromise, done, 'Session failed to start');
-    });
   });
 
-  describe('connectToSession()', () => {
 
-    it('should connect to a running session', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      startSession(sessionId).then((session) => {
-        connectToSession(sessionId.id).then((newSession) => {
-          expect(newSession.id).to.be(sessionId.id);
-          done();
-        });
-      });
-    });
+  describe('#getInfo()', () => {
 
-    it('should connect to a client session if given session options', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = connectToSession(sessionId.id, options);
-      tester.respond(200, [sessionId]);
-      tester.onRequest = () => {
-        tester.respond(200, [ { name: sessionId.kernel.name,
-                                id: sessionId.kernel.id }]);
-      }
-      sessionPromise.then((session) => {
-        expect(session.id).to.be(sessionId.id);
+    it('should get information about a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+
+      var info = session.getInfo();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(200, data);
+      return info.then((id: ISessionId) => {
+        expect(id.kernel.id).to.be(DEFAULT_ID.kernel.id); 
+        expect(id.kernel.name).to.be(DEFAULT_ID.kernel.name); 
+        expect(id.notebook.path).to.be(DEFAULT_ID.notebook.path);
+        expect(id.id).to.be(DEFAULT_ID.id);
         done();
       });
     });
 
-    it('should fail if not given session options', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var sessionPromise = connectToSession(sessionId.id);
-      expectFailure(sessionPromise, done, 'Please specify session options');
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var info = session.getInfo();
+      var data = { id: "1234" };
+      handler.respond(200, data);
+      return expectFailure(info, done, "Invalid Session Model");
     });
 
-    it('should fail if session is not available', (done) => {
-      var tester = new KernelTester();
-      var sessionId = createSessionId();
-      var options = createSessionOptions(sessionId);
-      var sessionPromise = connectToSession(sessionId.id, options);
-      tester.respond(200, []);
-      expectFailure(
-        sessionPromise, done, 'No running session with id: ' + sessionId.id
-      );
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var info = session.getInfo();
+      handler.respond(201, DEFAULT_ID);
+      return expectFailure(info, done, "Invalid response");
     });
+
   });
 
-  describe('INotebookSession', () => {
+  describe('#delete()', () => {
 
-    context('#sessionDied', () => {
+    it('should kill a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
 
-      it('should emit when the session dies', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          session.sessionDied.connect(() => {
-            done();
-          });
-          tester.sendStatus('dead');
-          tester.onRequest = () => {
-            tester.respond(204, { });
-          }
-        });
-      });
-    });
-
-    context('#id', () => {
-
-      it('should be a read only string', (done) => {
-        var id = createSessionId();
-        startSession(id).then((session) => {
-          expect(typeof session.id).to.be('string');
-          expect(() => { session.id = "1"; }).to.throwError();
+      var start = session.start();
+      handler.respond(201, DEFAULT_ID);
+      return start.then(() => {
+        var del = session.delete();
+        handler.respond(204, DEFAULT_ID);
+        del.then(() => {
+          expect(session.kernel.status).to.be('disconnected');
           done();
         });
       });
     });
 
-    context('#notebookPath', () => {
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      var data = JSON.parse(JSON.stringify(DEFAULT_ID));
+      (<any>data).id = 11;
+      handler.respond(204, data);
+      return expectFailure(del, done, "Invalid Session Model");
+    });
 
-      it('should be a read only string', (done) => {
-        var id = createSessionId();
-        startSession(id).then((session) => {
-          expect(typeof session.notebookPath).to.be('string');
-          expect(() => { session.notebookPath = '' }).to.throwError();
-          done();
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      handler.respond(200, DEFAULT_ID);
+      return expectFailure(del, done, "Invalid response");
+    });
+
+    it('should throw a specific error for 410 response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var del = session.delete();
+      handler.respond(410, DEFAULT_ID);
+      return expectFailure(del, done, "The kernel was deleted but the session was not");
+    });
+
+  });
+
+  describe('#restart()', () => {
+
+    it('should restart a session', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then(() => {
+        var restart = session.restart();
+        handler.respond(204, DEFAULT_ID);
+        setImmediate(() => {
+          handler.respond(201, DEFAULT_ID);
+          restart.then(() => { done(); });
         });
       });
     });
 
-    context('#kernel', () => {
+    it('should restart a session with different options', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
 
-      it('should be a read only IKernel object', (done) => {
-        var id = createSessionId();
-        startSession(id).then((session) => {
-          expect(typeof session.kernel.id).to.be('string');
-          expect(() => { session.kernel = null }).to.throwError();
-          done();
-        });
-      });
-    });
-
-    context('#renameNotebook', () => {
-
-      it('should rename the notebook', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        var newPath = '/foo.ipynb';
-        startSession(id, tester).then((session) => {
-          var promise = session.renameNotebook(newPath);
-          var newId = JSON.parse(JSON.stringify(id));
-          newId.notebook.path = newPath;
-          tester.respond(200, newId);
-          promise.then(() => {
-            expect(session.notebookPath).to.be(newPath);
-            done();
-          })
-        })
-      });
-
-      it('should fail for improper response status', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        var newPath = '/foo.ipynb';
-        startSession(id, tester).then((session) => {
-          var promise = session.renameNotebook(newPath);
-          tester.respond(201, { });
-          expectFailure(promise, done, 'Invalid Status: 201');
-        })
-      });
-
-      it('should fail for error response status', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        var newPath = '/foo.ipynb';
-        startSession(id, tester).then((session) => {
-          var promise = session.renameNotebook(newPath);
-          tester.respond(500, { });
-          expectFailure(promise, done, '');
-        })
-      });
-
-      it('should fail for improper model', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        var newPath = '/foo.ipynb';
-        startSession(id, tester).then((session) => {
-          var promise = session.renameNotebook(newPath);
-          tester.respond(200, { });
-          expectFailure(promise, done, 'Invalid Session Model');
-        })
-      });
-
-      it('should fail if the session is dead', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        startSession(id, tester).then((session) => {
-          var shutdown = session.shutdown();
-          expectFailure(session.renameNotebook(''), done, 'Session is dead');
-        });
-      });
-    });
-
-    context('#shutdown', () => {
-
-      it('should shut down properly', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown();
-          tester.respond(204, { });
-          promise.then(() => {
-            done();
-          })
-        });
-      });
-
-      it('should emit a sessionDied signal', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown();
-          session.sessionDied.connect(() => {
-            done();
-          })
-          tester.respond(204, { });
-        });
-      });
-
-      it('should fail for an incorrect response status', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown();
-          tester.respond(200, { });
-          expectFailure(promise, done, 'Invalid Status: 200');
-        });
-      });
-
-      it('should handle a specific error status', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown();
-          tester.respond(410, { });
-          expectFailure(
-            promise, done, 'The kernel was deleted but the session was not'
-          );
-        });
-      });
-
-      it('should fail for an error response status', (done) => {
-        var tester = new KernelTester();
-        var sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown();
-          tester.respond(500, { });
-          expectFailure(promise, done, '');
-        });
-      });
-
-      it('should fail if the session is dead', (done) => {
-        var tester = new KernelTester();
-        var id = createSessionId();
-        startSession(id, tester).then((session) => {
-          var shutdown = session.shutdown();
-          tester.respond(204, { });
-          shutdown.then(() => {
-            expectFailure(session.shutdown(), done, 'Session is dead');
+      var start = session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+      return start.then((msg: ISessionId) => {
+        var options: ISessionOptions = {
+          kernelName: 'R',
+          notebookPath: 'test2'
+        }
+        var restart = session.restart(options);
+        handler.respond(204, DEFAULT_ID);
+        setImmediate(() => {
+          var newID: ISessionId = DEFAULT_ID;
+          newID.kernel.name = 'R';
+          newID.notebook.path = 'test2';
+          handler.respond(201, newID);
+          restart.then(() => { 
+            expect(session.kernel.name).to.be('R');
+            expect(session.notebookPath).to.be('test2');
+            done(); 
           });
         });
       });
     });
   });
 
+  describe('#renameNotebook()', () => {
+
+    it('should rename the notebook', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+
+      var path = 'new path';
+      var rename = session.renameNotebook(path);
+
+      var id = JSON.parse(JSON.stringify(DEFAULT_ID));
+      id.notebook.path = path;
+      handler.respond(200, JSON.stringify(id));
+      return rename.then(() => {
+        expect(session.notebookPath).to.be(path);
+        done();
+      });
+    });
+
+    it('should throw an error for an invalid session id', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var rename = session.renameNotebook('new path');
+      var data = JSON.parse(JSON.stringify(DEFAULT_ID));
+      (<any>data.notebook).path = 11;
+      handler.respond(200, data);
+      return expectFailure(rename, done, "Invalid Notebook Model");
+    });
+
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      var rename = session.renameNotebook('new path');
+      handler.respond(201, DEFAULT_ID);
+      return expectFailure(rename, done, "Invalid response");
+    });
+
+  });
+
+  describe('#statusChanged', () => {
+
+    it('should emit a status changed', (done) => {
+      var handler = new RequestHandler();
+      var session = new NotebookSession(DEFAULTS);
+      session.kernel.id = DEFAULT_ID.kernel.id;
+      var server = new MockWebSocketServer(session.kernel.wsUrl);
+
+      session.statusChanged.connect((status: string) => {
+        expect(status).to.be('kernelCreated');
+        done();
+      });
+      session.start();
+      var data = JSON.stringify(DEFAULT_ID);
+      handler.respond(201, data);
+    });
+  });
 });
-
-
-/**
- * Start a session with the given options.
- */
-function startSession(sessionId: ISessionId, tester?: KernelTester): Promise<INotebookSession> {
-  var tester = tester || new KernelTester();
-  var options = createSessionOptions(sessionId);
-  var sessionPromise = startNewSession(options);
-  tester.respond(201, sessionId);
-  tester.onRequest = () => {
-    tester.respond(200, [ { name: sessionId.kernel.name,
-                            id: sessionId.kernel.id }]);
-  }
-  return sessionPromise;
-}

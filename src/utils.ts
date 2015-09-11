@@ -47,12 +47,8 @@ export
 function urlPathJoin(...paths: string[]): string {
   var url = '';
   for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-    if (path === '') {
+    if (paths[i] === '') {
       continue;
-    }
-    if (i > 0) {
-      path = path.replace(/\/\/+/, '/');
     }
     if (url.length > 0 && url.charAt(url.length - 1) != '/') {
       url = url + '/' + paths[i];
@@ -60,7 +56,7 @@ function urlPathJoin(...paths: string[]): string {
       url = url + paths[i];
     }
   }
-  return url
+  return url.replace(/\/\/+/, '/');
 }
 
 
@@ -91,9 +87,11 @@ function urlJoinEncode(...args: string[]): string {
  */
 export
 function jsonToQueryString(json: any): string {
-  return '?' + Object.keys(json).map(key =>
-    encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
-  ).join('&');
+  return '?' +
+    Object.keys(json).map((key: string): any => {
+      return encodeURIComponent(key) + '=' +
+        encodeURIComponent(json[key]);
+    }).join('&');
 }
 
 
@@ -142,69 +140,22 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
     var req = new XMLHttpRequest();
     req.open(settings.method, url);
     if (settings.contentType) {
-      req.setRequestHeader('Content-Type', settings.contentType);
+      req.overrideMimeType(settings.contentType);
     }
     req.onload = () => {
       var response = req.response;
-      if (settings.dataType === 'json' && req.response) {
+      if (settings.dataType === 'json') {
         response = JSON.parse(req.response);
       }
-      resolve({ data: response, statusText: req.statusText, xhr: req });
-    };
+      resolve({data: response, statusText: req.statusText, xhr: req});
+    }
     req.onerror = (err: ErrorEvent) => {
-      reject({ xhr: req, statusText: req.statusText, error: err });
-    };
+      reject({xhr: req, statusText: req.statusText, error: err});
+    }
     if (settings.data) {
       req.send(settings.data);
     } else {
       req.send();
     }
   });
-}
-
-
-/**
- * A Promise that can be resolved or rejected by another object.
- */
-export
-class PromiseDelegate<T> {
-
-  /**
-   * Construct a new Promise delegate.
-   */
-  constructor() {
-    this._promise = new Promise<T>((resolve, reject) => {
-      this._resolve = resolve;
-      this._reject = reject;
-    });
-  }
-
-  /**
-   * Get the underlying Promise.
-   */
-  get promise(): Promise<T> {
-    return this._promise;
-  }
-
-  /**
-   * Resolve the underlying Promise with an optional value or another Promise.
-   */
-  resolve(value?: T | Thenable<T>): void {
-    // Note: according to the Promise spec, and the `this` context for resolve 
-    // and reject are ignored
-    this._resolve(value);
-  }
-
-  /**
-   * Reject the underlying Promise with an optional reason.
-   */
-  reject(reason?: any): void {
-    // Note: according to the Promise spec, and the `this` context for resolve 
-    // and reject are ignored
-    this._reject(reason);
-  }
-
-  private _promise: Promise<T>;
-  private _resolve: (value?: T | Thenable<T>) => void;
-  private _reject: (reason?: any) => void;
 }
