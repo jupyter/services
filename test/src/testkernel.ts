@@ -715,6 +715,27 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
+    context('#registerIOPubHandler()', () => {
+
+      it('should call the handler', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel: IKernel) => {
+          kernel.registerIOPubHandler('my_message', (msg) => {
+            expect(msg.content).to.be('hello');
+            done();
+          });
+          var options: IKernelMessageOptions = {
+            msgType: "my_message",
+            channel: "iopub",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var msg = createKernelMessage(options, 'hello');
+          tester.send(msg);
+        });
+      });
+    });
+
     context('#kernelInfo()', () => {
 
       it('should resolve the promise', (done) => {
@@ -957,8 +978,8 @@ describe('jupyter.services - kernel', () => {
 /**
  * Convenience function to start a kernel fully.
  */
-function createKernel(): Promise<IKernel> {
-  var tester = new KernelTester();
+function createKernel(tester?: KernelTester): Promise<IKernel> {
+  var tester = tester || new KernelTester();
   var kernelPromise = startNewKernel(KERNEL_OPTIONS);
   tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
   return kernelPromise;
