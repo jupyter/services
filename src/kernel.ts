@@ -2,13 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IDisposable, DisposableDelegate } from 'phosphor-disposable';
+import { DisposableDelegate } from 'phosphor-disposable';
 
 import { ISignal, Signal } from 'phosphor-signaling';
-
-import { CommManager } from './comm';
-
-import { ICommManager } from './icomm';
 
 import { 
   ICompleteReply, ICompleteRequest, IExecuteReply, IExecuteRequest,
@@ -194,8 +190,8 @@ class Kernel implements IKernel {
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
+    this._ioPubHandlerMap = new Map<string, (msg: IKernelMessage) => void>();
     this._createSocket(options.wsUrl);
-    this._commManager = new CommManager(this);
   }
 
   /**
@@ -245,12 +241,10 @@ class Kernel implements IKernel {
   }
 
   /**
-   * The kernel comm manager.
-   *
-   * Read-only
+   * Register the io pub handler for a specific message type.
    */
-  get commManager(): ICommManager {
-    return this._commManager;
+  registerIOPubHandler(msgType: string, cb: (msg: IKernelMessage) => void): void {
+    this._ioPubHandlerMap.set(msgType, cb);
   }
 
   /**
@@ -460,20 +454,11 @@ class Kernel implements IKernel {
       }
     }
     if (msg.channel === 'iopub') {
-      switch(msg.header.msg_type) {
-        case 'status':
-          this._updateStatus(msg.content.execution_state);
-          break;
-        case 'comm_open':
-          this._commManager.handleOpen(msg);
-          break;
-        case 'comm_msg':
-          this._commManager.handleMsg(msg);
-          break;
-        case 'comm_close':
-          this._commManager.handleClose(msg);
-          break;
+      if (msg.header.msg_type === 'status') {
+        this._updateStatus(msg.content.execution_state);
       }
+      var handler = this._ioPubHandlerMap.get(msg.header.msg_type);
+      if (handler) handler(msg);
     }
   }
 
@@ -525,7 +510,7 @@ class Kernel implements IKernel {
   private _ws: WebSocket = null;
   private _username = '';
   private _handlerMap: Map<string, KernelFutureHandler> = null;
-  private _commManager: CommManager = null;
+  private _ioPubHandlerMap: Map<string, (msg: IKernelMessage) => void>;
 }
 
 

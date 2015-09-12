@@ -4,7 +4,7 @@
 
 export * from './config';
 export * from './contents';
-export * from './icomm';
+export * from './comm';
 export * from './ikernel';
 export * from './isession';
 export * from './kernel';

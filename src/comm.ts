@@ -4,30 +4,86 @@
 
 import requirejs = require('r.js');
 
+import { DisposableDelegate } from 'phosphor-disposable';
+
 import { 
   IKernel, IKernelFuture, IKernelMessage, IKernelMessageOptions 
 } from './ikernel';
 
 import { createKernelMessage } from './kernel';
 
-import { IComm, ICommManager, ICommInfo } from './icomm';
-
 import * as utils from './utils';
 
 
+/**
+ * A client side Comm interface.
+ */
+export
+interface IComm {
+  /**
+   * The uuid for the comm channel.
+   *
+   * Read-only
+   */
+  commId: string;
+
+  /** 
+   * The target name for the comm channel.
+   *
+   * Read-only
+   */
+  targetName: string;
+
+  /**
+   * The onClose handler.
+   */
+  onClose: (data?: any) => void;
+
+  /**
+   * The onMsg handler.
+   */
+  onMsg: (data: any) => void;
+
+  /**
+   * Send a comm message to the kernel.
+   */
+  send(data: any): void;
+
+  /**
+   * Close the comm.
+   */
+  close(data?: any): void;
+}
+
+
+/**
+ * Contents of `comm_info` message.
+ */
+export
+interface ICommInfo {
+  /**
+   * Mapping of comm ids to target names.
+   */
+  comms: Map<string, string>;
+}
+
+
 /*
- * CommManager implementation for a Kernel.
+ * CommManager for a Kernel.
  *
  * http://ipython.org/ipython-doc/dev/development/messaging.html#custom-messages
  */
 export
-class CommManager implements ICommManager {
+class CommManager {
 
   /**
    * Create a CommManager instance.
    */
   constructor(kernel: IKernel) {
     this._kernel = kernel;
+    kernel.registerIOPubHandler('comm_open', this._handleOpen);
+    kernel.registerIOPubHandler('comm_msg', this._handleMsg);
+    kernel.registerIOPubHandler('comm_close', this._handleClose);
   }
 
   /**
@@ -43,14 +99,16 @@ class CommManager implements ICommManager {
         return promise;
       }
     }
-    var comm = new Comm(targetName, commId, this);
+    var comm = new Comm(targetName, commId, this._kernel, () => {
+      this._unregisterComm(commId);
+    });
     
     var contents = {
       comm_id: comm.commId,
       target_name: targetName,
       data: data || {}
     }
-    this.sendCommMessage('comm_open', contents);
+    sendCommMessage(this._kernel, 'comm_open', contents);
     var promise = Promise.resolve(comm as IComm)
     this._comms.set(comm.commId, promise);
     return promise;
@@ -66,7 +124,9 @@ class CommManager implements ICommManager {
     if (promise) {
       return promise;
     }
-    var comm = new Comm(targetName, commId, this);
+    var comm = new Comm(targetName, commId, this._kernel, () => {
+      this._unregisterComm(commId);
+    });
     promise = Promise.resolve(comm);
     this._comms.set(commId, promise);
     return promise;
@@ -88,7 +148,7 @@ class CommManager implements ICommManager {
     if (targetName !== void 0) {
       contents = { target_name: targetName };
     }
-    var future = this.sendCommMessage('comm_info', contents);
+    var future = sendCommMessage(this._kernel, 'comm_info', contents);
     return new Promise((resolve, reject) => {
       future.onReply = (msg) => {
         resolve(msg.content);
@@ -98,20 +158,19 @@ class CommManager implements ICommManager {
 
   /**
    * Handle 'comm_open' kernel message.
-   *
-   * Not part of ICommManager interface.
    */  
-  handleOpen(msg: IKernelMessage): void {
+  private _handleOpen(msg: IKernelMessage): void {
     var content = msg.content;
 
     var promise = loadTarget(content.target_name, content.target_module, 
         this._targets).then((target: (comm: IComm, data: any) => any) => {
-      var comm = new Comm(content.target_name, content.comm_id, this);
+      var comm = new Comm(content.target_name, content.comm_id, this._kernel,
+        () => { this._unregisterComm(content.comm_id); });
       try {
         var response = target(comm, content.data);
       } catch (e) {
         comm.close();
-        this.unregisterComm(comm);
+        this._unregisterComm(comm.commId);
         console.error("Exception opening new comm");
         return Promise.reject(e);
       }
@@ -124,10 +183,8 @@ class CommManager implements ICommManager {
     
   /**
    * Handle 'comm_close' kernel message.
-   *
-   * Not part of ICommManager interface.
    */  
-  handleClose(msg: IKernelMessage): void {
+  private _handleClose(msg: IKernelMessage): void {
     var content = msg.content;
     var promise = this._comms.get(content.commId);
     if (!promise) {
@@ -135,7 +192,7 @@ class CommManager implements ICommManager {
         return;
     }
     promise.then((comm) => {
-      this.unregisterComm(comm);
+      this._unregisterComm(comm.commId);
       try {
         comm.close(msg);
       } catch (e) {
@@ -146,10 +203,8 @@ class CommManager implements ICommManager {
 
   /**
    * Handle 'comm_msg' kernel message.
-   *
-   * Not part of ICommManager interface.
    */  
-  handleMsg(msg: IKernelMessage): void {
+  private _handleMsg(msg: IKernelMessage): void {
     var content = msg.content;
     var promise = this._comms.get(content.comm_id);
     if (!promise) {
@@ -170,27 +225,9 @@ class CommManager implements ICommManager {
 
   /**
    * Unregister a comm instance.
-   *
-   * Not part of ICommManager interface.
    */
-  unregisterComm(comm: IComm) {
-    this._comms.delete(comm.commId);
-  }
-
-  /**
-   * Send a comm message to the kernel.
-   *
-   * Not part of ICommManager interface.
-   */
-  sendCommMessage(msgType: string, contents: any): IKernelFuture {
-   var options: IKernelMessageOptions = {
-      msgType: msgType,
-      channel: 'shell',
-      username: this._kernel.username,
-      session: this._kernel.clientId
-    }
-    var msg = createKernelMessage(options, contents);
-    return this._kernel.sendShellMessage(msg);
+  private _unregisterComm(commId: string) {
+    this._comms.delete(commId);
   }
 
   private _comms = new Map<string, Promise<IComm>>();
@@ -203,15 +240,16 @@ class CommManager implements ICommManager {
  * Comm channel handler.
  */
 export
-class Comm implements IComm {
+class Comm extends DisposableDelegate implements IComm {
 
   /**
    * Construct a new comm channel.
    */
-  constructor(targetName: string, commId: string, manager: CommManager) {
+  constructor(targetName: string, commId: string, kernel: IKernel, callback: () => void) {
+    super(callback);
     this._target = targetName;
     this._id = commId || utils.uuid();  
-    this._manager = manager;
+    this._kernel = kernel;
   }
 
   /**
@@ -265,7 +303,7 @@ class Comm implements IComm {
    */
   send(data: any): void {
     var contents = { comm_id: this._id, data: data || {} };
-    this._manager.sendCommMessage('comm_msg', contents);
+    sendCommMessage(this._kernel, 'comm_msg', contents);
   }
 
   /**
@@ -275,13 +313,13 @@ class Comm implements IComm {
     var onClose = this._onClose;
     if (onClose) onClose(data);
     var contents = { comm_id: this._id, data: data || {} };
-    this._manager.sendCommMessage('comm_close', contents);
-    this._manager.unregisterComm(this);
+    sendCommMessage(this._kernel, 'comm_close', contents);
+    this.dispose();
   }
 
   private _target = '';
   private _id = '';
-  private _manager: CommManager = null;
+  private _kernel: IKernel = null;
   private _onClose: (data?: any) => void = null;
   private _onMsg: (data: any) => void = null;
 }
@@ -311,3 +349,19 @@ function loadTarget(targetName: string, moduleName: string, registry: Map<string
     }
   });
 };
+
+
+
+/**
+ * Send a comm message to the kernel.
+ */
+function sendCommMessage(kernel: IKernel, msgType: string, contents: any): IKernelFuture {
+ var options: IKernelMessageOptions = {
+    msgType: msgType,
+    channel: 'shell',
+    username: this._kernel.username,
+    session: this._kernel.clientId
+  }
+  var msg = createKernelMessage(options, contents);
+  return this._kernel.sendShellMessage(msg);
+}

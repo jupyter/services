@@ -254,6 +254,11 @@ interface IKernel {
   sendShellMessage(msg: IKernelMessage): IKernelFuture;
 
   /**
+   * Register the io pub handler for a specific message type.
+   */
+  registerIOPubHandler(msgType: string, cb: (msg: IKernelMessage) => void): void;
+
+  /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
    */
   interrupt(): Promise<void>;
