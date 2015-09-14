@@ -12,7 +12,7 @@ var BASEURL = 'http://localhost:8888';
 var WSURL = 'ws://localhost:8888';
 
 
-describe('jupyter.services - Karma', () => {
+describe('jupyter.services - Integration', () => {
 
   describe('Kernel', () => {
 
@@ -131,4 +131,5 @@ describe('jupyter.services - Karma', () => {
       });
     });
   });
+
 });

@@ -2,8 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 "use strict";
 
-import requirejs = require('requirejs');
-
 import { DisposableDelegate } from 'phosphor-disposable';
 
 import { 
@@ -175,7 +173,6 @@ class CommManager {
 
     var promise = loadTarget(content.target_name, content.target_module, 
         this._targets).then((target: (comm: IComm, data: any) => any) => {
-      console.log('***starting comm');
       var comm = new Comm(content.target_name, content.comm_id, this._kernel,
         () => { this._unregisterComm(content.comm_id); });
       try {
