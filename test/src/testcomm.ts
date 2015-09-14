@@ -38,7 +38,7 @@ describe('jupyter.services - Comm', () => {
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.startNewComm('test').then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(typeof comm.commId).to.be('string');
             done();
@@ -238,6 +238,21 @@ describe('jupyter.services - Comm', () => {
           });
         });
       });
+
+      it('should ignore a close message for an unregistered id', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.startNewComm('test', {}).then((comm) => {
+            var content = {
+              comm_id: '1234',
+              target_name: comm.targetName
+            }
+            sendCommMessage(tester, kernel, 'comm_close', content);
+            done();
+          });
+        });
+      });
     });
 
     context('#onMsg', () => {
@@ -269,6 +284,21 @@ describe('jupyter.services - Comm', () => {
               data: { foo: 'bar' }
             }
             sendCommMessage(tester, kernel, 'comm_msg', content);
+          });
+        });
+      });
+
+      it('should ignore a message for an unregistered id', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.startNewComm('test', {}).then((comm) => {
+            var content = {
+              comm_id: '1234',
+              target_name: comm.targetName
+            }
+            sendCommMessage(tester, kernel, 'comm_msg', content);
+            done();
           });
         });
       });

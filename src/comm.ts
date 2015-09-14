@@ -154,9 +154,6 @@ class CommManager {
   }
 
   private _handleKernelMsg(kernel: IKernel, msg: IKernelMessage): void {
-    if (msg.channel !== 'iopub') {
-      return
-    }
     switch(msg.header.msg_type) {
        case 'comm_open':
          this._handleOpen(msg);
