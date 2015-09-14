@@ -98,7 +98,7 @@ class CommManager {
       }
     }
     var comm = new Comm(targetName, commId, this._kernel, () => {
-      this._unregisterComm(commId);
+      this._unregisterComm(comm.commId);
     });
     var contents = {
       comm_id: comm.commId,
@@ -122,7 +122,7 @@ class CommManager {
       return promise;
     }
     var comm = new Comm(targetName, commId, this._kernel, () => {
-      this._unregisterComm(commId);
+      this._unregisterComm(comm.commId);
     });
     promise = Promise.resolve(comm);
     this._comms.set(commId, promise);
@@ -145,7 +145,7 @@ class CommManager {
     if (targetName !== void 0) {
       contents = { target_name: targetName };
     }
-    var future = sendCommMessage(this._kernel, 'comm_info', contents);
+    var future = sendCommMessage(this._kernel, 'comm_info_request', contents);
     return new Promise((resolve, reject) => {
       future.onReply = (msg) => {
         resolve(msg.content);
@@ -200,7 +200,7 @@ class CommManager {
    */  
   private _handleClose(msg: IKernelMessage): void {
     var content = msg.content;
-    var promise = this._comms.get(content.commId);
+    var promise = this._comms.get(content.comm_id);
     if (!promise) {
         console.error('Comm promise not found for comm id ' + content.comm_id);
         return;
@@ -228,7 +228,7 @@ class CommManager {
     var newPromise = promise.then((comm) => {
       try {
         var onMsg = comm.onMsg;
-        if (onMsg) onMsg(msg);
+        if (onMsg) onMsg(msg.content.data);
       } catch (e) {
         console.log("Exception handling comm msg: ", e, e.stack, msg);
       }
@@ -316,6 +316,9 @@ class Comm extends DisposableDelegate implements IComm {
    * Send a comm message to the kernel.
    */
   send(data: any): void {
+    if (this.isDisposed) {
+      throw Error('Comm is closed');
+    }
     var contents = { comm_id: this._id, data: data || {} };
     sendCommMessage(this._kernel, 'comm_msg', contents);
   }
@@ -324,10 +327,15 @@ class Comm extends DisposableDelegate implements IComm {
    * Close the comm.
    */
   close(data?: any): void {
+    if (this.isDisposed) {
+      return;
+    }
     var onClose = this._onClose;
     if (onClose) onClose(data);
     var contents = { comm_id: this._id, data: data || {} };
     sendCommMessage(this._kernel, 'comm_close', contents);
+    this._onClose = null;
+    this._onMsg = null;
     this.dispose();
   }
 
