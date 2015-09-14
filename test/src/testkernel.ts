@@ -715,12 +715,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#registerIOPubHandler()', () => {
+    context('#unhandledIOPub', () => {
 
-      it('should call the handler', (done) => {
+      it('should emit the message', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel: IKernel) => {
-          kernel.registerIOPubHandler('my_message', (msg) => {
+          kernel.unhandledIOPub.connect((k, msg) => {
             expect(msg.content).to.be('hello');
             done();
           });
@@ -978,6 +978,7 @@ describe('jupyter.services - kernel', () => {
 /**
  * Convenience function to start a kernel fully.
  */
+export
 function createKernel(tester?: KernelTester): Promise<IKernel> {
   var tester = tester || new KernelTester();
   var kernelPromise = startNewKernel(KERNEL_OPTIONS);

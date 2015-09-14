@@ -17,6 +17,7 @@
     "src/karma.ts",
     "src/mocksocket.ts",
     "src/mockxhr.ts",
+    "src/testcomm.ts",
     "src/testconfig.ts",
     "src/testcontents.ts",
     "src/testkernel.ts",

@@ -81,9 +81,7 @@ class CommManager {
    */
   constructor(kernel: IKernel) {
     this._kernel = kernel;
-    kernel.registerIOPubHandler('comm_open', this._handleOpen);
-    kernel.registerIOPubHandler('comm_msg', this._handleMsg);
-    kernel.registerIOPubHandler('comm_close', this._handleClose);
+    this._kernel.unhandledIOPub.connect(this._handleKernelMsg, this);
   }
 
   /**
@@ -102,14 +100,13 @@ class CommManager {
     var comm = new Comm(targetName, commId, this._kernel, () => {
       this._unregisterComm(commId);
     });
-    
     var contents = {
       comm_id: comm.commId,
       target_name: targetName,
       data: data || {}
     }
     sendCommMessage(this._kernel, 'comm_open', contents);
-    var promise = Promise.resolve(comm as IComm)
+    var promise = Promise.resolve(comm as IComm);
     this._comms.set(comm.commId, promise);
     return promise;
   }
@@ -154,6 +151,23 @@ class CommManager {
         resolve(msg.content);
       }
     });
+  }
+
+  private _handleKernelMsg(kernel: IKernel, msg: IKernelMessage): void {
+    if (msg.channel !== 'iopub') {
+      return
+    }
+    switch(msg.header.msg_type) {
+       case 'comm_open':
+         this._handleOpen(msg);
+         break;
+       case 'comm_msg':
+         this._handleMsg(msg);
+         break;
+       case 'comm_close':
+         this._handleClose(msg);
+         break;
+    }
   }
 
   /**
@@ -359,9 +373,9 @@ function sendCommMessage(kernel: IKernel, msgType: string, contents: any): IKern
  var options: IKernelMessageOptions = {
     msgType: msgType,
     channel: 'shell',
-    username: this._kernel.username,
-    session: this._kernel.clientId
+    username: kernel.username,
+    session: kernel.clientId
   }
   var msg = createKernelMessage(options, contents);
-  return this._kernel.sendShellMessage(msg);
+  return kernel.sendShellMessage(msg);
 }

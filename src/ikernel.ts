@@ -216,6 +216,11 @@ interface IKernel {
   statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
+   * Broadcast for unhandled messages (not associated with a parent msgId).
+   */
+  unhandledIOPub: ISignal<IKernel, IKernelMessage>;
+
+  /**
    * The id of the server-side kernel.
    */
   id: string;
@@ -252,11 +257,6 @@ interface IKernel {
    * The future object will yield the result when available.
    */
   sendShellMessage(msg: IKernelMessage): IKernelFuture;
-
-  /**
-   * Register the io pub handler for a specific message type.
-   */
-  registerIOPubHandler(msgType: string, cb: (msg: IKernelMessage) => void): void;
 
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt

@@ -181,6 +181,12 @@ class Kernel implements IKernel {
   static statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
+   * Broadcast for unhandled IOPub messages
+   * (not associated with a parent msgId).
+   */
+  static unhandledIOPubSignal = new Signal<IKernel, IKernelMessage>();
+
+  /**
    * Construct a kernel object.
    */
   constructor(options: IKernelOptions, id: string) {
@@ -190,7 +196,6 @@ class Kernel implements IKernel {
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._handlerMap = new Map<string, KernelFutureHandler>();
-    this._ioPubHandlerMap = new Map<string, (msg: IKernelMessage) => void>();
     this._createSocket(options.wsUrl);
   }
 
@@ -199,6 +204,13 @@ class Kernel implements IKernel {
    */
   get statusChanged(): ISignal<IKernel, KernelStatus> {
     return Kernel.statusChangedSignal.bind(this);
+  }
+
+  /**
+   * The status changed signal for the kernel.
+   */
+  get unhandledIOPub(): ISignal<IKernel, IKernelMessage> {
+    return Kernel.unhandledIOPubSignal.bind(this);
   }
 
   /**
@@ -238,13 +250,6 @@ class Kernel implements IKernel {
    */
   get status(): KernelStatus {
     return this._status;
-  }
-
-  /**
-   * Register the io pub handler for a specific message type.
-   */
-  registerIOPubHandler(msgType: string, cb: (msg: IKernelMessage) => void): void {
-    this._ioPubHandlerMap.set(msgType, cb);
   }
 
   /**
@@ -446,6 +451,7 @@ class Kernel implements IKernel {
 
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
+    var future: KernelFutureHandler = null;
     if (msg.parent_header) {
       var header = msg.parent_header as IKernelMessageHeader;
       var future = this._handlerMap.get(header.msg_id);
@@ -457,8 +463,9 @@ class Kernel implements IKernel {
       if (msg.header.msg_type === 'status') {
         this._updateStatus(msg.content.execution_state);
       }
-      var handler = this._ioPubHandlerMap.get(msg.header.msg_type);
-      if (handler) handler(msg);
+      if (!future) {
+        this.unhandledIOPub.emit(msg);
+      }
     }
   }
 
@@ -510,7 +517,6 @@ class Kernel implements IKernel {
   private _ws: WebSocket = null;
   private _username = '';
   private _handlerMap: Map<string, KernelFutureHandler> = null;
-  private _ioPubHandlerMap: Map<string, (msg: IKernelMessage) => void>;
 }
 
 
