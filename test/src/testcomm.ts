@@ -14,7 +14,7 @@ import {  createKernelMessage } from '../../lib/kernel';
 
 import { createKernel, KernelTester } from './testkernel';
 
-import { RequestHandler, expectFailure } from './utils';
+import { RequestHandler, expectFailure, doLater } from './utils';
 
 
 
@@ -177,6 +177,61 @@ describe('jupyter.services - Comm', () => {
           });
         });
       });
+    });
+
+    describe('#_handleOpen()', () => {
+
+      it('should load a required module', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          var contents = {
+            target_name: 'test',
+            target_module: '../../../test/build/target',
+            comm_id: "1234",
+            data: { foo: 'bar'}
+          }
+          sendCommMessage(tester, kernel, 'comm_open', contents);
+          manager.connectToComm('test', '1234').then(() => {
+            done();
+          });
+        });
+      });
+
+      it('should fail to load the module', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          var contents = {
+            target_name: 'test2',
+            target_module: '../../../test/build/target',
+            comm_id: "1234",
+            data: { foo: 'bar'}
+          }
+          sendCommMessage(tester, kernel, 'comm_open', contents);
+          manager.connectToComm('test2', '1234').then(() => {
+            done();
+          });
+        });
+      });
+
+      it('should fail to find the target', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          var contents = {
+            target_name: 'unavailable',
+            target_module: '../../../test/build/target',
+            comm_id: "1234",
+            data: { foo: 'bar'}
+          }
+          sendCommMessage(tester, kernel, 'comm_open', contents);
+          manager.connectToComm('test2', '1234').then(() => {
+            done();
+          });
+        });
+      });
+
     });
   });
 

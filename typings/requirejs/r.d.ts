@@ -369,6 +369,6 @@ declare var require: Require;
 declare var define: RequireDefine;
 
 
-declare module "r.js" {
-    export = Require;
+declare module 'requirejs' {
+    export = requirejs;
 }
