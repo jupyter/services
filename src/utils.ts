@@ -23,19 +23,16 @@ function extend(target: any, source: any): any {
 
 
 /**
- * Get a uuid as a string.
- *
- * http://www.ietf.org/rfc/rfc4122.txt
+ * Get a random 128b hex string (not a formal UUID)
  */
 export
 function uuid(): string {
   var s: string[] = [];
-  var hexDigits = "0123456789ABCDEF";
+  var hexDigits = "0123456789abcdef";
+  var nChars = hexDigits.length;
   for (var i = 0; i < 32; i++) {
-    s[i] = hexDigits.charAt(Math.floor(Math.random() * 0x10));
+    s[i] = hexDigits.charAt(Math.floor(Math.random() * nChars));
   }
-  s[12] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
-  s[16] = hexDigits.charAt((Number(s[16]) & 0x3) | 0x8);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
   return s.join("");
 }
 
