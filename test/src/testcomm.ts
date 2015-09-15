@@ -42,12 +42,12 @@ describe('jupyter.services - Comm', () => {
       });
     });
 
-    context('#startNewComm', () => {
+    context('#connect', () => {
 
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test').then((comm) => {
+          manager.connect('test').then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(typeof comm.commId).to.be('string');
             done();
@@ -58,7 +58,7 @@ describe('jupyter.services - Comm', () => {
       it('should use the given commId', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', { foo: 'bar' }, '1234').then((comm) => {
+          manager.connect('test', '1234').then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(comm.commId).to.be('1234');
             done();
@@ -69,24 +69,21 @@ describe('jupyter.services - Comm', () => {
       it('should reuse an existing comm', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onClose = () => {
               done();
             }
-            manager.startNewComm('test', {}, comm.commId).then((comm2) => {
+            manager.connect('test', comm.commId).then((comm2) => {
               comm2.close();  // should trigger comm to close
             });
           });
         });
       });
-    });
-
-    context('#connectToComm', () => {
 
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.connectToComm('test', "1234").then((comm) => {
+          manager.connect('test', "1234").then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(comm.commId).to.be('1234');
             done();
@@ -97,7 +94,7 @@ describe('jupyter.services - Comm', () => {
       it('should use the given commId', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.connectToComm('test', '1234').then((comm) => {
+          manager.connect('test', '1234').then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(comm.commId).to.be('1234');
             done();
@@ -108,11 +105,11 @@ describe('jupyter.services - Comm', () => {
       it('should reuse an existing comm', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.connectToComm('test', '1234').then((comm) => {
+          manager.connect('test', '1234').then((comm) => {
             comm.onClose = () => {
               done();
             }
-            manager.connectToComm('test', '1234').then((comm2) => {
+            manager.connect('test', '1234').then((comm2) => {
               comm2.close();  // should trigger comm to close
             });
           });
@@ -201,7 +198,7 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          manager.connectToComm('test', '1234').then(() => {
+          manager.connect('test', '1234').then(() => {
             done();
           });
         });
@@ -218,7 +215,7 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          manager.connectToComm('test2', '1234').then(() => {
+          manager.connect('test2', '1234').then(() => {
             done();
           });
         });
@@ -235,7 +232,7 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          manager.connectToComm('test2', '1234').then(() => {
+          manager.connect('test2', '1234').then(() => {
             done();
           });
         });
@@ -250,7 +247,7 @@ describe('jupyter.services - Comm', () => {
       it('should be a read only string', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             expect(typeof comm.commId).to.be('string');
             expect(() => { comm.commId = ''; }).to.throwError();
             done();
@@ -263,7 +260,7 @@ describe('jupyter.services - Comm', () => {
       it('should be a read only string', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             expect(comm.targetName).to.be('test');
             expect(() => { comm.targetName = ''; }).to.throwError();
             done();
@@ -276,7 +273,7 @@ describe('jupyter.services - Comm', () => {
       it('should be readable and writable function', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onClose = (data) => {
               done();
             }
@@ -290,7 +287,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onClose = (data) => {
               done();
             }
@@ -307,7 +304,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             var content = {
               comm_id: '1234',
               target_name: comm.targetName
@@ -323,7 +320,7 @@ describe('jupyter.services - Comm', () => {
       it('should be readable and writable function', (done) => {
         createKernel().then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onMsg = (data) => {
               done();
             }
@@ -337,7 +334,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onMsg = (msg) => {
               expect(msg.foo).to.be('bar');
               done();
@@ -356,7 +353,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             var content = {
               comm_id: '1234',
               target_name: comm.targetName
@@ -373,7 +370,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             tester.onMessage((msg) => {
               expect(msg.content.data.foo).to.be('bar');
               done();
@@ -389,7 +386,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             tester.onMessage((msg) => {
               expect(msg.content.data.foo).to.be('bar');
               done();
@@ -403,7 +400,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.onClose = (data) => {
               expect(data.foo).to.be('bar');
               done();
@@ -417,7 +414,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.close({ foo: 'bar' });
             expect(() => { comm.send('test'); }).to.throwError();
             done();
@@ -429,7 +426,7 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test', {}).then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.close({ foo: 'bar' });
             comm.close();
             done();

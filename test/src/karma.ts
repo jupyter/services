@@ -144,7 +144,7 @@ describe('jupyter.services - Integration', () => {
         }
         startNewKernel(options).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.startNewComm('test').then((comm) => {
+          manager.connect('test').then((comm) => {
             comm.send('test');
             done();
           });

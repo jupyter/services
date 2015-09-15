@@ -715,27 +715,6 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    context('#unhandledIOPub', () => {
-
-      it('should emit the message', (done) => {
-        var tester = new KernelTester();
-        createKernel(tester).then((kernel: IKernel) => {
-          kernel.unhandledIOPub.connect((k, msg) => {
-            expect(msg.content).to.be('hello');
-            done();
-          });
-          var options: IKernelMessageOptions = {
-            msgType: "my_message",
-            channel: "iopub",
-            username: kernel.username,
-            session: kernel.clientId
-          }
-          var msg = createKernelMessage(options, 'hello');
-          tester.send(msg);
-        });
-      });
-    });
-
     context('#kernelInfo()', () => {
 
       it('should resolve the promise', (done) => {
