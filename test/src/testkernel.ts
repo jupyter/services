@@ -837,7 +837,7 @@ describe('jupyter.services - kernel', () => {
 
     context('#execute()', () => {
 
-      it('should send handle incoming messages', (done) => {
+      it('should send and handle incoming messages', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
@@ -853,11 +853,13 @@ describe('jupyter.services - kernel', () => {
             stop_on_error: false
           }
           var future = kernel.execute(options);
-          expect(future.autoDispose).to.be(true);
+          expect(future.autoDispose).to.be(false);
           expect(future.onDone).to.be(null);
           expect(future.onStdin).to.be(null);
           expect(future.onReply).to.be(null);
           expect(future.onIOPub).to.be(null);
+
+          future.autoDispose = true;
 
           tester.onMessage((msg) => {
 
