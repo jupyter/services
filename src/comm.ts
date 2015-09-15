@@ -88,32 +88,14 @@ class CommManager {
   }
 
   /**
-   * Start a new Comm, sending a "comm_open" message.
-   *
-   * If commId is given, and a client-side comm with that id exists,
-   * that comm is returned.
-   */
-  startNewComm(targetName: string, data?: any, commId?: string): Promise<IComm> {
-    if (commId !== void 0) {
-      var promise = this._comms.get(commId);
-      if (promise) {
-        return promise;
-      }
-    }
-    var comm = new Comm(targetName, commId, this._kernel, () => {
-      this._unregisterComm(comm.commId);
-    });
-    var promise = Promise.resolve(comm as IComm);
-    this._comms.set(comm.commId, promise);
-    return promise;
-  }
-
-  /**
-   * Connect to an existing server side comm.  
+   * Connect to a comm, or create a new one.
    *
    * If a client-side comm already exists, it is returned.
    */
-  connectToComm(targetName: string, commId: string): Promise<IComm> {
+  connect(targetName: string, commId?: string): Promise<IComm> {
+    if (commId === void 0) {
+      commId = utils.uuid();
+    }
     var promise = this._comms.get(commId);
     if (promise) {
       return promise;
