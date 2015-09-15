@@ -531,6 +531,33 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
+
+      it('should dispose if we do not get the right response', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IKernelMessageOptions = {
+            msgType: "custom",
+            channel: "shell",
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          var msg = createKernelMessage(options);
+          var future = kernel.sendShellMessage(msg);
+          future.autoDispose = false;
+          tester.onMessage((msg) => {
+            msg.channel = 'shell';
+            msg.header.msg_id = 'dummy';
+            msg.parent_header = msg.header;
+            tester.send(msg);
+            setTimeout(() => {
+              expect(future.isDisposed).to.be(true);
+              done();
+            }, 100);
+          });
+        });
+      });
     });
 
     context('#interrupt()', () => {

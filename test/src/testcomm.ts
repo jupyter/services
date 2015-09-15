@@ -365,7 +365,8 @@ describe('jupyter.services - Comm', () => {
       });
     });
 
-    context('#send()', () => {
+    context('#open()', () => {
+
       it('should send a message to the server', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
@@ -375,7 +376,64 @@ describe('jupyter.services - Comm', () => {
               expect(msg.content.data.foo).to.be('bar');
               done();
             });
-            comm.send({ foo: 'bar' });
+            comm.open({ foo: 'bar' }, 'metadata');
+          });
+        });
+      });
+
+      it('should yield a future', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.connect('test').then((comm) => {
+            tester.onMessage((msg) => {
+              msg.parent_header = msg.header;
+              msg.channel = 'iopub';
+              tester.send(msg);
+            });
+            var future = comm.open();
+            future.onIOPub = () => {
+              done();
+            }
+          });
+        });
+      });
+    });
+
+    context('#send()', () => {
+      it('should send a message to the server', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.connect('test').then((comm) => {
+            tester.onMessage((msg) => {
+              expect(msg.content.data.foo).to.be('bar');
+              var decoder = new TextDecoder('utf8');
+              var item = <DataView>msg.buffers[0];
+              expect(decoder.decode(item)).to.be('hello');
+              done();
+            });
+            var encoder = new TextEncoder('utf8');
+            var data = encoder.encode('hello');
+            comm.send({ foo: 'bar' }, 'metadata', [data, data.buffer]);
+          });
+        });
+      });
+
+      it('should yield a future', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.connect('test').then((comm) => {
+            tester.onMessage((msg) => {
+              msg.parent_header = msg.header;
+              msg.channel = 'iopub';
+              tester.send(msg);
+            });
+            var future = comm.send('foo');
+            future.onIOPub = () => {
+              done();
+            }
           });
         });
       });
@@ -391,7 +449,7 @@ describe('jupyter.services - Comm', () => {
               expect(msg.content.data.foo).to.be('bar');
               done();
             });
-            comm.close({ foo: 'bar' });
+            comm.close({ foo: 'bar' }, 'metadata');
           });
         });
       });
@@ -430,6 +488,24 @@ describe('jupyter.services - Comm', () => {
             comm.close({ foo: 'bar' });
             comm.close();
             done();
+          });
+        });
+      });
+
+      it('should yield a future', (done) => {
+        var tester = new KernelTester();
+        createKernel(tester).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.connect('test').then((comm) => {
+            tester.onMessage((msg) => {
+              msg.parent_header = msg.header;
+              msg.channel = 'iopub';
+              tester.send(msg);
+            });
+            var future = comm.close();
+            future.onIOPub = () => {
+              done();
+            }
           });
         });
       });

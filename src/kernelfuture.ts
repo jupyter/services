@@ -21,7 +21,9 @@ function createFuture(kernel: IKernel, msgId: string, shellPromise: Promise<IKer
   });
   kernel.iopubReceived.connect(future.handleIOPub, future);
   kernel.stdinReceived.connect(future.handleStdin, future);
-  shellPromise.then(msg => future.handleReply(kernel, msg));
+  shellPromise.then(msg => future.handleReply(kernel, msg)).catch(() => {
+    future.dispose();
+  });
   return future;
 }
 

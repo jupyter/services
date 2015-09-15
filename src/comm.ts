@@ -237,7 +237,7 @@ class Comm extends DisposableDelegate implements IComm {
   constructor(targetName: string, commId: string, kernel: IKernel, callback: () => void) {
     super(callback);
     this._target = targetName;
-    this._id = commId || utils.uuid();  
+    this._id = commId;  
     this._kernel = kernel;
   }
 
@@ -306,7 +306,7 @@ class Comm extends DisposableDelegate implements IComm {
     if (this.isDisposed) {
       throw Error('Comm is closed');
     }
-    var contents = { comm_id: this._id, data: data || {} };
+    var contents = { comm_id: this._id, data: data };
     return sendCommMessage(this._kernel, 'comm_msg', contents, metadata, buffers);
   }
 
