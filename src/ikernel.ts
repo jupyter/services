@@ -216,9 +216,14 @@ interface IKernel {
   statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
-   * Broadcast for unhandled messages (not associated with a parent msgId).
+   * The stdin message received signal for the kernel.
    */
-  unhandledIOPub: ISignal<IKernel, IKernelMessage>;
+  stdinReceived: ISignal<IKernel, IKernelMessage>;
+
+  /**
+   * The iopub message received signal for the kernel.
+   */
+  iopubReceived: ISignal<IKernel, IKernelMessage>;
 
   /**
    * The id of the server-side kernel.

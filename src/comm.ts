@@ -43,14 +43,19 @@ interface IComm {
   onMsg: (data: any) => void;
 
   /**
+   * Open a comm with optional data.
+   */
+  open(data?: any, metadata?: any): IKernelFuture;
+
+  /**
    * Send a comm message to the kernel.
    */
-  send(data: any): void;
+  send(data: any, metadata?: any, buffers?:(ArrayBuffer | ArrayBufferView)[]): IKernelFuture;
 
   /**
    * Close the comm.
    */
-  close(data?: any): void;
+  close(data?: any, metadata?: any): IKernelFuture;
 }
 
 
@@ -79,7 +84,7 @@ class CommManager {
    */
   constructor(kernel: IKernel) {
     this._kernel = kernel;
-    this._kernel.unhandledIOPub.connect(this._handleKernelMsg, this);
+    this._kernel.iopubReceived.connect(this._handleKernelMsg, this);
   }
 
   /**
@@ -98,12 +103,6 @@ class CommManager {
     var comm = new Comm(targetName, commId, this._kernel, () => {
       this._unregisterComm(comm.commId);
     });
-    var contents = {
-      comm_id: comm.commId,
-      target_name: targetName,
-      data: data || {}
-    }
-    sendCommMessage(this._kernel, 'comm_open', contents);
     var promise = Promise.resolve(comm as IComm);
     this._comms.set(comm.commId, promise);
     return promise;
@@ -170,7 +169,6 @@ class CommManager {
    */  
   private _handleOpen(msg: IKernelMessage): void {
     var content = msg.content;
-
     var promise = loadTarget(content.target_name, content.target_module, 
         this._targets).then((target: (comm: IComm, data: any) => any) => {
       var comm = new Comm(content.target_name, content.comm_id, this._kernel,
@@ -308,30 +306,43 @@ class Comm extends DisposableDelegate implements IComm {
   }
 
   /**
+   * Initialize a comm with optional data.
+   */
+  open(data?: any, metadata?: any): IKernelFuture {
+    var contents = {
+      comm_id: this._id,
+      target_name: this._target,
+      data: data || {}
+    }
+    return sendCommMessage(this._kernel, 'comm_open', contents, metadata);
+  }
+
+  /**
    * Send a comm message to the kernel.
    */
-  send(data: any): void {
+  send(data: any, metadata={}, buffers: (ArrayBuffer | ArrayBufferView)[]=[]): IKernelFuture {
     if (this.isDisposed) {
       throw Error('Comm is closed');
     }
     var contents = { comm_id: this._id, data: data || {} };
-    sendCommMessage(this._kernel, 'comm_msg', contents);
+    return sendCommMessage(this._kernel, 'comm_msg', contents, metadata, buffers);
   }
 
   /**
    * Close the comm.
    */
-  close(data?: any): void {
+  close(data?: any, metadata={}): IKernelFuture {
     if (this.isDisposed) {
       return;
     }
     var onClose = this._onClose;
     if (onClose) onClose(data);
     var contents = { comm_id: this._id, data: data || {} };
-    sendCommMessage(this._kernel, 'comm_close', contents);
+    var future = sendCommMessage(this._kernel, 'comm_close', contents, metadata);
     this._onClose = null;
     this._onMsg = null;
     this.dispose();
+    return future;
   }
 
   private _target = '';
@@ -372,13 +383,15 @@ function loadTarget(targetName: string, moduleName: string, registry: Map<string
 /**
  * Send a comm message to the kernel.
  */
-function sendCommMessage(kernel: IKernel, msgType: string, contents: any): IKernelFuture {
+function sendCommMessage(kernel: IKernel, msgType: string, contents: any, metadata={}, buffers:(ArrayBuffer | ArrayBufferView)[]=[]): IKernelFuture {
  var options: IKernelMessageOptions = {
     msgType: msgType,
     channel: 'shell',
     username: kernel.username,
     session: kernel.clientId
   }
-  var msg = createKernelMessage(options, contents);
-  return kernel.sendShellMessage(msg);
+  var msg = createKernelMessage(options, contents, metadata, buffers);
+  var future = kernel.sendShellMessage(msg);
+  future.autoDispose = false;
+  return future;
 }

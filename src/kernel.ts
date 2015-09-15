@@ -14,6 +14,8 @@ import {
   KernelStatus
 } from './ikernel';
 
+import { createFuture } from './kernelfuture';
+
 import * as serialize from './serialize';
 
 import * as utils from './utils';
@@ -181,10 +183,14 @@ class Kernel implements IKernel {
   static statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
-   * Broadcast for unhandled IOPub messages
-   * (not associated with a parent msgId).
+   * A signal emitted when a stdin message is received.
    */
-  static unhandledIOPubSignal = new Signal<IKernel, IKernelMessage>();
+  static stdinReceivedSignal = new Signal<IKernel, IKernelMessage>();
+
+  /**
+   * A signal emitted when an iopub message is received.
+   */
+  static iopubReceivedSignal = new Signal<IKernel, IKernelMessage>();
 
   /**
    * Construct a kernel object.
@@ -195,7 +201,6 @@ class Kernel implements IKernel {
     this._baseUrl = options.baseUrl;
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
-    this._handlerMap = new Map<string, KernelFutureHandler>();
     this._createSocket(options.wsUrl);
   }
 
@@ -207,10 +212,17 @@ class Kernel implements IKernel {
   }
 
   /**
-   * The status changed signal for the kernel.
+   * The stdin message received signal for the kernel.
    */
-  get unhandledIOPub(): ISignal<IKernel, IKernelMessage> {
-    return Kernel.unhandledIOPubSignal.bind(this);
+  get stdinReceived(): ISignal<IKernel, IKernelMessage> {
+    return Kernel.stdinReceivedSignal.bind(this);
+  }
+
+  /**
+   * The iopub message received signal for the kernel.
+   */
+  get iopubReceived(): ISignal<IKernel, IKernelMessage> {
+    return Kernel.iopubReceivedSignal.bind(this);
   }
 
   /**
@@ -264,13 +276,14 @@ class Kernel implements IKernel {
 
     this._ws.send(serialize.serialize(msg));
 
-    var future = new KernelFutureHandler(() => {
-      this._handlerMap.delete(msg.header.msg_id);
+    this._lastMsgId = msg.header.msg_id;
+
+    var promise = new Promise((resolve, reject) => {
+      this._resolveShell = resolve;
+      this._rejectShell = reject;
     });
 
-    this._handlerMap.set(msg.header.msg_id, future);
-
-    return future;
+    return createFuture(this, msg.header.msg_id, promise);
   }
 
   /**
@@ -376,7 +389,9 @@ class Kernel implements IKernel {
     };
     contents = utils.extend(defaults, contents);
     var msg = createKernelMessage(options, contents);
-    return this.sendShellMessage(msg);
+    var future = this.sendShellMessage(msg);
+    future.autoDispose = false;
+    return future;
   }
 
   /**
@@ -451,21 +466,22 @@ class Kernel implements IKernel {
 
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
-    var future: KernelFutureHandler = null;
-    if (msg.parent_header) {
-      var header = msg.parent_header as IKernelMessageHeader;
-      var future = this._handlerMap.get(header.msg_id);
-      if (future) {
-        future.handleMsg(msg);
+    if (msg.parent_header && msg.channel === 'shell') {
+      var parentHeader = msg.parent_header as IKernelMessageHeader;
+      if (parentHeader.msg_id == this._lastMsgId) {
+        this._resolveShell(msg);
+      } else {
+        this._rejectShell(msg);
       }
+      this._lastMsgId = '';
     }
     if (msg.channel === 'iopub') {
+      this.iopubReceived.emit(msg);
       if (msg.header.msg_type === 'status') {
         this._updateStatus(msg.content.execution_state);
       }
-      if (!future) {
-        this.unhandledIOPub.emit(msg);
-      }
+    } else if (msg.channel == 'stdin') {
+      this.stdinReceived.emit(msg);
     }
   }
 
@@ -516,7 +532,9 @@ class Kernel implements IKernel {
   private _clientId = '';
   private _ws: WebSocket = null;
   private _username = '';
-  private _handlerMap: Map<string, KernelFutureHandler> = null;
+  private _lastMsgId = '';
+  private _resolveShell: (msg: IKernelMessage) => void = null;
+  private _rejectShell: (msg: IKernelMessage) => void = null;
 }
 
 
@@ -638,29 +656,6 @@ function onKernelError(error: utils.IAjaxError): any {
   throw Error(error.statusText);
 }
 
-
-/**
- * Create a well-formed Kernel Message.
- */
-export
-function createKernelMessage(options: IKernelMessageOptions, content: any = {}, metadata: any = {}, buffers: ArrayBuffer[] = []) : IKernelMessage {
-  return {
-    header: {
-      username: options.username || '',
-      version: '5.0',
-      session: options.session,
-      msg_id: options.msgId || utils.uuid(),
-      msg_type: options.msgType
-    },
-    parent_header: { },
-    channel: options.channel,
-    content: content,
-    metadata: metadata,
-    buffers: buffers
-  }
-}
-
-
 /**
  * Send a kernel message to the kernel and return the contents of the response.
  */
@@ -675,187 +670,22 @@ function sendKernelMessage(kernel: IKernel, msg: IKernelMessage): Promise<any> {
 
 
 /**
- * Bit flags for the kernel future state.
+ * Create a well-formed Kernel Message.
  */
-enum KernelFutureFlag {
-  GotReply = 0x1,
-  GotIdle = 0x2,
-  AutoDispose = 0x4,
-  IsDone = 0x8
-}
-
-
-/**
- * Implementation of a kernel future.
- */
-class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
-
-  constructor(callback: () => void) {
-    super(callback);
-    this.autoDispose = true;
+export
+function createKernelMessage(options: IKernelMessageOptions, content: any = {}, metadata: any = {}, buffers:(ArrayBuffer | ArrayBufferView)[] = []) : IKernelMessage {
+  return {
+    header: {
+      username: options.username || '',
+      version: '5.0',
+      session: options.session,
+      msg_id: options.msgId || utils.uuid(),
+      msg_type: options.msgType
+    },
+    parent_header: { },
+    channel: options.channel,
+    content: content,
+    metadata: metadata,
+    buffers: buffers
   }
-
-  /**
-   * Get the current autoDispose status of the future.
-   */
-  get autoDispose(): boolean {
-    return this._testFlag(KernelFutureFlag.AutoDispose);
-  }
-
-  /**
-   * Set the current autoDispose behavior of the future.
-   *
-   * If True, it will self-dispose() after onDone() is called.
-   */
-  set autoDispose(value: boolean) {
-    if (value) {
-      this._setFlag(KernelFutureFlag.AutoDispose);
-    } else {
-      this._clearFlag(KernelFutureFlag.AutoDispose);
-    }
-  }
-
-  /**
-   * Check for message done state.
-   */
-  get isDone(): boolean {
-    return this._testFlag(KernelFutureFlag.IsDone);
-  }
-
-  /**
-   * Get the reply handler.
-   */
-  get onReply(): (msg: IKernelMessage) => void {
-    return this._reply;
-  }
-
-  /**
-   * Set the reply handler.
-   */
-  set onReply(cb: (msg: IKernelMessage) => void) {
-    this._reply = cb;
-  }
-
-  /** 
-   * Get the iopub handler.
-   */
-  get onIOPub(): (msg: IKernelMessage) => void {
-    return this._iopub;
-  }
-
-  /**
-   * Set the iopub handler.
-   */
-  set onIOPub(cb: (msg: IKernelMessage) => void) {
-    this._iopub = cb;
-  }
-
-  /**
-   * Get the done handler.
-   */
-  get onDone(): (msg: IKernelMessage) => void  {
-    return this._done;
-  }
-
-  /**
-   * Set the done handler.
-   */
-  set onDone(cb: (msg: IKernelMessage) => void) {
-    this._done = cb;
-  }
-
-  /**
-   * Get the stdin handler.
-   */
-  get onStdin(): (msg: IKernelMessage) => void {
-    return this._stdin;
-  }
-
-  /**
-   * Set the stdin handler.
-   */
-  set onStdin(cb: (msg: IKernelMessage) => void) {
-    this._stdin = cb;
-  }
-
-  /**
-   * Handle an incoming message from the kernel belonging to this future.
-   */
-  handleMsg(msg: IKernelMessage): void {
-    if (msg.channel === 'iopub') {
-      var iopub = this._iopub;
-      if (iopub) iopub(msg);
-      if (msg.header.msg_type === 'status' &&
-          msg.content.execution_state === 'idle') {
-        this._setFlag(KernelFutureFlag.GotIdle);
-        if (this._testFlag(KernelFutureFlag.GotReply)) {
-          this._handleDone(msg);
-        }
-      }
-    } else if (msg.channel === 'shell') {
-      var reply = this._reply;
-      if (reply) reply(msg);
-      this._setFlag(KernelFutureFlag.GotReply);
-      if (this._testFlag(KernelFutureFlag.GotIdle)) {
-        this._handleDone(msg);
-      }
-    } else if (msg.channel === 'stdin') {
-      var stdin = this._stdin;
-      if (stdin) stdin(msg);
-    }
-  }
-
-  /**
-   * Dispose and unregister the future.
-   */
-  dispose(): void {
-    this._stdin = null;
-    this._iopub = null;
-    this._reply = null;
-    this._done = null;
-    super.dispose();
-  }
-
-  /**
-   * Handle a message done status.
-   */
-  private _handleDone(msg: IKernelMessage): void {
-    if (this.isDone) {
-      return;
-    }
-    this._setFlag(KernelFutureFlag.IsDone);
-    var done = this._done;
-    if (done) done(msg);
-    this._done = null;
-    if (this._testFlag(KernelFutureFlag.AutoDispose)) {
-      this.dispose();
-    }
-  }
-
-  /**
-   * Test whether the given future flag is set.
-   */
-  private _testFlag(flag: KernelFutureFlag): boolean {
-    return (this._status & flag) !== 0;
-  }
-
-  /**
-   * Set the given future flag.
-   */
-  private _setFlag(flag: KernelFutureFlag): void {
-    this._status |= flag;
-  }
-
-  /**
-   * Clear the given future flag.
-   */
-  private _clearFlag(flag: KernelFutureFlag): void {
-    this._status &= ~flag;
-  }
-
-  private _status = 0;
-  private _stdin: (msg: IKernelMessage) => void = null;
-  private _iopub: (msg: IKernelMessage) => void = null;
-  private _reply: (msg: IKernelMessage) => void = null;
-  private _done: (msg: IKernelMessage) => void = null;
 }

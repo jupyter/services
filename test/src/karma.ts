@@ -4,7 +4,7 @@
 
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
-  connectToSession, startNewSession, getKernelSpecs
+  connectToSession, startNewSession, getKernelSpecs, CommManager
 } from '../../lib';
 
 
@@ -132,4 +132,48 @@ describe('jupyter.services - Integration', () => {
     });
   });
 
+  describe('Comm', () => {
+
+    it('should start a comm from the client end', (done) => {
+      // get info about the available kernels and connect to one
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var options = {
+          baseUrl: BASEURL,
+          wsUrl: WSURL,
+          name: kernelSpecs.default
+        }
+        startNewKernel(options).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.startNewComm('test').then((comm) => {
+            comm.send('test');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should start a comm from the server end', (done) => {
+      // get info about the available kernels and connect to one
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var options = {
+          baseUrl: BASEURL,
+          wsUrl: WSURL,
+          name: kernelSpecs.default
+        }
+        startNewKernel(options).then((kernel) => {
+          var manager = new CommManager(kernel);
+          manager.registerTarget('test2', (comm, data) => {
+            done();
+          });
+          console.log('***starting client comm');
+          var code = [
+            "from ipykernel.comm import Comm",
+            "comm = Comm(target_name='test2')",
+            "comm.send(data='hello')"
+          ].join('\n')
+          kernel.execute({ code: code });
+        });
+      });
+    });
+  });
 });
