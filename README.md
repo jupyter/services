@@ -199,6 +199,57 @@ startNewSession(options).then((session) => {
 });
 ```
 
+**Comm**
+
+```typescript
+import {
+  getKernelSpecs, startNewKernel, CommManager
+} from 'jupyter-js-services';
+
+var BASEURL = 'http://localhost:8888';
+var WSURL = 'ws://localhost:8888';
+
+// Create a comm from the server side.
+//
+// get info about the available kernels and connect to one
+getKernelSpecs(BASEURL).then((kernelSpecs) => {
+  var options = {
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default
+  }
+  startNewKernel(options).then((kernel) => {
+    var manager = new CommManager(kernel);
+    manager.connect('test').then((comm) => {
+      comm.send('test');
+      console.log('Done!');
+    });
+  });
+});
+
+
+// Create a comm from the client side.
+getKernelSpecs(BASEURL).then((kernelSpecs) => {
+  var options = {
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default
+  }
+  startNewKernel(options).then((kernel) => {
+    var manager = new CommManager(kernel);
+    manager.registerTarget('test2', (comm, data) => {
+      console.log('Hello, test2!');
+    });
+    var code = [
+      "from ipykernel.comm import Comm",
+      "comm = Comm(target_name='test2')",
+      "comm.send(data='hello')"
+    ].join('\n')
+    kernel.execute({ code: code });
+  });
+});
+```
+
 **Contents**
 
 ```typescript
