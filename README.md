@@ -221,6 +221,7 @@ getKernelSpecs(BASEURL).then((kernelSpecs) => {
   startNewKernel(options).then((kernel) => {
     var manager = new CommManager(kernel);
     manager.connect('test').then((comm) => {
+      comm.open('initial content');
       comm.send('test');
       console.log('Done!');
     });
