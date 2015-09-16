@@ -14,7 +14,7 @@ import {
   KernelStatus
 } from './ikernel';
 
-import { createFuture } from './kernelfuture';
+import { KernelFutureHandler } from './kernelfuture';
 
 import * as serialize from './serialize';
 
@@ -183,11 +183,6 @@ class Kernel implements IKernel {
   static statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
-   * A signal emitted when a stdin message is received.
-   */
-  static stdinReceivedSignal = new Signal<IKernel, IKernelMessage>();
-
-  /**
    * A signal emitted when an iopub message is received.
    */
   static iopubReceivedSignal = new Signal<IKernel, IKernelMessage>();
@@ -201,6 +196,7 @@ class Kernel implements IKernel {
     this._baseUrl = options.baseUrl;
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
+    this._futures = new Map<string, KernelFutureHandler>();
     this._createSocket(options.wsUrl);
   }
 
@@ -209,13 +205,6 @@ class Kernel implements IKernel {
    */
   get statusChanged(): ISignal<IKernel, KernelStatus> {
     return Kernel.statusChangedSignal.bind(this);
-  }
-
-  /**
-   * The stdin message received signal for the kernel.
-   */
-  get stdinReceived(): ISignal<IKernel, IKernelMessage> {
-    return Kernel.stdinReceivedSignal.bind(this);
   }
 
   /**
@@ -276,14 +265,12 @@ class Kernel implements IKernel {
 
     this._ws.send(serialize.serialize(msg));
 
-    this._lastMsgId = msg.header.msg_id;
-
-    var promise = new Promise((resolve, reject) => {
-      this._resolveShell = resolve;
-      this._rejectShell = reject;
+    var future = new KernelFutureHandler(() => {
+      this._futures.delete(msg.header.msg_id);
     });
+    this._futures.set(msg.header.msg_id, future);
 
-    return createFuture(this, msg.header.msg_id, promise);
+    return future;
   }
 
   /**
@@ -466,22 +453,16 @@ class Kernel implements IKernel {
 
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
-    if (msg.parent_header && msg.channel === 'shell') {
+    if (msg.parent_header) {
       var parentHeader = msg.parent_header as IKernelMessageHeader;
-      if (parentHeader.msg_id == this._lastMsgId) {
-        this._resolveShell(msg);
-      } else {
-        this._rejectShell(msg);
-      }
-      this._lastMsgId = '';
+      var future = this._futures.get(parentHeader.msg_id);
+      if (future) future.handleMsg(msg);
     }
     if (msg.channel === 'iopub') {
       this.iopubReceived.emit(msg);
       if (msg.header.msg_type === 'status') {
         this._updateStatus(msg.content.execution_state);
       }
-    } else if (msg.channel == 'stdin') {
-      this.stdinReceived.emit(msg);
     }
   }
 
@@ -532,9 +513,7 @@ class Kernel implements IKernel {
   private _clientId = '';
   private _ws: WebSocket = null;
   private _username = '';
-  private _lastMsgId = '';
-  private _resolveShell: (msg: IKernelMessage) => void = null;
-  private _rejectShell: (msg: IKernelMessage) => void = null;
+  private _futures: Map<string, KernelFutureHandler> = null;
 }
 
 

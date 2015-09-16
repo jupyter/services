@@ -80,6 +80,7 @@ describe('jupyter.services - Integration', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
+          console.log('Kernel started');
           kernel.complete({ code: 'impor', cursor_pos: 4 }).then((completions) => {
             console.log('Got completions: ', completions.matches);
             kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 }).then((info) => {
@@ -165,7 +166,6 @@ describe('jupyter.services - Integration', () => {
           manager.registerTarget('test2', (comm, data) => {
             done();
           });
-          console.log('***starting client comm');
           var code = [
             "from ipykernel.comm import Comm",
             "comm = Comm(target_name='test2')",

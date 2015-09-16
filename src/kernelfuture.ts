@@ -12,23 +12,6 @@ import {
 
 
 /**
- * Create a kernel future.
- */
-export
-function createFuture(kernel: IKernel, msgId: string, shellPromise: Promise<IKernelMessage>): IKernelFuture {
-  var future = new KernelFutureHandler(msgId, () => {
-    disconnectReceiver(future);
-  });
-  kernel.iopubReceived.connect(future.handleIOPub, future);
-  kernel.stdinReceived.connect(future.handleStdin, future);
-  shellPromise.then(msg => future.handleReply(kernel, msg)).catch(() => {
-    future.dispose();
-  });
-  return future;
-}
-
-
-/**
  * Bit flags for the kernel future state.
  */
 enum KernelFutureFlag {
@@ -42,11 +25,11 @@ enum KernelFutureFlag {
 /**
  * Implementation of a kernel future.
  */
+ export
 class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
 
-  constructor(msgId: string, cb: () => void) {
+  constructor(cb: () => void) {
     super(cb);
-    this._msgId = msgId;
     this.autoDispose = true;
   }
 
@@ -143,8 +126,25 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     this._done = null;
     super.dispose();
   }
+
+  /** 
+   * Handle an incoming kernel message.
+   */
+  handleMsg(msg: IKernelMessage): void {
+    switch(msg.channel) {
+      case 'shell':
+        this._handleReply(msg);
+        break;
+      case 'stdin':
+        this._handleStdin(msg);
+        break;
+      case 'iopub':
+        this._handleIOPub(msg);
+        break;
+    }
+  }
   
-  handleReply(sender: IKernel, msg: IKernelMessage): void {
+  private _handleReply(msg: IKernelMessage): void {
     var reply = this._reply;
     if (reply) reply(msg);
     this._setFlag(KernelFutureFlag.GotReply);
@@ -153,26 +153,12 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     }
   }
   
-  handleStdin(sender: IKernel, msg: IKernelMessage): void {
-    var parentHeader = msg.parent_header as IKernelMessageHeader;
-    if (!parentHeader) {
-      return;
-    }
-    if (parentHeader.msg_id !== this._msgId) {
-      return;
-    }
+  private _handleStdin(msg: IKernelMessage): void {
     var stdin = this._stdin;
     if (stdin) stdin(msg);
   }
 
-  handleIOPub(sender: IKernel, msg: IKernelMessage): void {
-    var parentHeader = msg.parent_header as IKernelMessageHeader;
-    if (!parentHeader) {
-      return;
-    }
-    if (parentHeader.msg_id !== this._msgId) {
-      return;
-    }
+  private _handleIOPub(msg: IKernelMessage): void {
     var iopub = this._iopub;
     if (iopub) iopub(msg);
     if (msg.header.msg_type === 'status' &&
@@ -184,9 +170,6 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     }
   }
 
-  /**
-   * Handle a message done status.
-   */
   private _handleDone(msg: IKernelMessage): void {
     if (this.isDone) {
       return;
@@ -222,7 +205,6 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   private _status = 0;
-  private _msgId = '';
   private _stdin: (msg: IKernelMessage) => void = null;
   private _iopub: (msg: IKernelMessage) => void = null;
   private _reply: (msg: IKernelMessage) => void = null;

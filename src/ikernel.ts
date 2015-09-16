@@ -216,11 +216,6 @@ interface IKernel {
   statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
-   * The stdin message received signal for the kernel.
-   */
-  stdinReceived: ISignal<IKernel, IKernelMessage>;
-
-  /**
    * The iopub message received signal for the kernel.
    */
   iopubReceived: ISignal<IKernel, IKernelMessage>;
