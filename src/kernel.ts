@@ -2,8 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { DisposableDelegate } from 'phosphor-disposable';
-
 import { ISignal, Signal } from 'phosphor-signaling';
 
 import { 
