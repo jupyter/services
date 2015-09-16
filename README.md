@@ -220,34 +220,34 @@ getKernelSpecs(BASEURL).then((kernelSpecs) => {
   }
   startNewKernel(options).then((kernel) => {
     var manager = new CommManager(kernel);
-    manager.connect('test').then((comm) => {
-      comm.open('initial content');
-      comm.send('test');
-      console.log('Done!');
+      manager.connect('test').then((comm) => {
+        comm.open('initial state');
+        comm.send('test');
+        comm.close('bye');
+        done();
+      });
     });
   });
 });
 
-
 // Create a comm from the client side.
-getKernelSpecs(BASEURL).then((kernelSpecs) => {
-  var options = {
-    baseUrl: BASEURL,
-    wsUrl: WSURL,
-    name: kernelSpecs.default
-  }
-  startNewKernel(options).then((kernel) => {
-    var manager = new CommManager(kernel);
-    manager.registerTarget('test2', (comm, data) => {
-      console.log('Hello, test2!');
-    });
-    var code = [
-      "from ipykernel.comm import Comm",
-      "comm = Comm(target_name='test2')",
-      "comm.send(data='hello')"
-    ].join('\n')
-    kernel.execute({ code: code });
+startNewKernel(options).then((kernel) => {
+  var manager = new CommManager(kernel);
+  manager.registerTarget('test2', (comm, data) => {
+    comm.onMsg = (msg) => {
+      console.log(msg);  // 'hello'
+    }
+    comm.onClose = (msg) => {
+      console.log(msg);  // 'bye'
+    }
   });
+  var code = [
+    "from ipykernel.comm import Comm",
+    "comm = Comm(target_name='test2')",
+    "comm.send(data='hello')",
+    "comm.close(data='bye')"
+  ].join('\n')
+  kernel.execute({ code: code });
 });
 ```
 

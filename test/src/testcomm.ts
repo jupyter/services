@@ -289,11 +289,13 @@ describe('jupyter.services - Comm', () => {
           var manager = new CommManager(kernel);
           manager.connect('test').then((comm) => {
             comm.onClose = (data) => {
+              expect(data.foo).to.be('bar');
               done();
             }
             var content = {
               comm_id: comm.commId,
-              target_name: comm.targetName
+              target_name: comm.targetName,
+              data: { foo: 'bar' }
             }
             sendCommMessage(tester, kernel, 'comm_close', content);
           });

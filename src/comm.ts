@@ -183,7 +183,7 @@ class CommManager {
     promise.then((comm) => {
       this._unregisterComm(comm.commId);
       try {
-        comm.close(msg);
+        comm.close(msg.content.data);
       } catch (e) {
         console.log("Exception closing comm: ", e, e.stack, msg);
       }

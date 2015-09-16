@@ -2,6 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 'use-strict';
 
+import expect = require('expect.js');
+
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
   connectToSession, startNewSession, getKernelSpecs, CommManager
@@ -148,6 +150,7 @@ describe('jupyter.services - Integration', () => {
           manager.connect('test').then((comm) => {
             comm.open('initial state');
             comm.send('test');
+            comm.close('bye');
             done();
           });
         });
@@ -165,12 +168,20 @@ describe('jupyter.services - Integration', () => {
         startNewKernel(options).then((kernel) => {
           var manager = new CommManager(kernel);
           manager.registerTarget('test2', (comm, data) => {
-            done();
+            comm.onMsg = (msg) => {
+              expect(msg).to.be('hello');
+            }
+            comm.onClose = (msg) => {
+              console.log('***msg', msg);
+              expect(msg).to.be('bye');
+              done();
+            }
           });
           var code = [
             "from ipykernel.comm import Comm",
             "comm = Comm(target_name='test2')",
-            "comm.send(data='hello')"
+            "comm.send(data='hello')",
+            "comm.close(data='bye')"
           ].join('\n')
           kernel.execute({ code: code });
         });
