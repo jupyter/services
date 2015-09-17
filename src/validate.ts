@@ -9,17 +9,24 @@ import {
 import { INotebookId, ISessionId } from './isession';
 
 
+const COMM_FIELDS = ['comm_id', 'target_name'];
+
+const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
+
+const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content', 
+                        'channel', 'buffers'];
+
+
 /**
  * Validate an Kernel Message as being a valid Comm Message.
  */
 export 
 function validateCommMessage(msg: IKernelMessage): boolean {
-  var fields = ['comm_id', 'target_name'];
-  for (var i = 0; i < fields.length; i++) {
-    if (!msg.content.hasOwnProperty(fields[i])) {
+  for (var i = 0; i < COMM_FIELDS.length; i++) {
+    if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
       return false;
     }
-    if (typeof msg.content[fields[i]] !== 'string') {
+    if (typeof msg.content[COMM_FIELDS[i]] !== 'string') {
       return false;
     }
   } 
@@ -28,12 +35,11 @@ function validateCommMessage(msg: IKernelMessage): boolean {
 
 
 function validateKernelHeader(header: any): void {
-  var fields = ['username', 'version', 'session', 'msg_id',  'msg_type'];
-  for (var i = 0; i < fields.length; i++) {
-    if (!header.hasOwnProperty(fields[i])) {
-      throw Error('Invalid Kernel message ' + fields[i]);
+  for (var i = 0; i < HEADER_FIELDS.length; i++) {
+    if (!header.hasOwnProperty(HEADER_FIELDS[i])) {
+      throw Error('Invalid Kernel message ' + HEADER_FIELDS[i]);
     }
-    if (typeof header[fields[i]] !== 'string') {
+    if (typeof header[HEADER_FIELDS[i]] !== 'string') {
       throw Error('Invalid Kernel message');
     }
   }
@@ -45,10 +51,8 @@ function validateKernelHeader(header: any): void {
  */
 export
 function validateKernelMessage(msg: IKernelMessage) : void {
-  var fields = ['header', 'parent_header', 'metadata', 'content', 
-                'channel', 'buffers'];
-  for (var i = 0; i < fields.length; i++) {
-    if (!msg.hasOwnProperty(fields[i])) {
+  for (var i = 0; i < MESSAGE_FIELDS.length; i++) {
+    if (!msg.hasOwnProperty(MESSAGE_FIELDS[i])) {
       throw Error('Invalid Kernel message');
     }
   }
