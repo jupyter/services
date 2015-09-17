@@ -98,16 +98,18 @@ class CommManager {
     if (commId === void 0) {
       commId = utils.uuid();
     }
-    var promise = this._comms.get(commId);
+    var promise = this._commPromises.get(commId);
     if (promise) {
       return promise;
     }
-    var comm = new Comm(targetName, commId, this._kernel, () => {
-      this._unregisterComm(comm.commId);
-    });
-    promise = Promise.resolve(comm);
-    this._comms.set(commId, promise);
-    return promise;
+    var comm = this._comms.get(commId);
+    if (!comm) {
+      comm = new Comm(targetName, commId, this._kernel, () => {
+        this._unregisterComm(comm.commId);
+      });
+    }
+    this._comms.set(commId, comm);
+    return Promise.resolve(comm);
   }
 
   /**
@@ -155,36 +157,45 @@ class CommManager {
   /**
    * Handle 'comm_open' kernel message.
    */  
-  private _handleOpen(msg: IKernelMessage): void {
-    var content = msg.content;
-    var promise = loadTarget(content.target_name, content.target_module, 
-        this._targets).then((target: (comm: IComm, data: any) => any) => {
-      var comm = new Comm(content.target_name, content.comm_id, this._kernel,
-        () => { this._unregisterComm(content.comm_id); });
-      try {
-        var response = target(comm, content.data);
-      } catch (e) {
-        comm.close();
-        this._unregisterComm(comm.commId);
-        console.error("Exception opening new comm");
-        return Promise.reject(e);
-      }
-      // Regardless of the target return value, we need to
-      // then return the comm
-      return Promise.resolve(response).then(() => { return comm; });
-    }, () => { throw Error('Could not open comm')} );
-    this._comms.set(content.comm_id, promise);
-  }
-    
+private _handleOpen(msg: IKernelMessage): void {
+  var content = msg.content;
+  var promise = loadTarget(
+    content.target_name, content.target_module, this._targets
+  ).then((target: (comm: IComm, data: any) => any) => {
+    var comm = new Comm(
+      content.target_name, 
+      content.comm_id, 
+      this._kernel,
+      () => { this._unregisterComm(content.comm_id); }
+    );
+    try {
+      var response = target(comm, content.data);
+    } catch (e) {
+      comm.close();
+      this._unregisterComm(comm.commId);
+      console.error("Exception opening new comm");
+      return Promise.reject(e);
+    }
+    this._commPromises.delete(comm.commId);
+    this._comms.set(comm.commId, comm);
+    return comm;
+  });
+  this._commPromises.set(content.comm_id, promise);
+}
+
   /**
    * Handle 'comm_close' kernel message.
    */  
   private _handleClose(msg: IKernelMessage): void {
     var content = msg.content;
-    var promise = this._comms.get(content.comm_id);
+    var promise = this._commPromises.get(content.comm_id);
     if (!promise) {
-        console.error('Comm promise not found for comm id ' + content.comm_id);
+      var comm = this._comms.get(content.comm_id);
+      if (!comm) {
+        console.error('Comm not found for comm id ' + content.comm_id);
         return;
+      }
+      promise = Promise.resolve(comm);
     }
     promise.then((comm) => {
       this._unregisterComm(comm.commId);
@@ -201,21 +212,28 @@ class CommManager {
    */  
   private _handleMsg(msg: IKernelMessage): void {
     var content = msg.content;
-    var promise = this._comms.get(content.comm_id);
+    var promise = this._commPromises.get(content.comm_id);
     if (!promise) {
-      console.error('Comm promise not found for comm id ' + content.comm_id);
-      return;
-    }
-    var newPromise = promise.then((comm) => {
-      try {
+      var comm = this._comms.get(content.comm_id);
+      if (!comm) {
+        console.error('Comm not found for comm id ' + content.comm_id);
+        return;
+      } else {
         var onMsg = comm.onMsg;
         if (onMsg) onMsg(msg.content.data);
-      } catch (e) {
-        console.log("Exception handling comm msg: ", e, e.stack, msg);
       }
-      return comm;
-    });
-    this._comms.set(content.comm_id, newPromise);
+    } else {
+      var newPromise = promise.then((comm) => {
+        try {
+          var onMsg = comm.onMsg;
+          if (onMsg) onMsg(msg.content.data);
+        } catch (e) {
+          console.log("Exception handling comm msg: ", e, e.stack, msg);
+        }
+        return comm;
+      });
+      this._commPromises.set(content.comm_id, newPromise);
+    }
   }
 
   /**
@@ -225,7 +243,8 @@ class CommManager {
     this._comms.delete(commId);
   }
 
-  private _comms = new Map<string, Promise<IComm>>();
+  private _commPromises = new Map<string, Promise<IComm>>();
+  private _comms = new Map<string, IComm>();
   private _kernel: IKernel = null;
   private _targets = new Map<string, (comm: IComm, data: any) => any>();
 }
