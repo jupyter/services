@@ -107,8 +107,8 @@ class CommManager {
       comm = new Comm(targetName, commId, this._kernel, () => {
         this._unregisterComm(comm.commId);
       });
+      this._comms.set(commId, comm);
     }
-    this._comms.set(commId, comm);
     return Promise.resolve(comm);
   }
 
