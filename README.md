@@ -212,22 +212,19 @@ var WSURL = 'ws://localhost:8888';
 // Create a comm from the server side.
 //
 // get info about the available kernels and connect to one
-getKernelSpecs(BASEURL).then((kernelSpecs) => {
-  var options = {
+getKernelSpecs(BASEURL).then(kernelSpecs => {
+  return startNewKernel({
     baseUrl: BASEURL,
     wsUrl: WSURL,
-    name: kernelSpecs.default
-  }
-  startNewKernel(options).then((kernel) => {
-    var manager = new CommManager(kernel);
-      manager.connect('test').then((comm) => {
-        comm.open('initial state');
-        comm.send('test');
-        comm.close('bye');
-        done();
-      });
-    });
+    name: kernelSpecs.default,
   });
+}).then(kernel => {
+  var manager = new CommManager(kernel);
+  return manager.connect('test');
+}).then(comm => {
+  comm.open('initial state');
+  comm.send('test');
+  comm.close('bye');
 });
 
 // Create a comm from the client side.

@@ -10,6 +10,8 @@ import {
 
 import { createKernelMessage } from './kernel';
 
+import { validateCommMessage } from './validate';
+
 import * as utils from './utils';
 
 
@@ -67,7 +69,7 @@ interface ICommInfo {
   /**
    * Mapping of comm ids to target names.
    */
-  comms: Map<string, string>;
+  comms: { [id: string]: string };
 }
 
 
@@ -133,6 +135,10 @@ class CommManager {
   }
 
   private _handleKernelMsg(kernel: IKernel, msg: IKernelMessage): void {
+    if (!validateCommMessage(msg)) {
+      console.error('Invalid comm message');
+      return;
+    }
     switch(msg.header.msg_type) {
        case 'comm_open':
          this._handleOpen(msg);
@@ -339,7 +345,7 @@ class Comm extends DisposableDelegate implements IComm {
  * Load a target from a module using require.js, if a module 
  * is specified, otherwise try to load a target from the given registry.
  */
-function loadTarget(targetName: string, moduleName: string, registry: Map<string, (comm: IComm, data: any) => any>): Promise<any> {
+function loadTarget(targetName: string, moduleName: string, registry: Map<string, (comm: IComm, data: any) => any>): Promise<(comm: IComm, data: any) => any> {
   return new Promise((resolve, reject) => {
     // Try loading the module using require.js
     if (moduleName) {

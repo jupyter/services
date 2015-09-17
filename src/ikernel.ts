@@ -49,8 +49,8 @@ interface IKernelMessage {
   parent_header: IKernelMessageHeader | {};
   metadata: any;
   content: any;
-  channel?: string;
-  buffers?: (ArrayBuffer | ArrayBufferView)[]
+  channel: string;
+  buffers: (ArrayBuffer | ArrayBufferView)[]
 }
 
 /**
