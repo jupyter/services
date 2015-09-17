@@ -223,7 +223,7 @@ class CommManager {
         if (onMsg) onMsg(msg.content.data);
       }
     } else {
-      var newPromise = promise.then((comm) => {
+      promise.then((comm) => {
         try {
           var onMsg = comm.onMsg;
           if (onMsg) onMsg(msg.content.data);
@@ -232,7 +232,6 @@ class CommManager {
         }
         return comm;
       });
-      this._commPromises.set(content.comm_id, newPromise);
     }
   }
 
@@ -350,6 +349,16 @@ class Comm extends DisposableDelegate implements IComm {
     this._onMsg = null;
     this.dispose();
     return future;
+  }
+
+  /**
+   * Clear internal state when disposed.
+   */
+  dispose(): void {
+    this._kernel = null;
+    this._onClose = null;
+    this._onMsg = null;
+    super.dispose();
   }
 
   private _target = '';
