@@ -228,7 +228,13 @@ getKernelSpecs(BASEURL).then(kernelSpecs => {
 });
 
 // Create a comm from the client side.
-startNewKernel(options).then((kernel) => {
+getKernelSpecs(BASEURL).then(kernelSpecs => {
+  return startNewKernel({
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default,
+  });
+}).then(kernel => {
   var manager = new CommManager(kernel);
   manager.registerTarget('test2', (comm, data) => {
     comm.onMsg = (msg) => {
