@@ -115,7 +115,7 @@ class CommManager {
   /**
    * Register the handler for a "comm_open" message on a given targetName.
    */
-  registerTarget(targetName: string, cb: (comm: IComm, data: any) => void): void {
+  setTargetHandler(targetName: string, cb: (comm: IComm, data: any) => void): void {
     this._targets.set(targetName, cb);
   }
 
@@ -157,31 +157,31 @@ class CommManager {
   /**
    * Handle 'comm_open' kernel message.
    */  
-private _handleOpen(msg: IKernelMessage): void {
-  var content = msg.content;
-  var promise = loadTarget(
-    content.target_name, content.target_module, this._targets
-  ).then((target: (comm: IComm, data: any) => any) => {
-    var comm = new Comm(
-      content.target_name, 
-      content.comm_id, 
-      this._kernel,
-      () => { this._unregisterComm(content.comm_id); }
-    );
-    try {
-      var response = target(comm, content.data);
-    } catch (e) {
-      comm.close();
-      this._unregisterComm(comm.commId);
-      console.error("Exception opening new comm");
-      return Promise.reject(e);
-    }
-    this._commPromises.delete(comm.commId);
-    this._comms.set(comm.commId, comm);
-    return comm;
-  });
-  this._commPromises.set(content.comm_id, promise);
-}
+  private _handleOpen(msg: IKernelMessage): void {
+    var content = msg.content;
+    var promise = loadTarget(
+      content.target_name, content.target_module, this._targets
+    ).then((target: (comm: IComm, data: any) => any) => {
+      var comm = new Comm(
+        content.target_name, 
+        content.comm_id, 
+        this._kernel,
+        () => { this._unregisterComm(content.comm_id); }
+      );
+      try {
+        var response = target(comm, content.data);
+      } catch (e) {
+        comm.close();
+        this._unregisterComm(comm.commId);
+        console.error("Exception opening new comm");
+        return Promise.reject(e);
+      }
+      this._commPromises.delete(comm.commId);
+      this._comms.set(comm.commId, comm);
+      return comm;
+    });
+    this._commPromises.set(content.comm_id, promise);
+  }
 
   /**
    * Handle 'comm_close' kernel message.

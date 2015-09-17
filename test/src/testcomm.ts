@@ -31,7 +31,7 @@ describe('jupyter.services - Comm', () => {
 
   describe('CommManager', () => {
 
-    context('#constructor', () => {
+    context('#constructor()', () => {
 
       it('should create an instance of CommManager', (done) => {
         createKernel().then((kernel) => {
@@ -42,7 +42,7 @@ describe('jupyter.services - Comm', () => {
       });
     });
 
-    context('#connect', () => {
+    context('#connect()', () => {
 
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
@@ -117,13 +117,13 @@ describe('jupyter.services - Comm', () => {
       });
     });
 
-    context('#registerTarget', () => {
+    context('#setTargetHandler()', () => {
 
       it('should call the provided callback', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.registerTarget('test', (comm, data) => {
+          manager.setTargetHandler('test', (comm, data) => {
             done();
           });
           var contents = {
@@ -136,7 +136,7 @@ describe('jupyter.services - Comm', () => {
       });
     });
 
-    context('#commInfo', () => {
+    context('#commInfo()', () => {
 
       it('should get the comm info', (done) => {
         var tester = new KernelTester();

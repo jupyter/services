@@ -167,7 +167,7 @@ describe('jupyter.services - Integration', () => {
         }
         startNewKernel(options).then((kernel) => {
           var manager = new CommManager(kernel);
-          manager.registerTarget('test2', (comm, data) => {
+          manager.setTargetHandler('test2', (comm, data) => {
             comm.onMsg = (msg) => {
               expect(msg).to.be('hello');
             }
