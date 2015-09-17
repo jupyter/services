@@ -23,7 +23,7 @@
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
     "typedoc": "git://github.com/phosphorjs/typedoc.git",
-    "typescript": "1.6.0-beta"
+    "typescript": "^1.6"
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
