@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
-  connectToSession, startNewSession, getKernelSpecs, CommManager
+  connectToSession, startNewSession, getKernelSpecs
 } from '../../lib';
 
 
@@ -146,8 +146,7 @@ describe('jupyter.services - Integration', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
-          var manager = new CommManager(kernel);
-          manager.connect('test').then((comm) => {
+          kernel.connectToComm('test').then((comm) => {
             comm.open('initial state');
             comm.send('test');
             comm.close('bye');
@@ -166,8 +165,7 @@ describe('jupyter.services - Integration', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
-          var manager = new CommManager(kernel);
-          manager.setTargetHandler('test2', (comm, data) => {
+          kernel.setCommTargetHandler('test2', (comm, data) => {
             comm.onMsg = (msg) => {
               expect(msg).to.be('hello');
             }
