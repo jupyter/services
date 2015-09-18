@@ -193,6 +193,27 @@ interface IInputReply {
 
 
 /**
+ * Contents of a 'comm_info_request' message.
+ */
+export
+interface ICommInfoRequest {
+  target?: string;
+}
+
+
+/**
+ * Contents of `comm_info_reply` message.
+ */
+export
+interface ICommInfoReply {
+  /**
+   * Mapping of comm ids to target names.
+   */
+  comms: { [id: string]: string };
+}
+
+
+/**
  * Options for an IKernelMessage.
  */
 export
@@ -216,9 +237,9 @@ interface IKernel {
   statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
-   * The iopub message received signal for the kernel.
+   * The unhandled message signal for the kernel.
    */
-  iopubReceived: ISignal<IKernel, IKernelMessage>;
+  unhandledMessage: ISignal<IKernel, IKernelMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -256,7 +277,7 @@ interface IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendShellMessage(msg: IKernelMessage): IKernelFuture;
+  sendShellMessage(msg: IKernelMessage, expectReply: boolean): IKernelFuture;
 
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
@@ -317,34 +338,46 @@ interface IKernel {
   isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
 
   /**
+   * Send a 'comm_info_request', and return the contents of the
+   * 'comm_info_reply'.
+   */
+  commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
+
+  /**
    * Send an "input_reply" message.
    *
    * https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets
    */
   sendInputReply(contents: IInputReply): void;
+
+  /**
+   * Connect to a comm, or create a new one.
+   *
+   * If a client-side comm already exists, it is returned.
+   */
+  connectToComm(targetName: string, commId?: string): Promise<IComm>;
+
+  /**
+   * Register the handler for a "comm_open" message on a given targetName.
+   */
+  setCommTargetHandler(targetName: string, cb: (comm: IComm, data: any) => void): void;
+
 }
 
 
 /**
  * Object providing a Future interface for message callbacks.
  *
- * If `autoDispose` is set, the future will self-dispose after `isDone` is
+ * The future will self-dispose after `isDone` is
  * set and the registered `onDone` handler is called.
  *
- * The Future is considered done when a `reply` message and a
- * an `idle` iopub status message have been received.
+ * If a `reply is expected, the Future is considered done when 
+ * both a `reply` message and a an `idle` iopub status message have 
+ * been received.  Otherwise, it is considered done when the `idle` status is
+ * received.
  */
 export
 interface IKernelFuture extends IDisposable {
-  /**
-   * Whether the future disposes itself when done.
-   *
-   * The default is `true`. This can be set to `false` if the consumer
-   * expects addition output messages to arrive after the reply. In
-   * this case, the consumer must call `dispose()` when finished.
-   */
-  autoDispose: boolean;
-
   /**
    * Test whether the future is done.
    *
@@ -416,4 +449,50 @@ export
 interface IKernelSpecIds {
   default: string;
   kernelspecs: { [key: string]: IKernelSpecId };
+}
+
+
+/**
+ * A client side Comm interface.
+ */
+export
+interface IComm {
+  /**
+   * The uuid for the comm channel.
+   *
+   * Read-only
+   */
+  commId: string;
+
+  /** 
+   * The target name for the comm channel.
+   *
+   * Read-only
+   */
+  targetName: string;
+
+  /**
+   * The onClose handler.
+   */
+  onClose: (data?: any) => void;
+
+  /**
+   * The onMsg handler.
+   */
+  onMsg: (data: any) => void;
+
+  /**
+   * Open a comm with optional data.
+   */
+  open(data?: any, metadata?: any): IKernelFuture;
+
+  /**
+   * Send a comm message to the kernel.
+   */
+  send(data: any, metadata?: any, buffers?:(ArrayBuffer | ArrayBufferView)[]): IKernelFuture;
+
+  /**
+   * Close the comm.
+   */
+  close(data?: any, metadata?: any): IKernelFuture;
 }

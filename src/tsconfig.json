@@ -17,7 +17,6 @@
     "../typings/es6-dataview.d.ts",
     "../typings/requirejs/r.d.ts",
     "index.ts",
-    "comm.ts",
     "config.ts",
     "contents.ts",
     "kernel.ts",
