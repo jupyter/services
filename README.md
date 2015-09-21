@@ -203,7 +203,7 @@ startNewSession(options).then((session) => {
 
 ```typescript
 import {
-  getKernelSpecs, startNewKernel, CommManager
+  getKernelSpecs, startNewKernel
 } from 'jupyter-js-services';
 
 var BASEURL = 'http://localhost:8888';
@@ -219,9 +219,7 @@ getKernelSpecs(BASEURL).then(kernelSpecs => {
     name: kernelSpecs.default,
   });
 }).then(kernel => {
-  var manager = new CommManager(kernel);
-  return manager.connect('test');
-}).then(comm => {
+  var comm = kernel.connectToComm('test');
   comm.open('initial state');
   comm.send('test');
   comm.close('bye');
@@ -235,8 +233,11 @@ getKernelSpecs(BASEURL).then(kernelSpecs => {
     name: kernelSpecs.default,
   });
 }).then(kernel => {
-  var manager = new CommManager(kernel);
-  manager.registerTarget('test2', (comm, data) => {
+  kernel.commOpened.connect((kernel, commMsg) => {
+    if (commMsg.target_name !== 'test2') {
+       return;
+    }
+    var comm = kernel.connectToComm('test2', commMsg.comm_id);
     comm.onMsg = (msg) => {
       console.log(msg);  // 'hello'
     }
