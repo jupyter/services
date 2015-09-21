@@ -214,6 +214,38 @@ interface ICommInfoReply {
 
 
 /**
+ * Contents of a `comm_open` message.
+ */
+export
+interface ICommOpen {
+  comm_id: string;
+  target_name: string;
+  data: any;
+  target_module?: string;
+}
+
+
+/**
+ * Contents of a `comm_msg` message.
+ */
+export
+interface ICommMsg {
+  comm_id: string;
+  data: any;
+}
+
+
+/**
+ * Contents of a `comm_close` message.
+ */
+export
+interface ICommClose {
+  comm_id: string;
+  data: any;
+}
+
+
+/**
  * Options for an IKernelMessage.
  */
 export
@@ -240,6 +272,11 @@ interface IKernel {
    * The unhandled message signal for the kernel.
    */
   unhandledMessage: ISignal<IKernel, IKernelMessage>;
+
+  /**
+   * An unhandled comm_open message received from the client.
+   */
+  commOpened: ISignal<IKernel, IKernelMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -356,11 +393,6 @@ interface IKernel {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): Promise<IComm>;
-
-  /**
-   * Register the handler for a "comm_open" message on a given targetName.
-   */
-  setCommTargetHandler(targetName: string, cb: (comm: IComm, data: any) => void): void;
 
 }
 

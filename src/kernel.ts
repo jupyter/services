@@ -7,10 +7,10 @@ import { DisposableDelegate } from 'phosphor-disposable';
 import { ISignal, Signal, disconnectReceiver } from 'phosphor-signaling';
 
 import { 
-  IComm, ICommInfoRequest, ICommInfoReply, ICompleteReply, ICompleteRequest, 
-  IExecuteReply, IExecuteRequest, IInspectReply, IInspectRequest, 
-  IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel, IKernelFuture, 
-  IKernelId, IKernelInfo, IKernelMessage, IKernelMessageHeader,
+  IComm, ICommInfoRequest, ICommInfoReply, ICommOpen, ICompleteReply, 
+  ICompleteRequest, IExecuteReply, IExecuteRequest, IInspectReply, 
+  IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel, 
+  IKernelFuture, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageHeader,
   IKernelMessageOptions, IKernelOptions, IKernelSpecIds, KernelStatus
 } from './ikernel';
 
@@ -208,6 +208,11 @@ class Kernel implements IKernel {
   static unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
 
   /**
+   * A signal emitted for unhandled comm open message.
+   */
+  static commOpenedSignal = new Signal<IKernel, IKernelMessage>();
+
+  /**
    * Construct a kernel object.
    */
   constructor(options: IKernelOptions, id: string) {
@@ -217,7 +222,6 @@ class Kernel implements IKernel {
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
-    this._commTargets = new Map<string, (comm: IComm, data: any) => any>();
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket(options.wsUrl);
@@ -235,6 +239,13 @@ class Kernel implements IKernel {
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
     return Kernel.unhandledMessageSignal.bind(this);
+  }
+
+  /**
+   * The unhandled comm_open message signal for the kernel.
+   */
+  get commOpened(): ISignal<IKernel, IKernelMessage> {
+    return Kernel.commOpenedSignal.bind(this);
   }
 
   /**
@@ -291,7 +302,6 @@ class Kernel implements IKernel {
       this._futures.delete(msg.header.msg_id);
     });
     this._futures.set(msg.header.msg_id, future);
-
     return future;
   }
 
@@ -452,13 +462,6 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Register the handler for a "comm_open" message on a given targetName.
-   */
-  setCommTargetHandler(targetName: string, cb: (comm: IComm, data: any) => void): void {
-    this._commTargets.set(targetName, cb);
-  }
-
-  /**
    * Connect to a comm, or create a new one.
    *
    * If a client-side comm already exists, it is returned.
@@ -473,7 +476,7 @@ class Kernel implements IKernel {
     }
     var comm = this._comms.get(commId);
     if (!comm) {
-      comm = new Comm(targetName, commId, this._sendCommMessage, () => {
+      comm = new Comm(targetName, commId, this._sendCommMessage.bind(this), () => {
         this._unregisterComm(comm.commId);
       });
       this._comms.set(commId, comm);
@@ -605,27 +608,40 @@ class Kernel implements IKernel {
       console.error('Invalid comm message');
       return;
     }
-    var content = msg.content;
-    var promise = loadTarget(
-      content.target_name, content.target_module, this._commTargets
-    ).then((target: (comm: IComm, data: any) => any) => {
-      var comm = new Comm(
-        content.target_name, 
-        content.comm_id, 
-        this._sendCommMessage,
-        () => { this._unregisterComm(content.comm_id); }
-      );
-      try {
-        var response = target(comm, content.data);
-      } catch (e) {
-        comm.close();
-        this._unregisterComm(comm.commId);
-        console.error("Exception opening new comm");
-        return Promise.reject(e);
-      }
-      this._commPromises.delete(comm.commId);
-      this._comms.set(comm.commId, comm);
-      return comm;
+    var content = msg.content as ICommOpen;
+    if (!content.target_module) {
+      this.commOpened.emit(msg);
+      return;
+    }
+    var targetName = content.target_name;
+    var moduleName = content.target_module
+    var promise = new Promise((resolve, reject) => {
+      // Try loading the module using require.js
+      requirejs([moduleName], (mod: any) => {
+        if (mod[targetName] === undefined) {
+          reject(new Error(
+            'Target ' + targetName + ' not found in module ' + moduleName
+          ));
+        }           
+        var target = mod[targetName];
+        var comm = new Comm(
+          content.target_name, 
+          content.comm_id, 
+          this._sendCommMessage,
+          () => { this._unregisterComm(content.comm_id); }
+        );
+        try {
+          var response = target(comm, content.data);
+        } catch (e) {
+          comm.close();
+          this._unregisterComm(comm.commId);
+          console.error("Exception opening new comm");
+          reject(e);
+        }
+        this._commPromises.delete(comm.commId);
+        this._comms.set(comm.commId, comm);
+        resolve(comm);
+      });
     });
     this._commPromises.set(content.comm_id, promise);
   }
@@ -722,7 +738,6 @@ class Kernel implements IKernel {
   private _ws: WebSocket = null;
   private _username = '';
   private _futures: Map<string, KernelFutureHandler> = null;
-  private _commTargets: Map<string, (comm: IComm, data: any) => any> = null;
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
 }
@@ -1165,42 +1180,15 @@ class Comm extends DisposableDelegate implements IComm {
    * Clear internal state when disposed.
    */
   dispose(): void {
-    this._kernel = null;
     this._onClose = null;
     this._onMsg = null;
+    this._msgFunc = null;
     super.dispose();
   }
 
   private _target = '';
   private _id = '';
-  private _kernel: IKernel = null;
   private _onClose: (data?: any) => void = null;
   private _onMsg: (data: any) => void = null;
   private _msgFunc: (payload: ICommPayload) => IKernelFuture = null;
 }
-
-
-/**
- * Load a target from a module using require.js, if a module 
- * is specified, otherwise try to load a target from the given registry.
- */
-function loadTarget(targetName: string, moduleName: string, registry: Map<string, (comm: IComm, data: any) => any>): Promise<(comm: IComm, data: any) => any> {
-  return new Promise((resolve, reject) => {
-    // Try loading the module using require.js
-    if (moduleName) {
-      requirejs([moduleName], (mod: any) => {
-        if (mod[targetName] === undefined) {
-          reject(new Error(
-            'Target ' + targetName + ' not found in module ' + moduleName
-          ));
-        } else {
-          resolve(mod[targetName]);
-        }
-      }, reject);
-    } else {
-      var target = registry.get(targetName);
-      if (target) resolve(target);
-      reject(new Error('Target ' + targetName + ' not found in registry '));
-    }
-  });
-};

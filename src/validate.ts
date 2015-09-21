@@ -9,7 +9,7 @@ import {
 import { INotebookId, ISessionId } from './isession';
 
 
-const COMM_FIELDS = ['comm_id', 'target_name'];
+const COMM_FIELDS = ['comm_id', 'data'];
 
 const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
 
@@ -24,12 +24,26 @@ export
 function validateCommMessage(msg: IKernelMessage): boolean {
   for (var i = 0; i < COMM_FIELDS.length; i++) {
     if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
+      console.log('*****invalid', COMM_FIELDS[i]);
       return false;
     }
-    if (typeof msg.content[COMM_FIELDS[i]] !== 'string') {
+  }
+  if (msg.header.msg_type === 'comm_open') {
+    if (!msg.content.hasOwnProperty('target_name') ||
+        typeof msg.content.target_name !== 'string') {
+      console.log('***TARGET NAME');
       return false;
     }
-  } 
+    if (msg.content.hasOwnProperty('target_module') &&
+        msg.content.target_module !== null &&
+        typeof msg.content.target_module !== 'string') {
+      return false;
+    }
+  }
+  if (typeof msg.content.comm_id !== 'string') {
+    console.log("COMM_ID")
+    return false;
+  }
   return true;
 }
 
@@ -37,7 +51,7 @@ function validateCommMessage(msg: IKernelMessage): boolean {
 function validateKernelHeader(header: any): void {
   for (var i = 0; i < HEADER_FIELDS.length; i++) {
     if (!header.hasOwnProperty(HEADER_FIELDS[i])) {
-      throw Error('Invalid Kernel message ' + HEADER_FIELDS[i]);
+      throw Error('Invalid Kernel message');
     }
     if (typeof header[HEADER_FIELDS[i]] !== 'string') {
       throw Error('Invalid Kernel message');

@@ -165,15 +165,19 @@ describe('jupyter.services - Integration', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
-          kernel.setCommTargetHandler('test2', (comm, data) => {
-            comm.onMsg = (msg) => {
-              expect(msg).to.be('hello');
-            }
-            comm.onClose = (msg) => {
-              console.log('***msg', msg);
-              expect(msg).to.be('bye');
-              done();
-            }
+          kernel.commOpened.connect((kernel, msg) => {
+            expect(msg.content.target_name).to.be('test2');
+            kernel.connectToComm(
+              msg.content.target_name, msg.content.comm_id
+            ).then(comm => {
+              comm.onMsg = (msg) => {
+                expect(msg).to.be('hello');
+              }
+              comm.onClose = (msg) => {
+                expect(msg).to.be('bye');
+                done();
+              }
+            });
           });
           var code = [
             "from ipykernel.comm import Comm",

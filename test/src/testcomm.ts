@@ -105,8 +105,12 @@ describe('jupyter.services - Comm', () => {
       it('should call the provided callback', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.setCommTargetHandler('test', (comm, data) => {
-            done();
+          kernel.commOpened.connect((kernel, msg) => {
+            kernel.connectToComm(
+              msg.content.target_name, msg.content.comm_id
+            ).then(comm => {
+              done();
+            });
           });
           var contents = {
             target_name: 'test',

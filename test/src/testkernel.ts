@@ -853,6 +853,7 @@ describe('jupyter.services - kernel', () => {
             stop_on_error: false
           }
           var future = kernel.execute(options);
+          console.log('***got the execute future back');
           expect(future.onDone).to.be(null);
           expect(future.onStdin).to.be(null);
           expect(future.onReply).to.be(null);
