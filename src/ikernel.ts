@@ -276,7 +276,7 @@ interface IKernel {
   /**
    * An unhandled comm_open message received from the client.
    */
-  commOpened: ISignal<IKernel, IKernelMessage>;
+  commOpened: ISignal<IKernel, ICommOpen>;
 
   /**
    * The id of the server-side kernel.
@@ -392,7 +392,7 @@ interface IKernel {
    *
    * If a client-side comm already exists, it is returned.
    */
-  connectToComm(targetName: string, commId?: string): Promise<IComm>;
+  connectToComm(targetName: string, commId?: string): IComm;
 
 }
 
@@ -521,7 +521,7 @@ interface IComm {
   /**
    * Send a comm message to the kernel.
    */
-  send(data: any, metadata?: any, buffers?:(ArrayBuffer | ArrayBufferView)[]): IKernelFuture;
+  send(data: any, metadata?: any, buffers?: (ArrayBuffer | ArrayBufferView)[]): IKernelFuture;
 
   /**
    * Close the comm.

@@ -35,67 +35,59 @@ describe('jupyter.services - Comm', () => {
 
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            expect(comm.targetName).to.be('test');
-            expect(typeof comm.commId).to.be('string');
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          expect(comm.targetName).to.be('test');
+          expect(typeof comm.commId).to.be('string');
+          done();
         });
       });
 
       it('should use the given commId', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test', '1234').then((comm) => {
-            expect(comm.targetName).to.be('test');
-            expect(comm.commId).to.be('1234');
-            done();
-          });
+          var comm = kernel.connectToComm('test', '1234');
+          expect(comm.targetName).to.be('test');
+          expect(comm.commId).to.be('1234');
+          done();
         });
       });
 
       it('should reuse an existing comm', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onClose = () => {
-              done();
-            }
-            kernel.connectToComm('test', comm.commId).then((comm2) => {
-              comm2.close();  // should trigger comm to close
-            });
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onClose = () => {
+            done();
+          }
+          var comm2 = kernel.connectToComm('test', comm.commId);
+          comm2.close();  // should trigger comm to close
         });
       });
 
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test', "1234").then((comm) => {
-            expect(comm.targetName).to.be('test');
-            expect(comm.commId).to.be('1234');
-            done();
-          });
+          var comm = kernel.connectToComm('test', "1234");
+          expect(comm.targetName).to.be('test');
+          expect(comm.commId).to.be('1234');
+          done();
         });
       });
 
       it('should use the given commId', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test', '1234').then((comm) => {
-            expect(comm.targetName).to.be('test');
-            expect(comm.commId).to.be('1234');
-            done();
-          });
+          var comm = kernel.connectToComm('test', '1234');
+          expect(comm.targetName).to.be('test');
+          expect(comm.commId).to.be('1234');
+          done();
         });
       });
 
       it('should reuse an existing comm', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test', '1234').then((comm) => {
-            comm.onClose = () => {
-              done();
-            }
-            kernel.connectToComm('test', '1234').then((comm2) => {
-              comm2.close();  // should trigger comm to close
-            });
-          });
+          var comm = kernel.connectToComm('test', '1234');
+          comm.onClose = () => {
+            done();
+          }
+          var comm2 = kernel.connectToComm('test', '1234');
+          comm2.close();  // should trigger comm to close
         });
       });
     });
@@ -106,11 +98,8 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           kernel.commOpened.connect((kernel, msg) => {
-            kernel.connectToComm(
-              msg.content.target_name, msg.content.comm_id
-            ).then(comm => {
-              done();
-            });
+            kernel.connectToComm(msg.target_name, msg.comm_id);
+            done();
           });
           var contents = {
             target_name: 'test',
@@ -181,9 +170,8 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          kernel.connectToComm('test', '1234').then(() => {
-            done();
-          });
+          kernel.connectToComm('test', '1234');
+          done();
         });
       });
 
@@ -197,9 +185,8 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          kernel.connectToComm('test2', '1234').then(() => {
-            done();
-          });
+          kernel.connectToComm('test2', '1234');
+          done();
         });
       });
 
@@ -213,9 +200,8 @@ describe('jupyter.services - Comm', () => {
             data: { foo: 'bar'}
           }
           sendCommMessage(tester, kernel, 'comm_open', contents);
-          kernel.connectToComm('test2', '1234').then(() => {
-            done();
-          });
+          kernel.connectToComm('test2', '1234');
+          done();
         });
       });
 
@@ -227,11 +213,10 @@ describe('jupyter.services - Comm', () => {
     context('#commId', () => {
       it('should be a read only string', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            expect(typeof comm.commId).to.be('string');
-            expect(() => { comm.commId = ''; }).to.throwError();
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          expect(typeof comm.commId).to.be('string');
+          expect(() => { comm.commId = ''; }).to.throwError();
+          done();
         });
       });
     });
@@ -239,11 +224,10 @@ describe('jupyter.services - Comm', () => {
     context('#targetName', () => {
       it('should be a read only string', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            expect(comm.targetName).to.be('test');
-            expect(() => { comm.targetName = ''; }).to.throwError();
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          expect(comm.targetName).to.be('test');
+          expect(() => { comm.targetName = ''; }).to.throwError();
+          done();
         });
       });
     });
@@ -251,45 +235,42 @@ describe('jupyter.services - Comm', () => {
     context('#onClose', () => {
       it('should be readable and writable function', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onClose = (data) => {
-              done();
-            }
-            expect(typeof comm.onClose).to.be('function');
-            comm.close();
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onClose = (data) => {
+            done();
+          }
+          expect(typeof comm.onClose).to.be('function');
+          comm.close();
         });
       });
 
       it('should be called when the server side closes', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onClose = (data) => {
-              expect(data.foo).to.be('bar');
-              done();
-            }
-            var content = {
-              comm_id: comm.commId,
-              target_name: comm.targetName,
-              data: { foo: 'bar' }
-            }
-            sendCommMessage(tester, kernel, 'comm_close', content);
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onClose = (data) => {
+            expect(data.foo).to.be('bar');
+            done();
+          }
+          var content = {
+            comm_id: comm.commId,
+            target_name: comm.targetName,
+            data: { foo: 'bar' }
+          }
+          sendCommMessage(tester, kernel, 'comm_close', content);
         });
       });
 
       it('should ignore a close message for an unregistered id', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            var content = {
-              comm_id: '1234',
-              target_name: comm.targetName
-            }
-            sendCommMessage(tester, kernel, 'comm_close', content);
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          var content = {
+            comm_id: '1234',
+            target_name: comm.targetName
+          }
+          sendCommMessage(tester, kernel, 'comm_close', content);
+          done();
         });
       });
     });
@@ -297,45 +278,42 @@ describe('jupyter.services - Comm', () => {
     context('#onMsg', () => {
       it('should be readable and writable function', (done) => {
         createKernel().then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onMsg = (data) => {
-              done();
-            }
-            expect(typeof comm.onMsg).to.be('function');
-            comm.onMsg({});
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onMsg = (data) => {
+            done();
+          }
+          expect(typeof comm.onMsg).to.be('function');
+          comm.onMsg({});
         });
       });
 
       it('should be called when the server side sends a message', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onMsg = (msg) => {
-              expect(msg.foo).to.be('bar');
-              done();
-            }
-            var content = {
-              comm_id: comm.commId,
-              target_name: comm.targetName,
-              data: { foo: 'bar' }
-            }
-            sendCommMessage(tester, kernel, 'comm_msg', content);
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onMsg = (msg) => {
+            expect(msg.foo).to.be('bar');
+            done();
+          }
+          var content = {
+            comm_id: comm.commId,
+            target_name: comm.targetName,
+            data: { foo: 'bar' }
+          }
+          sendCommMessage(tester, kernel, 'comm_msg', content);
         });
       });
 
       it('should ignore a message for an unregistered id', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            var content = {
-              comm_id: '1234',
-              target_name: comm.targetName
-            }
-            sendCommMessage(tester, kernel, 'comm_msg', content);
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          var content = {
+            comm_id: '1234',
+            target_name: comm.targetName
+          }
+          sendCommMessage(tester, kernel, 'comm_msg', content);
+          done();
         });
       });
     });
@@ -345,30 +323,28 @@ describe('jupyter.services - Comm', () => {
       it('should send a message to the server', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              expect(msg.content.data.foo).to.be('bar');
-              done();
-            });
-            comm.open({ foo: 'bar' }, 'metadata');
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            expect(msg.content.data.foo).to.be('bar');
+            done();
           });
+          comm.open({ foo: 'bar' }, 'metadata');
         });
       });
 
       it('should yield a future', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              msg.parent_header = msg.header;
-              msg.channel = 'iopub';
-              tester.send(msg);
-            });
-            var future = comm.open();
-            future.onIOPub = () => {
-              done();
-            }
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            msg.parent_header = msg.header;
+            msg.channel = 'iopub';
+            tester.send(msg);
           });
+          var future = comm.open();
+          future.onIOPub = () => {
+            done();
+          }
         });
       });
     });
@@ -377,35 +353,33 @@ describe('jupyter.services - Comm', () => {
       it('should send a message to the server', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              expect(msg.content.data.foo).to.be('bar');
-              var decoder = new TextDecoder('utf8');
-              var item = <DataView>msg.buffers[0];
-              expect(decoder.decode(item)).to.be('hello');
-              done();
-            });
-            var encoder = new TextEncoder('utf8');
-            var data = encoder.encode('hello');
-            comm.send({ foo: 'bar' }, 'metadata', [data, data.buffer]);
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            expect(msg.content.data.foo).to.be('bar');
+            var decoder = new TextDecoder('utf8');
+            var item = <DataView>msg.buffers[0];
+            expect(decoder.decode(item)).to.be('hello');
+            done();
           });
+          var encoder = new TextEncoder('utf8');
+          var data = encoder.encode('hello');
+          comm.send({ foo: 'bar' }, 'metadata', [data, data.buffer]);
         });
       });
 
       it('should yield a future', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              msg.parent_header = msg.header;
-              msg.channel = 'iopub';
-              tester.send(msg);
-            });
-            var future = comm.send('foo');
-            future.onIOPub = () => {
-              done();
-            }
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            msg.parent_header = msg.header;
+            msg.channel = 'iopub';
+            tester.send(msg);
           });
+          var future = comm.send('foo');
+          future.onIOPub = () => {
+            done();
+          }
         });
       });
     });
@@ -414,65 +388,60 @@ describe('jupyter.services - Comm', () => {
       it('should send a message to the server', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              expect(msg.content.data.foo).to.be('bar');
-              done();
-            });
-            comm.close({ foo: 'bar' }, 'metadata');
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            expect(msg.content.data.foo).to.be('bar');
+            done();
           });
+          comm.close({ foo: 'bar' }, 'metadata');
         });
       });
 
       it('should send trigger an onClose', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.onClose = (data) => {
-              expect(data.foo).to.be('bar');
-              done();
-            }
-            comm.close({ foo: 'bar' });
-          });
+          var comm = kernel.connectToComm('test');
+          comm.onClose = (data) => {
+            expect(data.foo).to.be('bar');
+            done();
+          }
+          comm.close({ foo: 'bar' });
         });
       });
 
       it('should not send subsequent messages', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.close({ foo: 'bar' });
-            expect(() => { comm.send('test'); }).to.throwError();
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          comm.close({ foo: 'bar' });
+          expect(() => { comm.send('test'); }).to.throwError();
+          done();
         });
       });
 
       it('should be a no-op if already closed', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.close({ foo: 'bar' });
-            comm.close();
-            done();
-          });
+          var comm = kernel.connectToComm('test');
+          comm.close({ foo: 'bar' });
+          comm.close();
+          done();
         });
       });
 
       it('should yield a future', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            tester.onMessage((msg) => {
-              msg.parent_header = msg.header;
-              msg.channel = 'iopub';
-              tester.send(msg);
-            });
-            var future = comm.close();
-            future.onIOPub = () => {
-              done();
-            }
+          var comm = kernel.connectToComm('test');
+          tester.onMessage((msg) => {
+            msg.parent_header = msg.header;
+            msg.channel = 'iopub';
+            tester.send(msg);
           });
+          var future = comm.close();
+          future.onIOPub = () => {
+            done();
+          }
         });
       });
     });

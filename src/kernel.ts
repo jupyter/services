@@ -210,7 +210,7 @@ class Kernel implements IKernel {
   /**
    * A signal emitted for unhandled comm open message.
    */
-  static commOpenedSignal = new Signal<IKernel, IKernelMessage>();
+  static commOpenedSignal = new Signal<IKernel, ICommOpen>();
 
   /**
    * Construct a kernel object.
@@ -244,7 +244,7 @@ class Kernel implements IKernel {
   /**
    * The unhandled comm_open message signal for the kernel.
    */
-  get commOpened(): ISignal<IKernel, IKernelMessage> {
+  get commOpened(): ISignal<IKernel, ICommOpen> {
     return Kernel.commOpenedSignal.bind(this);
   }
 
@@ -466,13 +466,9 @@ class Kernel implements IKernel {
    *
    * If a client-side comm already exists, it is returned.
    */
-  connectToComm(targetName: string, commId?: string): Promise<IComm> {
+  connectToComm(targetName: string, commId?: string): IComm {
     if (commId === void 0) {
       commId = utils.uuid();
-    }
-    var promise = this._commPromises.get(commId);
-    if (promise) {
-      return promise;
     }
     var comm = this._comms.get(commId);
     if (!comm) {
@@ -481,7 +477,7 @@ class Kernel implements IKernel {
       });
       this._comms.set(commId, comm);
     }
-    return Promise.resolve(comm);
+    return comm;
   }
 
   /**
@@ -610,7 +606,7 @@ class Kernel implements IKernel {
     }
     var content = msg.content as ICommOpen;
     if (!content.target_module) {
-      this.commOpened.emit(msg);
+      this.commOpened.emit(msg.content);
       return;
     }
     var targetName = content.target_name;
