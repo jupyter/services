@@ -667,7 +667,9 @@ class Kernel implements IKernel {
     promise.then((comm) => {
       this._unregisterComm(comm.commId);
       try {
-        comm.close(msg.content.data);
+        var onClose = comm.onClose;
+        if (onClose) onClose(msg.content.data);
+        (<Comm>comm).dispose();
       } catch (e) {
         console.log("Exception closing comm: ", e, e.stack, msg);
       }
@@ -887,8 +889,7 @@ function sendKernelMessage(kernel: IKernel, msg: IKernelMessage): Promise<any> {
 enum KernelFutureFlag {
   GotReply = 0x1,
   GotIdle = 0x2,
-  AutoDispose = 0x4,
-  IsDone = 0x8
+  IsDone = 0x4
 }
 
 
@@ -1029,9 +1030,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     var done = this._done;
     if (done) done(msg);
     this._done = null;
-    if (this._testFlag(KernelFutureFlag.AutoDispose)) {
-      this.dispose();
-    }
+    this.dispose();
   }
 
   /**
@@ -1170,8 +1169,6 @@ class Comm extends DisposableDelegate implements IComm {
       msgType: 'comm_close', contents: contents, metadata: metadata
     }
     var future = this._msgFunc(payload);
-    this._onClose = null;
-    this._onMsg = null;
     this.dispose();
     return future;
   }

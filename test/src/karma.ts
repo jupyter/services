@@ -137,25 +137,6 @@ describe('jupyter.services - Integration', () => {
 
   describe('Comm', () => {
 
-    it('should start a comm from the client end', (done) => {
-      // get info about the available kernels and connect to one
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
-        var options = {
-          baseUrl: BASEURL,
-          wsUrl: WSURL,
-          name: kernelSpecs.default
-        }
-        startNewKernel(options).then((kernel) => {
-          kernel.connectToComm('test').then((comm) => {
-            comm.open('initial state');
-            comm.send('test');
-            comm.close('bye');
-            done();
-          });
-        });
-      });
-    });
-
     it('should start a comm from the server end', (done) => {
       // get info about the available kernels and connect to one
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
@@ -166,24 +147,32 @@ describe('jupyter.services - Integration', () => {
         }
         startNewKernel(options).then((kernel) => {
           kernel.commOpened.connect((kernel, msg) => {
-            expect(msg.content.target_name).to.be('test2');
+            expect(msg.content.target_name).to.be('test');
             kernel.connectToComm(
               msg.content.target_name, msg.content.comm_id
             ).then(comm => {
               comm.onMsg = (msg) => {
                 expect(msg).to.be('hello');
+                comm.send('0');
+                comm.send('1');
+                comm.send('2');
               }
               comm.onClose = (msg) => {
-                expect(msg).to.be('bye');
+                expect(msg).to.eql(['0', '1', '2']);
                 done();
               }
             });
           });
           var code = [
             "from ipykernel.comm import Comm",
-            "comm = Comm(target_name='test2')",
+            "comm = Comm(target_name='test')",
             "comm.send(data='hello')",
-            "comm.close(data='bye')"
+            "msgs = []",
+            "def on_msg(msg):",
+            "    msgs.append(msg['content']['data'])",
+            "    if len(msgs) == 3:",
+            "       comm.close(msgs)",
+            "comm.on_msg(on_msg)"
           ].join('\n')
           kernel.execute({ code: code });
         });
