@@ -312,33 +312,26 @@ contents.listCheckpoints("/foo/bar.txt").then((models) => {
 **Configuration**
 
 ```typescript
-import {
-  ConfigSection, ConfigWithDefaults
+  startNewKernel, getKernelSpecs, getConfigSection, ConfigWithDefaults
 } from 'jupyter-js-services';
 
-var section = new ConfigSection('mySection', 'http://localhost:8000');
+var BASEURL = 'http://localhost:8888';
+var WSURL = 'ws://localhost:8888';
 
-// load from the server
-section.load().then((data: any) => {
-    console.log(data);
+getKernelSpecs(BASEURL).then(kernelSpecs => {
+  return startNewKernel({
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default,
+  });
+}).then(kernel => {
+  getConfigSection('notebook', BASEURL).then(section => {
+    var defaults = { default_cell_type: 'code' };
+    var config = new ConfigWithDefaults(section, defaults, 'Notebook');
+    console.log(config.get('default_cell_type'));   // 'code'
+    config.set('foo', 'bar').then(data => {
+       console.log(data.foo); // 'bar'
+    });
+  });
 });
-
-// update contents
-section.update({ mySubSection: { 'fizz': 'buzz', spam: 'eggs' } });
-
-console.log(section.data.mySubSection.fizz);  // 'buzz'
-
-// create a config object based on our section with default values and a
-// class of data
-var config = new ConfigWithDefaults(section, { bar: 'baz' }, 'mySubSection');
-
-// get the current value of fizz regardless of whether the section is loaded
-config.getSync('bar');  // defaults to 'baz' if section is not loaded
-
-// wait for the section to load and get our data
-console.log(config.get('bar'));
-
-// set a config value
-config.set('fizz', 'bazz');  // sets section.data.mySubSection.fizz = 'bazz'
-
 ```

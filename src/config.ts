@@ -11,40 +11,63 @@ var SERVICE_CONFIG_URL = 'api/config';
 
 
 /**
- * Configurable data section.
+ * A Configurable data section.
  */
-export 
-class ConfigSection {
+export
+interface IConfigSection {
+  /**
+   * The data for this section.
+   *
+   * Read-only.
+   */
+  data: any;
+
+  /**
+   * Modify the config values stored. Update the local data immediately,
+   * send the change to the server, and use the updated data from the server
+   * when the reply comes.
+   */
+  update(newdata: any): Promise<any>;
+
+}
+
+
+/**
+ * Get a config section and return a Promise that is fulfilled with the
+ * data is loaded.
+ */
+export
+function getConfigSection(sectionName: string, baseUrl: string): Promise<IConfigSection> {
+  var section = new ConfigSection(sectionName, baseUrl);
+  return section.load();
+}
+
+
+/**
+ * Implementation of the Configurable data section.
+ */
+class ConfigSection implements IConfigSection {
 
   /**
    * Create a config section.
    */
   constructor(sectionName: string, baseUrl: string) {
-    this._url = utils.urlJoinEncode(baseUrl, SERVICE_CONFIG_URL, sectionName);
-
-    this._loaded = new Promise<any>((resolve, reject) => {
-      this._finishFirstLoad = resolve;
-    })
+    this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL, sectionName);
   }
 
   /**
    * Get the data for this section.
+   *
+   * Read-only.
    */
   get data(): any {
       return this._data;
   }
-
-  /**
-   * Promose fullfilled when the config section is first loaded.
-   */
-  get onLoaded(): Promise<any> {
-    return this._loaded;
-  }
   
   /**
-   * Retrieve the data for this section.
+   * Load the initial data for this section.
    */
-  load(): Promise<any> {
+  load(): Promise<IConfigSection> {
     return utils.ajaxRequest(this._url, {
       method: "GET",
       dataType: "json",
@@ -53,8 +76,7 @@ class ConfigSection {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       this._data = success.data;
-      this._loadDone();
-      return this._data;
+      return this;
     });
   }
   
@@ -77,28 +99,12 @@ class ConfigSection {
       }
 
       this._data = success.data;
-      this._loadDone();
       return this._data;
     });
   }
 
-
-  /**
-   * Handle a finished load, fulfilling the onLoaded promise on the first call.
-   */
-  private _loadDone(): void {
-    if (!this._oneLoadFinished) {
-      this._oneLoadFinished = true;
-      this._finishFirstLoad(this._data);
-    }
-  }
-
   private _url = "unknown";
   private _data: any = { };
-  private _loaded: Promise<any> = null;
-  private _oneLoadFinished = false;
-  private _finishFirstLoad: (data: any) => void = null;
-
 }
 
 
@@ -111,30 +117,17 @@ class ConfigWithDefaults {
   /**
    * Create a new config with defaults.
    */
-  constructor(section: ConfigSection, defaults: any, classname?: string) {
+  constructor(section: IConfigSection, defaults: any, classname?: string) {
     this._section = section;
     this._defaults = defaults;
     this._className = classname;
   }
   
   /**
-   * Wait for config to have loaded, then get a value or the default.
-   *
-   * Note: section.load() must be called somewhere else.
+   * Get data from the config section or fall back to defaults.
    */
-  get(key: string): Promise<any> {
-    var that = this;
-    return this._section.onLoaded.then(() => {
-      return this._classData()[key] || this._defaults[key]
-    });
-  }
-  
-  /**
-   * Return a config value. If config is not yet loaded, return the default
-   * instead of waiting for it to load.
-   */
-  getSync(key: string): any {
-    return this._classData()[key] || this._defaults[key];
+  get(key: string): any {
+    return this._classData()[key] || this._defaults[key]
   }
   
   /**
@@ -165,7 +158,7 @@ class ConfigWithDefaults {
     }
   }
 
-  private _section: ConfigSection = null;
+  private _section: IConfigSection = null;
   private _defaults: any = null;
   private _className = "unknown";
 }

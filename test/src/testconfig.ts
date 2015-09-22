@@ -5,87 +5,69 @@
 import expect = require('expect.js');
 
 import { 
-  ConfigSection, ConfigWithDefaults
+  getConfigSection, ConfigWithDefaults
 } from '../../lib/config';
 
 
 import { RequestHandler, expectFailure } from './utils';
 
 
-describe('jupyter.services - ConfigSection', () => {
+describe('jupyter.services - IConfigSection', () => {
 
-  describe('#constructor()', () => {
+  describe('getConfigSection()', () => {
 
     it('should complete properly', (done) => {
-      var config = new ConfigSection("test", "localhost");
-      done();
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(config => {
+        done();
+      });
+      handler.respond(200, {});
     });
 
-  });
-
-  describe('#load()', () => {
-
     it('should load a config', (done) => {
-      var config = new ConfigSection("test", "localhost");
       var handler = new RequestHandler();
-      var load = config.load();
-      handler.respond(200, { foo: 'bar' });
-      return load.then((data: any) => {
-        expect(data.foo).to.be('bar');
+      getConfigSection("test", "localhost").then(config => {
         expect(config.data.foo).to.be('bar');
         done();
       });
+      handler.respond(200, { foo: 'bar' });
     });
 
     it('should fail for an incorrect response', (done) => {
-      var config = new ConfigSection("test", "localhost");
       var handler = new RequestHandler();
-      var load = config.load();
+      var configPromise = getConfigSection("test", "localhost");
       handler.respond(201, { });
-      expectFailure(load, done, 'Invalid Status: 201');
+      expectFailure(configPromise, done, 'Invalid Status: 201');
     });
 
-  });
-
-  describe('#onLoaded()', () => {
-
-      it('should fullfill the onLoaded promise', (done) => {
-      var config = new ConfigSection("test", "localhost");
-      var handler = new RequestHandler();
-      var load = config.load();
-      handler.respond(200, { foo: 'bar' });
-
-      config.onLoaded.then((data: any) => {
-        expect(config.data.foo).to.be('bar');
-        expect(data.foo).to.be('bar');
-        done();
-      });
-
-    });
   });
 
   describe('#update()', () => {
 
     it('should update a config', (done) => {
-      var config = new ConfigSection("test", "localhost");
       var handler = new RequestHandler();
-      var update = config.update( { foo: 'baz', spam: 'eggs' });
-      handler.respond(200, config.data );
-      return update.then((data: any) => {
-        expect(data.foo).to.be('baz');
-        expect(config.data.foo).to.be('baz');
-        expect(data.spam).to.be('eggs');
-        expect(config.data.spam).to.be('eggs');
-        done();
+      getConfigSection("test", "localhost").then(config => {
+        var update = config.update( { foo: 'baz', spam: 'eggs' });
+        handler.respond(200, config.data );
+        return update.then((data: any) => {
+          expect(data.foo).to.be('baz');
+          expect(config.data.foo).to.be('baz');
+          expect(data.spam).to.be('eggs');
+          expect(config.data.spam).to.be('eggs');
+          done();
+        });
       });
+      handler.respond(200, {});
     });
 
     it('should fail for an incorrect response', (done) => {
-      var config = new ConfigSection("test", "localhost");
       var handler = new RequestHandler();
-      var update = config.update({ foo: 'baz' });
-      handler.respond(201, { });
-      expectFailure(update, done, 'Invalid Status: 201');
+      getConfigSection("test", "localhost").then(config => {
+        var update = config.update({ foo: 'baz' });
+        handler.respond(201, { });
+        expectFailure(update, done, 'Invalid Status: 201');
+      });
+      handler.respond(200, {});
     });
 
   });
@@ -98,10 +80,13 @@ describe('jupyter.services - ConfigWithDefaults', () => {
   describe('#constructor()', () => {
 
     it('should complete properly', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { spam: 'eggs' },
                                           'testclass');
-      done();
+        done();
+      });
+      handler.respond(200, { testclass: { foo: 'bar' } });
     });
 
   });
@@ -109,102 +94,83 @@ describe('jupyter.services - ConfigWithDefaults', () => {
   describe('#get()', () => {
 
     it('should get a new config value', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
-                                          'testclass');
       var handler = new RequestHandler();
-
-      var get = config.get('foo');
-      section.load();
-      handler.respond(200, { testclass: { foo: 'bar' } });
-
-      return get.then((data: any) => {
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                            'testclass');
+        var data = config.get('foo');
         expect(data).to.be('bar');
         done();
       });
+      handler.respond(200, { testclass: { foo: 'bar' } });
     });
 
     it('should get a default config value', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
-                                          'testclass');
       var handler = new RequestHandler();
-
-      var get = config.get('spam');
-      section.load();
-      handler.respond(200, { testclass: { foo: 'bar' } });
-
-      return get.then((data: any) => {
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { spam: 'eggs' },
+                                            'testclass');
+        var data = config.get('spam');
         expect(data).to.be('eggs');
         done();
       });
+      handler.respond(200, { testclass: { foo: 'bar' } });
     });
 
     it('should get a default config value with no class', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { spam: 'eggs' });
       var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { spam: 'eggs' });
 
-      var get = config.get('spam');
-      section.load();
-      handler.respond(200, { foo: 'bar' });
-
-      return get.then((data: any) => {
+        var data = config.get('spam');
         expect(data).to.be('eggs');
         done();
       });
+      handler.respond(200, { foo: 'bar' });
     });
 
-  });
-
-  describe('#getSync()', () => {
-
-    it('should get a default value', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { foo: 'eggs' },
-                                          'testclass');
-      var handler = new RequestHandler();
-
-      var foo = config.getSync('foo');
-      expect(foo).to.be('eggs');
-      done();
-    });
-
-    it('should get a new config value', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { spam: 'eggs' },
-                                          'testclass');
-      var handler = new RequestHandler();
-      section.load();
-      handler.respond(200, { testclass: { foo: 'bar' } });
-
-      return section.onLoaded.then(() => {
-        var foo = config.getSync('foo');
-        expect(foo).to.be('bar');
-        done();
-      });
-    });
   });
 
   describe('#set()', () => {
 
-    it('should set a value in a class', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { },
-                                          'testclass');
+    it('should set a value in a class immediately', (done) => {
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { },
+                                            'testclass');
 
-      var set = config.set('foo', 'bar');
-      expect(section.data.testclass.foo).to.be('bar');
-      done();
+        var set = config.set('foo', 'bar');
+        expect(section.data.testclass.foo).to.be('bar');
+        done();
+      });
+      handler.respond(200, {});
     });
 
     it('should set a top level value', (done) => {
-      var section = new ConfigSection("test", "localhost");
-      var config = new ConfigWithDefaults(section, { });
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { });
+        var set = config.set('foo', 'bar');
+        expect(section.data.foo).to.be('bar');
+        set.then((data) => {
+          expect(section.data.foo).to.be('bar');
+          done();
+        });
+        handler.respond(200, {foo: 'bar'});
+      });
+      handler.respond(200, {});
+    });
 
-      var set = config.set('foo', 'bar');
-      expect(section.data.foo).to.be('bar');
-      done();
+    it('should fail for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(section => {
+        var config = new ConfigWithDefaults(section, { });
+        var set = config.set('foo', 'bar');
+        expect(section.data.foo).to.be('bar');
+        expectFailure(set, done, 'Invalid Status: 201');
+        handler.respond(201, {foo: 'bar'});
+      });
+      handler.respond(200, {});
     });
   });
 

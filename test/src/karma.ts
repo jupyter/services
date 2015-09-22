@@ -186,4 +186,20 @@ describe('jupyter.services - Integration', () => {
       });
     });
   });
+
+  describe('Config', () => {
+
+    it('should get a config section on the server and update it', (done) => {
+      startKernel().then(kernel => {
+        getConfigSection('notebook', BASEURL).then(section => {
+          var defaults = { default_cell_type: 'code' };
+          var config = new ConfigWithDefaults(section, defaults, 'Notebook');
+          expect(config.get('default_cell_type')).to.be('code');
+          done();
+        });
+      });
+    });
+
+  });
+
 });
