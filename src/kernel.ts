@@ -715,7 +715,7 @@ class Kernel implements IKernel {
       session: this.clientId
     }
     var msg = createKernelMessage(
-      options, payload.contents, payload.metadata, payload.buffers
+      options, payload.content, payload.metadata, payload.buffers
     );  
     return this.sendShellMessage(msg, false);
   }
@@ -782,7 +782,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
 
 interface ICommPayload {
   msgType: string;
-  contents: any;
+  content: any;
   metadata: any;
   buffers?: (ArrayBuffer | ArrayBufferView)[];
 }
@@ -1123,13 +1123,13 @@ class Comm extends DisposableDelegate implements IComm {
    * Initialize a comm with optional data.
    */
   open(data?: any, metadata?: any): IKernelFuture {
-    var contents = {
+    var content = {
       comm_id: this._id,
       target_name: this._target,
       data: data || {}
     }
     var payload = { 
-      msgType: 'comm_open', contents: contents, metadata: metadata
+      msgType: 'comm_open', content: content, metadata: metadata
     }
     return this._msgFunc(payload);
   }
@@ -1141,10 +1141,10 @@ class Comm extends DisposableDelegate implements IComm {
     if (this.isDisposed) {
       throw Error('Comm is closed');
     }
-    var contents = { comm_id: this._id, data: data };
+    var content = { comm_id: this._id, data: data };
     var payload = { 
       msgType: 'comm_msg', 
-      contents: contents, 
+      content: content, 
       metadata: metadata,
       buffers: buffers,
     }
@@ -1160,9 +1160,9 @@ class Comm extends DisposableDelegate implements IComm {
     }
     var onClose = this._onClose;
     if (onClose) onClose(data);
-    var contents = { comm_id: this._id, data: data || {} };
+    var content = { comm_id: this._id, data: data || {} };
     var payload = { 
-      msgType: 'comm_close', contents: contents, metadata: metadata
+      msgType: 'comm_close', content: content, metadata: metadata
     }
     var future = this._msgFunc(payload);
     this.dispose();
