@@ -440,7 +440,7 @@ describe('jupyter.services - kernel', () => {
             session: kernel.clientId
           }
           var msg = createKernelMessage(options);
-          var future = kernel.sendShellMessage(msg);
+          var future = kernel.sendShellMessage(msg, true);
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('custom');
             done();
@@ -462,7 +462,7 @@ describe('jupyter.services - kernel', () => {
           var encoder = new TextEncoder('utf8');
           var data = encoder.encode('hello');
           var msg = createKernelMessage(options, {}, {}, [data, data.buffer]);
-          var future = kernel.sendShellMessage(msg);
+          var future = kernel.sendShellMessage(msg, true);
 
           tester.onMessage((msg: any) => {
             var decoder = new TextDecoder('utf8');
@@ -488,7 +488,7 @@ describe('jupyter.services - kernel', () => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
             try {
-              kernel.sendShellMessage(msg);
+              kernel.sendShellMessage(msg, true);
             } catch(err) {
               expect(err.message).to.be(
                 'Cannot send a message to a closed Kernel'
@@ -511,7 +511,7 @@ describe('jupyter.services - kernel', () => {
             session: kernel.clientId
           }
           var msg = createKernelMessage(options);
-          var future = kernel.sendShellMessage(msg);
+          var future = kernel.sendShellMessage(msg, true);
           tester.onMessage((msg) => {
             // trigger onDone
             msg.channel = 'iopub';
@@ -837,7 +837,7 @@ describe('jupyter.services - kernel', () => {
 
     context('#execute()', () => {
 
-      it('should send handle incoming messages', (done) => {
+      it('should send and handle incoming messages', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
@@ -853,14 +853,12 @@ describe('jupyter.services - kernel', () => {
             stop_on_error: false
           }
           var future = kernel.execute(options);
-          expect(future.autoDispose).to.be(true);
           expect(future.onDone).to.be(null);
           expect(future.onStdin).to.be(null);
           expect(future.onReply).to.be(null);
           expect(future.onIOPub).to.be(null);
 
           tester.onMessage((msg) => {
-
             expect(msg.channel).to.be('shell');
 
             // send a reply
@@ -901,52 +899,6 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
-    });
-
-    it('should not auto-dispose', (done) => {
-      var tester = new KernelTester();
-      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      var data = { id: uuid(), name: KERNEL_OPTIONS.name };
-      tester.respond(201, data);
-
-      kernelPromise.then((kernel) => {
-        var options: IExecuteRequest = {
-          code: 'test',
-          silent: false,
-          store_history: true,
-          user_expressions: {},
-          allow_stdin: false,
-          stop_on_error: false
-        }
-        var future = kernel.execute(options);
-        future.autoDispose = false;
-        expect(future.autoDispose).to.be(false);
-
-        tester.onMessage((msg) => {
-
-          expect(msg.channel).to.be('shell');
-
-          // send a reply
-          msg.parent_header = msg.header;
-          msg.channel = 'shell';
-          tester.send(msg);
-
-          future.onReply = () => {
-            // trigger onDone
-            msg.channel = 'iopub';
-            msg.header.msg_type = 'status';
-            msg.content.execution_state = 'idle';
-            tester.send(msg);
-          }
-
-          future.onDone = () => {
-            doLater(() => {
-              expect(future.isDisposed).to.be(false);
-              done();
-            });
-          }
-        });
-      });
 
     });
   });
@@ -957,8 +909,9 @@ describe('jupyter.services - kernel', () => {
 /**
  * Convenience function to start a kernel fully.
  */
-function createKernel(): Promise<IKernel> {
-  var tester = new KernelTester();
+export
+function createKernel(tester?: KernelTester): Promise<IKernel> {
+  var tester = tester || new KernelTester();
   var kernelPromise = startNewKernel(KERNEL_OPTIONS);
   tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
   return kernelPromise;

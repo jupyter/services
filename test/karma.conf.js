@@ -4,6 +4,7 @@ module.exports = function (config) {
     reporters: ['mocha'],
     preprocessors: { 'build/karma.js': ['browserify'] },
     browserify: { debug: true },
+    client: { mocha: { timeout: 5000 } },
     files: ['build/karma.js'],
     colors: true,
     singleRun: true,

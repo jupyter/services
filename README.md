@@ -199,6 +199,62 @@ startNewSession(options).then((session) => {
 });
 ```
 
+**Comm**
+
+```typescript
+import {
+  getKernelSpecs, startNewKernel
+} from 'jupyter-js-services';
+
+var BASEURL = 'http://localhost:8888';
+var WSURL = 'ws://localhost:8888';
+
+// Create a comm from the server side.
+//
+// get info about the available kernels and connect to one
+getKernelSpecs(BASEURL).then(kernelSpecs => {
+  return startNewKernel({
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default,
+  });
+}).then(kernel => {
+  var comm = kernel.connectToComm('test');
+  comm.open('initial state');
+  comm.send('test');
+  comm.close('bye');
+});
+
+// Create a comm from the client side.
+getKernelSpecs(BASEURL).then(kernelSpecs => {
+  return startNewKernel({
+    baseUrl: BASEURL,
+    wsUrl: WSURL,
+    name: kernelSpecs.default,
+  });
+}).then(kernel => {
+  kernel.commOpened.connect((kernel, commMsg) => {
+    if (commMsg.target_name !== 'test2') {
+       return;
+    }
+    var comm = kernel.connectToComm('test2', commMsg.comm_id);
+    comm.onMsg = (msg) => {
+      console.log(msg);  // 'hello'
+    }
+    comm.onClose = (msg) => {
+      console.log(msg);  // 'bye'
+    }
+  });
+  var code = [
+    "from ipykernel.comm import Comm",
+    "comm = Comm(target_name='test2')",
+    "comm.send(data='hello')",
+    "comm.close(data='bye')"
+  ].join('\n')
+  kernel.execute({ code: code });
+});
+```
+
 **Contents**
 
 ```typescript

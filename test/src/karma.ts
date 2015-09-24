@@ -2,6 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 'use-strict';
 
+import expect = require('expect.js');
+
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
   connectToSession, startNewSession, getKernelSpecs
@@ -12,7 +14,7 @@ var BASEURL = 'http://localhost:8888';
 var WSURL = 'ws://localhost:8888';
 
 
-describe('jupyter.services - Karma', () => {
+describe('jupyter.services - Integration', () => {
 
   describe('Kernel', () => {
 
@@ -80,6 +82,7 @@ describe('jupyter.services - Karma', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
+          console.log('Kernel started');
           kernel.complete({ code: 'impor', cursor_pos: 4 }).then((completions) => {
             console.log('Got completions: ', completions.matches);
             kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 }).then((info) => {
@@ -127,6 +130,48 @@ describe('jupyter.services - Karma', () => {
               });
             });
           });
+        });
+      });
+    });
+  });
+
+  describe('Comm', () => {
+
+    it('should start a comm from the server end', (done) => {
+      // get info about the available kernels and connect to one
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var options = {
+          baseUrl: BASEURL,
+          wsUrl: WSURL,
+          name: kernelSpecs.default
+        }
+        startNewKernel(options).then((kernel) => {
+          kernel.commOpened.connect((kernel, msg) => {
+            expect(msg.target_name).to.be('test');
+            var comm = kernel.connectToComm(msg.target_name, msg.comm_id);
+            comm.onMsg = (msg) => {
+              expect(msg).to.be('hello');
+              comm.send('0');
+              comm.send('1');
+              comm.send('2');
+            }
+            comm.onClose = (msg) => {
+              expect(msg).to.eql(['0', '1', '2']);
+              done();
+            }
+          });
+          var code = [
+            "from ipykernel.comm import Comm",
+            "comm = Comm(target_name='test')",
+            "comm.send(data='hello')",
+            "msgs = []",
+            "def on_msg(msg):",
+            "    msgs.append(msg['content']['data'])",
+            "    if len(msgs) == 3:",
+            "       comm.close(msgs)",
+            "comm.on_msg(on_msg)"
+          ].join('\n')
+          kernel.execute({ code: code });
         });
       });
     });
