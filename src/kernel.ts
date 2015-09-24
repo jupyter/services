@@ -292,7 +292,7 @@ class Kernel implements IKernel {
    *
    * The future object will yield the result when available.
    */
-  sendShellMessage(msg: IKernelMessage, expectReply: boolean): IKernelFuture {
+  sendShellMessage(msg: IKernelMessage, expectReply=false): IKernelFuture {
     if (this._status === KernelStatus.Dead) {
       throw Error('Cannot send a message to a closed Kernel');
     }
@@ -717,7 +717,7 @@ class Kernel implements IKernel {
     var msg = createKernelMessage(
       options, payload.content, payload.metadata, payload.buffers
     );  
-    return this.sendShellMessage(msg, false);
+    return this.sendShellMessage(msg);
   }
 
   /**
