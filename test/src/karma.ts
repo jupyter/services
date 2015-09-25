@@ -34,7 +34,10 @@ describe('jupyter.services - Integration', () => {
             console.log('Kernel restarted');
             kernel.kernelInfo().then((info) => {
               console.log('Got info: ', info.language_info);
-              done();
+              kernel.shutdown().then(() => {
+                console.log('Kernel shut down');
+                done();
+              });
             });
          });
         });
