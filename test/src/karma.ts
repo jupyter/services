@@ -6,7 +6,8 @@ import expect = require('expect.js');
 
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
-  connectToSession, startNewSession, getKernelSpecs
+  connectToSession, startNewSession, getKernelSpecs, getConfigSection,
+  ConfigWithDefaults
 } from '../../lib';
 
 
@@ -190,12 +191,22 @@ describe('jupyter.services - Integration', () => {
   describe('Config', () => {
 
     it('should get a config section on the server and update it', (done) => {
-      startKernel().then(kernel => {
-        getConfigSection('notebook', BASEURL).then(section => {
-          var defaults = { default_cell_type: 'code' };
-          var config = new ConfigWithDefaults(section, defaults, 'Notebook');
-          expect(config.get('default_cell_type')).to.be('code');
-          done();
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var options = {
+          baseUrl: BASEURL,
+          wsUrl: WSURL,
+          name: kernelSpecs.default
+        }
+        startNewKernel(options).then((kernel) => {
+          getConfigSection('notebook', BASEURL).then(section => {
+            var defaults = { default_cell_type: 'code' };
+            var config = new ConfigWithDefaults(section, defaults, 'Notebook');
+            expect(config.get('default_cell_type')).to.be('code');
+            config.set('foo', 'bar').then(() => {
+              expect(config.get('foo')).to.be('bar');
+              done();
+            });
+          });
         });
       });
     });
