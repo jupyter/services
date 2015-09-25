@@ -56,9 +56,11 @@ karma_command = ['karma', 'start', '--browsers=' + options.browsers,
 if options.debug:
     karma_command += ['--singleRun=false', '--debug=true']
 print(' '.join(karma_command))
+resp = 1
 try:
     resp = subprocess.check_call(karma_command, stderr=subprocess.STDOUT)
 except subprocess.CalledProcessError:
     pass
 finally:
     nb_server.kill()
+sys.exit(resp)
