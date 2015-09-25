@@ -1160,7 +1160,7 @@ class Comm extends DisposableDelegate implements IComm {
     }
     var onClose = this._onClose;
     if (onClose) onClose(data);
-    if (this._msgFunc === null) {
+    if (this._msgFunc === void 0) {
       return;
     }
     var content = { comm_id: this._id, data: data || {} };
