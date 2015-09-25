@@ -117,19 +117,26 @@ describe('jupyter.services - Integration', () => {
         }
         startNewSession(options).then((session) => {
           console.log('Hello Session: ', session.id, session.notebookPath);
-          // should grab the same session object
-          connectToSession(session.id, options).then((session2) => {
-            console.log('Should have gotten the same kernel');
-            if (session2.kernel.clientId !== session.kernel.clientId) {
-              throw Error('Did not reuse session');
-            }
-            listRunningSessions(BASEURL).then((sessions) => {
-              if (!sessions.length) {
-                throw Error('Should be one at least one running session');
+          session.renameNotebook('Untitled2.ipynb').then(() => {
+            expect(session.notebookPath).to.be('Untitled2.ipynb');
+
+            // should grab the same session object
+            connectToSession(session.id, options).then((session2) => {
+              console.log('Should have gotten the same kernel');
+              if (session2.kernel.clientId !== session.kernel.clientId) {
+                throw Error('Did not reuse session');
               }
-              session2.kernel.interrupt().then(() => {
-                console.log('Got interrupt');
-                done();
+              listRunningSessions(BASEURL).then((sessions) => {
+                if (!sessions.length) {
+                  throw Error('Should be one at least one running session');
+                }
+                session2.kernel.interrupt().then(() => {
+                  console.log('Got interrupt');
+                  session2.shutdown().then(() => {
+                    console.log('Got shutdown');
+                    done();
+                  });
+                });
               });
             });
           });
