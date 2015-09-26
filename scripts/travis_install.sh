@@ -15,5 +15,5 @@ cd notebook-dev
 git clone --quiet --depth 1 https://github.com/minrk/travis-wheels travis-wheels
 pip install -f travis-wheels/wheelhouse .
 
-# avoid error when trying to start up config
-mkdir -p ~/.jupyter/nbconfig
+# create jupyter base dir (needed for config retreival)
+mkdir ~/.jupyter
