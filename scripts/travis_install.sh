@@ -14,3 +14,6 @@ git clone https://github.com/jupyter/notebook notebook-dev
 cd notebook-dev
 git clone --quiet --depth 1 https://github.com/minrk/travis-wheels travis-wheels
 pip install -f travis-wheels/wheelhouse .
+
+# create jupyter base dir (needed for config retreival)
+mkdir ~/.jupyter
