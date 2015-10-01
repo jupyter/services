@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
+import {
+  ICheckpointModel, IContentsModel
+} from './contents';
+
 import { 
   IKernelId, IKernelMessage, IKernelMessageHeader, IKernelSpecId
 } from './ikernel';
@@ -150,3 +154,54 @@ function validateKernelSpec(info: IKernelSpecId): void {
     throw err;
   }
 }
+
+
+/**
+ * Validate a Contents Model.
+ */
+export
+function validateContentsModel(model: IContentsModel) {
+  var err = new Error('Invalid Contents Model');
+  if (!model.hasOwnProperty('name') || typeof model.name !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('path') || typeof model.path !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('type') || typeof model.type !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('created') || typeof model.created !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('last_modified') || 
+      typeof model.last_modified !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('mimetype')) {
+    throw err;
+  }
+  if (!model.hasOwnProperty('content')) {
+    throw err;
+  }
+  if (!model.hasOwnProperty('format')) {
+    throw err;
+  }
+}
+
+
+/**
+ * Validate a Checkpoint model.
+ */
+export
+function validateCheckpointModel(model: ICheckpointModel) {
+  var err = new Error('Invalid Checkpoint Model');
+  if (!model.hasOwnProperty('id') || typeof model.id !== 'string') {
+    throw err;
+  }
+  if (!model.hasOwnProperty('last_modified') || 
+      typeof model.last_modified !== 'string') {
+    throw err;
+  }
+}
+

@@ -2,6 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import * as utils from './utils';
+import * as validate from './validate';
 
 
 /**
@@ -101,7 +102,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateContentsModel(success.data);
+      validate.validateContentsModel(success.data);
       return success.data;
     });
   }
@@ -127,7 +128,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateContentsModel(success.data);
+      validate.validateContentsModel(success.data);
       return success.data;
     });
   }
@@ -152,7 +153,7 @@ class Contents implements IContents {
         if (error.xhr.status === 400) {
           throw new Error('Directory not found');
         }
-        throw error;
+        throw new Error(error.xhr.statusText);
       }
     );
   }
@@ -173,7 +174,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateContentsModel(success.data);
+      validate.validateContentsModel(success.data);
       return success.data;
     });
   }
@@ -194,7 +195,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateContentsModel(success.data);
+      validate.validateContentsModel(success.data);
       return success.data;
     });
   }
@@ -215,7 +216,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateContentsModel(success.data);
+      validate.validateContentsModel(success.data);
       return success.data;
     });
   }
@@ -233,7 +234,7 @@ class Contents implements IContents {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validateCheckpointModel(success.data);
+      validate.validateCheckpointModel(success.data);
       return success.data;
     });
   }
@@ -255,7 +256,7 @@ class Contents implements IContents {
         throw Error('Invalid Checkpoint list');
       }
       for (var i = 0; i < success.data.length; i++) {
-        validateCheckpointModel(success.data[i]);
+        validate.validateCheckpointModel(success.data[i]);
       }
       return success.data;
     });
@@ -311,52 +312,4 @@ class Contents implements IContents {
   }
 
   private _apiUrl = "unknown";
-}
-
-
-/**
- * Validate a Contents Model.
- */
-function validateContentsModel(model: IContentsModel) {
-  var err = new Error('Invalid Contents Model');
-  if (!model.hasOwnProperty('name') || typeof model.name !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('path') || typeof model.path !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('type') || typeof model.type !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('created') || typeof model.created !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('last_modified') || 
-      typeof model.last_modified !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('mimetype')) {
-    throw err;
-  }
-  if (!model.hasOwnProperty('content')) {
-    throw err;
-  }
-  if (!model.hasOwnProperty('format')) {
-    throw err;
-  }
-}
-
-
-/**
- * Validate a Checkpoint model.
- */
-function validateCheckpointModel(model: ICheckpointModel) {
-  var err = new Error('Invalid Checkpoint Model');
-  if (!model.hasOwnProperty('id') || typeof model.id !== 'string') {
-    throw err;
-  }
-  if (!model.hasOwnProperty('last_modified') || 
-      typeof model.last_modified !== 'string') {
-    throw err;
-  }
 }

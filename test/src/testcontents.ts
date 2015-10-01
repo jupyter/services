@@ -169,6 +169,14 @@ describe('jupyter.services - Contents', () => {
       expectFailure(del, done, 'Directory not found');
     });
 
+    it('should throw a general error', (done) => {
+      var contents = new Contents("localhost");
+      var handler = new RequestHandler();
+      var del = contents.delete("/foo/");
+      handler.respond(500, { });
+      expectFailure(del, done, '');
+    });
+
   });
 
   describe('#rename()', () => {
