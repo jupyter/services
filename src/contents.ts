@@ -80,7 +80,7 @@ class Contents implements IContents {
    * Create a new contents object.
    */
   constructor(baseUrl: string) {
-    this._apiUrl = utils.urlJoinEncode(baseUrl, SERVICE_CONTENTS_URL);
+    this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }
 
   /**
@@ -305,9 +305,10 @@ class Contents implements IContents {
    * Get an REST url for this file given a path.
    */
   private _getUrl(...args: string[]): string {
-    var url_parts = [this._apiUrl].concat(
+    var url_parts = [].concat(
                 Array.prototype.slice.apply(args));
-    return utils.urlJoinEncode.apply(null, url_parts);
+    return utils.urlPathJoin(this._apiUrl,
+                             utils.urlJoinEncode.apply(null, url_parts));
   }
 
   private _apiUrl = "unknown";
