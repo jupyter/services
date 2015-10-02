@@ -7,7 +7,7 @@ import expect = require('expect.js');
 import { 
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
   connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults
+  ConfigWithDefaults, Contents
 } from '../../lib';
 
 
@@ -213,4 +213,70 @@ describe('jupyter.services - Integration', () => {
 
   });
 
+  describe('Contents', () => {
+
+    it('should list a directory and get the file contents', (done) => {
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var contents = new Contents(BASEURL);
+        contents.listContents('.').then(listing => {
+          var content = listing.content as any;
+          for (var i = 0; i < content.length; i++) {
+            if (content[i].type === 'file') {
+              contents.get(content[i].path, { type: "file" }).then(msg => {
+                expect(msg.path).to.be(content[i].path);
+                done();
+              });
+              break;
+            }
+          }
+        });
+      });
+    });
+
+    it('should create a new file, rename it, and delete it', (done) => {
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var contents = new Contents(BASEURL);
+        var options = { type: 'file', ext: '.ipynb' };
+        contents.newUntitled('.', options).then(model0 => {
+          contents.rename(model0.path, 'foo.ipynb').then(model1 => {
+            console.log("***HERE WE ARE 2");
+            expect(model1.path).to.be('foo.ipynb');
+            console.log("***HERE WE ARE 3");
+            contents.delete('foo.ipynb').then(done);
+          });
+        });
+      });
+    });
+
+    it('should create a file by name and delete it', (done) => {
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var contents = new Contents(BASEURL);
+        var options = { type: 'file', contents: '' };
+        contents.save('baz.txt', options).then(model0 => {
+          contents.delete('baz.txt').then(done);
+        });
+      });
+    });
+
+    it('should exercise the checkpoint API', (done) => {
+      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+        var contents = new Contents(BASEURL);
+        var options = { type: 'file', contents: '' };
+        contents.save('baz.txt', options).then(model0 => {
+          contents.createCheckpoint('baz.txt').then(checkpoint => {
+            contents.listCheckpoints('baz.txt').then(checkpoints => {
+              expect(checkpoints[0]).to.eql(checkpoint);
+              contents.restoreCheckpoint('baz.txt', checkpoint.id).then(() => {
+                contents.deleteCheckpoint('baz.txt', checkpoint.id).then(() => {
+                  contents.delete('baz.txt').then(done);
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+  });
 });
