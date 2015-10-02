@@ -490,7 +490,8 @@ class Kernel implements IKernel {
         location.protocol.replace('http', 'ws') + "//" + location.host
       );
     }
-    var partialUrl = utils.urlPathJoin(wsUrl, KERNEL_SERVICE_URL, this._id);
+    var partialUrl = utils.urlPathJoin(wsUrl, KERNEL_SERVICE_URL, 
+                                       utils.urlJoinEncode(this._id));
     console.log('Starting WebSocket:', partialUrl);
 
     var url = (
@@ -754,7 +755,8 @@ var runningKernels = new Map<string, Kernel>();
  */
 function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   var url = utils.urlPathJoin(
-    baseUrl, KERNEL_SERVICE_URL, kernel.id, 'restart'
+    baseUrl, KERNEL_SERVICE_URL, 
+    utils.urlJoinEncode(kernel.id, 'restart')
   );
   return utils.ajaxRequest(url, {
     method: "POST",
@@ -795,7 +797,8 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
     return Promise.reject(new Error('Kernel is dead'));
   }
   var url = utils.urlPathJoin(
-    baseUrl, KERNEL_SERVICE_URL, kernel.id, 'interrupt'
+    baseUrl, KERNEL_SERVICE_URL, 
+    utils.urlJoinEncode(kernel.id, 'interrupt')
   );
   return utils.ajaxRequest(url, {
     method: "POST",
@@ -821,7 +824,8 @@ function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
-  var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, kernel.id);
+  var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, 
+                              utils.urlJoinEncode(kernel.id));
   return utils.ajaxRequest(url, {
     method: "DELETE",
     dataType: "json"

@@ -47,8 +47,8 @@
     "notebook"
   ],
   "files": [
-    "lib/index.js",
-    "lib/index.d.ts"
+    "lib/*.js",
+    "lib/*.d.ts"
   ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",

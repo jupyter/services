@@ -52,7 +52,8 @@ class ConfigSection implements IConfigSection {
    * Create a config section.
    */
   constructor(sectionName: string, baseUrl: string) {
-    this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL, sectionName);
+    this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL, 
+                                  utils.urlJoinEncode(sectionName));
   }
 
   /**
