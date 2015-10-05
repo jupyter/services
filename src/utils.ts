@@ -157,7 +157,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOption
     if (settings.contentType) {
       req.setRequestHeader('Content-Type', settings.contentType);
     }
-    req.timeout = options.timeout || 0;
+    if (options.timeout !== void 0) req.timeout = options.timeout;
     req.withCredentials = options.withCredentials || false;
     if (options.requestHeaders !== void 0) {
        for (var prop in options.requestHeaders) {
