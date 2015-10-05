@@ -8,6 +8,7 @@ module.exports = function (config) {
     files: ['build/karma.js'],
     colors: true,
     singleRun: true,
-    logLevel: config.LOG_INFO
+    logLevel: config.LOG_INFO,
+    browserNoActivityTimeout: 30000,
   });
 };
