@@ -7,6 +7,9 @@ import { IKernelMessage } from './ikernel';
 
 /**
  * Deserialize and return the unpacked message.
+ *
+ * #### Notes
+ * Handles JSON blob strings and binary messages.
  */
 export
 function deserialize(data: ArrayBuffer | string): IKernelMessage {
@@ -22,6 +25,10 @@ function deserialize(data: ArrayBuffer | string): IKernelMessage {
 
 /**
  * Serialize a kernel message for transport.
+ *
+ * #### Notes
+ * If there is binary content, an `ArrayBuffer` is returned, 
+ * otherwise the message is converted to a JSON string.
  */
 export
 function serialize(msg: IKernelMessage): string | ArrayBuffer {
@@ -64,6 +71,7 @@ function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
 
 /**
  * Implement the binary serialization protocol.
+ *
  * Serialize Kernel message to ArrayBuffer.
  */
 function serializeBinary(msg: IKernelMessage): ArrayBuffer {
@@ -103,7 +111,7 @@ function serializeBinary(msg: IKernelMessage): ArrayBuffer {
 
 
 /**
- * Filter "buffers" key for JSON.stringify
+ * Filter `"buffers"` key for `JSON.stringify`.
  */
 function replace_buffers(key: string, value: any) {
   if (key === "buffers") {

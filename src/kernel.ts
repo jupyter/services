@@ -36,7 +36,12 @@ var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
 
 
 /**  
- * Fetch the kernel specs via API: GET /kernelspecs
+ * Fetch the kernel specs.
+ *
+ * #### Notes
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernelspecs).
+ *
+ * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
 function getKernelSpecs(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelSpecIds> {
@@ -71,7 +76,12 @@ function getKernelSpecs(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IK
 
 
 /**
- * Fetch the running kernels via API: GET /kernels
+ * Fetch the running kernels.
+ *
+ * #### Notes
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
+ *
+ * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
 function listRunningKernels(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelId[]> {
@@ -95,9 +105,12 @@ function listRunningKernels(baseUrl: string, ajaxOptions?: IAjaxOptions): Promis
 
 
 /**
- * Start a new kernel via API: POST /kernels
+ * Start a new kernel.
  *
- * Wrap the result in an Kernel object. The promise is fulfilled
+ * #### Notes
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
+ *
+ * Wraps the result in an Kernel object. The promise is fulfilled
  * when the kernel is fully ready to send the first message. If
  * the kernel fails to become ready, the promise is rejected.
  */
@@ -120,11 +133,13 @@ function startNewKernel(options: IKernelOptions, ajaxOptions?: IAjaxOptions): Pr
 /**
  * Connect to a running kernel.
  *
+ * #### Notes
  * If the kernel was already started via `startNewKernel`, the existing
  * Kernel object is used as the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
- * kernel.  The promise is fulfilled when the kernel is fully ready to send 
+ * kernel found by calling `listRunningKernels`.  
+ * The promise is fulfilled when the kernel is fully ready to send 
  * the first message. If the kernel fails to become ready, the promise is 
  * rejected.
  *
@@ -174,6 +189,7 @@ function createKernelMessage(options: IKernelMessageOptions, content: any = {}, 
 /**
  * Create a Promise for a Kernel object.
  * 
+ * #### Notes
  * Fulfilled when the Kernel is Starting, or rejected if Dead.
  */
 function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
@@ -201,16 +217,22 @@ class Kernel implements IKernel {
 
   /**
    * A signal emitted when the kernel status changes.
+   *
+   * **See also:** [[statusChanged]]
    */
   static statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
    * A signal emitted for unhandled kernel message.
+   *
+   * **See also:** [[unhandledMessage]]
    */
   static unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
 
   /**
    * A signal emitted for unhandled comm open message.
+   *
+   * **See also:** [[commOpened]]
    */
   static commOpenedSignal = new Signal<IKernel, ICommOpen>();
 
@@ -230,21 +252,21 @@ class Kernel implements IKernel {
   }
 
   /**
-   * The status changed signal for the kernel.
+   * A signal emitted when the kernel status changes.
    */
   get statusChanged(): ISignal<IKernel, KernelStatus> {
     return Kernel.statusChangedSignal.bind(this);
   }
 
   /**
-   * The unhandled message signal for the kernel.
+   * A signal emitted for unhandled kernel message.
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
     return Kernel.unhandledMessageSignal.bind(this);
   }
 
   /**
-   * The unhandled comm_open message signal for the kernel.
+   * A signal emitted for unhandled comm open message.
    */
   get commOpened(): ISignal<IKernel, ICommOpen> {
     return Kernel.commOpenedSignal.bind(this);
@@ -252,6 +274,9 @@ class Kernel implements IKernel {
 
   /**
    * The id of the server-side kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
    */
   get id(): string {
     return this._id;
@@ -259,6 +284,9 @@ class Kernel implements IKernel {
 
   /**
    * The name of the server-side kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
    */
   get name(): string {
     return this._name;
@@ -267,7 +295,8 @@ class Kernel implements IKernel {
   /**
    * The client username.
    *
-   * Read-only
+   * #### Notes
+   * This is a read-only property.
    */
    get username(): string {
      return this._username;
@@ -276,7 +305,8 @@ class Kernel implements IKernel {
   /**
    * The client unique id.
    *
-   * Read-only
+   * #### Notes
+   * This is a read-only property.
    */
   get clientId(): string {
     return this._clientId;
@@ -284,15 +314,29 @@ class Kernel implements IKernel {
 
   /**
    * The current status of the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
    */
   get status(): KernelStatus {
     return this._status;
   }
 
   /**
-   * Send a message to the kernel.
+   * Send a shell message to the kernel.
    *
-   * The future object will yield the result when available.
+   * #### Notes
+   * Send a message to the kernel's shell channel, yielding a future object
+   * for accepting replies.  
+   *
+   * If `expectReply` is given and `true`, the future is disposed when both a 
+   * shell reply and an idle status message are received.   If `expectReply` 
+   * is not given or is `false`, the future is disposed when an idle status 
+   * message is received.
+   * 
+   * All replies are validated as valid kernel messages.
+   * 
+   * If the kernel status is `Dead`, this will throw an error.
    */
   sendShellMessage(msg: IKernelMessage, expectReply=false): IKernelFuture {
     if (this._status === KernelStatus.Dead) {
@@ -308,16 +352,34 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
+   * Interrupt a kernel.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels).
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   *
+   * It is assumed that the API call does not mutate the kernel id or name.
+   *
+   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * request fails or the response is invalid.
    */
   interrupt(ajaxOptions?: IAjaxOptions): Promise<void> {
     return interruptKernel(this, this._baseUrl, ajaxOptions);
   }
 
   /**
-   * Restart a kernel via API: POST /kernels/{kernel_id}/restart
+   * Restart a kernel.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
    *
    * It is assumed that the API call does not mutate the kernel id or name.
+   *
+   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * request fails or the response is invalid.
    */
   restart(ajaxOptions?: IAjaxOptions): Promise<void> {
     if (this._status === KernelStatus.Dead) {
@@ -328,13 +390,18 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Delete a kernel via API: DELETE /kernels/{kernel_id}
+   * Shutdown a kernel.
    *
-   * If the given kernel id corresponds to an Kernel object, that
-   * object is disposed and its websocket connection is cleared.
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels).
    *
-   * Any further calls to `sendMessage` for that Kernel will throw
-   * an exception.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   *
+   * On a valid response, closes the websocket and disposes of the kernel 
+   * object, and fulfills the promise.
+   *
+   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * request fails or the response is invalid.
    */
   shutdown(ajaxOptions?: IAjaxOptions): Promise<void> {
     return shutdownKernel(this, this._baseUrl, ajaxOptions).then(() => {
@@ -343,9 +410,13 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send a "kernel_info_request" message.
+   * Send a `kernel_info_request` message.
    *
-   * See https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info).
+   *
+   * Fulfills with the `kernel_info_response` content when the shell reply is 
+   * received and validated.
    */
   kernelInfo(): Promise<IKernelInfo> {
     var options: IKernelMessageOptions = {
@@ -359,9 +430,13 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send a "complete_request" message.
+   * Send a `complete_request` message.
    *
-   * See https://ipython.org/ipython-doc/dev/development/messaging.html#completion
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#completion).
+   *
+   * Fulfills with the `complete_reply` content when the shell reply is 
+   * received and validated.
    */
   complete(contents: ICompleteRequest): Promise<ICompleteReply> {
     var options: IKernelMessageOptions = {
@@ -375,9 +450,13 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send an "inspect_request" message.
+   * Send an `inspect_request` message.
    *
-   * See https://ipython.org/ipython-doc/dev/development/messaging.html#introspection
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#introspection).
+   *
+   * Fulfills with the `inspect_reply` content when the shell reply is 
+   * received and validated.
    */
   inspect(contents: IInspectRequest): Promise<IInspectReply> {
     var options: IKernelMessageOptions = {
@@ -391,9 +470,16 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send an "execute_request" message.
+   * Send an `execute_request` message.
    *
-   * See https://ipython.org/ipython-doc/dev/development/messaging.html#execute
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#execute).
+   *
+   * Future `onReply` is called with the `execute_reply` content when the 
+   * shell reply is received and validated.  The future will dispose when
+   * this message is received and the `idle` iopub status is received.
+   *
+   * **See also:** [[IExecuteReply]]
    */
   execute(contents: IExecuteRequest): IKernelFuture {
     var options: IKernelMessageOptions = {
@@ -414,9 +500,13 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send an "is_complete_request" message.
+   * Send an `is_complete_request` message.
    *
-   * See https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness).
+   *
+   * Fulfills with the `is_complete_response` content when the shell reply is 
+   * received and validated.
    */
   isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
     var options: IKernelMessageOptions = {
@@ -430,8 +520,11 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send a 'comm_info_request', and return the contents of the
-   * 'comm_info_reply'.
+   * Send a `comm_info_request` message.
+   *
+   * #### Notes
+   * Fulfills with the `comm_info_reply` content when the shell reply is 
+   * received and validated.
    */
   commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply> {
     var options: IKernelMessageOptions = {
@@ -445,9 +538,10 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Send an "input_reply" message.
+   * Send an `input_reply` message.
    *
-   * https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets
+   * #### Notes
+   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
   sendInputReply(contents: IInputReply): void {
     if (this._status === KernelStatus.Dead) {
@@ -466,6 +560,7 @@ class Kernel implements IKernel {
   /**
    * Connect to a comm, or create a new one.
    *
+   * #### Notes
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm {
@@ -513,11 +608,17 @@ class Kernel implements IKernel {
     this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
   }
 
+  /**
+   * Handle a websocket open event.
+   */
   private _onWSOpen(evt: Event) {
     // trigger a status response
     this.kernelInfo();
   }
 
+  /**
+   * Handle a websocket message, validating and routing appropriately.
+   */
   private _onWSMessage(evt: MessageEvent) {
     var msg = serialize.deserialize(evt.data);
     var handled = false;
@@ -559,6 +660,9 @@ class Kernel implements IKernel {
     }
   }
 
+  /**
+   * Handle a websocket close event. 
+   */
   private _onWSClose(evt: Event) {
     this._updateStatus('dead');
   }
@@ -600,7 +704,7 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Handle 'comm_open' kernel message.
+   * Handle `comm_open` kernel message.
    */  
   private _handleCommOpen(msg: IKernelMessage): void {
     if (!validate.validateCommMessage(msg)) {
@@ -751,9 +855,7 @@ var runningKernels = new Map<string, Kernel>();
 
 
 /**
- * Restart a kernel via API: POST /kernels/{kernel_id}/restart
- *
- * It is assumed that the API call does not mutate the kernel id or name.
+ * Restart a kernel.
  */
 function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   var url = utils.urlPathJoin(
@@ -784,6 +886,9 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
 }
 
 
+/**
+ * The contents of a comm payload. 
+ */
 interface ICommPayload {
   msgType: string;
   content: any;
@@ -791,8 +896,9 @@ interface ICommPayload {
   buffers?: (ArrayBuffer | ArrayBufferView)[];
 }
 
+
 /**
- * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
+ * Interrupt a kernel.
  */
 function interruptKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
@@ -814,13 +920,7 @@ function interruptKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOp
 
 
 /**
- * Delete a kernel via API: DELETE /kernels/{kernel_id}
- *
- * If the given kernel id corresponds to an Kernel object, that
- * object is disposed and its websocket connection is cleared.
- *
- * Any further calls to `sendMessage` for that Kernel will throw
- * an exception.
+ * Delete a kernel.
  */
 function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
@@ -872,6 +972,7 @@ function onKernelError(error: utils.IAjaxError): any {
   throw Error(error.statusText);
 }
 
+
 /**
  * Send a kernel message to the kernel and return the contents of the response.
  */
@@ -900,6 +1001,9 @@ enum KernelFutureFlag {
  */
 class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
 
+  /**
+   * Construct a new KernelFutureHandler. 
+   */
   constructor(expectShell: boolean, cb: () => void) {
     super(cb);
     if (!expectShell) {
@@ -1080,53 +1184,76 @@ class Comm extends DisposableDelegate implements IComm {
   }
 
   /**
-   * Get the uuid for the comm channel.
+   * The unique id for the comm channel.
    *
-   * Read-only
+   * #### Notes
+   * This is a read-only property.
    */
   get commId(): string {
     return this._id;
   }
 
   /** 
-   * Get the target name for the comm channel.
+   * The target name for the comm channel.
    *
-   * Read-only
+   * #### Notes
+   * This is a read-only property.
    */
   get targetName(): string {
     return this._target;
   }
 
-  /** 
-   * Get the onClose handler.
+  /**
+   * Get the callback for a comm close event.
+   *
+   * #### Notes
+   * This is called when the comm is closed from either the server or
+   * client.
+   *
+   * **See also:** [[ICommClose]], [[close]]
    */
   get onClose(): (data?: any) => void {
     return this._onClose;
   }
 
   /**
-   * Set the onClose handler.
+   * Set the callback for a comm close event.
+   *
+   * #### Notes
+   * This is called when the comm is closed from either the server or
+   * client.
+   *
+   * **See also:** [[ICommClose]], [[close]]
    */
   set onClose(cb: (data?: any) => void) {
     this._onClose = cb;
   }
 
   /**
-   * Get the onMsg handler.
+   * Get the callback for a comm message received event.
+   *
+   * **See also:** [[ICommMsg]]
    */
   get onMsg(): (data: any) => void {
     return this._onMsg;
   }
 
   /**
-   * Set the onMsg handler.
+   * Set the callback for a comm message received event.
+   *
+   * **See also:** [[ICommMsg]]
    */
   set onMsg(cb: (data: any) => void) {
     this._onMsg = cb;
   }
 
   /**
-   * Initialize a comm with optional data.
+   * Open a comm with optional data and metadata.
+   *
+   * #### Notes
+   * This sends a `comm_open` message to the server.
+   *
+   * **See also:** [[ICommOpen]]
    */
   open(data?: any, metadata?: any): IKernelFuture {
     var content = {
@@ -1141,7 +1268,12 @@ class Comm extends DisposableDelegate implements IComm {
   }
 
   /**
-   * Send a comm message to the kernel.
+   * Send a `comm_msg` message to the kernel.
+   *
+   * #### Notes
+   * This is a no-op if the comm has been closed.
+   *
+   * **See also:** [[ICommMsg]]
    */
   send(data: any, metadata={}, buffers: (ArrayBuffer | ArrayBufferView)[]=[]): IKernelFuture {
     if (this.isDisposed) {
@@ -1159,6 +1291,14 @@ class Comm extends DisposableDelegate implements IComm {
 
   /**
    * Close the comm.
+   *
+   * #### Notes
+   * This will send a `comm_close` message to the kernel, and call the
+   * `onClose` callback if set.
+   *
+   * This is a no-op if the comm is already closed.
+   *
+   * **See also:** [[ICommClose]], [[onClose]]
    */
   close(data?: any, metadata?: any): IKernelFuture {
     if (this.isDisposed) {
@@ -1179,7 +1319,7 @@ class Comm extends DisposableDelegate implements IComm {
   }
 
   /**
-   * Clear internal state when disposed.
+   * Dispose of the resources held by the comm.
    */
   dispose(): void {
     this._onClose = null;
