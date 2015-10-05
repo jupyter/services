@@ -14,6 +14,8 @@ import {
   IKernelMessageOptions, IKernelOptions, IKernelSpecIds, KernelStatus
 } from './ikernel';
 
+import { IAjaxOptions } from './utils';
+
 import * as serialize from './serialize';
 
 import * as utils from './utils';
@@ -37,12 +39,12 @@ var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
  * Fetch the kernel specs via API: GET /kernelspecs
  */
 export
-function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
+function getKernelSpecs(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelSpecIds> {
   var url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
     dataType: "json"   
-  }).then((success: utils.IAjaxSuccess) => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     var err = new Error('Invalid KernelSpecs Model');
     if (success.xhr.status !== 200) {
       throw new Error('Invalid Response: ' + success.xhr.status);
@@ -72,12 +74,12 @@ function getKernelSpecs(baseUrl: string): Promise<IKernelSpecIds> {
  * Fetch the running kernels via API: GET /kernels
  */
 export
-function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
+function listRunningKernels(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelId[]> {
   var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
     dataType: "json"
-  }).then((success: utils.IAjaxSuccess): IKernelId[] => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess): IKernelId[] => {
     if (success.xhr.status !== 200) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
@@ -100,12 +102,12 @@ function listRunningKernels(baseUrl: string): Promise<IKernelId[]> {
  * the kernel fails to become ready, the promise is rejected.
  */
 export
-function startNewKernel(options: IKernelOptions): Promise<IKernel> {
+function startNewKernel(options: IKernelOptions, ajaxOptions?: IAjaxOptions): Promise<IKernel> {
   var url = utils.urlPathJoin(options.baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
-  }).then((success: utils.IAjaxSuccess) => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 201) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
@@ -130,7 +132,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  * the promise is rejected.
  */
 export
-function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
+function connectToKernel(id: string, options?: IKernelOptions, ajaxOptions?: IAjaxOptions): Promise<IKernel> {
   var kernel = runningKernels.get(id);
   if (kernel) {
     return Promise.resolve(kernel);
@@ -138,7 +140,7 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
   if (options === void 0) {
     return Promise.reject(new Error('Please specify kernel options'));
   }
-  return listRunningKernels(options.baseUrl).then((kernelIds) => {
+  return listRunningKernels(options.baseUrl, ajaxOptions).then((kernelIds) => {
     if (!kernelIds.some(k => k.id === id)) {
       throw new Error('No running kernel with id: ' + id);
     }
@@ -308,8 +310,8 @@ class Kernel implements IKernel {
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
    */
-  interrupt(): Promise<void> {
-    return interruptKernel(this, this._baseUrl);
+  interrupt(ajaxOptions?: IAjaxOptions): Promise<void> {
+    return interruptKernel(this, this._baseUrl, ajaxOptions);
   }
 
   /**
@@ -317,12 +319,12 @@ class Kernel implements IKernel {
    *
    * It is assumed that the API call does not mutate the kernel id or name.
    */
-  restart(): Promise<void> {
+  restart(ajaxOptions?: IAjaxOptions): Promise<void> {
     if (this._status === KernelStatus.Dead) {
       return Promise.reject(new Error('Kernel is dead'));
     }
     this._status = KernelStatus.Restarting;
-    return restartKernel(this, this._baseUrl);
+    return restartKernel(this, this._baseUrl, ajaxOptions);
   }
 
   /**
@@ -334,8 +336,8 @@ class Kernel implements IKernel {
    * Any further calls to `sendMessage` for that Kernel will throw
    * an exception.
    */
-  shutdown(): Promise<void> {
-    return shutdownKernel(this, this._baseUrl).then(() => {
+  shutdown(ajaxOptions?: IAjaxOptions): Promise<void> {
+    return shutdownKernel(this, this._baseUrl, ajaxOptions).then(() => {
       this._ws.close();
     });
   }
@@ -753,7 +755,7 @@ var runningKernels = new Map<string, Kernel>();
  *
  * It is assumed that the API call does not mutate the kernel id or name.
  */
-function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   var url = utils.urlPathJoin(
     baseUrl, KERNEL_SERVICE_URL, 
     utils.urlJoinEncode(kernel.id, 'restart')
@@ -761,7 +763,7 @@ function restartKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
-  }).then((success: utils.IAjaxSuccess) => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 200) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
@@ -792,7 +794,7 @@ interface ICommPayload {
 /**
  * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
  */
-function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
+function interruptKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -803,7 +805,7 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
-  }).then((success: utils.IAjaxSuccess) => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 204) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
@@ -820,7 +822,7 @@ function interruptKernel(kernel: IKernel, baseUrl: string): Promise<void> {
  * Any further calls to `sendMessage` for that Kernel will throw
  * an exception.
  */
-function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
+function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<void> {
   if (kernel.status === KernelStatus.Dead) {
     return Promise.reject(new Error('Kernel is dead'));
   }
@@ -829,7 +831,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string): Promise<void> {
   return utils.ajaxRequest(url, {
     method: "DELETE",
     dataType: "json"
-  }).then((success: utils.IAjaxSuccess) => {
+  }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 204) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }

@@ -1,6 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { IAjaxOptions } from './utils';
+
 import * as utils from './utils';
 
 
@@ -37,9 +39,9 @@ interface IConfigSection {
  * data is loaded.
  */
 export
-function getConfigSection(sectionName: string, baseUrl: string): Promise<IConfigSection> {
+function getConfigSection(sectionName: string, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
   var section = new ConfigSection(sectionName, baseUrl);
-  return section.load();
+  return section.load(ajaxOptions);
 }
 
 
@@ -68,11 +70,11 @@ class ConfigSection implements IConfigSection {
   /**
    * Load the initial data for this section.
    */
-  load(): Promise<IConfigSection> {
+  load(ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
     return utils.ajaxRequest(this._url, {
       method: "GET",
       dataType: "json",
-    }).then((success: utils.IAjaxSuccess) => {
+    }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -86,7 +88,7 @@ class ConfigSection implements IConfigSection {
    * send the change to the server, and use the updated data from the server
    * when the reply comes.
    */
-  update(newdata: any): Promise<any> {
+  update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any> {
     this._data = utils.extend(this._data, newdata);
 
     return utils.ajaxRequest(this._url, {
@@ -94,7 +96,7 @@ class ConfigSection implements IConfigSection {
       data: JSON.stringify(newdata),
       dataType : "json",
       contentType: 'application/json',
-    }).then((success: utils.IAjaxSuccess) => {
+    }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }

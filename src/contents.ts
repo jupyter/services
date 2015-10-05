@@ -1,7 +1,10 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { IAjaxOptions } from './utils';
+
 import * as utils from './utils';
+
 import * as validate from './validate';
 
 
@@ -56,17 +59,17 @@ interface ICheckpointModel {
  **/
 export 
 interface IContents {
-  get(path: string, type: string, options: IContentsOpts): Promise<IContentsModel>;
-  newUntitled(path: string, options: IContentsOpts): Promise<IContentsModel>;
-  delete(path: string): Promise<void>;
-  rename(path: string, newPath: string): Promise<IContentsModel>;
-  save(path: string, model: any): Promise<IContentsModel>;
-  listContents(path: string): Promise<IContentsModel>;
-  copy(path: string, toDir: string): Promise<IContentsModel>;
-  createCheckpoint(path: string): Promise<ICheckpointModel>;
-  restoreCheckpoint(path: string, checkpointID: string): Promise<void>;
-  deleteCheckpoint(path: string, checkpointID: string): Promise<void>
-  listCheckpoints(path: string): Promise<ICheckpointModel[]>;
+  get(path: string, type: string, options: IContentsOpts, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  newUntitled(path: string, options: IContentsOpts, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  delete(path: string, ajaxOptions?: IAjaxOptions): Promise<void>;
+  rename(path: string, newPath: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  save(path: string, model: any, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  listContents(path: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  copy(path: string, toDir: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel>;
+  createCheckpoint(path: string, ajaxOptions?: IAjaxOptions): Promise<ICheckpointModel>;
+  restoreCheckpoint(path: string, checkpointID: string, ajaxOptions?: IAjaxOptions): Promise<void>;
+  deleteCheckpoint(path: string, checkpointID: string, ajaxOptions?: IAjaxOptions): Promise<void>
+  listCheckpoints(path: string, ajaxOptions?: IAjaxOptions): Promise<ICheckpointModel[]>;
 }
 
 
@@ -87,7 +90,7 @@ class Contents implements IContents {
   /**
    * Get a file or directory.
    */
-  get(path: string, options: IContentsOpts): Promise<IContentsModel> {
+  get(path: string, options: IContentsOpts, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
     var settings = {
       method : "GET",
       dataType : "json",
@@ -98,7 +101,7 @@ class Contents implements IContents {
     if (options.format) { params.format = options.format; }
     if (options.content === false) { params.content = '0'; }
     url = url + utils.jsonToQueryString(params);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -110,7 +113,7 @@ class Contents implements IContents {
   /**
    * Create a new untitled file or directory in the specified directory path.
    */
-  newUntitled(path: string, options?: IContentsOpts): Promise<IContentsModel> {
+  newUntitled(path: string, options?: IContentsOpts, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
     var settings: utils.IAjaxSettings = {
         method : "POST",
         dataType : "json",
@@ -124,7 +127,7 @@ class Contents implements IContents {
       settings.contentType = 'application/json';
     }
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -136,13 +139,13 @@ class Contents implements IContents {
   /**
    * Delete a file.
    */
-  delete(path: string): Promise<void> {
+  delete(path: string, ajaxOptions?: IAjaxOptions): Promise<void> {
     var settings = {
       method : "DELETE",
       dataType : "json",
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -161,7 +164,7 @@ class Contents implements IContents {
   /**
    * Rename a file.
    */
-  rename(path: string, newPath: string): Promise<IContentsModel> {
+  rename(path: string, newPath: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
     var data = {path: newPath};
     var settings = {
       method : "PATCH",
@@ -170,7 +173,7 @@ class Contents implements IContents {
       contentType: 'application/json',
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -182,7 +185,7 @@ class Contents implements IContents {
   /**
    * Save a file.
    */
-  save(path: string, model: IContentsOpts): Promise<IContentsModel> {
+  save(path: string, model: IContentsOpts, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
     var settings = {
       method : "PUT",
       dataType: "json",
@@ -190,7 +193,7 @@ class Contents implements IContents {
       contentType: 'application/json',
     };
     var url = this._getUrl(path);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): IContentsModel => {
       // will return 200 for an existing file and 201 for a new file
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
@@ -204,7 +207,7 @@ class Contents implements IContents {
    * Copy a file into a given directory via POST
    * The server will select the name of the copied file.
    */
-  copy(fromFile: string, toDir: string): Promise<IContentsModel> {
+  copy(fromFile: string, toDir: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
     var settings = {
       method: "POST",
       data: JSON.stringify({copy_from: fromFile}),
@@ -212,7 +215,7 @@ class Contents implements IContents {
       dataType : "json",
     };
     var url = this._getUrl(toDir);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -224,13 +227,13 @@ class Contents implements IContents {
   /**
    * Create a checkpoint for a file.
    */
-  createCheckpoint(path: string): Promise<ICheckpointModel> {
+  createCheckpoint(path: string, ajaxOptions?: IAjaxOptions): Promise<ICheckpointModel> {
     var settings = {
       method : "POST",
       dataType : "json",
     };
     var url = this._getUrl(path, 'checkpoints');
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): ICheckpointModel => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): ICheckpointModel => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -242,13 +245,13 @@ class Contents implements IContents {
   /** 
    * List available checkpoints for a file.
    */
-  listCheckpoints(path: string): Promise<ICheckpointModel[]> {
+  listCheckpoints(path: string, ajaxOptions?: IAjaxOptions): Promise<ICheckpointModel[]> {
     var settings = {
       method : "GET",
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints');
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): ICheckpointModel[] => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): ICheckpointModel[] => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -265,13 +268,13 @@ class Contents implements IContents {
   /**
    * Restore a file to a known checkpoint state.
    */
-  restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
+  restoreCheckpoint(path: string, checkpointID: string, ajaxOptions?: IAjaxOptions): Promise<void> {
     var settings = {
       method : "POST",
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints', checkpointID);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -282,13 +285,13 @@ class Contents implements IContents {
   /**
    * Delete a checkpoint for a file.
    */
-  deleteCheckpoint(path: string, checkpointID: string): Promise<void> {
+  deleteCheckpoint(path: string, checkpointID: string, ajaxOptions?: IAjaxOptions): Promise<void> {
     var settings = {
       method : "DELETE",
       dataType: "json",
     };
     var url = this._getUrl(path, 'checkpoints', checkpointID);
-    return utils.ajaxRequest(url, settings).then((success: utils.IAjaxSuccess): void => {
+    return utils.ajaxRequest(url, settings, ajaxOptions).then((success: utils.IAjaxSuccess): void => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -298,8 +301,8 @@ class Contents implements IContents {
   /** 
    * List notebooks and directories at a given path.
    */
-  listContents(path: string): Promise<IContentsModel> {
-    return this.get(path, {type: 'directory'});
+  listContents(path: string, ajaxOptions?: IAjaxOptions): Promise<IContentsModel> {
+    return this.get(path, {type: 'directory'}, ajaxOptions);
   }
 
   /**
