@@ -239,9 +239,7 @@ describe('jupyter.services - Integration', () => {
         var options = { type: 'file', ext: '.ipynb' };
         contents.newUntitled('.', options).then(model0 => {
           contents.rename(model0.path, 'foo.ipynb').then(model1 => {
-            console.log("***HERE WE ARE 2");
             expect(model1.path).to.be('foo.ipynb');
-            console.log("***HERE WE ARE 3");
             contents.delete('foo.ipynb').then(done);
           });
         });
