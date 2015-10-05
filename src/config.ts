@@ -29,7 +29,7 @@ interface IConfigSection {
    * send the change to the server, and use the updated data from the server
    * when the reply comes.
    */
-  update(newdata: any): Promise<any>;
+  update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any>;
 
 }
 
@@ -71,14 +71,17 @@ class ConfigSection implements IConfigSection {
    * Load the initial data for this section.
    */
   load(ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
+    console.log('****LOAD');
     return utils.ajaxRequest(this._url, {
       method: "GET",
       dataType: "json",
     }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
+      console.log('***LOAD RESPONSE');
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       this._data = success.data;
+      console.log('***LOAD RESPONSE 2');
       return this;
     });
   }
