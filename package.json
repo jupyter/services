@@ -5,8 +5,8 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "phosphor-disposable": "^1.0.2",
-    "phosphor-signaling": "^1.1.0"
+    "phosphor-disposable": "^1.0.4",
+    "phosphor-signaling": "^1.1.2"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
@@ -22,7 +22,7 @@
     "requirejs": "^2.1.20",
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
-    "typedoc": "git://github.com/phosphorjs/typedoc.git",
+    "typedoc": "^0.3.11",
     "typescript": "^1.6.2"
   },
   "scripts": {
