@@ -8,6 +8,8 @@ import encoding = require('text-encoding');
 
 import { MockXMLHttpRequest } from './mockxhr';
 
+import { IAjaxOptions } from '../../lib/index';
+
 
 // stub for node global
 declare var global: any;
@@ -69,4 +71,18 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
 export
 function doLater(cb: () => void): void {
   Promise.resolve().then(cb);
+}
+
+
+/**
+ * Optional ajax arguments.
+ */
+export
+var ajaxOptions: IAjaxOptions = {
+  timeout: 10,
+  requestHeaders: { foo: 'bar', fizz: 'buzz' },
+  async: true,
+  withCredentials: true,
+  user: 'foo',
+  password: 'bar'
 }

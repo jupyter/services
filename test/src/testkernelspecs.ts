@@ -8,7 +8,7 @@ import {  IKernelSpecId, IKernelSpecIds } from '../../lib/ikernel';
 
 import { getKernelSpecs } from '../../lib/kernel';
 
-import { RequestHandler, expectFailure } from './utils';
+import { RequestHandler, ajaxOptions, expectFailure } from './utils';
 
 
 var PYTHON_SPEC: IKernelSpecId = {
@@ -37,6 +37,24 @@ describe('jupyter.services - Kernel', () => {
       var handler = new RequestHandler();
 
       var promise = getKernelSpecs('localhost');
+      var ids = {
+        'python': PYTHON_SPEC,
+        'python3': PYTHON3_SPEC
+      }
+      handler.respond(200, { 'default': 'python',
+                             'kernelspecs': ids });
+      return promise.then((specs) => {
+        var names = Object.keys(specs.kernelspecs);
+        expect(names[0]).to.be('python');
+        expect(names[1]).to.be('python3');
+        done();
+      });
+    });
+
+    it('should accept ajax options', (done) => {
+      var handler = new RequestHandler();
+
+      var promise = getKernelSpecs('localhost', ajaxOptions);
       var ids = {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC

@@ -20,7 +20,7 @@ import { PromiseDelegate, uuid } from '../../lib/utils';
 
 import { MockSocket, MockSocketServer, overrideWebSocket } from './mocksocket';
 
-import { RequestHandler, expectFailure, doLater } from './utils';
+import { RequestHandler, ajaxOptions, expectFailure, doLater } from './utils';
 
 
 // Abnormal websocket close.
@@ -165,6 +165,21 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
+    it('should accept ajax options', (done) => {
+      var handler = new RequestHandler();
+      var list = listRunningKernels('http://localhost:8888', ajaxOptions);
+      var data = [
+        { id: uuid(), name: "test" },
+        { id: uuid(), name: "test2" }
+      ];
+      handler.respond(200, data);
+      return list.then((response: IKernelId[]) => {
+        expect(response[0]).to.eql(data[0]);
+        expect(response[1]).to.eql(data[1]);
+        done();
+      });
+    });
+
     it('should throw an error for an invalid model', (done) => {
       var handler = new RequestHandler();
       var list = listRunningKernels('http://localhost:8888');
@@ -194,6 +209,16 @@ describe('jupyter.services - kernel', () => {
     it('should create an IKernel object', (done) => {
       var tester = new KernelTester();
       var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      kernelPromise.then((kernel: IKernel) => {
+        expect(kernel.status).to.be(KernelStatus.Starting);
+        done();
+      });
+    });
+
+    it('should accept ajax options', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS, ajaxOptions);
       tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
         expect(kernel.status).to.be(KernelStatus.Starting);
@@ -269,6 +294,19 @@ describe('jupyter.services - kernel', () => {
         done();
       });
     });
+
+    it('should accept ajax options', (done) => {
+      var tester = new KernelTester();
+      var id = uuid();
+      var kernelPromise = connectToKernel(id, KERNEL_OPTIONS, ajaxOptions);
+      tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+      kernelPromise.then((kernel: IKernel) => {
+        expect(kernel.name).to.be(KERNEL_OPTIONS.name);
+        expect(kernel.id).to.be(id);
+        done();
+      });
+    });
+
 
     it('should fail if no existing kernel and no options', (done) => {
       var tester = new KernelTester();
@@ -547,6 +585,18 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should accept ajax options', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var interrupt = kernel.interrupt(ajaxOptions);
+          tester.respond(204, data);
+          interrupt.then(() => { done(); });
+        });
+      });
+
       it('should throw an error for an invalid response', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
@@ -594,6 +644,19 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
+          tester.respond(200, data);
+          tester.sendStatus('starting');
+          restart.then(() => { done(); });
+        });
+      });
+
+      it('should accept ajax options', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart(ajaxOptions);
           tester.respond(200, data);
           tester.sendStatus('starting');
           restart.then(() => { done(); });
@@ -672,6 +735,18 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var shutdown = kernel.shutdown();
+          tester.respond(204, data);
+          shutdown.then(() => { done(); });
+        });
+      });
+
+      it('should accept ajax options', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var shutdown = kernel.shutdown(ajaxOptions);
           tester.respond(204, data);
           shutdown.then(() => { done(); });
         });
