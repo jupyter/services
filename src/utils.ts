@@ -167,9 +167,9 @@ function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOption
        }
     }
     req.onload = () => {
-      var response = req.response;
-      if (settings.dataType === 'json' && req.response) {
-        response = JSON.parse(req.response);
+      var response = req.responseText;
+      if (settings.dataType === 'json' && response) {
+        response = JSON.parse(response);
       }
       resolve({ data: response, statusText: req.statusText, xhr: req });
     };

@@ -67,9 +67,41 @@ Supported Runtimes
 The runtime versions which are currently *known to work* are listed below.
 Earlier versions may also work, but come with no guarantees.
 
+- Node 0.12.7+
 - IE 11+
 - Firefox 32+
 - Chrome 38+
+
+
+Bundle for the Browser
+----------------------
+
+Follow the package install instructions first.
+
+```bash
+npm install --save-dev browserify
+browserify myapp.js -o mybundle.js
+```
+
+
+Usage from Node.js
+------------------
+
+Follow the package install instructions first.
+
+```bash
+npm install --save xmlhttprequest ws
+```
+
+Override the global `XMLHttpRequest` and `WebSocket`:
+
+```typescript
+import { XMLHttpRequest } from "xmlhttprequest";
+import { default as WebSocket } from 'ws';
+
+global.XMLHttpRequest = XMLHttpRequest;
+global.WebSocket = WebSocket;
+```
 
 
 Usage Examples
