@@ -9,7 +9,7 @@ import {
 } from '../../lib/config';
 
 
-import { RequestHandler, expectFailure } from './utils';
+import { RequestHandler, expectFailure, ajaxOptions } from './utils';
 
 
 describe('jupyter.services - IConfigSection', () => {
@@ -19,6 +19,14 @@ describe('jupyter.services - IConfigSection', () => {
     it('should complete properly', (done) => {
       var handler = new RequestHandler();
       getConfigSection("test", "localhost").then(config => {
+        done();
+      });
+      handler.respond(200, {});
+    });
+
+    it('should accept ajaxOptions', (done) => {
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost", ajaxOptions).then(config => {
         done();
       });
       handler.respond(200, {});
@@ -54,6 +62,19 @@ describe('jupyter.services - IConfigSection', () => {
           expect(config.data.foo).to.be('baz');
           expect(data.spam).to.be('eggs');
           expect(config.data.spam).to.be('eggs');
+          done();
+        });
+      });
+      handler.respond(200, {});
+    });
+
+    it('should accept ajaxOptions', (done) => {
+      var handler = new RequestHandler();
+      getConfigSection("test", "localhost").then(config => {
+        var update = config.update( { foo: 'baz', spam: 'eggs' }, ajaxOptions);
+        handler.respond(200, config.data );
+        return update.then((data: any) => {
+          expect(data.foo).to.be('baz');
           done();
         });
       });

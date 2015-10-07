@@ -6,6 +6,8 @@ import { IDisposable } from 'phosphor-disposable';
 
 import { ISignal, Signal } from 'phosphor-signaling';
 
+import { IAjaxOptions } from './utils';
+
 
 export
 interface IKernelOptions {
@@ -319,14 +321,14 @@ interface IKernel {
   /**
    * Interrupt a kernel via API: POST /kernels/{kernel_id}/interrupt
    */
-  interrupt(): Promise<void>;
+  interrupt(ajaxOptions?: IAjaxOptions): Promise<void>;
 
   /**
    * Restart a kernel via API: POST /kernels/{kernel_id}/restart
    *
    * It is assumed that the API call does not mutate the kernel id or name.
    */
-  restart(): Promise<void>;
+  restart(ajaxOptions?: IAjaxOptions): Promise<void>;
 
   /**
    * Delete a kernel via API: DELETE /kernels/{kernel_id}
@@ -337,7 +339,7 @@ interface IKernel {
    * Any further calls to `sendMessage` for that Kernel will throw
    * an exception.
    */
-  shutdown(): Promise<void>;
+  shutdown(ajaxOptions?: IAjaxOptions): Promise<void>;
 
   /**
    * Send a "kernel_info_request" message.

@@ -6,6 +6,8 @@ import { ISignal, Signal } from 'phosphor-signaling';
 
 import { IKernel, IKernelId, KernelStatus } from './ikernel';
 
+import { IAjaxOptions } from './utils';
+
 
 /**
  * Notebook Identification specification.
@@ -75,10 +77,10 @@ interface INotebookSession {
   /**
    * Rename the notebook.
    */
-  renameNotebook(path: string): Promise<void>;
+  renameNotebook(path: string, ajaxOptions?: IAjaxOptions): Promise<void>;
 
   /**
    * Kill the kernel and shutdown the session.
    */
-  shutdown(): Promise<void>;
+  shutdown(ajaxOptions?: IAjaxOptions): Promise<void>;
 }

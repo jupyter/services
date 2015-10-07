@@ -90,7 +90,6 @@ class MockXMLHttpRequest {
    * automatically canceled.
    */
   set timeout(timeout: number) {
-    throw Error('Not implemented');
     this._timeout = timeout;
   }
 
@@ -121,6 +120,13 @@ class MockXMLHttpRequest {
    */
   set onreadystatechange(cb: () => void) {
     this._onReadyState = cb;
+  }
+
+  /**
+   * Set a callback for when the ready state changes.
+   */
+  set ontimeout(cb: () => void) {
+    this._onTimeout = cb;
   }
 
   /**
@@ -163,6 +169,14 @@ class MockXMLHttpRequest {
     var onRequest = MockXMLHttpRequest.onRequest;
     if (onRequest) onRequest();
     MockXMLHttpRequest.onRequest = null;
+    if (this._timeout > 0) {
+      setTimeout(() => {
+        if (this._readyState != MockXMLHttpRequest.DONE) {
+          var cb = this._onTimeout;
+          if (cb) cb();
+        }
+      }, this._timeout);
+    }
   }
 
   /**
@@ -229,4 +243,5 @@ class MockXMLHttpRequest {
   private _requestHeader: any = {};
   private _responseHeader: any = {};
   private _onReadyState: () => void = null;
+  private _onTimeout: () => void = null;
 }

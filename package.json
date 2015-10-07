@@ -34,6 +34,7 @@
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
     "test": "mocha test/build/test*.js",
+    "test:debug": "pkill node; node-debug _mocha test/build/test*.js",
     "test:integration": "cd test && python run_test.py",
     "test:coverage": "istanbul cover _mocha -- test/build/test*.js"
   },

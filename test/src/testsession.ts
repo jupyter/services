@@ -18,7 +18,7 @@ import { uuid } from '../../lib/utils';
 
 import { KernelTester } from './testkernel';
 
-import { RequestHandler, expectFailure, doLater } from './utils';
+import { RequestHandler, ajaxOptions, expectFailure, doLater } from './utils';
 
 
 /**
@@ -53,6 +53,18 @@ describe('jupyter.services - session', () => {
     it('should yield a list of valid kernel ids', (done) => {
       var handler = new RequestHandler();
       var list = listRunningSessions('http://localhost:8888');
+      var sessionIds = [createSessionId(), createSessionId()];
+      handler.respond(200, sessionIds);
+      return list.then((response: ISessionId[]) => {
+        expect(response[0]).to.eql(sessionIds[0]);
+        expect(response[1]).to.eql(sessionIds[1]);
+        done();
+      });
+    });
+
+    it('should accept ajax options', (done) => {
+      var handler = new RequestHandler();
+      var list = listRunningSessions('http://localhost:8888', ajaxOptions);
       var sessionIds = [createSessionId(), createSessionId()];
       handler.respond(200, sessionIds);
       return list.then((response: ISessionId[]) => {
@@ -101,6 +113,22 @@ describe('jupyter.services - session', () => {
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
       var sessionPromise = startNewSession(options);
+      tester.respond(201, sessionId)
+      tester.onRequest = () => {
+        tester.respond(200, [ { name: sessionId.kernel.name,
+                                id: sessionId.kernel.id }]);
+      }
+      return sessionPromise.then((session) => {
+        expect(session.id).to.be(sessionId.id);
+        done();
+      });
+    });
+
+    it('should accept ajax options', (done) => {
+      var tester = new KernelTester();
+      var sessionId = createSessionId();
+      var options = createSessionOptions(sessionId);
+      var sessionPromise = startNewSession(options, ajaxOptions);
       tester.respond(201, sessionId)
       tester.onRequest = () => {
         tester.respond(200, [ { name: sessionId.kernel.name,
@@ -197,6 +225,22 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    it('should accept ajax options', (done) => {
+      var tester = new KernelTester();
+      var sessionId = createSessionId();
+      var options = createSessionOptions(sessionId);
+      var sessionPromise = connectToSession(sessionId.id, options, ajaxOptions);
+      tester.respond(200, [sessionId]);
+      tester.onRequest = () => {
+        tester.respond(200, [ { name: sessionId.kernel.name,
+                                id: sessionId.kernel.id }]);
+      }
+      sessionPromise.then((session) => {
+        expect(session.id).to.be(sessionId.id);
+        done();
+      });
+    });
+
     it('should fail if not given session options', (done) => {
       var tester = new KernelTester();
       var sessionId = createSessionId();
@@ -271,7 +315,7 @@ describe('jupyter.services - session', () => {
       });
     });
 
-    context('#renameNotebook', () => {
+    context('#renameNotebook()', () => {
 
       it('should rename the notebook', (done) => {
         var tester = new KernelTester();
@@ -279,6 +323,22 @@ describe('jupyter.services - session', () => {
         var newPath = '/foo.ipynb';
         startSession(id, tester).then((session) => {
           var promise = session.renameNotebook(newPath);
+          var newId = JSON.parse(JSON.stringify(id));
+          newId.notebook.path = newPath;
+          tester.respond(200, newId);
+          promise.then(() => {
+            expect(session.notebookPath).to.be(newPath);
+            done();
+          })
+        })
+      });
+
+      it('should accept ajax options', (done) => {
+        var tester = new KernelTester();
+        var id = createSessionId();
+        var newPath = '/foo.ipynb';
+        startSession(id, tester).then((session) => {
+          var promise = session.renameNotebook(newPath, ajaxOptions);
           var newId = JSON.parse(JSON.stringify(id));
           newId.notebook.path = newPath;
           tester.respond(200, newId);
@@ -332,7 +392,7 @@ describe('jupyter.services - session', () => {
       });
     });
 
-    context('#shutdown', () => {
+    context('#shutdown()', () => {
 
       it('should shut down properly', (done) => {
         var tester = new KernelTester();
@@ -355,6 +415,18 @@ describe('jupyter.services - session', () => {
             done();
           })
           tester.respond(204, { });
+        });
+      });
+
+      it('should accept ajax options', (done) => {
+        var tester = new KernelTester();
+        var sessionId = createSessionId();
+        startSession(sessionId, tester).then((session) => {
+          var promise = session.shutdown(ajaxOptions);
+          tester.respond(204, { });
+          promise.then(() => {
+            done();
+          })
         });
       });
 

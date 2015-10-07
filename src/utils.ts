@@ -107,6 +107,20 @@ interface IAjaxSettings {
 
 
 /**
+ * Options for AJAX calls.
+ */
+export
+interface IAjaxOptions {
+  timeout?: number;
+  requestHeaders?: { [key: string]: string; };
+  async?: boolean;
+  withCredentials?: boolean;
+  user?: string;
+  password?: string;
+}
+
+
+/**
  * Success handler for AJAX request.
  */
 export
@@ -134,12 +148,23 @@ interface IAjaxError {
  * http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest
  */
 export
-function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
+function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOptions): Promise<any> {
+  options = options || {};
   return new Promise((resolve, reject) => {
     var req = new XMLHttpRequest();
-    req.open(settings.method, url);
+    req.open(settings.method, url, options.async, options.user,
+             options.password);
     if (settings.contentType) {
       req.setRequestHeader('Content-Type', settings.contentType);
+    }
+    if (options.timeout !== void 0) req.timeout = options.timeout;
+    if (options.withCredentials !== void 0) {
+      req.withCredentials = options.withCredentials;
+    }
+    if (options.requestHeaders !== void 0) {
+       for (var prop in options.requestHeaders) {
+         req.setRequestHeader(prop, (options as any).requestHeaders[prop]);
+       }
     }
     req.onload = () => {
       var response = req.response;
@@ -151,6 +176,10 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<any> {
     req.onerror = (err: ErrorEvent) => {
       reject({ xhr: req, statusText: req.statusText, error: err });
     };
+    req.ontimeout = () => {
+      reject({ xhr: req, statusText: req.statusText,
+               error: new Error('Operation Timed Out') });
+    }
     if (settings.data) {
       req.send(settings.data);
     } else {
