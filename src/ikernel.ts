@@ -275,7 +275,7 @@ interface IInputReply {
 /**
  * Contents of a `comm_info_request` message.
  *
- * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
  *
  * **See also:** [[ICommInfoReply]], [[IKernel.commInfo]]
  */
@@ -288,7 +288,7 @@ interface ICommInfoRequest {
 /**
  * Contents of `comm_info_reply` message.
  *
- * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
  *
   * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
  */
