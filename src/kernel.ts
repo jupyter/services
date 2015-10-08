@@ -870,18 +870,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return new Promise<void>((resolve, reject) => {
-      var waitForStart = () => {
-        if (kernel.status === KernelStatus.Starting) {
-          kernel.statusChanged.disconnect(waitForStart);
-          resolve();
-        } else if (kernel.status === KernelStatus.Dead) {
-          kernel.statusChanged.disconnect(waitForStart);
-          reject(new Error('Kernel is dead'));
-        }
-      }
-      kernel.statusChanged.connect(waitForStart);
-    });
+    return kernel.kernelInfo().then(() => null);
   }, onKernelError);
 }
 
@@ -1264,6 +1253,9 @@ class Comm extends DisposableDelegate implements IComm {
     var payload = { 
       msgType: 'comm_open', content: content, metadata: metadata
     }
+    if (this._msgFunc === void 0) {
+      return;
+    }
     return this._msgFunc(payload);
   }
 
@@ -1285,6 +1277,9 @@ class Comm extends DisposableDelegate implements IComm {
       content: content, 
       metadata: metadata,
       buffers: buffers,
+    }
+    if (this._msgFunc === void 0) {
+      return;
     }
     return this._msgFunc(payload);
   }
