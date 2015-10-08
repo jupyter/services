@@ -62,7 +62,7 @@ interface IKernelId {
 /**
  * Kernel message header content.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#general-message-format).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#general-message-format).
  *
  * **See also:** [[IKernelMessage]]
  */
@@ -79,7 +79,7 @@ interface IKernelMessageHeader {
 /**
  * Kernel message specification.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#general-message-format).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#general-message-format).
  */
 export
 interface IKernelMessage {
@@ -94,7 +94,7 @@ interface IKernelMessage {
 /**
  * Kernel information specification.
  *
- * See http://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
  */
 export
 interface IKernelInfo {
@@ -110,7 +110,7 @@ interface IKernelInfo {
 /**
  * Kernel language information specification.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
  */
 export
 interface IKernelLanguageInfo {
@@ -141,7 +141,7 @@ enum KernelStatus {
 /**
  * Contents of a `complete_request` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#completion).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
  *
  * **See also:** [[ICompleteReply]], [[IKernel.complete]]
  */
@@ -155,7 +155,7 @@ interface ICompleteRequest {
 /**
  * Contents of a `complete_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#completion).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
  *
  * **See also:** [[ICompleteRequest]], [[IKernel.complete]]
  */
@@ -172,7 +172,7 @@ interface ICompleteReply {
 /**
  * Contents of an `inspect_request` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#introspection).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
  *
  * **See also:** [[IInspectReply]], [[[IKernel.inspect]]]
  */
@@ -187,7 +187,7 @@ interface IInspectRequest {
 /**
  * Contents of an `inspect_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#introspection).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
  *
  * **See also:** [[IInspectRequest]], [[IKernel.inspect]]
  */
@@ -202,7 +202,7 @@ interface IInspectReply {
 /**
  * Contents of an `is_complete_request` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
  *
  * **See also:** [[IIsCompleteReply]], [[IKernel.isComplete]]
  */
@@ -215,7 +215,7 @@ interface IIsCompleteRequest {
 /**
  * Contents of an `is_complete_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
  *
  * **See also:** [[IIsCompleteRequest]], [[IKernel.isComplete]]
  */
@@ -229,7 +229,7 @@ interface IIsCompleteReply {
 /**
  * Contents of an `execute_request` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#execute).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
  *
  * **See also:** [[IExecuteReply]], [[IKernel.execute]]
  */
@@ -247,7 +247,7 @@ interface IExecuteRequest {
 /**
  * Contents of an `execute_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#execute).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
  *
  * **See also:** [[IExecuteRequest]], [[IKernel.execute]]
  */
@@ -262,7 +262,7 @@ interface IExecuteReply {
 /**
  * Contents of an `input_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
  *
  * **See also:** [[IKernel.input_reply]]
  */
@@ -275,7 +275,7 @@ interface IInputReply {
 /**
  * Contents of a `comm_info_request` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#comm_info).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
  *
  * **See also:** [[ICommInfoReply]], [[IKernel.commInfo]]
  */
@@ -288,7 +288,7 @@ interface ICommInfoRequest {
 /**
  * Contents of `comm_info_reply` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#comm_info).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
  *
   * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
  */
@@ -304,7 +304,7 @@ interface ICommInfoReply {
 /**
  * Contents of a `comm_open` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#opening-a-comm).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
  *
  * **See also:** [[IComm.open]]
  */
@@ -320,7 +320,7 @@ interface ICommOpen {
 /**
  * Contents of a `comm_msg` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#comm-messages).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-messages).
  *
  * **See also:** [[IComm.send]]
  */
@@ -334,7 +334,7 @@ interface ICommMsg {
 /**
  * Contents of a `comm_close` message.
  *
- * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#tearing-down-comms).
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#tearing-down-comms).
  *
  * **See also:** [[IComm.close]]
  */
@@ -488,7 +488,7 @@ interface IKernel {
    * Send a `kernel_info_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
    *
    * Fulfills with the `kernel_info_response` content when the shell reply is 
    * received and validated.
@@ -499,7 +499,7 @@ interface IKernel {
    * Send a `complete_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#completion).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
    * Fulfills with the `complete_reply` content when the shell reply is 
    * received and validated.
@@ -510,7 +510,7 @@ interface IKernel {
    * Send an `inspect_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#introspection).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
    * Fulfills with the `inspect_reply` content when the shell reply is 
    * received and validated.
@@ -521,7 +521,7 @@ interface IKernel {
    * Send an `execute_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#execute).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
    * Future `onReply` is called with the `execute_reply` content when the 
    * shell reply is received and validated.
@@ -534,7 +534,7 @@ interface IKernel {
    * Send an `is_complete_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *
    * Fulfills with the `is_complete_response` content when the shell reply is 
    * received and validated.
@@ -545,7 +545,7 @@ interface IKernel {
    * Send a `comm_info_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#comm_info).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
    *
    * Fulfills with the `comm_info_reply` content when the shell reply is 
    * received and validated.
@@ -556,7 +556,7 @@ interface IKernel {
    * Send an `input_reply` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
   sendInputReply(contents: IInputReply): void;
 

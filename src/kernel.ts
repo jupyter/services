@@ -413,7 +413,7 @@ class Kernel implements IKernel {
    * Send a `kernel_info_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
    *
    * Fulfills with the `kernel_info_response` content when the shell reply is 
    * received and validated.
@@ -433,7 +433,7 @@ class Kernel implements IKernel {
    * Send a `complete_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#completion).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
    * Fulfills with the `complete_reply` content when the shell reply is 
    * received and validated.
@@ -453,7 +453,7 @@ class Kernel implements IKernel {
    * Send an `inspect_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#introspection).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
    * Fulfills with the `inspect_reply` content when the shell reply is 
    * received and validated.
@@ -473,7 +473,7 @@ class Kernel implements IKernel {
    * Send an `execute_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#execute).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
    * Future `onReply` is called with the `execute_reply` content when the 
    * shell reply is received and validated.  The future will dispose when
@@ -503,7 +503,7 @@ class Kernel implements IKernel {
    * Send an `is_complete_request` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#code-completeness).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *
    * Fulfills with the `is_complete_response` content when the shell reply is 
    * received and validated.
@@ -541,7 +541,7 @@ class Kernel implements IKernel {
    * Send an `input_reply` message.
    *
    * #### Notes
-   * See [IPython documentation](https://ipython.org/ipython-doc/dev/development/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
   sendInputReply(contents: IInputReply): void {
     if (this._status === KernelStatus.Dead) {
