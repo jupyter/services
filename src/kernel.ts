@@ -883,6 +883,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
         }
       }
       kernel.statusChanged.connect(waitForStart);
+      kernel.kernelInfo();
     });
   }, onKernelError);
 }
