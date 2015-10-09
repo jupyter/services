@@ -871,7 +871,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
     }
     validate.validateKernelId(success.data);
     return new Promise<void>((resolve, reject) => {
-      var waitForStatus = () => {
+      var waitForStart = () => {
         if (kernel.status === KernelStatus.Dead) {
           kernel.statusChanged.disconnect(waitForStart);
           reject(new Error('Kernel is dead'));
@@ -879,10 +879,10 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
           kernel.statusChanged.disconnect(waitForStart);
           kernel.kernelInfo().then(() => {
             resolve();
-          }
+          });
         }
       }
-      kernel.statusChanged.connect(waitForStatus);
+      kernel.statusChanged.connect(waitForStart);
     });
   }, onKernelError);
 }
