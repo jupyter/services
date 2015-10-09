@@ -20,14 +20,18 @@ interface IConfigSection {
   /**
    * The data for this section.
    *
-   * Read-only.
+   * #### Notes
+   * This is a read-only property.
    */
   data: any;
 
   /**
-   * Modify the config values stored. Update the local data immediately,
-   * send the change to the server, and use the updated data from the server
-   * when the reply comes.
+   * Modify the stored config values. 
+   *
+   * #### Notes
+   * Updates the local data immediately, sends the change to the server, 
+   * and updates the local data with the response, and fullfils the promise
+   * with that data.
    */
   update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any>;
 
@@ -35,8 +39,9 @@ interface IConfigSection {
 
 
 /**
- * Get a config section and return a Promise that is fulfilled with the
- * data is loaded.
+ * Create a config section.
+ * 
+ * @returns A Promise that is fulfilled with the config section is loaded.
  */
 export
 function getConfigSection(sectionName: string, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
@@ -61,7 +66,8 @@ class ConfigSection implements IConfigSection {
   /**
    * Get the data for this section.
    *
-   * Read-only.
+   * #### Notes
+   * This is a read-only property.
    */
   get data(): any {
       return this._data;
@@ -69,6 +75,11 @@ class ConfigSection implements IConfigSection {
   
   /**
    * Load the initial data for this section.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
    */
   load(ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
     return utils.ajaxRequest(this._url, {
@@ -84,9 +95,16 @@ class ConfigSection implements IConfigSection {
   }
   
   /**
-   * Modify the config values stored. Update the local data immediately,
-   * send the change to the server, and use the updated data from the server
-   * when the reply comes.
+   * Modify the stored config values. 
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   *
+   * Updates the local data immediately, sends the change to the server, 
+   * and updates the local data with the response, and fullfils the promise
+   * with that data.
    */
   update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any> {
     this._data = utils.extend(this._data, newdata);
@@ -134,8 +152,15 @@ class ConfigWithDefaults {
   }
   
   /**
-   * Set a config value. Send the update to the server, and change our
-   * local copy of the data immediately.
+   * Set a config value. 
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   *
+   * Sends the update to the server, and changes our local copy of the data 
+   * immediately.
    */
   set(key: string, value: any): Promise<any> {
      var d: any = {};
@@ -151,6 +176,8 @@ class ConfigWithDefaults {
 
   /**
    * Get data from the Section with our classname, if available.
+   *
+   * #### Notes
    * If we have no classname, get all of the data in the Section
    */
   private _classData(): any {

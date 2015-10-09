@@ -6,7 +6,7 @@
 /**
  * Copy the contents of one object to another, recursively.
  *
- * http://stackoverflow.com/questions/12317003/something-like-jquery-extend-but-standalone
+ * From [stackoverflow](http://stackoverflow.com/a/12317051).
  */
 export
 function extend(target: any, source: any): any {
@@ -38,7 +38,7 @@ function uuid(): string {
 
 
 /**
- * Join a sequence of url components with '/'.
+ * Join a sequence of url components with `'/'`.
  */
 export
 function urlPathJoin(...paths: string[]): string {
@@ -62,8 +62,9 @@ function urlPathJoin(...paths: string[]): string {
 
 
 /**
- * Encode just the components of a multi-segment uri,
- * leaving '/' separators.
+ * Encode just the components of a multi-segment uri.  
+ *
+ * Preserves the `'/'` separators.
  */
 export
 function encodeURIComponents(uri: string): string {
@@ -72,8 +73,7 @@ function encodeURIComponents(uri: string): string {
 
 
 /**
- * Join a sequence of url components with '/',
- * encoding each component with encodeURIComponent.
+ * Encode and join a sequence of url components with `'/'`.
  */
 export
 function urlJoinEncode(...args: string[]): string {
@@ -84,7 +84,7 @@ function urlJoinEncode(...args: string[]): string {
 /**
  * Return a serialized object string suitable for a query.
  *
- * http://stackoverflow.com/a/30707423
+ * From [stackoverflow](http://stackoverflow.com/a/30707423).
  */
 export
 function jsonToQueryString(json: any): string {
@@ -145,7 +145,7 @@ interface IAjaxError {
 /**
  * Asynchronous XMLHTTPRequest handler.
  *
- * http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest
+ * Based on this [example](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest).
  */
 export
 function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOptions): Promise<any> {

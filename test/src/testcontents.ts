@@ -18,6 +18,7 @@ var DEFAULT_FILE: IContentsModel = {
   type: "file",
   created: "yesterday",
   last_modified: "today",
+  writable: true,
   mimetype: "text/plain",
   content: "hello, world!",
   format: "text"
@@ -29,6 +30,7 @@ var DEFAULT_DIR: IContentsModel = {
   type: "file",
   created: "yesterday",
   last_modified: "today",
+  writable: false,
   mimetype: "",
   content: "['buzz.txt', 'bazz.py']",
   format: "json"

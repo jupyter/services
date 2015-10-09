@@ -12,11 +12,19 @@ import {
 
 import { INotebookId, ISessionId } from './isession';
 
-
+/**
+ * Required fields for comm messages.
+ */
 const COMM_FIELDS = ['comm_id', 'data'];
 
+/**
+ * Required fields for `IKernelHeader`.
+ */
 const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
 
+/**
+ * Required fields for `IKernelMessage`.
+ */
 const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content', 
                         'channel', 'buffers'];
 
@@ -52,6 +60,9 @@ function validateCommMessage(msg: IKernelMessage): boolean {
 }
 
 
+/**
+ * Validate the header of an `IKernelMessage`.
+ */
 function validateKernelHeader(header: any): void {
   for (var i = 0; i < HEADER_FIELDS.length; i++) {
     if (!header.hasOwnProperty(HEADER_FIELDS[i])) {
@@ -65,7 +76,7 @@ function validateKernelHeader(header: any): void {
 
 
 /**
- * Validate an object as being of IKernelMessage type.
+ * Validate an `IKernelMessage` object.
  */
 export
 function validateKernelMessage(msg: IKernelMessage) : void {
@@ -88,7 +99,7 @@ function validateKernelMessage(msg: IKernelMessage) : void {
 
 
 /**
- * Validate an object as being of IKernelID type
+ * Validate an `KernelId` object.
  */
 export
 function validateKernelId(info: IKernelId) : void {
@@ -102,7 +113,7 @@ function validateKernelId(info: IKernelId) : void {
 
 
 /**
- * Validate an object as being of ISessionId type.
+ * Validate an `ISessionId` object.
  */
 export
 function validateSessionId(info: ISessionId): void {
@@ -120,7 +131,7 @@ function validateSessionId(info: ISessionId): void {
 
 
 /**
- * Validate an object as being of INotebookId type.
+ * Validate an `INotebookId` object.
  */
 export
 function validateNotebookId(model: INotebookId): void {
@@ -131,7 +142,7 @@ function validateNotebookId(model: INotebookId): void {
 
 
 /**
- * Validate an object as being of IKernelSpecID type.
+ * Validate an `IKernelSpecID` object.
  */
  export
 function validateKernelSpec(info: IKernelSpecId): void {
@@ -157,7 +168,7 @@ function validateKernelSpec(info: IKernelSpecId): void {
 
 
 /**
- * Validate a Contents Model.
+ * Validate an `IContentsModel` object.
  */
 export
 function validateContentsModel(model: IContentsModel) {
@@ -191,7 +202,7 @@ function validateContentsModel(model: IContentsModel) {
 
 
 /**
- * Validate a Checkpoint model.
+ * Validate an `ICheckpointModel` object.
  */
 export
 function validateCheckpointModel(model: ICheckpointModel) {
@@ -204,4 +215,3 @@ function validateCheckpointModel(model: ICheckpointModel) {
     throw err;
   }
 }
-

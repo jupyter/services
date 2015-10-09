@@ -24,7 +24,12 @@ var SESSION_SERVICE_URL = 'api/sessions';
 
 
 /**
- * Fetch the running sessions via API: GET /sessions
+ * Fetch the running sessions.
+ *
+ * #### Notes
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+ *
+ * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
 function listRunningSessions(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<ISessionId[]> {
@@ -48,8 +53,13 @@ function listRunningSessions(baseUrl: string, ajaxOptions?: IAjaxOptions): Promi
 
 
 /**
- * Start a new session via API: POST /kernels
+ * Start a new session.
  *
+ * #### Notes
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+ *
+ * The promise is fulfilled on a valid response and rejected otherwise.
+
  * Wrap the result in an NotebookSession object. The promise is fulfilled
  * when the session is fully ready to send the first message. If
  * the session fails to become ready, the promise is rejected.
@@ -80,11 +90,13 @@ function startNewSession(options: ISessionOptions, ajaxOptions?: IAjaxOptions): 
 /**
  * Connect to a running notebook session.
  *
+ * #### Notes
  * If the session was already started via `startNewSession`, the existing
  * NotebookSession object is used as the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
- * session.  The promise is fulfilled when the session is fully ready to send 
+ * session found by calling `listRunningSessions`. 
+ * The promise is fulfilled when the session is fully ready to send 
  * the first message. If the session fails to become ready, the promise is 
  * rejected.
  *
@@ -156,6 +168,8 @@ class NotebookSession implements INotebookSession {
 
   /**
    * A signal emitted when the session dies.
+   *
+   * **See also:** [[sessionDied]]
    */
   static sessionDiedSignal = new Signal<INotebookSession, void>();
 
@@ -171,7 +185,7 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * Get the session died signal.
+   * A signal emitted when the session dies.
    */
   get sessionDied(): ISignal<INotebookSession, void> {
     return NotebookSession.sessionDiedSignal.bind(this);
@@ -179,6 +193,9 @@ class NotebookSession implements INotebookSession {
 
   /**
    * Get the session id.
+   *
+   * #### Notes
+   * This is a read-only property.
    */
   get id(): string {
     return this._id;
@@ -186,20 +203,32 @@ class NotebookSession implements INotebookSession {
 
   /**
    * Get the session kernel object.
-  */
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
   get kernel() : IKernel {
     return this._kernel;
   }
 
   /**
    * Get the notebook path.
+   *
+   * #### Notes
+   * This is a read-only property.
    */
   get notebookPath(): string {
     return this._notebookPath;
   }
 
   /**
-   * Rename the notebook.
+   * Rename or move a notebook.
+   *
+   * @param path - The new notebook path.
+   *
+   * #### Notes
+   * This uses the Notebook REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
    */
   renameNotebook(path: string, ajaxOptions?: IAjaxOptions): Promise<void> {
     if (this._isDead) {
@@ -225,9 +254,12 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * DELETE /api/sessions/[:session_id]
-   *
    * Kill the kernel and shutdown the session.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
    */
   shutdown(ajaxOptions?: IAjaxOptions): Promise<void> {
     if (this._isDead) {
@@ -267,6 +299,7 @@ class NotebookSession implements INotebookSession {
   private _url = '';
   private _isDead = false;
 }
+
 
 /**
  * Handle an error on a session Ajax call.
