@@ -645,7 +645,7 @@ describe('jupyter.services - kernel', () => {
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(200, data);
-          tester.sendStatus('starting');
+          tester.sendStatus('idle');
           restart.then(() => { done(); });
         });
       });
@@ -658,8 +658,21 @@ describe('jupyter.services - kernel', () => {
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart(ajaxOptions);
           tester.respond(200, data);
-          tester.sendStatus('starting');
+          tester.sendStatus('idle');
           restart.then(() => { done(); });
+        });
+      });
+
+      it('should fail if the kernel does not restart', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var restart = kernel.restart();
+          tester.respond(200, data);
+          tester.sendStatus('dead');
+          expectFailure(restart, done, 'Kernel is dead');
         });
       });
 

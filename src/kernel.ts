@@ -870,7 +870,20 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return kernel.kernelInfo().then(() => null);
+    return new Promise<void>((resolve, reject) => {
+      var waitForStart = () => {
+        if (kernel.status === KernelStatus.Idle) {
+          kernel.statusChanged.disconnect(waitForStart);
+          resolve();
+        } else if (kernel.status === KernelStatus.Dead) {
+          kernel.statusChanged.disconnect(waitForStart);
+          reject(new Error('Kernel is dead'));
+        }
+      }
+      kernel.statusChanged.connect(waitForStart);
+      // Trigger an idle message
+      kernel.kernelInfo();
+    });
   }, onKernelError);
 }
 
