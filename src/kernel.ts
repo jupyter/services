@@ -872,11 +872,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    if (kernel.status === KernelStatus.Dead) {
-      throw Error('Kernel is dead');
-    } else if (kernel.status !== KernelStatus.Restarting) {
-      return kernel.kernelInfo().then(() => { return; });
-    }
+    return kernel.kernelInfo().then(() => { return; });
   }, onKernelError);
 }
 
