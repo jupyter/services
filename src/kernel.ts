@@ -877,21 +877,6 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
     } else if (kernel.status !== KernelStatus.Restarting) {
       return kernel.kernelInfo().then(() => { return; });
     }
-    return new Promise<void>((resolve, reject) => {
-      var waitForStart = () => {
-        if (kernel.status === KernelStatus.Dead) {
-          kernel.statusChanged.disconnect(waitForStart);
-          reject(new Error('Kernel is dead'));
-        } else {
-          kernel.statusChanged.disconnect(waitForStart);
-          kernel.kernelInfo().then(() => {
-            resolve();
-          });
-        }
-      }
-      kernel.statusChanged.connect(waitForStart);
-      kernel.kernelInfo();
-    });
   }, onKernelError);
 }
 
