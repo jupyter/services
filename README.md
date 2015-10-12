@@ -27,12 +27,13 @@ Source Build
 
 **Prerequisites**
 - [git](http://git-scm.com/)
-- [node](http://nodejs.org/)
+- [node 0.12+](http://nodejs.org/)
 
 ```bash
 git clone https://github.com/jupyter/jupyter-js-services.git
 cd jupyter-js-services
 npm install
+npm run build
 ```
 
 **Rebuild**
