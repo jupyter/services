@@ -862,14 +862,21 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
     baseUrl, KERNEL_SERVICE_URL, 
     utils.urlJoinEncode(kernel.id, 'restart')
   );
+  console.log('***issuing a restart');
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
   }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
+    console.log('****got the ajax response');
     if (success.xhr.status !== 200) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
+    if (kernel.status === KernelStatus.Dead) {
+      throw Error('Kernel is dead');
+    } else if (kernel.status !== KernelStatus.Restarting) {
+      return kernel.kernelInfo().then(() => { return; });
+    }
     return new Promise<void>((resolve, reject) => {
       var waitForStart = () => {
         if (kernel.status === KernelStatus.Dead) {
@@ -946,24 +953,32 @@ function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxOptions?: IAjaxOpti
  * Log the current kernel status.
  */
 function logKernelStatus(kernel: IKernel): void {
+  /*
   if (kernel.status == KernelStatus.Idle || 
       kernel.status === KernelStatus.Busy ||
       kernel.status === KernelStatus.Unknown) {
     return;
   }
+  */
   var status = '';
   switch (kernel.status) {
-    case KernelStatus.Starting:
-      status = 'starting';
-      break;
-    case KernelStatus.Restarting:
-      status = 'restarting';
-      break;
-    case KernelStatus.Dead:
-      status = 'dead';
-      break;
+  case KernelStatus.Starting:
+    status = 'starting';
+    break;
+  case KernelStatus.Restarting:
+    status = 'restarting';
+    break;
+  case KernelStatus.Dead:
+    status = 'dead';
+    break;
+  case KernelStatus.Idle:
+    status = 'idle';
+    break;
+  case KernelStatus.Busy:
+    status = 'busy';
+    break;
   }
-  console.log('Kernel: ' + status + ' (' + kernel.id + ')');
+  console.log('***Kernel: ' + status + ' (' + kernel.id + ')');
 }
 
 
