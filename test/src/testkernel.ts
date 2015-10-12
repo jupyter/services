@@ -670,8 +670,8 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
-          tester.respond(200, data);
           tester.sendStatus('dead');
+          tester.respond(200, data);
           expectFailure(restart, done, 'Kernel is dead');
         });
       });
