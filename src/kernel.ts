@@ -862,7 +862,17 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
     baseUrl, KERNEL_SERVICE_URL, 
     utils.urlJoinEncode(kernel.id, 'restart')
   );
-  console.log('***issuing a restart');
+  var promise = new Promise<void>((resolve, reject) => {
+    var callback = () => {
+      if (kernel.status === KernelStatus.Starting) {
+        kernel.statusChanged.disconnect(callback);
+        kernel.kernelInfo().then(() => resolve());
+      } else if (kernel.status == KernelStatus.Dead) {
+        reject(new Error('Kernel is dead'));
+      }
+    }
+    kernel.statusChanged.connect(callback);
+  });
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
@@ -872,7 +882,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return kernel.kernelInfo().then(() => { return; });
+    return promise;
   }, onKernelError);
 }
 

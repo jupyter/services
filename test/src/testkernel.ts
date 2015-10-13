@@ -645,7 +645,7 @@ describe('jupyter.services - kernel', () => {
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart();
           tester.respond(200, data);
-          tester.sendStatus('idle');
+          tester.sendStatus('starting');
           restart.then(() => { done(); });
         });
       });
@@ -658,7 +658,7 @@ describe('jupyter.services - kernel', () => {
         kernelPromise.then((kernel: IKernel) => {
           var restart = kernel.restart(ajaxOptions);
           tester.respond(200, data);
-          tester.sendStatus('idle');
+          tester.sendStatus('starting');
           restart.then(() => { done(); });
         });
       });
