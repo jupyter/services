@@ -862,26 +862,27 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
     baseUrl, KERNEL_SERVICE_URL, 
     utils.urlJoinEncode(kernel.id, 'restart')
   );
+  var promise = new Promise<void>((resolve, reject) => {
+    var callback = () => {
+      if (kernel.status === KernelStatus.Starting) {
+        kernel.statusChanged.disconnect(callback);
+        kernel.kernelInfo().then(() => resolve());
+      } else if (kernel.status === KernelStatus.Dead) {
+        reject(new Error('Kernel is dead'));
+      }
+    }
+    kernel.statusChanged.connect(callback);
+  });
   return utils.ajaxRequest(url, {
     method: "POST",
     dataType: "json"
   }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
+    console.log('****got the ajax response');
     if (success.xhr.status !== 200) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return new Promise<void>((resolve, reject) => {
-      var waitForStart = () => {
-        if (kernel.status === KernelStatus.Starting) {
-          kernel.statusChanged.disconnect(waitForStart);
-          resolve();
-        } else if (kernel.status === KernelStatus.Dead) {
-          kernel.statusChanged.disconnect(waitForStart);
-          reject(new Error('Kernel is dead'));
-        }
-      }
-      kernel.statusChanged.connect(waitForStart);
-    });
+    return promise;
   }, onKernelError);
 }
 
@@ -943,24 +944,32 @@ function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxOptions?: IAjaxOpti
  * Log the current kernel status.
  */
 function logKernelStatus(kernel: IKernel): void {
+  /*
   if (kernel.status == KernelStatus.Idle || 
       kernel.status === KernelStatus.Busy ||
       kernel.status === KernelStatus.Unknown) {
     return;
   }
+  */
   var status = '';
   switch (kernel.status) {
-    case KernelStatus.Starting:
-      status = 'starting';
-      break;
-    case KernelStatus.Restarting:
-      status = 'restarting';
-      break;
-    case KernelStatus.Dead:
-      status = 'dead';
-      break;
+  case KernelStatus.Starting:
+    status = 'starting';
+    break;
+  case KernelStatus.Restarting:
+    status = 'restarting';
+    break;
+  case KernelStatus.Dead:
+    status = 'dead';
+    break;
+  case KernelStatus.Idle:
+    status = 'idle';
+    break;
+  case KernelStatus.Busy:
+    status = 'busy';
+    break;
   }
-  console.log('Kernel: ' + status + ' (' + kernel.id + ')');
+  console.log('***Kernel: ' + status + ' (' + kernel.id + ')');
 }
 
 
@@ -1264,6 +1273,9 @@ class Comm extends DisposableDelegate implements IComm {
     var payload = { 
       msgType: 'comm_open', content: content, metadata: metadata
     }
+    if (this._msgFunc === void 0) {
+      return;
+    }
     return this._msgFunc(payload);
   }
 
@@ -1285,6 +1297,9 @@ class Comm extends DisposableDelegate implements IComm {
       content: content, 
       metadata: metadata,
       buffers: buffers,
+    }
+    if (this._msgFunc === void 0) {
+      return;
     }
     return this._msgFunc(payload);
   }
