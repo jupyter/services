@@ -867,7 +867,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       if (kernel.status === KernelStatus.Starting) {
         kernel.statusChanged.disconnect(callback);
         kernel.kernelInfo().then(() => resolve());
-      } else if (kernel.status == KernelStatus.Dead) {
+      } else if (kernel.status === KernelStatus.Dead) {
         reject(new Error('Kernel is dead'));
       }
     }
