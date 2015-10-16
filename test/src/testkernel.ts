@@ -975,6 +975,68 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should not dispose of KernelFuture when disposeOnDone=false', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+
+        kernelPromise.then((kernel) => {
+          var options: IExecuteRequest = {
+            code: 'test',
+            silent: false,
+            store_history: true,
+            user_expressions: {},
+            allow_stdin: false,
+            stop_on_error: false
+          }
+          var future = kernel.execute(options, false);
+          expect(future.onDone).to.be(null);
+          expect(future.onStdin).to.be(null);
+          expect(future.onReply).to.be(null);
+          expect(future.onIOPub).to.be(null);
+
+          tester.onMessage((msg) => {
+            expect(msg.channel).to.be('shell');
+
+            // send a reply
+            msg.parent_header = msg.header;
+            msg.channel = 'shell';
+            tester.send(msg);
+
+            future.onReply = () => {
+              // trigger onIOPub with a 'stream' message
+              msg.channel = 'iopub';
+              msg.header.msg_type = 'stream';
+              tester.send(msg);
+            }
+
+            future.onIOPub = () => { 
+              if (msg.header.msg_type === 'stream') {
+                // trigger onDone
+                msg.channel = 'iopub';
+                msg.header.msg_type = 'status';
+                msg.content.execution_state = 'idle';
+                tester.send(msg);
+              }
+            }
+
+            future.onDone = () => {
+              doLater(() => {
+                expect(future.isDisposed).to.be(false);
+                expect(future.onDone).to.be(null);
+                expect(future.onIOPub).to.not.be(null);
+                future.dispose();
+                expect(future.onIOPub).to.be(null);
+                expect(future.isDisposed).to.be(true);
+                done();
+              });
+            }
+
+          });
+        });
+      });
+
     });
   });
 

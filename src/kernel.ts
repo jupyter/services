@@ -331,22 +331,24 @@ class Kernel implements IKernel {
    *
    * If `expectReply` is given and `true`, the future is disposed when both a 
    * shell reply and an idle status message are received.   If `expectReply` 
-   * is not given or is `false`, the future is disposed when an idle status 
+   * is not given or is `false`, the future is resolved when an idle status 
    * message is received.
+   * If `disposeOnDone` is not given or is `true`, the Future is disposed at this point.
+   * If `disposeOnDone` is given and `false`, it is up to the caller to dispose of the Future.
    * 
    * All replies are validated as valid kernel messages.
    * 
    * If the kernel status is `Dead`, this will throw an error.
    */
-  sendShellMessage(msg: IKernelMessage, expectReply=false): IKernelFuture {
+  sendShellMessage(msg: IKernelMessage, expectReply=false, disposeOnDone=true): IKernelFuture {
     if (this._status === KernelStatus.Dead) {
       throw Error('Cannot send a message to a closed Kernel');
     }
     this._ws.send(serialize.serialize(msg));
 
-    var future = new KernelFutureHandler(expectReply, () => {
+    var future = new KernelFutureHandler(() => {
       this._futures.delete(msg.header.msg_id);
-    });
+    }, expectReply, disposeOnDone);
     this._futures.set(msg.header.msg_id, future);
     return future;
   }
@@ -476,12 +478,14 @@ class Kernel implements IKernel {
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
    * Future `onReply` is called with the `execute_reply` content when the 
-   * shell reply is received and validated.  The future will dispose when
+   * shell reply is received and validated.  The future will resolve when
    * this message is received and the `idle` iopub status is received.
+   * The future will also be disposed at this point unless `disposeOnDone`
+   * is specified and `false`, in which case it is up to the caller to dispose of the future.
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(contents: IExecuteRequest): IKernelFuture {
+  execute(contents: IExecuteRequest, disposeOnDone: boolean = true): IKernelFuture {
     var options: IKernelMessageOptions = {
       msgType: 'execute_request',
       channel: 'shell',
@@ -496,7 +500,7 @@ class Kernel implements IKernel {
     };
     contents = utils.extend(defaults, contents);
     var msg = createKernelMessage(options, contents);
-    return this.sendShellMessage(msg, true);
+    return this.sendShellMessage(msg, true, disposeOnDone);
   }
 
   /**
@@ -814,7 +818,7 @@ class Kernel implements IKernel {
   /**
    * Send a comm message to the kernel.
    */
-  private _sendCommMessage(payload: ICommPayload): IKernelFuture {
+  private _sendCommMessage(payload: ICommPayload, disposeOnDone: boolean = true): IKernelFuture {
    var options: IKernelMessageOptions = {
       msgType: payload.msgType,
       channel: 'shell',
@@ -824,7 +828,7 @@ class Kernel implements IKernel {
     var msg = createKernelMessage(
       options, payload.content, payload.metadata, payload.buffers
     );  
-    return this.sendShellMessage(msg);
+    return this.sendShellMessage(msg, false, disposeOnDone);
   }
 
   /**
@@ -992,7 +996,8 @@ function sendKernelMessage(kernel: IKernel, msg: IKernelMessage): Promise<any> {
 enum KernelFutureFlag {
   GotReply = 0x1,
   GotIdle = 0x2,
-  IsDone = 0x4
+  IsDone = 0x4,
+  DisposeOnDone = 0x8,
 }
 
 
@@ -1002,13 +1007,14 @@ enum KernelFutureFlag {
 class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
 
   /**
-   * Construct a new KernelFutureHandler. 
+   * Construct a new KernelFutureHandler.
    */
-  constructor(expectShell: boolean, cb: () => void) {
+  constructor(cb: () => void, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
     if (!expectShell) {
       this._setFlag(KernelFutureFlag.GotReply);
     }
+    this._disposeOnDone = disposeOnDone;
   }
 
   /**
@@ -1136,7 +1142,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     var done = this._done;
     if (done) done(msg);
     this._done = null;
-    this.dispose();
+    if (this._disposeOnDone) {
+      this.dispose();
+    }
   }
 
   /**
@@ -1165,6 +1173,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   private _iopub: (msg: IKernelMessage) => void = null;
   private _reply: (msg: IKernelMessage) => void = null;
   private _done: (msg: IKernelMessage) => void = null;
+  private _disposeOnDone = true;
 }
 
 
@@ -1176,7 +1185,7 @@ class Comm extends DisposableDelegate implements IComm {
   /**
    * Construct a new comm channel.
    */
-  constructor(target: string, id: string, msgFunc: (payload: ICommPayload) => IKernelFuture, disposeCb: () => void) {
+  constructor(target: string, id: string, msgFunc: (payload: ICommPayload, disposeOnDone?: boolean) => IKernelFuture, disposeCb: () => void) {
     super(disposeCb);
     this._target = target;
     this._id = id;  
@@ -1275,7 +1284,7 @@ class Comm extends DisposableDelegate implements IComm {
    *
    * **See also:** [[ICommMsg]]
    */
-  send(data: any, metadata={}, buffers: (ArrayBuffer | ArrayBufferView)[]=[]): IKernelFuture {
+  send(data: any, metadata={}, buffers: (ArrayBuffer | ArrayBufferView)[]=[], disposeOnDone: boolean = true): IKernelFuture {
     if (this.isDisposed) {
       throw Error('Comm is closed');
     }
@@ -1286,7 +1295,7 @@ class Comm extends DisposableDelegate implements IComm {
       metadata: metadata,
       buffers: buffers,
     }
-    return this._msgFunc(payload);
+    return this._msgFunc(payload, disposeOnDone);
   }
 
   /**
@@ -1332,5 +1341,5 @@ class Comm extends DisposableDelegate implements IComm {
   private _id = '';
   private _onClose: (data?: any) => void = null;
   private _onMsg: (data: any) => void = null;
-  private _msgFunc: (payload: ICommPayload) => IKernelFuture = null;
+  private _msgFunc: (payload: ICommPayload, disposeOnDone?: boolean) => IKernelFuture = null;
 }
