@@ -874,18 +874,6 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxOptions?: IAjaxOpti
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return new Promise<void>((resolve, reject) => {
-      var waitForStart = () => {
-        if (kernel.status === KernelStatus.Starting) {
-          kernel.statusChanged.disconnect(waitForStart);
-          resolve();
-        } else if (kernel.status === KernelStatus.Dead) {
-          kernel.statusChanged.disconnect(waitForStart);
-          reject(new Error('Kernel is dead'));
-        }
-      }
-      kernel.statusChanged.connect(waitForStart);
-    });
   }, onKernelError);
 }
 
