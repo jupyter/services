@@ -119,6 +119,7 @@ function startNewKernel(options: IKernelOptions, ajaxOptions?: IAjaxOptions): Pr
   var url = utils.urlPathJoin(options.baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
+    data: { name: options.name },
     dataType: "json"
   }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     if (success.xhr.status !== 201) {
