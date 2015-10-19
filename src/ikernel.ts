@@ -432,11 +432,15 @@ interface IKernel {
    * is not given or is `false`, the future is disposed when an idle status 
    * message is received.
    * 
+   * If `disposeOnDone` is given and `false`, the Future will not be disposed
+   * of when the future is done, instead relying on the caller to dispose of it.
+   * This allows for the handling of out-of-order output from ill-behaved kernels.
+   * 
    * All replies are validated as valid kernel messages.
    * 
    * If the kernel status is `Dead`, this will throw an error.
    */
-  sendShellMessage(msg: IKernelMessage, expectReply?: boolean): IKernelFuture;
+  sendShellMessage(msg: IKernelMessage, expectReply?: boolean, disposeOnDone?: boolean): IKernelFuture;
 
   /**
    * Interrupt a kernel.
@@ -528,7 +532,7 @@ interface IKernel {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(contents: IExecuteRequest): IKernelFuture;
+  execute(contents: IExecuteRequest, disposeOnDone?: boolean): IKernelFuture;
 
   /**
    * Send an `is_complete_request` message.
@@ -716,7 +720,7 @@ interface IComm {
    *
    * **See also:** [[ICommMsg]]
    */
-  send(data: any, metadata?: any, buffers?: (ArrayBuffer | ArrayBufferView)[]): IKernelFuture;
+  send(data: any, metadata?: any, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IKernelFuture;
 
   /**
    * Close the comm.
