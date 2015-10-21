@@ -483,7 +483,6 @@ class Kernel implements IKernel {
    */
   complete(contents: ICompleteRequest): Promise<ICompleteReply> {
     if (!this._isReady) {
-      console.log('Rejecting promise');
       return Promise.reject(Error('Kernel is not ready to send a message'));
     }
     var options: IKernelMessageOptions = {
@@ -733,7 +732,7 @@ class Kernel implements IKernel {
         (this._reconnectAttempt < this._reconnectLimit)) {
       this._updateStatus('reconnecting');
       var timeout = Math.pow(2, this._reconnectAttempt);
-      console.log("Connection lost, reconnecting in " + timeout + " seconds.");
+      console.error("Connection lost, reconnecting in " + timeout + " seconds.");
       setTimeout(this._createSocket.bind(this), 1e3 * timeout);
       this._reconnectAttempt += 1;
     } else {
@@ -855,7 +854,7 @@ class Kernel implements IKernel {
         if (onClose) onClose(msg.content.data);
         (<Comm>comm).dispose();
       } catch (e) {
-        console.log("Exception closing comm: ", e, e.stack, msg);
+        console.error("Exception closing comm: ", e, e.stack, msg);
       }
     });
   }
@@ -885,7 +884,7 @@ class Kernel implements IKernel {
           var onMsg = comm.onMsg;
           if (onMsg) onMsg(msg.content.data);
         } catch (e) {
-          console.log("Exception handling comm msg: ", e, e.stack, msg);
+          console.error("Exception handling comm msg: ", e, e.stack, msg);
         }
         return comm;
       });
