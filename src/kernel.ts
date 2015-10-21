@@ -35,6 +35,12 @@ var KERNEL_SERVICE_URL = 'api/kernels';
 var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
 
 
+/**
+ * The error message to send when the kernel is not ready.
+ */
+var KERNEL_NOT_READY_MSG = 'Kernel is not ready to send a message';
+
+
 /**  
  * Fetch the kernel specs.
  *
@@ -370,7 +376,7 @@ class Kernel implements IKernel {
    */
   sendShellMessage(msg: IKernelMessage, expectReply=false, disposeOnDone=true): IKernelFuture {
     if (this._status === KernelStatus.Dead) {
-      throw Error('Kernel is not ready to send a message');
+      throw Error(KERNEL_NOT_READY_MSG);
     }
     this._ws.send(serialize.serialize(msg));
 
@@ -460,7 +466,7 @@ class Kernel implements IKernel {
    */
   kernelInfo(): Promise<IKernelInfo> {
     if (this._status === KernelStatus.Dead) {
-      return Promise.reject(Error('Kernel is not ready to send a message'));
+      return Promise.reject(Error(KERNEL_NOT_READY_MSG));
     }
     var options: IKernelMessageOptions = {
       msgType: 'kernel_info_request',
@@ -483,7 +489,7 @@ class Kernel implements IKernel {
    */
   complete(contents: ICompleteRequest): Promise<ICompleteReply> {
     if (!this._isReady) {
-      return Promise.reject(Error('Kernel is not ready to send a message'));
+      return Promise.reject(Error(KERNEL_NOT_READY_MSG));
     }
     var options: IKernelMessageOptions = {
       msgType: 'complete_request',
@@ -506,7 +512,7 @@ class Kernel implements IKernel {
    */
   inspect(contents: IInspectRequest): Promise<IInspectReply> {
     if (!this._isReady) {
-      return Promise.reject(Error('Kernel is not ready to send a message'));
+      return Promise.reject(Error(KERNEL_NOT_READY_MSG));
     }
     var options: IKernelMessageOptions = {
       msgType: 'inspect_request',
@@ -534,7 +540,7 @@ class Kernel implements IKernel {
    */
   execute(contents: IExecuteRequest, disposeOnDone: boolean = true): IKernelFuture {
     if (!this._isReady) {
-      throw Error('Kernel is not ready to send a message');
+      throw Error(KERNEL_NOT_READY_MSG);
     }
     var options: IKernelMessageOptions = {
       msgType: 'execute_request',
@@ -564,7 +570,7 @@ class Kernel implements IKernel {
    */
   isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
     if (!this._isReady) {
-      return Promise.reject(Error('Kernel is not ready to send a message'));
+      return Promise.reject(Error(KERNEL_NOT_READY_MSG));
     }
     var options: IKernelMessageOptions = {
       msgType: 'is_complete_request',
@@ -585,7 +591,7 @@ class Kernel implements IKernel {
    */
   commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply> {
     if (!this._isReady) {
-      return Promise.reject(Error('Kernel is not ready to send a message'));
+      return Promise.reject(Error(KERNEL_NOT_READY_MSG));
     }
     var options: IKernelMessageOptions = {
       msgType: 'comm_info_request',
@@ -605,10 +611,7 @@ class Kernel implements IKernel {
    */
   sendInputReply(contents: IInputReply): void {
     if (!this._isReady) {
-      throw Error('Kernel is not ready to send a message');
-    }
-    if (this._status === KernelStatus.Dead) {
-      throw Error('Cannot send a message to a closed Kernel');
+      throw Error(KERNEL_NOT_READY_MSG);
     }
     var options: IKernelMessageOptions = {
       msgType: 'input_reply',
