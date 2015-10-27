@@ -131,6 +131,7 @@ export
 enum KernelStatus {
   Unknown,
   Starting,
+  Reconnecting,
   Idle,
   Busy,
   Restarting,
@@ -361,10 +362,17 @@ interface IKernelMessageOptions {
 
 
 /**
- * Interface of a kernel object.
+ * Interface of a Kernel object.
+ *
+ * #### Notes
+ * The Kernel object is tied to the lifetime of the Kernel id, which is
+ * a unique id for the Kernel session on the server.  The Kernel object 
+ * manages a websocket connection internally, and will auto-restart if the
+ * websocket temporarily loses connection.  Restarting creates a new Kernel 
+ * process on the server, but preserves the Kernel id.
  */
 export 
-interface IKernel {
+interface IKernel extends IDisposable {
   /**
    * A signal emitted when the kernel status changes.
    */
@@ -462,6 +470,8 @@ interface IKernel {
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
+   *
+   * Any existing Future or Comm objects are cleared.
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
@@ -667,7 +677,7 @@ interface IKernelSpecIds {
  * A client side Comm interface.
  */
 export
-interface IComm {
+interface IComm extends IDisposable {
   /**
    * The unique id for the comm channel.
    *

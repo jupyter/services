@@ -265,6 +265,20 @@ describe('jupyter.services - kernel', () => {
       return expectFailure(kernelPromise, done, "");
     });
 
+    it('should auto-reconnect on websocket error', (done) => {
+      var tester = new KernelTester();
+      var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      kernelPromise.then((kernel: IKernel) => {
+        expect(kernel.status).to.be(KernelStatus.Starting);
+        kernel.statusChanged.connect(() => {
+          if (kernel.status === KernelStatus.Starting) {
+            done();
+          }
+        });
+        tester.triggerError('Error event');
+      });
+    });
   });
 
   describe('connectToKernel()', () => {
@@ -434,6 +448,20 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should get a reconnecting status', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.statusChanged.connect(() => {
+            expect(kernel.status).to.be(KernelStatus.Reconnecting);
+            done();
+          });
+          tester.triggerError('Error event');
+        });
+      });
+
       it('should get a dead status', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
@@ -444,7 +472,7 @@ describe('jupyter.services - kernel', () => {
             expect(kernel.status).to.be(KernelStatus.Dead);
             done();
           });
-          tester.triggerError('Error event');
+          tester.sendStatus('dead');
         });
       });
 
@@ -460,6 +488,42 @@ describe('jupyter.services - kernel', () => {
           });
           tester.sendStatus('celebrating');
           tester.sendStatus('idle');
+        });
+      });
+    });
+
+    context('#isDisposed', () => {
+
+      it('should be true after we dispose of the kernel', () => {
+        createKernel().then((kernel: IKernel) => {
+          expect(kernel.isDisposed).to.be(false);
+          kernel.dispose();
+          expect(kernel.isDisposed).to.be(true);
+        });
+      });
+
+      it('should be safe to call multiple times', () => {
+        createKernel().then((kernel: IKernel) => {
+          expect(kernel.isDisposed).to.be(false);
+          expect(kernel.isDisposed).to.be(false);
+          kernel.dispose();
+          expect(kernel.isDisposed).to.be(true);
+          expect(kernel.isDisposed).to.be(true);
+        });
+      });
+    });
+
+    context('#dispose()', () => {
+
+      it('should dispose of the resources held by the kernel', () => {
+        createKernel().then((kernel: IKernel) => {
+          var future = kernel.execute({ code: 'foo' });
+          var comm = kernel.connectToComm('foo');
+          expect(future.isDisposed).to.be(false);
+          expect(comm.isDisposed).to.be(false);
+          kernel.dispose();
+          expect(future.isDisposed).to.be(true);
+          expect(comm.isDisposed).to.be(true);
         });
       });
     });
@@ -529,7 +593,7 @@ describe('jupyter.services - kernel', () => {
               kernel.sendShellMessage(msg, true);
             } catch(err) {
               expect(err.message).to.be(
-                'Cannot send a message to a closed Kernel'
+                'Kernel is not ready to send a message'
               );
               done();
             }
@@ -711,18 +775,21 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
-      it('should fail if the kernel is dead', (done) => {
+      it('should dispose of existing comm and future objects', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
-          tester.sendStatus('dead');
-          kernel.statusChanged.connect(() => {
-            expectFailure(kernel.restart(), done, 'Kernel is dead');
-          });
+          var comm = kernel.connectToComm('test');
+          var future = kernel.execute({ code: 'foo' });
+          var restart = kernel.restart();
+          expect(comm.isDisposed).to.be(true);
+          expect(future.isDisposed).to.be(true);
+          done();
         });
       });
+
     });
 
     context('#shutdown()', () => {
@@ -824,6 +891,27 @@ describe('jupyter.services - kernel', () => {
           promise.then(() => { done(); });
         });
       });
+
+      it('should reject the promise if the kernel is dead', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var options: ICompleteRequest = {
+            code: 'hello',
+            cursor_pos: 4
+          }
+          tester.sendStatus('dead');
+          kernel.statusChanged.connect(() => {
+            if (kernel.status === KernelStatus.Dead) {
+              var promise = kernel.complete(options);
+              expectFailure(promise, done, 
+                            'Kernel is not ready to send a message');
+            }
+          });
+        });
+      });
     });
 
     context('#inspect()', () => {
@@ -846,6 +934,28 @@ describe('jupyter.services - kernel', () => {
             tester.send(msg);
           });
           promise.then(() => { done(); });
+        });
+      });
+
+      it('should reject the promise if the kernel is reconnecting', (done) => {
+        var tester = new KernelTester();
+        var kernelPromise = startNewKernel(KERNEL_OPTIONS);
+        var data = { id: uuid(), name: KERNEL_OPTIONS.name };
+        tester.respond(201, data);
+        kernelPromise.then((kernel: IKernel) => {
+          var options: IInspectRequest = {
+            code: 'hello',
+            cursor_pos: 4,
+            detail_level: 0
+          }
+          tester.triggerError('foo');
+          kernel.statusChanged.connect(() => {
+            if (kernel.status === KernelStatus.Reconnecting) {
+              var promise = kernel.inspect(options);
+              expectFailure(promise, done,
+                            'Kernel is not ready to send a message');
+            }
+          });
         });
       });
     });
@@ -900,7 +1010,7 @@ describe('jupyter.services - kernel', () => {
               kernel.sendInputReply({ value: 'test' });
             } catch(err) {
               expect(err.message).to.be(
-                'Cannot send a message to a closed Kernel'
+                'Kernel is not ready to send a message'
               );
               done();
             }
