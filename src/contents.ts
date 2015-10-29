@@ -38,13 +38,13 @@ interface IContentsOpts {
   format?: string;
 
   /**
-   * The file contents, or whether to include the file contents.
+   * The file content, or whether to include the file contents.
    *
    * #### Notes
-   * Can either contain the contents of a file for upload, or a boolean
+   * Can either contain the content of a file for upload, or a boolean
    * indicating whether to include contents in the response.
    */
-  content?: string | boolean;
+  content?: any;
 
   /**
    * The file extension, including a leading `.`. 
@@ -118,7 +118,7 @@ interface IContentsModel {
   /**
    * The file content. 
    */
-  content?: string;
+  content?: any;
 
   /**
    * The format of the file `content`.
