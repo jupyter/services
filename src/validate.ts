@@ -36,14 +36,12 @@ export
 function validateCommMessage(msg: IKernelMessage): boolean {
   for (var i = 0; i < COMM_FIELDS.length; i++) {
     if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
-      console.log('*****invalid', COMM_FIELDS[i]);
       return false;
     }
   }
   if (msg.header.msg_type === 'comm_open') {
     if (!msg.content.hasOwnProperty('target_name') ||
         typeof msg.content.target_name !== 'string') {
-      console.log('***TARGET NAME');
       return false;
     }
     if (msg.content.hasOwnProperty('target_module') &&
@@ -53,7 +51,6 @@ function validateCommMessage(msg: IKernelMessage): boolean {
     }
   }
   if (typeof msg.content.comm_id !== 'string') {
-    console.log("COMM_ID")
     return false;
   }
   return true;
