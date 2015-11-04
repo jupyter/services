@@ -12,7 +12,6 @@ import {
 
 
 var BASEURL = 'http://localhost:8888';
-var WSURL = 'ws://localhost:8888';
 
 
 describe('jupyter.services - Integration', () => {
@@ -26,7 +25,6 @@ describe('jupyter.services - Integration', () => {
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
@@ -51,7 +49,6 @@ describe('jupyter.services - Integration', () => {
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
@@ -82,7 +79,6 @@ describe('jupyter.services - Integration', () => {
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
@@ -112,7 +108,6 @@ describe('jupyter.services - Integration', () => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           kernelName: kernelSpecs.default,
           notebookPath: 'Untitled1.ipynb'
         }
@@ -153,7 +148,6 @@ describe('jupyter.services - Integration', () => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
@@ -194,7 +188,6 @@ describe('jupyter.services - Integration', () => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
-          wsUrl: WSURL,
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
