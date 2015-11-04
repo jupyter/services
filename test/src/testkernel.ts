@@ -1084,6 +1084,15 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should have a read-only msgId attribute', (done) => {
+         createKernel().then(kernel => {
+           var future = kernel.execute({ code: 'hello' });
+           expect(typeof future.msgId).to.be('string');
+           expect(() => { future.msgId = 'bar'; }).to.throwError();
+           done();
+         });
+      });
+
       it('should not dispose of KernelFuture when disposeOnDone=false', (done) => {
         var tester = new KernelTester();
         var kernelPromise = startNewKernel(KERNEL_OPTIONS);
