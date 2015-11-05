@@ -599,6 +599,11 @@ interface IKernel extends IDisposable {
 export
 interface IKernelFuture extends IDisposable {
   /**
+   * The unique id of the message.
+   */
+  msgId: string;
+
+  /**
    * Test whether the future is done.
    *
    * #### Notes

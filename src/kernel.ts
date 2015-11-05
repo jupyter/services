@@ -382,7 +382,7 @@ class Kernel implements IKernel {
 
     var future = new KernelFutureHandler(() => {
       this._futures.delete(msg.header.msg_id);
-    }, expectReply, disposeOnDone);
+    }, msg.header.msg_id, expectReply, disposeOnDone);
     this._futures.set(msg.header.msg_id, future);
     return future;
   }
@@ -1080,12 +1080,20 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Construct a new KernelFutureHandler.
    */
-  constructor(cb: () => void, expectShell: boolean, disposeOnDone: boolean) {
+  constructor(cb: () => void, msgId: string, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
+    this._msgId = msgId;
     if (!expectShell) {
       this._setFlag(KernelFutureFlag.GotReply);
     }
     this._disposeOnDone = disposeOnDone;
+  }
+
+  /**
+   * Get the id of the message.
+   */
+  get msgId(): string {
+    return this._msgId;
   }
 
   /**
@@ -1239,6 +1247,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     this._status &= ~flag;
   }
 
+  private _msgId = '';
   private _status = 0;
   private _stdin: (msg: IKernelMessage) => void = null;
   private _iopub: (msg: IKernelMessage) => void = null;
