@@ -21,11 +21,12 @@ interface IKernelOptions {
 
   /**
    * The root url of the kernel server.
+   * Default is location.origin in browsers, notebook-server default otherwise.
    */
-  baseUrl: string;
+  baseUrl?: string;
 
   /**
-   * The url to access websockets. 
+   * The url to access websockets, if different from baseUrl.
    */
   wsUrl?: string;
 

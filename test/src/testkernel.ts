@@ -51,7 +51,6 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
 
 const KERNEL_OPTIONS: IKernelOptions = {
   baseUrl: 'http://localhost:8888',
-  wsUrl: 'ws://localhost:8888',
   name: 'test',
   username: 'testUser'
 }

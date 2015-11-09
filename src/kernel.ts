@@ -40,8 +40,21 @@ var KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
  */
 var KERNEL_NOT_READY_MSG = 'Kernel is not ready to send a message';
 
+/**
+ * handle default logic for baseUrl
+ */
+function defaultBaseUrl(baseUrl?: string): string {
+  if (baseUrl !== undefined) {
+    return baseUrl;
+  }
+  if (typeof location === undefined) {
+    return 'http://localhost:8888/';
+  } else {
+    return location.origin + '/';
+  }
+}
 
-/**  
+/**
  * Fetch the kernel specs.
  *
  * #### Notes
@@ -50,11 +63,12 @@ var KERNEL_NOT_READY_MSG = 'Kernel is not ready to send a message';
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function getKernelSpecs(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelSpecIds> {
+function getKernelSpecs(baseUrl?: string, ajaxOptions?: IAjaxOptions): Promise<IKernelSpecIds> {
+  baseUrl = defaultBaseUrl(baseUrl);
   var url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
-    dataType: "json"   
+    dataType: "json"
   }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
     var err = new Error('Invalid KernelSpecs Model');
     if (success.xhr.status !== 200) {
@@ -90,7 +104,8 @@ function getKernelSpecs(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IK
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningKernels(baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IKernelId[]> {
+function listRunningKernels(baseUrl?: string, ajaxOptions?: IAjaxOptions): Promise<IKernelId[]> {
+  baseUrl = defaultBaseUrl(baseUrl);
   var url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "GET",
@@ -122,7 +137,7 @@ function listRunningKernels(baseUrl: string, ajaxOptions?: IAjaxOptions): Promis
  */
 export
 function startNewKernel(options: IKernelOptions, ajaxOptions?: IAjaxOptions): Promise<IKernel> {
-  var url = utils.urlPathJoin(options.baseUrl, KERNEL_SERVICE_URL);
+  var url = utils.urlPathJoin(defaultBaseUrl(options.baseUrl), KERNEL_SERVICE_URL);
   return utils.ajaxRequest(url, {
     method: "POST",
     data: JSON.stringify({ name: options.name }),
@@ -249,8 +264,12 @@ class Kernel implements IKernel {
   constructor(options: IKernelOptions, id: string) {
     this._name = options.name;
     this._id = id;
-    this._baseUrl = options.baseUrl;
-    this._wsUrl = options.wsUrl;
+    this._baseUrl = defaultBaseUrl(options.baseUrl);
+    if (options.wsUrl) {
+      this._wsUrl = options.wsUrl;
+    } else {
+        this._wsUrl = 'ws' + this._baseUrl.slice(4);
+    }
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
@@ -647,12 +666,6 @@ class Kernel implements IKernel {
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket() {
-    if (!this._wsUrl) {
-      // trailing 's' in https will become wss for secure web sockets
-      this._wsUrl = (
-        location.protocol.replace('http', 'ws') + "//" + location.host
-      );
-    }
     var partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL, 
                                        utils.urlJoinEncode(this._id));
     console.log('Starting WebSocket:', partialUrl);
