@@ -81,7 +81,6 @@ export
 var ajaxOptions: IAjaxOptions = {
   timeout: 10,
   requestHeaders: { foo: 'bar', fizz: 'buzz' },
-  async: true,
   withCredentials: true,
   user: 'foo',
   password: 'bar'

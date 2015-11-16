@@ -62,7 +62,7 @@ function urlPathJoin(...paths: string[]): string {
 
 
 /**
- * Encode just the components of a multi-segment uri.  
+ * Encode just the components of a multi-segment uri.
  *
  * Preserves the `'/'` separators.
  */
@@ -113,7 +113,6 @@ export
 interface IAjaxOptions {
   timeout?: number;
   requestHeaders?: { [key: string]: string; };
-  async?: boolean;
   withCredentials?: boolean;
   user?: string;
   password?: string;
@@ -152,7 +151,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOption
   options = options || {};
   return new Promise((resolve, reject) => {
     var req = new XMLHttpRequest();
-    req.open(settings.method, url, options.async, options.user,
+    req.open(settings.method, url, true, options.user,
              options.password);
     if (settings.contentType) {
       req.setRequestHeader('Content-Type', settings.contentType);
@@ -216,7 +215,7 @@ class PromiseDelegate<T> {
    * Resolve the underlying Promise with an optional value or another Promise.
    */
   resolve(value?: T | Thenable<T>): void {
-    // Note: according to the Promise spec, and the `this` context for resolve 
+    // Note: according to the Promise spec, and the `this` context for resolve
     // and reject are ignored
     this._resolve(value);
   }
@@ -225,7 +224,7 @@ class PromiseDelegate<T> {
    * Reject the underlying Promise with an optional reason.
    */
   reject(reason?: any): void {
-    // Note: according to the Promise spec, and the `this` context for resolve 
+    // Note: according to the Promise spec, and the `this` context for resolve
     // and reject are ignored
     this._reject(reason);
   }
