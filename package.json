@@ -49,7 +49,8 @@
   ],
   "files": [
     "lib/*.js",
-    "lib/*.d.ts"
+    "lib/*.d.ts",
+    "lib/*.map"
   ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",
