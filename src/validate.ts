@@ -6,7 +6,7 @@ import {
   ICheckpointModel, IContentsModel
 } from './contents';
 
-import { 
+import {
   IKernelId, IKernelMessage, IKernelMessageHeader, IKernelSpecId
 } from './ikernel';
 
@@ -25,14 +25,14 @@ const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
 /**
  * Required fields for `IKernelMessage`.
  */
-const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content', 
+const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content',
                         'channel', 'buffers'];
 
 
 /**
- * Validate an Kernel Message as being a valid Comm Message.
+ * Validate an `IKernelMessage` as being a valid Comm Message.
  */
-export 
+export
 function validateCommMessage(msg: IKernelMessage): boolean {
   for (var i = 0; i < COMM_FIELDS.length; i++) {
     if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
@@ -96,7 +96,7 @@ function validateKernelMessage(msg: IKernelMessage) : void {
 
 
 /**
- * Validate an `KernelId` object.
+ * Validate an `IKernelId` object.
  */
 export
 function validateKernelId(info: IKernelId) : void {
@@ -114,7 +114,7 @@ function validateKernelId(info: IKernelId) : void {
  */
 export
 function validateSessionId(info: ISessionId): void {
-  if (!info.hasOwnProperty('id') || 
+  if (!info.hasOwnProperty('id') ||
       !info.hasOwnProperty('notebook') ||
       !info.hasOwnProperty('kernel')) {
     throw Error('Invalid Session Model');
@@ -182,7 +182,7 @@ function validateContentsModel(model: IContentsModel) {
   if (!model.hasOwnProperty('created') || typeof model.created !== 'string') {
     throw err;
   }
-  if (!model.hasOwnProperty('last_modified') || 
+  if (!model.hasOwnProperty('last_modified') ||
       typeof model.last_modified !== 'string') {
     throw err;
   }
@@ -207,7 +207,7 @@ function validateCheckpointModel(model: ICheckpointModel) {
   if (!model.hasOwnProperty('id') || typeof model.id !== 'string') {
     throw err;
   }
-  if (!model.hasOwnProperty('last_modified') || 
+  if (!model.hasOwnProperty('last_modified') ||
       typeof model.last_modified !== 'string') {
     throw err;
   }

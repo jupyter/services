@@ -578,7 +578,7 @@ class Contents implements IContents {
   }
 
   /**
-   * Get an REST url for this file given a path.
+   * Get a REST url for this file given a path.
    */
   private _getUrl(...args: string[]): string {
     var url_parts = [].concat(

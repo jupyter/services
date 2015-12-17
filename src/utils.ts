@@ -224,7 +224,7 @@ class PromiseDelegate<T> {
    * Reject the underlying Promise with an optional reason.
    */
   reject(reason?: any): void {
-    // Note: according to the Promise spec, and the `this` context for resolve
+    // Note: according to the Promise spec, the `this` context for resolve
     // and reject are ignored
     this._reject(reason);
   }
