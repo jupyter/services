@@ -31,7 +31,7 @@ interface IKernelOptions {
   wsUrl?: string;
 
   /**
-   * The username of the kernel client. 
+   * The username of the kernel client.
    */
   username?: string;
 
@@ -48,13 +48,13 @@ interface IKernelOptions {
 export
 interface IKernelId {
 
-  /** 
+  /**
    * Unique identifier of the kernel server session.
    */
   id: string;
 
   /**
-   * The name of the kernel. 
+   * The name of the kernel.
    */
   name: string;
 }
@@ -89,7 +89,7 @@ interface IKernelMessage {
   metadata: any;
   content: any;
   channel: string;
-  buffers: (ArrayBuffer | ArrayBufferView)[]
+  buffers: (ArrayBuffer | ArrayBufferView)[];
 }
 
 /**
@@ -161,7 +161,7 @@ interface ICompleteRequest {
  *
  * **See also:** [[ICompleteRequest]], [[IKernel.complete]]
  */
-export 
+export
 interface ICompleteReply {
   matches: string[];
   cursor_start: number;
@@ -208,7 +208,7 @@ interface IInspectReply {
  *
  * **See also:** [[IIsCompleteReply]], [[IKernel.isComplete]]
  */
-export 
+export
 interface IIsCompleteRequest {
   code: string;
 }
@@ -221,7 +221,7 @@ interface IIsCompleteRequest {
  *
  * **See also:** [[IIsCompleteRequest]], [[IKernel.isComplete]]
  */
-export 
+export
 interface IIsCompleteReply {
   status: string;
   indent: string;
@@ -367,12 +367,12 @@ interface IKernelMessageOptions {
  *
  * #### Notes
  * The Kernel object is tied to the lifetime of the Kernel id, which is
- * a unique id for the Kernel session on the server.  The Kernel object 
+ * a unique id for the Kernel session on the server.  The Kernel object
  * manages a websocket connection internally, and will auto-restart if the
- * websocket temporarily loses connection.  Restarting creates a new Kernel 
+ * websocket temporarily loses connection.  Restarting creates a new Kernel
  * process on the server, but preserves the Kernel id.
  */
-export 
+export
 interface IKernel extends IDisposable {
   /**
    * A signal emitted when the kernel status changes.
@@ -434,19 +434,19 @@ interface IKernel extends IDisposable {
    *
    * #### Notes
    * Send a message to the kernel's shell channel, yielding a future object
-   * for accepting replies.  
+   * for accepting replies.
    *
-   * If `expectReply` is given and `true`, the future is disposed when both a 
-   * shell reply and an idle status message are received.   If `expectReply` 
-   * is not given or is `false`, the future is disposed when an idle status 
+   * If `expectReply` is given and `true`, the future is disposed when both a
+   * shell reply and an idle status message are received. If `expectReply`
+   * is not given or is `false`, the future is disposed when an idle status
    * message is received.
-   * 
+   *
    * If `disposeOnDone` is given and `false`, the Future will not be disposed
    * of when the future is done, instead relying on the caller to dispose of it.
    * This allows for the handling of out-of-order output from ill-behaved kernels.
-   * 
+   *
    * All replies are validated as valid kernel messages.
-   * 
+   *
    * If the kernel status is `Dead`, this will throw an error.
    */
   sendShellMessage(msg: IKernelMessage, expectReply?: boolean, disposeOnDone?: boolean): IKernelFuture;
@@ -461,7 +461,7 @@ interface IKernel extends IDisposable {
    *
    * It is assumed that the API call does not mutate the kernel id or name.
    *
-   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
   interrupt(ajaxOptions?: IAjaxOptions): Promise<void>;
@@ -478,7 +478,7 @@ interface IKernel extends IDisposable {
    *
    * It is assumed that the API call does not mutate the kernel id or name.
    *
-   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
   restart(ajaxOptions?: IAjaxOptions): Promise<void>;
@@ -491,10 +491,10 @@ interface IKernel extends IDisposable {
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
-   * On a valid response, closes the websocket and disposes of the kernel 
+   * On a valid response, closes the websocket and disposes of the kernel
    * object, and fulfills the promise.
    *
-   * The promise will be rejected if the kernel status is `Dead` or if the 
+   * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
   shutdown(ajaxOptions?: IAjaxOptions): Promise<void>;
@@ -505,7 +505,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
    *
-   * Fulfills with the `kernel_info_response` content when the shell reply is 
+   * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
   kernelInfo(): Promise<IKernelInfo>;
@@ -516,7 +516,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
-   * Fulfills with the `complete_reply` content when the shell reply is 
+   * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
   complete(contents: ICompleteRequest): Promise<ICompleteReply>;
@@ -527,7 +527,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
-   * Fulfills with the `inspect_reply` content when the shell reply is 
+   * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
   inspect(contents: IInspectRequest): Promise<IInspectReply>;
@@ -538,7 +538,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
-   * Future `onReply` is called with the `execute_reply` content when the 
+   * Future `onReply` is called with the `execute_reply` content when the
    * shell reply is received and validated.
    *
    * **See also:** [[IExecuteReply]]
@@ -551,7 +551,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *
-   * Fulfills with the `is_complete_response` content when the shell reply is 
+   * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
   isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
@@ -562,7 +562,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
    *
-   * Fulfills with the `comm_info_reply` content when the shell reply is 
+   * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
   commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
@@ -582,7 +582,6 @@ interface IKernel extends IDisposable {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm;
-
 }
 
 
@@ -592,8 +591,8 @@ interface IKernel extends IDisposable {
  * The future will self-dispose after `isDone` is
  * set and the registered `onDone` handler is called.
  *
- * If a `reply` is expected, the Future is considered done when 
- * both a `reply` message and a an `idle` iopub status message have 
+ * If a `reply` is expected, the Future is considered done when
+ * both a `reply` message and an `idle` iopub status message have
  * been received.  Otherwise, it is considered done when the `idle` status is
  * received.
  */
@@ -637,7 +636,7 @@ interface IKernelFuture extends IDisposable {
 /**
  * KernelSpec help link interface.
  */
-export 
+export
 interface IKernelSpecHelpLink {
   text: string;
   url: string;
@@ -672,7 +671,7 @@ interface IKernelSpecId {
 /**
  * KernelSpecInfo interface
  */
-export 
+export
 interface IKernelSpecIds {
   default: string;
   kernelspecs: { [key: string]: IKernelSpecId };
@@ -692,7 +691,7 @@ interface IComm extends IDisposable {
    */
   commId: string;
 
-  /** 
+  /**
    * The target name for the comm channel.
    *
    * #### Notes

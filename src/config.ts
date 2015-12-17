@@ -26,10 +26,10 @@ interface IConfigSection {
   data: any;
 
   /**
-   * Modify the stored config values. 
+   * Modify the stored config values.
    *
    * #### Notes
-   * Updates the local data immediately, sends the change to the server, 
+   * Updates the local data immediately, sends the change to the server,
    * and updates the local data with the response, and fullfils the promise
    * with that data.
    */
@@ -40,7 +40,7 @@ interface IConfigSection {
 
 /**
  * Create a config section.
- * 
+ *
  * @returns A Promise that is fulfilled with the config section is loaded.
  */
 export
@@ -59,7 +59,7 @@ class ConfigSection implements IConfigSection {
    * Create a config section.
    */
   constructor(sectionName: string, baseUrl: string) {
-    this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL, 
+    this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
                                   utils.urlJoinEncode(sectionName));
   }
 
@@ -72,7 +72,7 @@ class ConfigSection implements IConfigSection {
   get data(): any {
       return this._data;
   }
-  
+
   /**
    * Load the initial data for this section.
    *
@@ -93,17 +93,17 @@ class ConfigSection implements IConfigSection {
       return this;
     });
   }
-  
+
   /**
-   * Modify the stored config values. 
+   * Modify the stored config values.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
-   * Updates the local data immediately, sends the change to the server, 
-   * and updates the local data with the response, and fullfils the promise
+   * Updates the local data immediately, sends the change to the server,
+   * and updates the local data with the response, and fulfils the promise
    * with that data.
    */
   update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any> {
@@ -132,9 +132,9 @@ class ConfigSection implements IConfigSection {
 /**
  * Configurable object with defaults.
  */
-export 
+export
 class ConfigWithDefaults {
-  
+
   /**
    * Create a new config with defaults.
    */
@@ -143,23 +143,23 @@ class ConfigWithDefaults {
     this._defaults = defaults;
     this._className = classname;
   }
-  
+
   /**
    * Get data from the config section or fall back to defaults.
    */
   get(key: string): any {
     return this._classData()[key] || this._defaults[key]
   }
-  
+
   /**
-   * Set a config value. 
+   * Set a config value.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
-   * Sends the update to the server, and changes our local copy of the data 
+   * Sends the update to the server, and changes our local copy of the data
    * immediately.
    */
   set(key: string, value: any): Promise<any> {
