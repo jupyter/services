@@ -53,13 +53,13 @@ class NotebookSessionManager implements INotebookSessionManager {
    }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the manager.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the manager.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);
@@ -307,13 +307,13 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the session.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the session.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);

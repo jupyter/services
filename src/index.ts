@@ -3,7 +3,7 @@
 'use strict';
 
 export * from './config';
-export * from './contents';
+export * from './content';
 export * from './ikernel';
 export * from './isession';
 export * from './kernel';

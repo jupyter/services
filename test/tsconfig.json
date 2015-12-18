@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES5",
+    "outDir": "build"
+  },
+  "files": [
+    "../typings/expect.js/expect.js.d.ts",
+    "../typings/mocha/mocha.d.ts",
+    "../typings/es6-collections/es6-collections.d.ts",
+    "../typings/es6-promise/es6-promise.d.ts",
+    "../typings/text-encoding/text-encoding.d.ts",
+    "../typings/requirejs/r.d.ts",
+    "src/karma.ts",
+    "src/mocksocket.ts",
+    "src/mockxhr.ts",
+    "src/target.ts",
+    "src/testcomm.ts",
+    "src/testconfig.ts",
+    "src/testcontent.ts",
+    "src/testkernel.ts",
+    "src/testkernelspecs.ts",
+    "src/testsession.ts",
+    "src/testmocksocket.ts",
+    "src/testmockxhr.ts",
+    "src/utils.ts"
+  ]
+}

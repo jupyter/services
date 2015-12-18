@@ -100,6 +100,11 @@ interface INotebookSessionManager {
    * Connect to a running notebook session.
    */
   connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession>;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -156,4 +161,9 @@ interface INotebookSession {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   shutdown(ajaxSettings?: IAjaxSettings): Promise<void>;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }

@@ -2,9 +2,17 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IDisposable } from 'phosphor-disposable';
+import {
+  IDisposable
+} from 'phosphor-disposable';
 
-import { ISignal, Signal } from 'phosphor-signaling';
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
+
+import {
+  IAjaxSettings
+} from './utils';
 
 
 /**
@@ -580,6 +588,11 @@ interface IKernel extends IDisposable {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -607,6 +620,11 @@ interface IKernelManager {
    * Connect to an existing kernel.
    */
   connectTo(id: string, options?: IKernelOptions): Promise<IKernel>;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 

@@ -17,7 +17,7 @@
     "../typings/requirejs/r.d.ts",
     "index.ts",
     "config.ts",
-    "contents.ts",
+    "content.ts",
     "kernel.ts",
     "ikernel.ts",
     "isession.ts",

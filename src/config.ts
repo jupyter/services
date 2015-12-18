@@ -36,6 +36,11 @@ interface IConfigSection {
    * with that data.
    */
   update(newdata: any): Promise<any>;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -69,13 +74,13 @@ class ConfigSection implements IConfigSection {
   }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the section.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the section.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);

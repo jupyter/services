@@ -67,13 +67,13 @@ class KernelManager implements IKernelManager {
    }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the manager.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the manager.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);
@@ -82,39 +82,35 @@ class KernelManager implements IKernelManager {
   /**
    * Get the kernel specs.  See also [[getKernelSpecs]].
    */
-  getSpecs(ajaxSettings?: IAjaxSettings): Promise<IKernelSpecIds> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return getKernelSpecs(this._baseUrl, ajaxSettings);
+  getSpecs(): Promise<IKernelSpecIds> {
+    return getKernelSpecs(this._baseUrl, this.ajaxSettings);
   }
 
   /**
    * List the running kernels.  See also [[listRunningKernels]].
    */
-  listRunning(ajaxSettings?: IAjaxSettings): Promise<IKernelId[]> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return listRunningKernels(this._baseUrl, ajaxSettings);
+  listRunning(): Promise<IKernelId[]> {
+    return listRunningKernels(this._baseUrl, this.ajaxSettings);
   }
 
   /**
    * Start a new kernel.  See also [[startNewKernel]].
    */
-  startNew(options: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  startNew(options: IKernelOptions): Promise<IKernel> {
     options.baseUrl = this._baseUrl;
-    return startNewKernel(options, ajaxSettings);
+    return startNewKernel(options, this.ajaxSettings);
   }
 
   /**
    * Connect to a running kernel.  See also [[connectToKernel]].
    */
-  connectTo(id: string, options?: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
+  connectTo(id: string, options?: IKernelOptions): Promise<IKernel> {
     if (options) {
       options.baseUrl = this._baseUrl;
     } else {
       options = void 0;
     }
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return connectToKernel(id, options, ajaxSettings);
+    return connectToKernel(id, options, this.ajaxSettings);
   }
 
   private _baseUrl = '';
@@ -423,13 +419,13 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the kernel.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);

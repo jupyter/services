@@ -4,7 +4,7 @@
 
 import {
   ICheckpointModel, IContentModel
-} from './contents';
+} from './content';
 
 import {
   IKernelId, IKernelMessage, IKernelMessageHeader, IKernelSpecId

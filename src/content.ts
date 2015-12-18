@@ -274,6 +274,11 @@ interface IContentManager {
    * @returns A promise which resolves when the checkpoint is deleted.
    */
   deleteCheckpoint(path: string, checkpointID: string): Promise<void>;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -324,8 +329,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  get(path: string, options?: IContentOpts, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  get(path: string, options?: IContentOpts): Promise<IContentModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
@@ -362,8 +367,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  newUntitled(path: string, options?: IContentOpts, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  newUntitled(path: string, options?: IContentOpts): Promise<IContentModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
     if (options) {
@@ -394,8 +399,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
    */
-  delete(path: string, ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  delete(path: string): Promise<void> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
 
@@ -429,8 +434,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  rename(path: string, newPath: string, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  rename(path: string, newPath: string): Promise<IContentModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
     ajaxSettings.contentType = 'application/json';
@@ -461,8 +466,8 @@ class ContentManager implements IContentManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  save(path: string, model: IContentOpts, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  save(path: string, model: IContentOpts): Promise<IContentModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PUT';
     ajaxSettings.dataType = 'json';
     ajaxSettings.data = JSON.stringify(model);
@@ -495,8 +500,8 @@ class ContentManager implements IContentManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  copy(fromFile: string, toDir: string, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  copy(fromFile: string, toDir: string): Promise<IContentModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.data = JSON.stringify({ copy_from: fromFile });
     ajaxSettings.contentType = 'application/json';
@@ -522,8 +527,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  listContents(path: string, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
-    return this.get(path, {type: 'directory'}, ajaxSettings);
+  listContents(path: string): Promise<IContentModel> {
+    return this.get(path, {type: 'directory'});
   }
 
   /**
@@ -537,8 +542,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  createCheckpoint(path: string, ajaxSettings?: IAjaxSettings): Promise<ICheckpointModel> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  createCheckpoint(path: string): Promise<ICheckpointModel> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json'
 
@@ -563,8 +568,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  listCheckpoints(path: string, ajaxSettings?: IAjaxSettings): Promise<ICheckpointModel[]> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  listCheckpoints(path: string): Promise<ICheckpointModel[]> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
@@ -596,8 +601,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
    */
-  restoreCheckpoint(path: string, checkpointID: string, ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
 
@@ -622,8 +627,8 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
    */
-  deleteCheckpoint(path: string, checkpointID: string, ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  deleteCheckpoint(path: string, checkpointID: string): Promise<void> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
 
