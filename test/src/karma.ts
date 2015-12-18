@@ -242,7 +242,7 @@ describe('jupyter.services - Integration', () => {
     it('should create a file by name and delete it', (done) => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
         var contents = new ContentManager(BASEURL);
-        var options = { type: 'file', contents: '' };
+        var options = { type: 'file', content: '', format: 'text' };
         contents.save('baz.txt', options).then(model0 => {
           contents.delete('baz.txt').then(done);
         });

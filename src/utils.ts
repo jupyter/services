@@ -200,7 +200,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess
 
   return new Promise((resolve, reject) => {
     let req = new XMLHttpRequest();
-    req.open(settings.method, url, true, user, password);
+    req.open(method, url, true, user, password);
 
     if (settings.contentType !== void 0) {
       req.setRequestHeader('Content-Type', settings.contentType);

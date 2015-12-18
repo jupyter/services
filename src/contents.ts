@@ -326,6 +326,7 @@ class ContentManager implements IContentManager {
    */
   get(path: string, options?: IContentOpts, ajaxSettings?: IAjaxSettings): Promise<IContentModel> {
     ajaxSettings = ajaxSettings || this.ajaxSettings;
+    ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
 
@@ -564,6 +565,7 @@ class ContentManager implements IContentManager {
    */
   listCheckpoints(path: string, ajaxSettings?: IAjaxSettings): Promise<ICheckpointModel[]> {
     ajaxSettings = ajaxSettings || this.ajaxSettings;
+    ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
 

@@ -337,7 +337,7 @@ class NotebookSession implements INotebookSession {
       notebook: { path: path }
     }
     let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'POST';
+    ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
     ajaxSettings.data = JSON.stringify(model);
     ajaxSettings.contentType = 'application/json';
