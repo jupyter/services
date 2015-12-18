@@ -45,21 +45,24 @@ interface IConfigSection {
  * @returns A Promise that is fulfilled with the config section is loaded.
  */
 export
-function getConfigSection(sectionName: string, baseUrl: string, ajaxSettings?: IajaxSettings): Promise<IConfigSection> {
+function getConfigSection(sectionName: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<IConfigSection> {
+  baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   var section = new ConfigSection(sectionName, baseUrl, ajaxSettings);
-  return section.load(ajaxSettings);
+  return section.load();
 }
 
 
 /**
  * Implementation of the Configurable data section.
  */
+export
 class ConfigSection implements IConfigSection {
 
   /**
    * Create a config section.
    */
   constructor(sectionName: string, baseUrl: string, ajaxSettings?: IAjaxSettings) {
+    baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
                                   utils.urlJoinEncode(sectionName));
@@ -96,8 +99,8 @@ class ConfigSection implements IConfigSection {
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  load(ajaxSettings?: IAjaxSettings): Promise<IConfigSection> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  load(): Promise<IConfigSection> {
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
@@ -121,9 +124,9 @@ class ConfigSection implements IConfigSection {
    * and updates the local data with the response, and fulfils the promise
    * with that data.
    */
-  update(newdata: any, ajaxSettings?: IAjaxSettings): Promise<any> {
+  update(newdata: any): Promise<any> {
     this._data = utils.extend(this._data, newdata);
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.data = JSON.stringify(newdata);
     ajaxSettings.dataType = 'json';
@@ -141,6 +144,7 @@ class ConfigSection implements IConfigSection {
 
   private _url = "unknown";
   private _data: any = { };
+  private _ajaxSettings = '{}';
 }
 
 

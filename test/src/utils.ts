@@ -6,9 +6,13 @@ import expect = require('expect.js');
 
 import encoding = require('text-encoding');
 
-import { MockXMLHttpRequest } from './mockxhr';
+import {
+  MockXMLHttpRequest
+} from './mockxhr';
 
-import { IAjaxOptions } from '../../lib/index';
+import {
+  IAjaxSettings
+} from '../../lib/index';
 
 
 // stub for node global
@@ -78,7 +82,7 @@ function doLater(cb: () => void): void {
  * Optional ajax arguments.
  */
 export
-var ajaxOptions: IAjaxOptions = {
+var ajaxSettings: IAjaxSettings = {
   timeout: 10,
   requestHeaders: { foo: 'bar', fizz: 'buzz' },
   withCredentials: true,

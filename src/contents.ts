@@ -262,7 +262,7 @@ interface IContentManager {
    *
    * @returns A promise which resolves when the checkpoint is restored.
    */
-  restoreCheckpoint(path: string, checkpointID: string) Promise<void>;
+  restoreCheckpoint(path: string, checkpointID: string): Promise<void>;
 
   /**
    * Delete a checkpoint for a file.
@@ -293,6 +293,7 @@ class ContentManager implements IContentManager {
    * @param ajaxSettings - Optional initial ajax settings.
    */
   constructor(baseUrl: string, ajaxSettings?: IAjaxSettings) {
+    baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }
@@ -643,5 +644,5 @@ class ContentManager implements IContentManager {
   }
 
   private _apiUrl = "unknown";
-  private _ajaxSettings = '';
+  private _ajaxSettings = '{}';
 }

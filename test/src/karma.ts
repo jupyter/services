@@ -4,10 +4,10 @@
 
 import expect = require('expect.js');
 
-import { 
-  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions, 
+import {
+  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
   connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults, Contents
+  ConfigWithDefaults, ContentManager
 } from '../../lib';
 
 
@@ -206,11 +206,11 @@ describe('jupyter.services - Integration', () => {
 
   });
 
-  describe('Contents', () => {
+  describe('ContentManager', () => {
 
     it('should list a directory and get the file contents', (done) => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
-        var contents = new Contents(BASEURL);
+        var contents = new ContentManager(BASEURL);
         contents.listContents('.').then(listing => {
           var content = listing.content as any;
           for (var i = 0; i < content.length; i++) {
@@ -228,7 +228,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should create a new file, rename it, and delete it', (done) => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
-        var contents = new Contents(BASEURL);
+        var contents = new ContentManager(BASEURL);
         var options = { type: 'file', ext: '.ipynb' };
         contents.newUntitled('.', options).then(model0 => {
           contents.rename(model0.path, 'foo.ipynb').then(model1 => {
@@ -241,7 +241,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should create a file by name and delete it', (done) => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
-        var contents = new Contents(BASEURL);
+        var contents = new ContentManager(BASEURL);
         var options = { type: 'file', contents: '' };
         contents.save('baz.txt', options).then(model0 => {
           contents.delete('baz.txt').then(done);
@@ -251,7 +251,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should exercise the checkpoint API', (done) => {
       getKernelSpecs(BASEURL).then((kernelSpecs) => {
-        var contents = new Contents(BASEURL);
+        var contents = new ContentManager(BASEURL);
         var options = { type: 'file', contents: '' };
         contents.save('baz.txt', options).then(model0 => {
           contents.createCheckpoint('baz.txt').then(checkpoint => {

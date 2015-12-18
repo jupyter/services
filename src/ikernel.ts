@@ -591,22 +591,22 @@ interface IKernelManager {
   /**
    * Get the available kernel specs.
    */
-  getKernelSpecs(): Promise<IKernelSpecIds>;
+  getSpecs(): Promise<IKernelSpecIds>;
 
   /**
    * Get a list of running kernels.
    */
-  listRunningKernels(): Promise<IKernelId[]>;
+  listRunning(): Promise<IKernelId[]>;
 
   /**
    * Start a new kernel.
    */
-  startNewKernel(options: IKernelOptions): Promise<IKernel>;
+  startNew(options: IKernelOptions): Promise<IKernel>;
 
   /**
    * Connect to an existing kernel.
    */
-  connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>;
+  connectTo(id: string, options?: IKernelOptions): Promise<IKernel>;
 }
 
 

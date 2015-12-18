@@ -2,6 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
+/**
+ * Default base URL.
+ */
+ export
+const DEFAULT_BASE_URL = (typeof location === 'undefined' ?
+                          'http://localhost:8888/': location.origin + '/');
 
 /**
  * Copy the contents of one object to another, recursively.

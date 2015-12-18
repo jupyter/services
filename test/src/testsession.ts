@@ -4,7 +4,7 @@
 
 import expect = require('expect.js');
 
-import { 
+import {
   listRunningSessions, connectToSession, startNewSession
 } from '../../lib/session';
 
@@ -18,7 +18,7 @@ import { uuid } from '../../lib/utils';
 
 import { KernelTester } from './testkernel';
 
-import { RequestHandler, ajaxOptions, expectFailure, doLater } from './utils';
+import { RequestHandler, ajaxSettings, expectFailure, doLater } from './utils';
 
 
 /**
@@ -64,7 +64,7 @@ describe('jupyter.services - session', () => {
 
     it('should accept ajax options', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888', ajaxOptions);
+      var list = listRunningSessions('http://localhost:8888', ajaxSettings);
       var sessionIds = [createSessionId(), createSessionId()];
       handler.respond(200, sessionIds);
       return list.then((response: ISessionId[]) => {
@@ -128,7 +128,7 @@ describe('jupyter.services - session', () => {
       var tester = new KernelTester();
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options, ajaxOptions);
+      var sessionPromise = startNewSession(options, ajaxSettings);
       tester.respond(201, sessionId)
       tester.onRequest = () => {
         tester.respond(200, [ { name: sessionId.kernel.name,
@@ -176,7 +176,7 @@ describe('jupyter.services - session', () => {
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
       var sessionPromise = startNewSession(options);
-      var data = { 
+      var data = {
         id: 1, kernel: { name: '', id: '' }, notebook: { path: ''}
       };
       tester.respond(201, data);
@@ -229,7 +229,7 @@ describe('jupyter.services - session', () => {
       var tester = new KernelTester();
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
-      var sessionPromise = connectToSession(sessionId.id, options, ajaxOptions);
+      var sessionPromise = connectToSession(sessionId.id, options, ajaxSettings);
       tester.respond(200, [sessionId]);
       tester.onRequest = () => {
         tester.respond(200, [ { name: sessionId.kernel.name,
@@ -338,7 +338,7 @@ describe('jupyter.services - session', () => {
         var id = createSessionId();
         var newPath = '/foo.ipynb';
         startSession(id, tester).then((session) => {
-          var promise = session.renameNotebook(newPath, ajaxOptions);
+          var promise = session.renameNotebook(newPath, ajaxSettings);
           var newId = JSON.parse(JSON.stringify(id));
           newId.notebook.path = newPath;
           tester.respond(200, newId);
@@ -422,7 +422,7 @@ describe('jupyter.services - session', () => {
         var tester = new KernelTester();
         var sessionId = createSessionId();
         startSession(sessionId, tester).then((session) => {
-          var promise = session.shutdown(ajaxOptions);
+          var promise = session.shutdown(ajaxSettings);
           tester.respond(204, { });
           promise.then(() => {
             done();

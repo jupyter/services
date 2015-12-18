@@ -47,12 +47,6 @@ const KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
  */
 const KERNEL_NOT_READY_MSG = 'Kernel is not ready to send a message';
 
-/**
- * Default base URL.
- */
-const DEFAULT_BASE_URL = (typeof location === undefined ?
-                          'http://localhost:8888/': location.origin + '/');
-
 
 /**
  * An implementation of a kernel manager.
@@ -68,7 +62,7 @@ class KernelManager implements IKernelManager {
    * @param ajaxSettings - Optional default ajax settings for the manager.
    */
    constructor(baseUrl: string, ajaxSettings?: IAjaxSettings) {
-     this._baseUrl = baseUrl || DEFAULT_BASE_URL;
+     this._baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
      if (ajaxSettings) this.ajaxSettings = ajaxSettings;
    }
 
@@ -86,17 +80,17 @@ class KernelManager implements IKernelManager {
   }
 
   /**
-   * Fetch the kernel specs.  See also [[getKernelSpecs]].
+   * Get the kernel specs.  See also [[getKernelSpecs]].
    */
-  getKernelSpecs(ajaxSettings?: IAjaxSettings): Promise<IKernelSpecIds> {
+  getSpecs(ajaxSettings?: IAjaxSettings): Promise<IKernelSpecIds> {
     ajaxSettings = ajaxSettings || this.ajaxSettings;
     return getKernelSpecs(this._baseUrl, ajaxSettings);
   }
 
   /**
-   * Fetch the running kernels.  See also [[listRunningKernels]].
+   * List the running kernels.  See also [[listRunningKernels]].
    */
-  listRunningKernels(ajaxSettings?: IAjaxSettings): Promise<IKernelId[]> {
+  listRunning(ajaxSettings?: IAjaxSettings): Promise<IKernelId[]> {
     ajaxSettings = ajaxSettings || this.ajaxSettings;
     return listRunningKernels(this._baseUrl, ajaxSettings);
   }
@@ -104,7 +98,7 @@ class KernelManager implements IKernelManager {
   /**
    * Start a new kernel.  See also [[startNewKernel]].
    */
-  startNewKernel(options: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
+  startNew(options: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
     ajaxSettings = ajaxSettings || this.ajaxSettings;
     options.baseUrl = this._baseUrl;
     return startNewKernel(options, ajaxSettings);
@@ -113,7 +107,7 @@ class KernelManager implements IKernelManager {
   /**
    * Connect to a running kernel.  See also [[connectToKernel]].
    */
-  connectToKernel(id: string, options?: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
+  connectTo(id: string, options?: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
     if (options) {
       options.baseUrl = this._baseUrl;
     } else {
@@ -124,7 +118,7 @@ class KernelManager implements IKernelManager {
   }
 
   private _baseUrl = '';
-  private _ajaxSettings = '';
+  private _ajaxSettings = '{}';
 
 }
 
@@ -137,7 +131,7 @@ class KernelManager implements IKernelManager {
  */
 export
 function getKernelSpecs(baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<IKernelSpecIds> {
-  baseUrl = baseUrl || DEFAULT_BASE_URL;
+  baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
   ajaxSettings.method = 'GET';
@@ -179,7 +173,7 @@ function getKernelSpecs(baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<
  */
 export
 function listRunningKernels(baseUrl?: string, ajaxSettings?: IAjaxSettings): Promise<IKernelId[]> {
-  baseUrl = baseUrl || DEFAULT_BASE_URL;
+  baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
   ajaxSettings.method = 'GET';
@@ -212,7 +206,7 @@ function listRunningKernels(baseUrl?: string, ajaxSettings?: IAjaxSettings): Pro
  */
 export
 function startNewKernel(options: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
-  let baseUrl = options.baseUrl || DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
   ajaxSettings.method = 'POST';
@@ -254,7 +248,7 @@ function connectToKernel(id: string, options?: IKernelOptions, ajaxSettings?: IA
   if (options === void 0) {
     return Promise.reject(new Error('Please specify kernel options'));
   }
-  let baseUrl = options.baseUrl || DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
   return listRunningKernels(baseUrl, ajaxSettings).then(kernelIds => {
     if (!kernelIds.some(k => k.id === id)) {
       throw new Error('No running kernel with id: ' + id);
@@ -343,7 +337,7 @@ class Kernel implements IKernel {
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._name = options.name;
     this._id = id;
-    this._baseUrl = options.baseUrl || DEFAULT_BASE_URL;
+    this._baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
     if (options.wsUrl) {
       this._wsUrl = options.wsUrl;
     } else {
@@ -511,9 +505,8 @@ class Kernel implements IKernel {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  interrupt(ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return interruptKernel(this, this._baseUrl, ajaxSettings);
+  interrupt(): Promise<void> {
+    return interruptKernel(this, this._baseUrl, this.ajaxSettings);
   }
 
   /**
@@ -532,7 +525,6 @@ class Kernel implements IKernel {
    * invalid.
    */
   restart(ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
     // clear internal state
     this._futures.forEach((future, key) => {
       future.dispose();
@@ -561,8 +553,7 @@ class Kernel implements IKernel {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  shutdown(ajaxSettings?: IAjaxSettings): Promise<void> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
+  shutdown(): Promise<void> {
     return shutdownKernel(this, this._baseUrl, this.ajaxSettings).then(() => {
       this._status = KernelStatus.Dead;
       this._ws.close();
@@ -1035,7 +1026,7 @@ class Kernel implements IKernel {
   private _clientId = '';
   private _ws: WebSocket = null;
   private _username = '';
-  private _ajaxSettings = '';
+  private _ajaxSettings = '{}';
   private _reconnectLimit = 7;
   private _reconnectAttempt = 0;
   private _isReady = false;
@@ -1119,7 +1110,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxSettings?: IAjaxSet
   ajaxSettings.method = 'DELETE';
   ajaxSettings.dataType = 'json';
 
-  return utils.ajaxRequest(ur, ajaxSettings).then(success => {
+  return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 204) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
