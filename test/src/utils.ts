@@ -58,12 +58,11 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
   return promise.then((msg: any) => {
     console.error('***should not reach this point');
     throw Error('Should not reach this point');
-  }).catch((err) => {
-    console.log('****in expect failure', err);
-    if (err.message !== message) {
-      console.error(err.message, ' != ', message);
+  }).catch((error) => {
+    if (error.message.indexOf(message) == -1) {
+      console.error('****', message, 'not in:', error.message);
+      return;
     }
-    expect(err.message).to.be(message);
     done();
   });
 }
