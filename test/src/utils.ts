@@ -59,7 +59,7 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
     console.error('***should not reach this point');
     throw Error('Should not reach this point');
   }).catch((error) => {
-    if (error.message.indexOf(message) == -1) {
+    if (error.message.indexOf(message) === -1) {
       console.error('****', message, 'not in:', error.message);
       return;
     }
