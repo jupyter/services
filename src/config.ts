@@ -1,7 +1,9 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { IAjaxOptions } from './utils';
+import {
+  IAjaxSettings
+} from './utils';
 
 import * as utils from './utils';
 
@@ -33,8 +35,7 @@ interface IConfigSection {
    * and updates the local data with the response, and fullfils the promise
    * with that data.
    */
-  update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any>;
-
+  update(newdata: any): Promise<any>;
 }
 
 
@@ -44,9 +45,9 @@ interface IConfigSection {
  * @returns A Promise that is fulfilled with the config section is loaded.
  */
 export
-function getConfigSection(sectionName: string, baseUrl: string, ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
-  var section = new ConfigSection(sectionName, baseUrl);
-  return section.load(ajaxOptions);
+function getConfigSection(sectionName: string, baseUrl: string, ajaxSettings?: IajaxSettings): Promise<IConfigSection> {
+  var section = new ConfigSection(sectionName, baseUrl, ajaxSettings);
+  return section.load(ajaxSettings);
 }
 
 
@@ -58,9 +59,23 @@ class ConfigSection implements IConfigSection {
   /**
    * Create a config section.
    */
-  constructor(sectionName: string, baseUrl: string) {
+  constructor(sectionName: string, baseUrl: string, ajaxSettings?: IAjaxSettings) {
+    if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
                                   utils.urlJoinEncode(sectionName));
+  }
+
+  /**
+   * Get a copy of the default ajax settings for the content manager.
+   */
+  get ajaxSettings(): IAjaxSettings {
+    return JSON.parse(this._ajaxSettings);
+  }
+  /**
+   * Set the default ajax settings for the content manager.
+   */
+  set ajaxSettings(value: IAjaxSettings) {
+    this._ajaxSettings = JSON.stringify(value);
   }
 
   /**
@@ -70,7 +85,7 @@ class ConfigSection implements IConfigSection {
    * This is a read-only property.
    */
   get data(): any {
-      return this._data;
+    return this._data;
   }
 
   /**
@@ -81,11 +96,11 @@ class ConfigSection implements IConfigSection {
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  load(ajaxOptions?: IAjaxOptions): Promise<IConfigSection> {
-    return utils.ajaxRequest(this._url, {
-      method: "GET",
-      dataType: "json",
-    }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
+  load(ajaxSettings?: IAjaxSettings): Promise<IConfigSection> {
+    ajaxSettings = ajaxSettings || this.ajaxSettings;
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -106,15 +121,15 @@ class ConfigSection implements IConfigSection {
    * and updates the local data with the response, and fulfils the promise
    * with that data.
    */
-  update(newdata: any, ajaxOptions?: IAjaxOptions): Promise<any> {
+  update(newdata: any, ajaxSettings?: IAjaxSettings): Promise<any> {
     this._data = utils.extend(this._data, newdata);
+    ajaxSettings = ajaxSettings || this.ajaxSettings;
+    ajaxSettings.method = 'PATCH';
+    ajaxSettings.data = JSON.stringify(newdata);
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.contentType = 'application/json';
 
-    return utils.ajaxRequest(this._url, {
-      method : "PATCH",
-      data: JSON.stringify(newdata),
-      dataType : "json",
-      contentType: 'application/json',
-    }, ajaxOptions).then((success: utils.IAjaxSuccess) => {
+    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }

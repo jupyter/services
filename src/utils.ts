@@ -99,22 +99,58 @@ function jsonToQueryString(json: any): string {
  */
 export
 interface IAjaxSettings {
-  method: string;
-  dataType: string;
+  /**
+   * The HTTP method to use.  Defaults to `'GET'`.
+   */
+  method?: string;
+
+  /**
+   * The return data type (used to parse the return data).
+   */
+  dataType?: string;
+
+  /**
+   * The outgoing content type, used to set the `Content-Type` header.
+   */
   contentType?: string;
+
+  /**
+   * The request data.
+   */
   data?: any;
-}
 
+  /**
+   * Whether to cache the response. Defaults to `true`.
+   */
+  cache?: boolean;
 
-/**
- * Options for AJAX calls.
- */
-export
-interface IAjaxOptions {
+  /**
+   * The number of milliseconds a request can take before automatically
+   * being terminated.  A value of 0 (which is the default) means there is
+   * no timeout.
+   */
   timeout?: number;
+
+  /**
+   * A mapping of request headers, used via `setRequestHeader`.
+   */
   requestHeaders?: { [key: string]: string; };
+
+  /**
+   * Is a Boolean that indicates whether or not cross-site Access-Control
+   * requests should be made using credentials such as cookies or
+   * authorization headers.  Defaults to `false`.
+   */
   withCredentials?: boolean;
+
+  /**
+   * The user name associated with the request.  Defaults to `''`.
+   */
   user?: string;
+
+  /**
+   * The password associated with the request.  Defaults to `''`.
+   */
   password?: string;
 }
 
@@ -147,38 +183,53 @@ interface IAjaxError {
  * Based on this [example](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest).
  */
 export
-function ajaxRequest(url: string, settings: IAjaxSettings, options?: IAjaxOptions): Promise<any> {
-  options = options || {};
+function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess> {
+  let method = settings.method || 'GET';
+  let user = settings.user || '';
+  let password = settings.password || '';
+  if (!!settings.cache) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache.
+    url += ((/\?/).test(url) ? "&" : "?") + (new Date()).getTime();
+  }
+
   return new Promise((resolve, reject) => {
-    var req = new XMLHttpRequest();
-    req.open(settings.method, url, true, options.user,
-             options.password);
-    if (settings.contentType) {
+    let req = new XMLHttpRequest();
+    req.open(settings.method, url, true, user, password);
+
+    if (settings.contentType !== void 0) {
       req.setRequestHeader('Content-Type', settings.contentType);
     }
-    if (options.timeout !== void 0) req.timeout = options.timeout;
-    if (options.withCredentials !== void 0) {
-      req.withCredentials = options.withCredentials;
+    if (settings.timeout !== void 0) req.timeout = settings.timeout;
+    if (!!settings.withCredentials) {
+      req.withCredentials = true;
     }
-    if (options.requestHeaders !== void 0) {
-       for (var prop in options.requestHeaders) {
-         req.setRequestHeader(prop, (options as any).requestHeaders[prop]);
+    if (settings.requestHeaders !== void 0) {
+       for (let prop in settings.requestHeaders) {
+         req.setRequestHeader(prop, (settings as any).requestHeaders[prop]);
        }
     }
+
     req.onload = () => {
-      var response = req.responseText;
+      if (req.status >= 400) {
+        let error = new Error(req.statusText);
+        reject({ xhr: req, statusText: req.statusText, error: error });
+      }
+      let response = req.responseText;
       if (settings.dataType === 'json' && response) {
         response = JSON.parse(response);
       }
       resolve({ data: response, statusText: req.statusText, xhr: req });
     };
+
     req.onerror = (err: ErrorEvent) => {
       reject({ xhr: req, statusText: req.statusText, error: err });
     };
+
     req.ontimeout = () => {
       reject({ xhr: req, statusText: req.statusText,
                error: new Error('Operation Timed Out') });
     }
+
     if (settings.data) {
       req.send(settings.data);
     } else {

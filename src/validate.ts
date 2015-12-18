@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  ICheckpointModel, IContentsModel
+  ICheckpointModel, IContentModel
 } from './contents';
 
 import {
@@ -168,7 +168,7 @@ function validateKernelSpec(info: IKernelSpecId): void {
  * Validate an `IContentsModel` object.
  */
 export
-function validateContentsModel(model: IContentsModel) {
+function validateContentsModel(model: IContentModel) {
   var err = new Error('Invalid Contents Model');
   if (!model.hasOwnProperty('name') || typeof model.name !== 'string') {
     throw err;

@@ -6,8 +6,6 @@ import { IDisposable } from 'phosphor-disposable';
 
 import { ISignal, Signal } from 'phosphor-signaling';
 
-import { IAjaxOptions } from './utils';
-
 
 /**
  * The options object used to initialize a kernel.
@@ -464,7 +462,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  interrupt(ajaxOptions?: IAjaxOptions): Promise<void>;
+  interrupt(): Promise<void>;
 
   /**
    * Restart a kernel.
@@ -481,7 +479,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  restart(ajaxOptions?: IAjaxOptions): Promise<void>;
+  restart(): Promise<void>;
 
   /**
    * Shutdown a kernel.
@@ -497,7 +495,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  shutdown(ajaxOptions?: IAjaxOptions): Promise<void>;
+  shutdown(): Promise<void>;
 
   /**
    * Send a `kernel_info_request` message.
@@ -582,6 +580,33 @@ interface IKernel extends IDisposable {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm;
+}
+
+
+/**
+ * Object which manages kernel instances.
+ */
+export
+interface IKernelManager {
+  /**
+   * Get the available kernel specs.
+   */
+  getKernelSpecs(): Promise<IKernelSpecIds>;
+
+  /**
+   * Get a list of running kernels.
+   */
+  listRunningKernels(): Promise<IKernelId[]>;
+
+  /**
+   * Start a new kernel.
+   */
+  startNewKernel(options: IKernelOptions): Promise<IKernel>;
+
+  /**
+   * Connect to an existing kernel.
+   */
+  connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>;
 }
 
 
