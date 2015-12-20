@@ -60,7 +60,6 @@ function getConfigSection(sectionName: string, baseUrl: string, ajaxSettings?: I
 /**
  * Implementation of the Configurable data section.
  */
-export
 class ConfigSection implements IConfigSection {
 
   /**
