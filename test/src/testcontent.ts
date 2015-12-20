@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   ICheckpointModel, IContentModel, IContentOpts, ContentManager,
-} from '../../lib/contents';
+} from '../../lib/content';
 
 
 import {
