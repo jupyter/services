@@ -5,8 +5,8 @@
 import expect = require('expect.js');
 
 import {
-  ICheckpointModel, IContentModel, IContentOpts, ContentManager,
-} from '../../lib/content';
+  ICheckpointModel, IContentsModel, IContentsOpts, ContentsManager,
+} from '../../lib/contents';
 
 
 import {
@@ -14,7 +14,7 @@ import {
 } from './utils';
 
 
-var DEFAULT_FILE: IContentModel = {
+var DEFAULT_FILE: IContentsModel = {
   name: "test",
   path: "",
   type: "file",
@@ -26,7 +26,7 @@ var DEFAULT_FILE: IContentModel = {
   format: "text"
 }
 
-var DEFAULT_DIR: IContentModel = {
+var DEFAULT_DIR: IContentsModel = {
   name: "bar",
   path: "/foo/bar",
   type: "file",
@@ -49,7 +49,7 @@ describe('jupyter.services - Contents', () => {
   describe('#constructor()', () => {
 
     it('should complete properly', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       done();
     });
 
@@ -58,40 +58,40 @@ describe('jupyter.services - Contents', () => {
   describe('#get()', () => {
 
     it('should get a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var get = contents.get("/foo", { type: "file", name: "test" });
       handler.respond(200, DEFAULT_FILE);
-      return get.then((model: IContentModel) => {
+      return get.then((model: IContentsModel) => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should get a directory', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var get = contents.get("/foo", { type: "directory", name: "bar" });
       handler.respond(200, DEFAULT_DIR);
-      return get.then((model: IContentModel) => {
+      return get.then((model: IContentsModel) => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var get = contents.get("/foo", { type: "directory", name: "bar" });
       handler.respond(200, DEFAULT_DIR);
-      return get.then((model: IContentModel) => {
+      return get.then((model: IContentsModel) => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var get = contents.get("/foo", { type: "directory", name: "bar",
                                        format: "json", content: false });
@@ -102,7 +102,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var get = contents.get("/foo", { name: "bar" });
       handler.respond(201, DEFAULT_DIR);
@@ -114,42 +114,42 @@ describe('jupyter.services - Contents', () => {
   describe('#newUntitled()', () => {
 
     it('should create a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var newFile = contents.newUntitled("/foo");
       handler.respond(201, DEFAULT_FILE);
-      return newFile.then((model: IContentModel) => {
+      return newFile.then((model: IContentsModel) => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should create a directory', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
       handler.respond(201, DEFAULT_DIR);
-      return newDir.then((model: IContentModel) => {
+      return newDir.then((model: IContentsModel) => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
       handler.respond(201, DEFAULT_DIR);
-      return newDir.then((model: IContentModel) => {
+      return newDir.then((model: IContentsModel) => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var newFile = contents.newUntitled("/foo", { type: "file", ext: "py" });
       var dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
@@ -159,7 +159,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var newDir = contents.newUntitled("/foo", { name: "bar" });
       handler.respond(200, DEFAULT_DIR);
@@ -171,7 +171,7 @@ describe('jupyter.services - Contents', () => {
   describe('#delete()', () => {
 
     it('should delete a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var del = contents.delete("/foo/bar.txt");
       handler.respond(204, { });
@@ -181,7 +181,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var del = contents.delete("/foo/bar.txt");
       handler.respond(204, { });
@@ -191,7 +191,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var del = contents.delete("/foo/bar.txt");
       handler.respond(200, { });
@@ -199,7 +199,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should throw a specific error', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var del = contents.delete("/foo/");
       handler.respond(400, { });
@@ -207,7 +207,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should throw a general error', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var del = contents.delete("/foo/");
       handler.respond(500, { });
@@ -219,29 +219,29 @@ describe('jupyter.services - Contents', () => {
   describe('#rename()', () => {
 
     it('should rename a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       handler.respond(200, DEFAULT_FILE);
-      return rename.then((obj: IContentModel) => {
+      return rename.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       handler.respond(200, DEFAULT_FILE);
-      return rename.then((obj: IContentModel) => {
+      return rename.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       var dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
@@ -251,7 +251,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       handler.respond(201, DEFAULT_FILE);
@@ -263,40 +263,40 @@ describe('jupyter.services - Contents', () => {
   describe('#save()', () => {
 
     it('should save a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var save = contents.save("/foo", { type: "file", name: "test" });
       handler.respond(200, DEFAULT_FILE);
-      return save.then((obj: IContentModel) => {
+      return save.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should create a new file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var save = contents.save("/foo", { type: "file", name: "test" });
       handler.respond(201, DEFAULT_FILE);
-      return save.then((obj: IContentModel) => {
+      return save.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var save = contents.save("/foo", { type: "file", name: "test" });
       handler.respond(200, DEFAULT_FILE);
-      return save.then((obj: IContentModel) => {
+      return save.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var save = contents.save("/foo", { type: "file", name: "test" });
       var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
@@ -306,7 +306,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var save = contents.save("/foo", { type: "file", name: "test" });
       handler.respond(204, DEFAULT_FILE);
@@ -318,29 +318,29 @@ describe('jupyter.services - Contents', () => {
   describe('#copy()', () => {
 
     it('should copy a file', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var copy = contents.copy("/foo/bar.txt", "/baz");
       handler.respond(201, DEFAULT_FILE);
-      return copy.then((obj: IContentModel) => {
+      return copy.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var copy = contents.copy("/foo/bar.txt", "/baz");
       handler.respond(201, DEFAULT_FILE);
-      return copy.then((obj: IContentModel) => {
+      return copy.then((obj: IContentsModel) => {
         expect(obj.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var copy = contents.copy("/foo/bar.txt", "/baz");
       var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
@@ -350,7 +350,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var copy = contents.copy("/foo/bar.txt", "/baz");
       handler.respond(200, DEFAULT_FILE);
@@ -362,7 +362,7 @@ describe('jupyter.services - Contents', () => {
   describe('#createCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.createCheckpoint("/foo/bar.txt");
       handler.respond(201, DEFAULT_CP);
@@ -373,7 +373,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var checkpoint = contents.createCheckpoint("/foo/bar.txt");
       handler.respond(201, DEFAULT_CP);
@@ -384,7 +384,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.createCheckpoint("/foo/bar.txt");
       var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
@@ -394,7 +394,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.createCheckpoint("/foo/bar.txt");
       handler.respond(200, DEFAULT_CP);
@@ -406,7 +406,7 @@ describe('jupyter.services - Contents', () => {
   describe('#listCheckpoints()', () => {
 
     it('should list the checkpoints', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoints = contents.listCheckpoints("/foo/bar.txt");
       handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
@@ -417,7 +417,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var checkpoints = contents.listCheckpoints("/foo/bar.txt");
       handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
@@ -428,7 +428,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoints = contents.listCheckpoints("/foo/bar.txt");
       var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
@@ -445,7 +445,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoints = contents.listCheckpoints("/foo/bar.txt");
       handler.respond(201, { });
@@ -457,7 +457,7 @@ describe('jupyter.services - Contents', () => {
   describe('#restoreCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -468,7 +468,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -479,7 +479,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -492,7 +492,7 @@ describe('jupyter.services - Contents', () => {
   describe('#deleteCheckpoint()', () => {
 
     it('should delete a checkpoint', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -503,7 +503,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -514,7 +514,7 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
@@ -527,22 +527,22 @@ describe('jupyter.services - Contents', () => {
   describe('#listContents()', () => {
 
     it('should get a directory', (done) => {
-      var contents = new ContentManager("localhost");
+      var contents = new ContentsManager("localhost");
       var handler = new RequestHandler();
       var dir = contents.listContents("/foo");
       handler.respond(200, DEFAULT_FILE);
-      return dir.then((model: IContentModel) => {
+      return dir.then((model: IContentsModel) => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentManager("localhost", ajaxSettings);
+      var contents = new ContentsManager("localhost", ajaxSettings);
       var handler = new RequestHandler();
       var dir = contents.listContents("/foo");
       handler.respond(200, DEFAULT_FILE);
-      return dir.then((model: IContentModel) => {
+      return dir.then((model: IContentsModel) => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });

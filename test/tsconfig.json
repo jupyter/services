@@ -21,7 +21,7 @@
     "src/target.ts",
     "src/testcomm.ts",
     "src/testconfig.ts",
-    "src/testcontent.ts",
+    "src/testcontents.ts",
     "src/testkernel.ts",
     "src/testkernelspecs.ts",
     "src/testsession.ts",

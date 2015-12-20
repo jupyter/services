@@ -16,10 +16,10 @@ var SERVICE_CONTENTS_URL = 'api/contents';
 
 
 /**
- * Options for a content object.
+ * Options for a contents object.
  */
 export
-interface IContentOpts {
+interface IContentsOpts {
   /**
    * The type of file.
    *
@@ -60,14 +60,14 @@ interface IContentOpts {
 
 
 /**
- * Content model.
+ * Contents model.
  *
  * #### Notes
  * If the model does not contain content, the `content`, `format`, and
  * `mimetype` keys will be `null`.
  */
 export
-interface IContentModel {
+interface IContentsModel {
 
   /**
    * Name of the contents file.
@@ -151,10 +151,10 @@ interface ICheckpointModel {
 
 
 /**
- * Interface that a content manager should implement.
+ * Interface that a contents manager should implement.
  **/
 export
-interface IContentManager {
+interface IContentsManager {
   /**
    * Get a file or directory.
    *
@@ -165,7 +165,7 @@ interface IContentManager {
    *
    * @returns A promise which resolves with the file content.
    */
-  get(path: string, options?: IContentOpts): Promise<IContentModel>;
+  get(path: string, options?: IContentsOpts): Promise<IContentsModel>;
 
   /**
    * Create a new untitled file or directory in the specified directory path.
@@ -177,7 +177,7 @@ interface IContentManager {
    * @returns A promise which resolves with the created file content when the
    *    file is created.
    */
-  newUntitled(path: string, options: IContentOpts): Promise<IContentModel>;
+  newUntitled(path: string, options: IContentsOpts): Promise<IContentsModel>;
 
   /**
    * Delete a file.
@@ -198,7 +198,7 @@ interface IContentManager {
    * @returns A promise which resolves with the new file content model when the
    *   file is renamed.
    */
-  rename(path: string, newPath: string): Promise<IContentModel>;
+  rename(path: string, newPath: string): Promise<IContentsModel>;
 
   /**
    * Save a file.
@@ -210,7 +210,7 @@ interface IContentManager {
    * @returns A promise which resolves with the file content model when the
    *   file is saved.
    */
-  save(path: string, model: any): Promise<IContentModel>;
+  save(path: string, model: any): Promise<IContentsModel>;
 
   /**
    * Copy a file into a given directory.
@@ -222,7 +222,7 @@ interface IContentManager {
    * @returns A promise which resolves with the new content model when the
    *  file is copied.
    */
-  copy(path: string, toDir: string): Promise<IContentModel>;
+  copy(path: string, toDir: string): Promise<IContentsModel>;
 
   /**
    * List notebooks and directories at a given path.
@@ -231,7 +231,7 @@ interface IContentManager {
    *
    * @returns A promise which resolves with a model with the directory content.
    */
-  listContents(path: string): Promise<IContentModel>;
+  listContents(path: string): Promise<IContentsModel>;
 
   /**
    * Create a checkpoint for a file.
@@ -283,15 +283,14 @@ interface IContentManager {
 
 
 /**
- * A contents handle passing file operations to the back-end.
+ * A contents manager that passes file operations to the server.
  *
  * This includes checkpointing with the normal file operations.
  */
 export
-class ContentManager implements IContentManager {
-
+class ContentsManager implements IContentsManager {
   /**
-   * Construct a new content manager object.
+   * Construct a new contents manager object.
    *
    * @param baseUrl - The base URL for the server.
    *
@@ -304,13 +303,13 @@ class ContentManager implements IContentManager {
   }
 
   /**
-   * Get a copy of the default ajax settings for the content manager.
+   * Get a copy of the default ajax settings for the contents manager.
    */
   get ajaxSettings(): IAjaxSettings {
     return JSON.parse(this._ajaxSettings);
   }
   /**
-   * Set the default ajax settings for the content manager.
+   * Set the default ajax settings for the contents manager.
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);
@@ -329,7 +328,7 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  get(path: string, options?: IContentOpts): Promise<IContentModel> {
+  get(path: string, options?: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -338,14 +337,14 @@ class ContentManager implements IContentManager {
     let url = this._getUrl(path);
 
     if (options) {
-      let params: IContentOpts = {};
+      let params: IContentsOpts = {};
       if (options.type) { params.type = options.type; }
       if (options.format) { params.format = options.format; }
       if (options.content === false) { params.content = '0'; }
       url += utils.jsonToQueryString(params);
     }
 
-    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContentModel => {
+    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContentsModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -367,7 +366,7 @@ class ContentManager implements IContentManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  newUntitled(path: string, options?: IContentOpts): Promise<IContentModel> {
+  newUntitled(path: string, options?: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -428,13 +427,13 @@ class ContentManager implements IContentManager {
    *
    * @param newPath - The new file path.
    *
-   * @returns A promise which resolves with the new file content model when the
-   *   file is renamed.
+   * @returns A promise which resolves with the new file contents model when
+   *   the file is renamed.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  rename(path: string, newPath: string): Promise<IContentModel> {
+  rename(path: string, newPath: string): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
@@ -458,7 +457,7 @@ class ContentManager implements IContentManager {
    *
    * @param model - The file model to save.
    *
-   * @returns A promise which resolves with the file content model when the
+   * @returns A promise which resolves with the file contents model when the
    *   file is saved.
    *
    * #### Notes
@@ -466,7 +465,7 @@ class ContentManager implements IContentManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  save(path: string, model: IContentOpts): Promise<IContentModel> {
+  save(path: string, model: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PUT';
     ajaxSettings.dataType = 'json';
@@ -492,7 +491,7 @@ class ContentManager implements IContentManager {
    *
    * @param toDir - The destination directory path.
    *
-   * @returns A promise which resolves with the new content model when the
+   * @returns A promise which resolves with the new contents model when the
    *  file is copied.
    *
    * #### Notes
@@ -500,7 +499,7 @@ class ContentManager implements IContentManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  copy(fromFile: string, toDir: string): Promise<IContentModel> {
+  copy(fromFile: string, toDir: string): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.data = JSON.stringify({ copy_from: fromFile });
@@ -522,12 +521,13 @@ class ContentManager implements IContentManager {
    *
    * @param: path - The path in which to list the contents.
    *
-   * @returns A promise which resolves with a model with the directory content.
+   * @returns A promise which resolves with a model with the directory
+   *    contents.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
    */
-  listContents(path: string): Promise<IContentModel> {
+  listContents(path: string): Promise<IContentsModel> {
     return this.get(path, {type: 'directory'});
   }
 

@@ -3,11 +3,12 @@
 'use strict';
 
 export * from './config';
-export * from './content';
+export * from './contents';
 export * from './ikernel';
 export * from './isession';
 export * from './kernel';
 export * from './session';
+
 export {
   IAjaxSettings
 } from './utils';
