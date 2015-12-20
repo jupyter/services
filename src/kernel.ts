@@ -129,7 +129,7 @@ export
 function getKernelSpecs(baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<IKernelSpecIds> {
   baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
-  ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
+  ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
 
@@ -171,7 +171,7 @@ export
 function listRunningKernels(baseUrl?: string, ajaxSettings?: IAjaxSettings): Promise<IKernelId[]> {
   baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
+  ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
 
@@ -204,7 +204,7 @@ export
 function startNewKernel(options: IKernelOptions, ajaxSettings?: IAjaxSettings): Promise<IKernel> {
   let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  ajaxSettings = ajaxSettings ? JSON.parse(JSON.stringify(ajaxSettings)) : { };
+  ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'POST';
   ajaxSettings.data = JSON.stringify({ name: options.name });
   ajaxSettings.dataType = 'json';
@@ -520,7 +520,7 @@ class Kernel implements IKernel {
    * The promise will be rejected if the request fails or the response is
    * invalid.
    */
-  restart(ajaxSettings?: IAjaxSettings): Promise<void> {
+  restart(): Promise<void> {
     // clear internal state
     this._futures.forEach((future, key) => {
       future.dispose();

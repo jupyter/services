@@ -29,6 +29,18 @@ function extend(target: any, source: any): any {
 
 
 /**
+ * Get a copy of an object, or null.
+ */
+export
+function copy(object: any): any {
+  if (object && typeof object === 'object') {
+    return JSON.parse(JSON.stringify(object));
+  }
+  return null;
+}
+
+
+/**
  * Get a random 128b hex string (not a formal UUID)
  */
 export

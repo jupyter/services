@@ -113,7 +113,7 @@ export
 function listRunningSessions(baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<ISessionId[]> {
   baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-  ajaxSettings = ajaxSettings || { };
+  ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
 
@@ -152,7 +152,7 @@ function startNewSession(options: ISessionOptions, ajaxSettings?: IAjaxSettings)
     kernel: { name: options.kernelName },
     notebook: { path: options.notebookPath }
   }
-  ajaxSettings = ajaxSettings || { };
+  ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'POST';
   ajaxSettings.dataType = 'json';
   ajaxSettings.data = JSON.stringify(model);
@@ -188,6 +188,7 @@ function startNewSession(options: ISessionOptions, ajaxSettings?: IAjaxSettings)
 export
 function connectToSession(id: string, options?: ISessionOptions, ajaxSettings?: IAjaxSettings): Promise<INotebookSession> {
   let baseUrl = utils.DEFAULT_BASE_URL;
+
   if (options && options.baseUrl) baseUrl = options.baseUrl;
 
   let session = runningSessions.get(id);
