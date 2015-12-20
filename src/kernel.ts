@@ -174,6 +174,7 @@ function listRunningKernels(baseUrl?: string, ajaxSettings?: IAjaxSettings): Pro
   ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
@@ -208,6 +209,7 @@ function startNewKernel(options: IKernelOptions, ajaxSettings?: IAjaxSettings): 
   ajaxSettings.method = 'POST';
   ajaxSettings.data = JSON.stringify({ name: options.name });
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 201) {
@@ -1049,6 +1051,7 @@ function restartKernel(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxSet
   ajaxSettings = ajaxSettings || { };
   ajaxSettings.method = 'POST';
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
@@ -1084,6 +1087,7 @@ function interruptKernel(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxS
   ajaxSettings = ajaxSettings || { };
   ajaxSettings.method = 'POST';
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 204) {
@@ -1105,6 +1109,7 @@ function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxSettings?: IAjaxSet
   ajaxSettings = ajaxSettings || { };
   ajaxSettings.method = 'DELETE';
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 204) {

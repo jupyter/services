@@ -116,6 +116,7 @@ function listRunningSessions(baseUrl: string, ajaxSettings?: IAjaxSettings): Pro
   ajaxSettings = utils.copy(ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
@@ -157,6 +158,7 @@ function startNewSession(options: ISessionOptions, ajaxSettings?: IAjaxSettings)
   ajaxSettings.dataType = 'json';
   ajaxSettings.data = JSON.stringify(model);
   ajaxSettings.contentType = 'application/json';
+  ajaxSettings.cache = false;
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 201) {
@@ -342,6 +344,7 @@ class NotebookSession implements INotebookSession {
     ajaxSettings.dataType = 'json';
     ajaxSettings.data = JSON.stringify(model);
     ajaxSettings.contentType = 'application/json';
+    ajaxSettings.cache = false;
 
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
@@ -369,6 +372,8 @@ class NotebookSession implements INotebookSession {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
