@@ -33,7 +33,7 @@ function extend(target: any, source: any): any {
  */
 export
 function copy(object: any): any {
-  if (object && typeof object === 'object') {
+  if (object !== null && typeof object === 'object') {
     return JSON.parse(JSON.stringify(object));
   }
   return null;
