@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import {
-  getConfigSection, ConfigSection, ConfigWithDefaults
+  getConfigSection, ConfigWithDefaults
 } from '../../lib/config';
 
 
