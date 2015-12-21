@@ -60,7 +60,14 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
 const KERNEL_OPTIONS: IKernelOptions = {
   baseUrl: 'http://localhost:8888',
   name: 'test',
-  username: 'testUser'
+  username: 'testUser',
+}
+
+const AJAX_KERNEL_OPTIONS: IKernelOptions = {
+  baseUrl: 'http://localhost:8888',
+  name: 'test',
+  username: 'testUser',
+  ajaxSettings: ajaxSettings
 }
 
 
@@ -174,7 +181,11 @@ describe('jupyter.services - kernel', () => {
 
     it('should accept ajax options', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningKernels('http://localhost:8888', ajaxSettings);
+      var options = {
+        baseUrl: 'http://localhost:8888',
+        ajaxSettings: ajaxSettings
+      }
+      var list = listRunningKernels(options);
       var data = [
         { id: uuid(), name: "test" },
         { id: uuid(), name: "test2" }
@@ -225,7 +236,7 @@ describe('jupyter.services - kernel', () => {
 
     it('should accept ajax options', (done) => {
       var tester = new KernelTester();
-      var kernelPromise = startNewKernel(KERNEL_OPTIONS, ajaxSettings);
+      var kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
       tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       kernelPromise.then((kernel: IKernel) => {
         expect(kernel.status).to.be(KernelStatus.Starting);
@@ -319,7 +330,7 @@ describe('jupyter.services - kernel', () => {
     it('should accept ajax options', (done) => {
       var tester = new KernelTester();
       var id = uuid();
-      var kernelPromise = connectToKernel(id, KERNEL_OPTIONS, ajaxSettings);
+      var kernelPromise = connectToKernel(id, AJAX_KERNEL_OPTIONS);
       tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
       kernelPromise.then((kernel: IKernel) => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
@@ -658,7 +669,7 @@ describe('jupyter.services - kernel', () => {
 
       it('should use ajax options', (done) => {
         var tester = new KernelTester();
-        var kernelPromise = startNewKernel(KERNEL_OPTIONS, ajaxSettings);
+        var kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
@@ -723,7 +734,7 @@ describe('jupyter.services - kernel', () => {
 
       it('should use ajax options', (done) => {
         var tester = new KernelTester();
-        var kernelPromise = startNewKernel(KERNEL_OPTIONS, ajaxSettings);
+        var kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {
@@ -815,7 +826,7 @@ describe('jupyter.services - kernel', () => {
 
       it('should use ajax options', (done) => {
         var tester = new KernelTester();
-        var kernelPromise = startNewKernel(KERNEL_OPTIONS, ajaxSettings);
+        var kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
         var data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(201, data);
         kernelPromise.then((kernel: IKernel) => {

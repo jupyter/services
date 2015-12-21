@@ -52,17 +52,17 @@ interface ISessionOptions {
   /**
    * The path (not including name) to the notebook.
    */
-  notebookPath: string;
+  notebookPath?: string;
 
   /**
    * The type of kernel (e.g. python3).
    */
-  kernelName: string;
+  kernelName?: string;
 
   /**
    * The root url of the notebook server.
    */
-  baseUrl: string;
+  baseUrl?: string;
 
   /**
    * The url to access websockets.
@@ -78,6 +78,11 @@ interface ISessionOptions {
    * The unique identifier for the session client.
    */
   clientId?: string;
+
+  /**
+   * The default ajax settings to use for the session.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -89,7 +94,7 @@ interface INotebookSessionManager {
   /*
    * Get the running sessions.
    */
-  listRunning(): Promise<ISessionId[]>;
+  listRunning(options?: ISessionOptions): Promise<ISessionId[]>;
 
   /**
    * Start a new session.
@@ -100,11 +105,6 @@ interface INotebookSessionManager {
    * Connect to a running notebook session.
    */
   connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession>;
-
-  /**
-   * Optional default settings for ajax requests, if applicable.
-   */
-  ajaxSettings?: IAjaxSettings;
 }
 
 

@@ -68,7 +68,7 @@ describe('jupyter.services - session', () => {
 
     it('should accept ajax options', (done) => {
       var handler = new RequestHandler();
-      var list = listRunningSessions('http://localhost:8888', ajaxSettings);
+      var list = listRunningSessions({ ajaxSettings: ajaxSettings });
       var sessionIds = [createSessionId(), createSessionId()];
       handler.respond(200, sessionIds);
       return list.then((response: ISessionId[]) => {
@@ -132,7 +132,8 @@ describe('jupyter.services - session', () => {
       var tester = new KernelTester();
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
-      var sessionPromise = startNewSession(options, ajaxSettings);
+      options.ajaxSettings = ajaxSettings
+      var sessionPromise = startNewSession(options);
       tester.respond(201, sessionId)
       tester.onRequest = () => {
         tester.respond(200, [ { name: sessionId.kernel.name,
@@ -233,7 +234,8 @@ describe('jupyter.services - session', () => {
       var tester = new KernelTester();
       var sessionId = createSessionId();
       var options = createSessionOptions(sessionId);
-      var sessionPromise = connectToSession(sessionId.id, options, ajaxSettings);
+      options.ajaxSettings = ajaxSettings
+      var sessionPromise = connectToSession(sessionId.id, options);
       tester.respond(200, [sessionId]);
       tester.onRequest = () => {
         tester.respond(200, [ { name: sessionId.kernel.name,

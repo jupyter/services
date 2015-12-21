@@ -42,62 +42,54 @@ class NotebookSessionManager implements INotebookSessionManager {
   /**
    * Construct a new notebook session manager.
    *
-   * @param baseUrl - The base url of the session manager.  If an empty string
-   *   is passed, it will use the default base url.
-   *
-   * @param ajaxSettings - Optional default ajax settings for the manager.
+   * @param options - The default options for each session.
    */
-   constructor(baseUrl: string, ajaxSettings?: IAjaxSettings) {
-     this._baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
-     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
+   constructor(options: ISessionOptions) {
+     this._options = utils.copy(options);
    }
 
   /**
-   * Get a copy of the default ajax settings for the manager.
-   */
-  get ajaxSettings(): IAjaxSettings {
-    return JSON.parse(this._ajaxSettings);
-  }
-  /**
-   * Set the default ajax settings for the manager.
-   */
-  set ajaxSettings(value: IAjaxSettings) {
-    this._ajaxSettings = JSON.stringify(value);
-  }
-
-  /**
    * List the running sessions.  See also [[listRunningSessions]].
+   *
+   * @param options - Overrides for the default options.
    */
-  listRunning(ajaxSettings?: IAjaxSettings): Promise<ISessionId[]> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return listRunningSessions(this._baseUrl, ajaxSettings);
+  listRunning(options?: ISessionOptions): Promise<ISessionId[]> {
+    return listRunningSessions(this._getOptions(options));
   }
 
   /**
    * Start a new session.  See also [[startNewSession]].
+   *
+   * @param options - Overrides for the default options, must include a
+   *   `'notebookPath'`.
    */
-  startNew(options: ISessionOptions, ajaxSettings?: IAjaxSettings): Promise<INotebookSession> {
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    options.baseUrl = this._baseUrl;
-    return startNewSession(options, ajaxSettings);
+  startNew(options: ISessionOptions): Promise<INotebookSession> {
+    return startNewSession(this._getOptions(options));
   }
 
   /**
    * Connect to a running session.  See also [[connectToSession]].
+   *
+   * @param options - Overrides for the default options.
    */
-  connectTo(id: string, options?: ISessionOptions, ajaxSettings?: IAjaxSettings): Promise<INotebookSession> {
-    if (options) {
-      options.baseUrl = this._baseUrl;
-    } else {
-      options = void 0;
-    }
-    ajaxSettings = ajaxSettings || this.ajaxSettings;
-    return connectToSession(id, options, ajaxSettings);
+  connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession> {
+    if (options) options = this._getOptions(options);
+    return connectToSession(id, options);
   }
 
-  private _baseUrl = '';
-  private _ajaxSettings = '';
+  /**
+   * Get optionally overidden options.
+   */
+  private _getOptions(options: ISessionOptions): ISessionOptions {
+    if (options) {
+      options = utils.extend(this._options, options);
+    } else {
+      options = this._options;
+    }
+    return options;
+  }
 
+  private _options: ISessionOptions = null;
 }
 
 
@@ -110,10 +102,10 @@ class NotebookSessionManager implements INotebookSessionManager {
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningSessions(baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<ISessionId[]> {
-  baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
-  let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-  ajaxSettings = utils.copy(ajaxSettings) || {};
+function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
+  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL);
+  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
   ajaxSettings.cache = false;
@@ -146,14 +138,14 @@ function listRunningSessions(baseUrl: string, ajaxSettings?: IAjaxSettings): Pro
  * the session fails to become ready, the promise is rejected.
  */
 export
-function startNewSession(options: ISessionOptions, ajaxSettings?: IAjaxSettings): Promise<INotebookSession> {
+function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
   let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
   let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
   var model = {
     kernel: { name: options.kernelName },
     notebook: { path: options.notebookPath }
   }
-  ajaxSettings = utils.copy(ajaxSettings) || {};
+  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'POST';
   ajaxSettings.dataType = 'json';
   ajaxSettings.data = JSON.stringify(model);
@@ -188,11 +180,7 @@ function startNewSession(options: ISessionOptions, ajaxSettings?: IAjaxSettings)
  * the promise is rejected.
  */
 export
-function connectToSession(id: string, options?: ISessionOptions, ajaxSettings?: IAjaxSettings): Promise<INotebookSession> {
-  let baseUrl = utils.DEFAULT_BASE_URL;
-
-  if (options && options.baseUrl) baseUrl = options.baseUrl;
-
+function connectToSession(id: string, options?: ISessionOptions): Promise<INotebookSession> {
   let session = runningSessions.get(id);
   if (session) {
     return Promise.resolve(session);
@@ -200,12 +188,12 @@ function connectToSession(id: string, options?: ISessionOptions, ajaxSettings?: 
   if (options === void 0) {
     return Promise.reject(new Error('Please specify session options'));
   }
-  return listRunningSessions(baseUrl, ajaxSettings).then(sessionIds => {
+  return listRunningSessions(options).then(sessionIds => {
     sessionIds = sessionIds.filter(k => k.id === id);
     if (!sessionIds.length) {
       throw new Error('No running session with id: ' + id);
     }
-    return createSession(sessionIds[0], options, ajaxSettings);
+    return createSession(sessionIds[0], options);
   });
 }
 
@@ -215,7 +203,7 @@ function connectToSession(id: string, options?: ISessionOptions, ajaxSettings?: 
  *
  * Fulfilled when the NotebookSession is Starting, or rejected if Dead.
  */
-function createSession(sessionId: ISessionId, options: ISessionOptions,ajaxSettings?: IAjaxSettings): Promise<NotebookSession> {
+function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
 
   let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
   options.notebookPath = sessionId.notebook.path;
@@ -225,12 +213,12 @@ function createSession(sessionId: ISessionId, options: ISessionOptions,ajaxSetti
     baseUrl: options.baseUrl,
     wsUrl: options.wsUrl,
     username: options.username,
-    clientId: options.clientId
+    clientId: options.clientId,
+    ajaxSettings: options.ajaxSettings
   }
-  return connectToKernel(sessionId.kernel.id, kernelOptions, ajaxSettings
+  return connectToKernel(sessionId.kernel.id, kernelOptions
   ).then(kernel => {
-     let session = new NotebookSession(options, sessionId.id, kernel,
-                                       ajaxSettings);
+     let session = new NotebookSession(options, sessionId.id, kernel);
      runningSessions.set(session.id, session);
      return session;
   }).catch(error => {
@@ -263,8 +251,8 @@ class NotebookSession implements INotebookSession {
   /**
    * Construct a new session.
    */
-  constructor(options: ISessionOptions, id: string, kernel: IKernel, ajaxSettings?: IAjaxSettings) {
-    if (ajaxSettings) this.ajaxSettings = ajaxSettings;
+  constructor(options: ISessionOptions, id: string, kernel: IKernel) {
+    this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._notebookPath = options.notebookPath;
     this._kernel = kernel;
@@ -408,9 +396,9 @@ class NotebookSession implements INotebookSession {
     }
   }
 
-  private _id = "";
-  private _notebookPath = "";
-  private _ajaxSettings = '{}';
+  private _id = '';
+  private _notebookPath = '';
+  private _ajaxSettings = '';
   private _kernel: IKernel = null;
   private _url = '';
   private _isDead = false;

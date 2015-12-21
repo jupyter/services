@@ -122,7 +122,8 @@ describe('jupyter.services - Integration', () => {
               if (session2.kernel.clientId !== session.kernel.clientId) {
                 throw Error('Did not reuse session');
               }
-              listRunningSessions(BASEURL).then((sessions) => {
+
+              listRunningSessions({ baseUrl: BASEURL}).then((sessions) => {
                 if (!sessions.length) {
                   throw Error('Should be one at least one running session');
                 }

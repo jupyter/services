@@ -23,7 +23,7 @@ interface IKernelOptions {
   /**
    * The kernel type (e.g. python3).
    */
-  name: string;
+  name?: string;
 
   /**
    * The root url of the kernel server.
@@ -45,6 +45,11 @@ interface IKernelOptions {
    * The unique identifier for the kernel client.
    */
   clientId?: string;
+
+  /**
+   * The default ajax settings to use for the kernel.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -604,27 +609,22 @@ interface IKernelManager {
   /**
    * Get the available kernel specs.
    */
-  getSpecs(): Promise<IKernelSpecIds>;
+  getSpecs(options?: IKernelOptions): Promise<IKernelSpecIds>;
 
   /**
    * Get a list of running kernels.
    */
-  listRunning(): Promise<IKernelId[]>;
+  listRunning(options?: IKernelOptions): Promise<IKernelId[]>;
 
   /**
    * Start a new kernel.
    */
-  startNew(options: IKernelOptions): Promise<IKernel>;
+  startNew(options?: IKernelOptions): Promise<IKernel>;
 
   /**
    * Connect to an existing kernel.
    */
   connectTo(id: string, options?: IKernelOptions): Promise<IKernel>;
-
-  /**
-   * Optional default settings for ajax requests, if applicable.
-   */
-  ajaxSettings?: IAjaxSettings;
 }
 
 

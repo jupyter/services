@@ -54,7 +54,7 @@ describe('jupyter.services - Kernel', () => {
     it('should accept ajax options', (done) => {
       var handler = new RequestHandler();
 
-      var promise = getKernelSpecs('localhost', ajaxSettings);
+      var promise = getKernelSpecs({ ajaxSettings: ajaxSettings });
       var ids = {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC
