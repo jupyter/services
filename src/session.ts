@@ -300,6 +300,16 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
+   * The current status of the session, and is a delegate to the kernel status.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get status(): KernelStatus {
+    return this._kernel.status;
+  }
+
+  /**
    * Get the notebook path.
    *
    * #### Notes

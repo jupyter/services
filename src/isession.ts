@@ -143,6 +143,14 @@ interface INotebookSession {
   kernel: IKernel;
 
   /**
+   * The current status of the session.
+   *
+   * #### Notes
+   * This is a read-only property, and is a delegate to the kernel status.
+   */
+  status: KernelStatus;
+
+  /**
    * Rename or move a notebook.
    *
    * @param path - The new notebook path.

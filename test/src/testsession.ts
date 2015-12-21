@@ -5,6 +5,10 @@
 import expect = require('expect.js');
 
 import {
+  KernelStatus
+} from '../../lib/ikernel';
+
+import {
   listRunningSessions, connectToSession, startNewSession
 } from '../../lib/session';
 
@@ -310,6 +314,18 @@ describe('jupyter.services - session', () => {
         startSession(id).then((session) => {
           expect(typeof session.kernel.id).to.be('string');
           expect(() => { session.kernel = null }).to.throwError();
+          done();
+        });
+      });
+    });
+
+    context('#kernel', () => {
+
+      it('should be a read only delegate to the kernel status', (done) => {
+        var id = createSessionId();
+        startSession(id).then((session) => {
+          expect(session.status).to.be(session.kernel.status);
+          expect(() => { session.status = 0 }).to.throwError();
           done();
         });
       });
