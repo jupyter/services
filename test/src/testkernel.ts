@@ -5,13 +5,14 @@
 import expect = require('expect.js');
 
 import {
-  listRunningKernels, connectToKernel, startNewKernel, createKernelMessage
+  KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
+  listRunningKernels, startNewKernel
 } from '../../lib/kernel';
 
 import {
   ICompleteRequest, IExecuteRequest, IInspectRequest, IIsCompleteRequest,
   IKernel, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageOptions,
-  IKernelOptions, KernelStatus
+  IKernelOptions, IKernelSpecId, KernelStatus
 } from '../../lib/ikernel';
 
 import {
@@ -69,6 +70,23 @@ const AJAX_KERNEL_OPTIONS: IKernelOptions = {
   username: 'testUser',
   ajaxSettings: ajaxSettings
 }
+
+var PYTHON_SPEC: IKernelSpecId = {
+  name: "Python",
+  spec: {
+    language: "python",
+    argv: [],
+    display_name: "python",
+    codemirror_mode: "python",
+    env: {},
+    help_links: [ { text: "re", url: "reUrl" }]
+  },
+  resources: { foo: 'bar' },
+}
+
+var PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+PYTHON3_SPEC.name = "Python3";
+PYTHON3_SPEC.spec.display_name = "python3"
 
 
 /**
@@ -1174,6 +1192,216 @@ describe('jupyter.services - kernel', () => {
       });
 
     });
+  });
+
+  describe('KernelManager', () => {
+
+    describe('#constructor()', () => {
+
+      it('should take the options as an argument', () => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        expect(manager instanceof KernelManager).to.be(true);
+      });
+
+    });
+
+    describe('#getSpecs()', () => {
+
+      it('should get the list of kernel specs', (done) => {
+        var handler = new RequestHandler();
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        var promise = manager.getSpecs();
+        var ids = {
+          'python': PYTHON_SPEC,
+          'python3': PYTHON3_SPEC
+        }
+        handler.respond(200, { 'default': 'python',
+                               'kernelspecs': ids });
+        return promise.then((specs) => {
+          var names = Object.keys(specs.kernelspecs);
+          expect(names[0]).to.be('python');
+          expect(names[1]).to.be('python3');
+          done();
+        });
+      });
+
+    });
+
+    describe('#listRunning()', () => {
+
+      it('should list the running kernels', (done) => {
+        let handler = new RequestHandler();
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        var list = manager.listRunning();
+        var data = [
+          { id: uuid(), name: "test" },
+          { id: uuid(), name: "test2" }
+        ];
+        handler.respond(200, data);
+        return list.then((response: IKernelId[]) => {
+          expect(response[0]).to.eql(data[0]);
+          expect(response[1]).to.eql(data[1]);
+          done();
+        });
+      });
+
+    });
+
+    describe('#startNew()', () => {
+
+      it('should start a new kernel', (done) => {
+        let tester = new KernelTester();
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let kernelPromise = manager.startNew();
+        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          done();
+        });
+
+      });
+
+    });
+
+    describe('#connectTo()', () => {
+
+      it('should connect to an existing kernel', (done) => {
+        let tester = new KernelTester();
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let kernelPromise = manager.startNew();
+        let id = uuid();
+        tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
+        kernelPromise.then((kernel: IKernel) => {
+          manager.connectTo(id).then(newKernel => {
+            expect(newKernel.name).to.be(kernel.name);
+            expect(newKernel.id).to.be(kernel.id);
+            done();
+          });
+        });
+      });
+
+    });
+
+  });
+
+  describe('getKernelSpecs()', () => {
+
+    it('should load the kernelspecs', (done) => {
+      var handler = new RequestHandler();
+
+      var promise = getKernelSpecs('localhost');
+      var ids = {
+        'python': PYTHON_SPEC,
+        'python3': PYTHON3_SPEC
+      }
+      handler.respond(200, { 'default': 'python',
+                             'kernelspecs': ids });
+      return promise.then((specs) => {
+        var names = Object.keys(specs.kernelspecs);
+        expect(names[0]).to.be('python');
+        expect(names[1]).to.be('python3');
+        done();
+      });
+    });
+
+    it('should accept ajax options', (done) => {
+      var handler = new RequestHandler();
+
+      var promise = getKernelSpecs({ ajaxSettings: ajaxSettings });
+      var ids = {
+        'python': PYTHON_SPEC,
+        'python3': PYTHON3_SPEC
+      }
+      handler.respond(200, { 'default': 'python',
+                             'kernelspecs': ids });
+      return promise.then((specs) => {
+        var names = Object.keys(specs.kernelspecs);
+        expect(names[0]).to.be('python');
+        expect(names[1]).to.be('python3');
+        done();
+      });
+    });
+
+    it('should throw an error for missing default parameter', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
+      return expectFailure(promise, done, "Invalid KernelSpecs Model");
+    });
+
+    it('should throw an error for missing kernelspecs parameter', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      handler.respond(200, { 'default': PYTHON_SPEC.name });
+      return expectFailure(promise, done, "Invalid KernelSpecs Model");
+    });
+
+    it('should throw an error for incorrect kernelspecs parameter type', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      handler.respond(200, { 'default': PYTHON_SPEC.name,
+                             'kernelspecs': [ PYTHON_SPEC ]
+                           });
+      return expectFailure(promise, done, "Invalid KernelSpecs Model");
+    });
+
+    it('should throw an error for improper name', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.name = 1;
+      handler.respond(200, { 'default': 'R',
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper language', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.language = 1;
+      handler.respond(200, { 'default': 'R',
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper argv', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.argv = 'hello';
+      handler.respond(200, { 'default': 'R',
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for improper display_name', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.spec.display_name = ['hello'];
+      handler.respond(200, { 'default': 'R',
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for missing resources', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      var R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      delete R_SPEC.resources;
+      handler.respond(200, { 'default': 'R',
+                             'kernelspecs': { 'R': R_SPEC } });
+      return expectFailure(promise, done, "Invalid KernelSpec Model");
+    });
+
+    it('should throw an error for an invalid response', (done) => {
+      var handler = new RequestHandler();
+      var promise = getKernelSpecs('localhost');
+      handler.respond(201, { });
+      return expectFailure(promise, done, "Invalid Response: 201");
+    });
+
   });
 
 });

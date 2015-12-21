@@ -9,7 +9,8 @@ import {
 } from '../../lib/ikernel';
 
 import {
-  listRunningSessions, connectToSession, startNewSession
+  NotebookSessionManager, connectToSession, listRunningSessions,
+  startNewSession
 } from '../../lib/session';
 
 import {
@@ -40,7 +41,8 @@ function createSessionId(): ISessionId {
 /**
  * Create session options based on a sessionId.
  */
-function createSessionOptions(sessionId: ISessionId): ISessionOptions {
+function createSessionOptions(sessionId?: ISessionId): ISessionOptions {
+  sessionId = sessionId || createSessionId();
   return {
     notebookPath: sessionId.notebook.path,
     kernelName: sessionId.kernel.name,
@@ -54,7 +56,7 @@ describe('jupyter.services - session', () => {
 
   describe('listRunningSessions()', () => {
 
-    it('should yield a list of valid kernel ids', (done) => {
+    it('should yield a list of valid session ids', (done) => {
       var handler = new RequestHandler();
       var list = listRunningSessions('http://localhost:8888');
       var sessionIds = [createSessionId(), createSessionId()];
@@ -492,6 +494,81 @@ describe('jupyter.services - session', () => {
         });
       });
     });
+  });
+
+  describe('NotebookSessionManager', () => {
+
+    describe('#constructor()', () => {
+
+      it('should take the options as an argument', () => {
+        let manager = new NotebookSessionManager(createSessionOptions());
+        expect(manager instanceof NotebookSessionManager).to.be(true);
+      });
+
+    });
+
+    describe('#listRunning()', () => {
+
+      it('should return a list of session ids', (done) => {
+        let handler = new RequestHandler();
+        let manager = new NotebookSessionManager(createSessionOptions());
+        let list = manager.listRunning();
+        let sessionIds = [createSessionId(), createSessionId()];
+        handler.respond(200, sessionIds);
+        return list.then((response: ISessionId[]) => {
+          expect(response[0]).to.eql(sessionIds[0]);
+          expect(response[1]).to.eql(sessionIds[1]);
+          done();
+        });
+
+      });
+
+    });
+
+    describe('#startNew()', () => {
+
+      it('should start a session', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let manager = new NotebookSessionManager(createSessionOptions(id));
+        let sessionPromise = manager.startNew({ notebookPath: 'test.ipynb'});
+        tester.respond(201, id)
+        tester.onRequest = () => {
+          tester.respond(200, [ { name: id.kernel.name,
+                                  id: id.kernel.id }]);
+        }
+        return sessionPromise.then(session => {
+          expect(session.id).to.be(id.id);
+          done();
+        });
+      });
+
+    });
+
+    describe('#connectTo()', () => {
+
+      it('should connect to a running session', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let manager = new NotebookSessionManager(createSessionOptions(id));
+        manager.startNew({ notebookPath: 'test.ipynb' }
+        ).then(session => {
+          manager.connectTo(session.id).then(newSession => {
+            expect(newSession).to.be(session);
+            done();
+          });
+        });
+
+        tester.respond(201, id);
+        tester.onRequest = () => {
+          tester.respond(200, [ { name: id.kernel.name,
+                                  id: id.kernel.id }]);
+        }
+
+      });
+
+    });
+
   });
 
 });
