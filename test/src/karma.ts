@@ -20,7 +20,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should start, restart and get kernel info', (done) => {
       // get info about the available kernels and connect to one
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         console.log('default spec:', kernelSpecs.default);
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
@@ -44,7 +44,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should connect to existing kernel and list running kernels', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         console.log('default spec:', kernelSpecs.default);
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
@@ -59,7 +59,7 @@ describe('jupyter.services - Integration', () => {
             if (kernel2.clientId !== kernel.clientId) {
               throw Error('Did not reuse kernel');
             }
-            listRunningKernels(BASEURL).then((kernels) => {
+            listRunningKernels({ baseUrl: BASEURL }).then((kernels) => {
               if (!kernels.length) {
                 throw Error('Should be one at least one running kernel');
               }
@@ -74,7 +74,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should handle other kernel messages', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         console.log('default spec:', kernelSpecs.default);
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         var options = {
@@ -105,7 +105,7 @@ describe('jupyter.services - Integration', () => {
   describe('Session', () => {
 
     it('should start, connect to existing session and list running sessions', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
           kernelName: kernelSpecs.default,
@@ -146,7 +146,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should start a comm from the server end', (done) => {
       // get info about the available kernels and connect to one
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
           name: kernelSpecs.default
@@ -186,7 +186,7 @@ describe('jupyter.services - Integration', () => {
   describe('Config', () => {
 
     it('should get a config section on the server and update it', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var options = {
           baseUrl: BASEURL,
           name: kernelSpecs.default
@@ -210,7 +210,7 @@ describe('jupyter.services - Integration', () => {
   describe('ContentManager', () => {
 
     it('should list a directory and get the file contents', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var contents = new ContentsManager(BASEURL);
         contents.listContents('.').then(listing => {
           var content = listing.content as any;
@@ -228,7 +228,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should create a new file, rename it, and delete it', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var contents = new ContentsManager(BASEURL);
         var options = { type: 'file', ext: '.ipynb' };
         contents.newUntitled('.', options).then(model0 => {
@@ -241,7 +241,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should create a file by name and delete it', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var contents = new ContentsManager(BASEURL);
         var options = { type: 'file', content: '', format: 'text' };
         contents.save('baz.txt', options).then(model0 => {
@@ -251,7 +251,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should exercise the checkpoint API', (done) => {
-      getKernelSpecs(BASEURL).then((kernelSpecs) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var contents = new ContentsManager(BASEURL);
         var options = { type: 'file', contents: '' };
         contents.save('baz.txt', options).then(model0 => {

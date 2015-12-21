@@ -178,8 +178,19 @@ interface IAjaxSettings {
  */
 export
 interface IAjaxSuccess {
+  /**
+   * The data returned by the ajax call.
+   */
   data: any;
+
+  /**
+   * The status text of the response.
+   */
   statusText: string;
+
+  /**
+   * The XHR object.
+   */
   xhr: XMLHttpRequest;
 }
 
@@ -189,8 +200,19 @@ interface IAjaxSuccess {
  */
 export
 interface IAjaxError {
+  /**
+   * The XHR object.
+   */
   xhr: XMLHttpRequest;
+
+  /**
+   * The status text of the response.
+   */
   statusText: string;
+
+  /**
+   * The response error object.
+   */
   error: ErrorEvent;
 }
 
@@ -198,6 +220,11 @@ interface IAjaxError {
 /**
  * Asynchronous XMLHTTPRequest handler.
  *
+ * @param url - The url to request.
+ *
+ * @param settings - The settings to apply to the request and response.
+ *
+ * #### Notes
  * Based on this [example](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest).
  */
 export
@@ -231,6 +258,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess
       if (req.status >= 400) {
         let error = new Error(req.statusText);
         reject({ xhr: req, statusText: req.statusText, error: error });
+        return;
       }
       let response = req.responseText;
       if (settings.dataType === 'json' && response) {
