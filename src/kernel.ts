@@ -95,7 +95,11 @@ class KernelManager implements IKernelManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: IKernelOptions): Promise<IKernel> {
-    if (options) options = this._getOptions(options);
+    if (options) {
+      options = this._getOptions(options);
+    } else {
+      options = utils.copy(this._options);
+    }
     return connectToKernel(id, options);
   }
 
@@ -104,7 +108,7 @@ class KernelManager implements IKernelManager {
    */
   private _getOptions(options: IKernelOptions): IKernelOptions {
     if (options) {
-      options = utils.extend(this._options, options);
+      options = utils.extend(utils.copy(this._options), options);
     } else {
       options = this._options;
     }

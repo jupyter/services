@@ -73,7 +73,11 @@ class NotebookSessionManager implements INotebookSessionManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession> {
-    if (options) options = this._getOptions(options);
+    if (options) {
+      options = this._getOptions(options);
+    } else {
+      options = utils.copy(this._options);
+    }
     return connectToSession(id, options);
   }
 
@@ -82,7 +86,7 @@ class NotebookSessionManager implements INotebookSessionManager {
    */
   private _getOptions(options: ISessionOptions): ISessionOptions {
     if (options) {
-      options = utils.extend(this._options, options);
+      options = utils.extend(utils.copy(this._options), options);
     } else {
       options = this._options;
     }
