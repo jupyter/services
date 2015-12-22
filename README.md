@@ -7,7 +7,7 @@ Javascript client for the Jupyter services REST APIs
 
 [REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml)
 
-Note: All functions and methods using the REST API allow an optional 
+Note: All functions and methods using the REST API allow an optional
 `ajaxOptions` parameter to configure the request.
 
 
@@ -107,12 +107,12 @@ omit the type declarations when using a language other than TypeScript.
 **Kernel**
 
 ```typescript
-import { 
+import {
   listRunningKernels, connectToKernel, startNewKernel, getKernelSpecs
 } from 'jupyter-js-services';
 
 // get a list of available kernels and connect to one
-listRunningKernels('http://localhost:8000').then((kernelModels) => {
+listRunningKernels({ baseUrl: 'http://localhost:8000' }).then(kernelModels => {
   var options = {
     baseUrl: 'http://localhost:8000',
     wsUrl: 'ws://localhost:8000',
@@ -125,7 +125,7 @@ listRunningKernels('http://localhost:8000').then((kernelModels) => {
 
 
 // get info about the available kernels and start a new one
-getKernelSpecs('http://localhost:8888').then((kernelSpecs) => {
+getKernelSpecs({ baseUrl: 'http://localhost:8888' }).then(kernelSpecs => {
   console.log('Default spec:', kernelSpecs.default);
   console.log('Available specs', Object.keys(kernelSpecs.kernelspecs));
   // use the default name
@@ -180,7 +180,8 @@ import {
 } from 'jupyter-js-services';
 
 // get a list of available sessions and connect to one
-listRunningSessions('http://localhost:8000').then((sessionModels) => {
+listRunningSessions({ baseUrl: 'http://localhost:8000' }
+).then(sessionModels => {
   var options = {
     baseUrl: 'http://localhost:8000',
     wsUrl: 'ws://localhost:8000',
@@ -237,7 +238,7 @@ var WSURL = 'ws://localhost:8888';
 // Create a comm from the server side.
 //
 // get info about the available kernels and connect to one
-getKernelSpecs(BASEURL).then(kernelSpecs => {
+getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
   return startNewKernel({
     baseUrl: BASEURL,
     wsUrl: WSURL,
@@ -251,7 +252,7 @@ getKernelSpecs(BASEURL).then(kernelSpecs => {
 });
 
 // Create a comm from the client side.
-getKernelSpecs(BASEURL).then(kernelSpecs => {
+getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
   return startNewKernel({
     baseUrl: BASEURL,
     wsUrl: WSURL,
@@ -284,10 +285,10 @@ getKernelSpecs(BASEURL).then(kernelSpecs => {
 
 ```typescript
 import {
-  Contents
+  ContentsManager
 } from 'jupyter-js-services';
 
-var contents = new Contents('http://localhost:8000');
+var contents = new ContentsManager('http://localhost:8000');
 
 // create a new python file
 contents.newUntitled("/foo", { type: "file", ext: "py" }).then(
@@ -343,7 +344,7 @@ contents.listCheckpoints("/foo/bar.txt").then((models) => {
 var BASEURL = 'http://localhost:8888';
 var WSURL = 'ws://localhost:8888';
 
-getKernelSpecs(BASEURL).then(kernelSpecs => {
+getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
   return startNewKernel({
     baseUrl: BASEURL,
     wsUrl: WSURL,
