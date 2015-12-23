@@ -335,6 +335,40 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#isDisposed', () => {
+
+      it('should be true after we dispose of the session', () => {
+        let id = createSessionId();
+        startSession(id).then(session => {
+          expect(session.isDisposed).to.be(false);
+          session.dispose();
+          expect(session.isDisposed).to.be(true);
+        });
+      });
+
+      it('should be safe to call multiple times', () => {
+        let id = createSessionId();
+        startSession(id).then(session => {
+          expect(session.isDisposed).to.be(false);
+          expect(session.isDisposed).to.be(false);
+          session.dispose();
+          expect(session.isDisposed).to.be(true);
+          expect(session.isDisposed).to.be(true);
+        });
+      });
+    });
+
+    context('#dispose()', () => {
+
+      it('should dispose of the resources held by the session', () => {
+        let id = createSessionId();
+        startSession(id).then(session => {
+          session.dispose();
+          expect(session.kernel).to.be(null);
+        });
+      });
+    });
+
     context('#renameNotebook()', () => {
 
       it('should rename the notebook', (done) => {

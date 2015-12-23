@@ -243,7 +243,7 @@ var runningSessions = new Map<string, NotebookSession>();
  * should be used to start kernels and then shut them down -- for
  * all other operations, the kernel object should be used.
  **/
-class NotebookSession implements INotebookSession implements IDisposable {
+class NotebookSession implements INotebookSession {
 
   /**
    * A signal emitted when the session dies.
