@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -243,7 +243,7 @@ var runningSessions = new Map<string, NotebookSession>();
  * should be used to start kernels and then shut them down -- for
  * all other operations, the kernel object should be used.
  **/
-class NotebookSession implements INotebookSession {
+class NotebookSession implements INotebookSession implements IDisposable {
 
   /**
    * A signal emitted when the session dies.
@@ -322,6 +322,25 @@ class NotebookSession implements INotebookSession {
    */
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = JSON.stringify(value);
+  }
+
+  /**
+   * Test whether the session has been disposed.
+   *
+   * #### Notes
+   * This is a read-only property which is always safe to access.
+   */
+  get isDisposed(): boolean {
+    return (this._kernel !== null);
+  }
+
+  /**
+   * Dispose of the resources held by the session.
+   */
+  dispose(): void {
+    this._kernel = null;
+    clearSignalData(this);
+    runningSessions.delete(this._id);
   }
 
   /**

@@ -7,7 +7,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal, disconnectReceiver
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -458,6 +458,8 @@ class Kernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._ws = null;
+    clearSignalData(this);
+    runningKernels.delete(this._id);
   }
 
   /**

@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
   ISignal, Signal
 } from 'phosphor-signaling';
 
@@ -112,7 +116,7 @@ interface INotebookSessionManager {
  * Interface of a notebook session object.
  */
 export
-interface INotebookSession {
+interface INotebookSession extends IDisposable {
   /**
    * A signal emitted when the session dies.
    */
