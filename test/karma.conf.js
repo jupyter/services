@@ -3,6 +3,7 @@ module.exports = function (config) {
     basePath: '..',
     frameworks: ['mocha'],
     reporters: ['mocha'],
+    client: { mocha: { timeout: 30000 } },
     preprocessors: { 'test/src/karma.ts': ['webpack'] },
     files: ['test/src/karma.ts'],
     webpack: {
