@@ -4,12 +4,10 @@
 
 import expect = require('expect.js');
 
-import requirejs = require('requirejs');
-
 import * as utils from '../../lib/utils';
 
-import {  
-  IComm, ICommInfoReply, IKernel, IKernelMessageOptions 
+import {
+  IComm, ICommInfoReply, IKernel, IKernelMessageOptions
 } from '../../lib/ikernel';
 
 import {  createKernelMessage } from '../../lib/kernel';
@@ -20,11 +18,6 @@ import { RequestHandler, expectFailure, doLater } from './utils';
 
 // stub for node global
 declare var global: any;
-
-
-if (typeof window === 'undefined') {
-  global.requirejs = requirejs;
-}
 
 
 describe('jupyter.services - Comm', () => {
