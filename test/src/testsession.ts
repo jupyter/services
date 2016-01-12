@@ -384,7 +384,9 @@ describe('jupyter.services - session', () => {
             expect(session.notebookPath).to.be(newPath);
             done();
           })
-        })
+        }, error => {
+          console.log(error);
+        });
       });
 
       it('should accept ajax options', (done) => {
@@ -612,13 +614,14 @@ describe('jupyter.services - session', () => {
  * Start a session with the given options.
  */
 function startSession(sessionId: ISessionId, tester?: KernelTester): Promise<INotebookSession> {
-  var tester = tester || new KernelTester();
-  var options = createSessionOptions(sessionId);
-  var sessionPromise = startNewSession(options);
-  tester.respond(201, sessionId);
-  tester.onRequest = () => {
-    tester.respond(200, [ { name: sessionId.kernel.name,
-                            id: sessionId.kernel.id }]);
-  }
-  return sessionPromise;
+  tester = tester || new KernelTester();
+  requestAnimationFrame(() => {
+    tester.respond(201, sessionId);
+    tester.onRequest = () => {
+      tester.respond(200, [ { name: sessionId.kernel.name,
+                              id: sessionId.kernel.id }]);
+    }
+  })
+  let options = createSessionOptions(sessionId);
+  return startNewSession(options);
 }

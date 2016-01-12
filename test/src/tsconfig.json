@@ -24,7 +24,6 @@
     "testconfig.ts",
     "testcontents.ts",
     "testkernel.ts",
-    "testkernelspecs.ts",
     "testsession.ts",
     "testmocksocket.ts",
     "testmockxhr.ts",
