@@ -6,7 +6,6 @@ export * from './testcomm';
 export * from './testconfig';
 export * from './testcontents';
 export * from './testkernel';
-export * from './testkernelspecs';
 export * from './testmocksocket';
 export * from './testmockxhr';
 export * from './testsession';

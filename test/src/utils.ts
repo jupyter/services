@@ -6,9 +6,13 @@ import expect = require('expect.js');
 
 import encoding = require('text-encoding');
 
-import { MockXMLHttpRequest } from './mockxhr';
+import {
+  MockXMLHttpRequest
+} from './mockxhr';
 
-import { IAjaxOptions } from '../../lib/index';
+import {
+  IAjaxSettings
+} from '../../lib/index';
 
 
 // stub for node global
@@ -54,12 +58,11 @@ function expectFailure(promise: Promise<any>, done: () => void, message: string)
   return promise.then((msg: any) => {
     console.error('***should not reach this point');
     throw Error('Should not reach this point');
-  }).catch((err) => {
-    console.log('****in expect failure', err);
-    if (err.message !== message) {
-      console.error(err.message, ' != ', message);
+  }).catch((error) => {
+    if (error.message.indexOf(message) === -1) {
+      console.error('****', message, 'not in:', error.message);
+      return;
     }
-    expect(err.message).to.be(message);
     done();
   });
 }
@@ -78,7 +81,7 @@ function doLater(cb: () => void): void {
  * Optional ajax arguments.
  */
 export
-var ajaxOptions: IAjaxOptions = {
+var ajaxSettings: IAjaxSettings = {
   timeout: 10,
   requestHeaders: { foo: 'bar', fizz: 'buzz' },
   withCredentials: true,

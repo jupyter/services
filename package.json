@@ -1,12 +1,12 @@
 {
   "name": "jupyter-js-services",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "phosphor-disposable": "^1.0.4",
-    "phosphor-signaling": "^1.1.2"
+    "phosphor-disposable": "^1.0.5",
+    "phosphor-signaling": "^1.2.0"
   },
   "devDependencies": {
     "css-loader": "^0.23.1",
@@ -43,7 +43,7 @@
     "test:firefox": "karma start --browsers=Firefox test/karma.conf.js",
     "test:ie": "karma start --browsers=IE test/karma.conf.js",
     "test:debug": "karma start --browsers=Chrome --singleRun=false --debug=true test/karma.conf.js",
-    "test:integration": "cd test && python run_test.py",
+    "test:integration": "webpack --config test/webpack-integration.conf.js && cd test && python run_test.py",
     "test": "npm run test:firefox"
   },
   "repository": {
@@ -57,8 +57,7 @@
   ],
   "files": [
     "lib/*.js",
-    "lib/*.d.ts",
-    "lib/*.map"
+    "lib/*.d.ts"
   ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",

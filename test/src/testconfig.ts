@@ -4,12 +4,14 @@
 
 import expect = require('expect.js');
 
-import { 
+import {
   getConfigSection, ConfigWithDefaults
 } from '../../lib/config';
 
 
-import { RequestHandler, expectFailure, ajaxOptions } from './utils';
+import {
+  RequestHandler, ajaxSettings, expectFailure
+} from './utils';
 
 
 describe('jupyter.services - IConfigSection', () => {
@@ -26,7 +28,7 @@ describe('jupyter.services - IConfigSection', () => {
 
     it('should accept ajaxOptions', (done) => {
       var handler = new RequestHandler();
-      getConfigSection("test", "localhost", ajaxOptions).then(config => {
+      getConfigSection("test", "localhost", ajaxSettings).then(config => {
         done();
       });
       handler.respond(200, {});
@@ -70,8 +72,8 @@ describe('jupyter.services - IConfigSection', () => {
 
     it('should accept ajaxOptions', (done) => {
       var handler = new RequestHandler();
-      getConfigSection("test", "localhost").then(config => {
-        var update = config.update( { foo: 'baz', spam: 'eggs' }, ajaxOptions);
+      getConfigSection("test", "localhost", ajaxSettings).then(config => {
+        var update = config.update({ foo: 'baz', spam: 'eggs' });
         handler.respond(200, config.data );
         return update.then((data: any) => {
           expect(data.foo).to.be('baz');

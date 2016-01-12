@@ -2,11 +2,17 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IDisposable } from 'phosphor-disposable';
+import {
+  IDisposable
+} from 'phosphor-disposable';
 
-import { ISignal, Signal } from 'phosphor-signaling';
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
 
-import { IAjaxOptions } from './utils';
+import {
+  IAjaxSettings
+} from './utils';
 
 
 /**
@@ -17,7 +23,7 @@ interface IKernelOptions {
   /**
    * The kernel type (e.g. python3).
    */
-  name: string;
+  name?: string;
 
   /**
    * The root url of the kernel server.
@@ -39,6 +45,11 @@ interface IKernelOptions {
    * The unique identifier for the kernel client.
    */
   clientId?: string;
+
+  /**
+   * The default ajax settings to use for the kernel.
+   */
+  ajaxSettings?: IAjaxSettings;
 }
 
 
@@ -464,7 +475,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  interrupt(ajaxOptions?: IAjaxOptions): Promise<void>;
+  interrupt(): Promise<void>;
 
   /**
    * Restart a kernel.
@@ -481,7 +492,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  restart(ajaxOptions?: IAjaxOptions): Promise<void>;
+  restart(): Promise<void>;
 
   /**
    * Shutdown a kernel.
@@ -497,7 +508,7 @@ interface IKernel extends IDisposable {
    * The promise will be rejected if the kernel status is `Dead` or if the
    * request fails or the response is invalid.
    */
-  shutdown(ajaxOptions?: IAjaxOptions): Promise<void>;
+  shutdown(): Promise<void>;
 
   /**
    * Send a `kernel_info_request` message.
@@ -582,6 +593,38 @@ interface IKernel extends IDisposable {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
+}
+
+
+/**
+ * Object which manages kernel instances.
+ */
+export
+interface IKernelManager {
+  /**
+   * Get the available kernel specs.
+   */
+  getSpecs(options?: IKernelOptions): Promise<IKernelSpecIds>;
+
+  /**
+   * Get a list of running kernels.
+   */
+  listRunning(options?: IKernelOptions): Promise<IKernelId[]>;
+
+  /**
+   * Start a new kernel.
+   */
+  startNew(options?: IKernelOptions): Promise<IKernel>;
+
+  /**
+   * Connect to an existing kernel.
+   */
+  connectTo(id: string, options?: IKernelOptions): Promise<IKernel>;
 }
 
 
