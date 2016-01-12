@@ -52,7 +52,7 @@ if options.debug:
     options.browsers = 'Chrome'
 
 karma_command = ['karma', 'start', '--browsers=' + options.browsers,
-                 'karma.conf.js', '--port=%s' % KARMA_PORT]
+                 'karma-integration.conf.js', '--port=%s' % KARMA_PORT]
 if options.debug:
     karma_command += ['--singleRun=false', '--debug=true']
 print(' '.join(karma_command))
