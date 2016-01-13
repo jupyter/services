@@ -5,6 +5,10 @@
 import expect = require('expect.js');
 
 import {
+  PromiseDelegate, uuid
+} from 'jupyter-js-utils';
+
+import {
   KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
   listRunningKernels, startNewKernel
 } from '../../lib/kernel';
@@ -18,10 +22,6 @@ import {
 import {
   deserialize, serialize
 } from '../../lib/serialize';
-
-import {
-  PromiseDelegate, uuid
-} from '../../lib/utils';
 
 import {
   MockSocket, MockSocketServer, overrideWebSocket

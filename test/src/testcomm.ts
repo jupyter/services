@@ -4,7 +4,8 @@
 
 import expect = require('expect.js');
 
-import * as utils from '../../lib/utils';
+import * as utils
+  from 'jupyter-js-utils';
 
 import {
   IComm, ICommInfoReply, IKernel, IKernelMessageOptions
