@@ -44,17 +44,6 @@ describe('jupyter.services - Comm', () => {
         });
       });
 
-      it('should reuse an existing comm', (done) => {
-        createKernel().then((kernel) => {
-          var comm = kernel.connectToComm('test');
-          comm.onClose = () => {
-            done();
-          }
-          var comm2 = kernel.connectToComm('test', comm.commId);
-          comm2.close();  // should trigger comm to close
-        });
-      });
-
       it('should create an instance of IComm', (done) => {
         createKernel().then((kernel) => {
           var comm = kernel.connectToComm('test', "1234");
@@ -91,7 +80,8 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           kernel.commOpened.connect((kernel, msg) => {
-            kernel.connectToComm(msg.target_name, msg.comm_id);
+            let data = msg.content.data;
+            kernel.connectToComm(data.target_name, data.comm_id);
             done();
           });
           var contents = {
@@ -276,8 +266,8 @@ describe('jupyter.services - Comm', () => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var comm = kernel.connectToComm('test');
-          comm.onClose = (data) => {
-            expect(data.foo).to.be('bar');
+          comm.onClose = (msg) => {
+            expect(msg.content.data.foo).to.be('bar');
             done();
           }
           var content = {
@@ -306,12 +296,19 @@ describe('jupyter.services - Comm', () => {
     context('#onMsg', () => {
       it('should be readable and writable function', (done) => {
         createKernel().then((kernel) => {
-          var comm = kernel.connectToComm('test');
-          comm.onMsg = (data) => {
+          let comm = kernel.connectToComm('test');
+          comm.onMsg = (msg) => {
             done();
           }
           expect(typeof comm.onMsg).to.be('function');
-          comm.onMsg({});
+          let options: IKernelMessageOptions = {
+            msgType: 'comm_msg',
+            channel: 'iopub',
+            username: kernel.username,
+            session: kernel.clientId
+          }
+          let msg = createKernelMessage(options);
+          comm.onMsg(msg);
         });
       });
 
@@ -320,7 +317,7 @@ describe('jupyter.services - Comm', () => {
         createKernel(tester).then((kernel) => {
           var comm = kernel.connectToComm('test');
           comm.onMsg = (msg) => {
-            expect(msg.foo).to.be('bar');
+            expect(msg.content.data.foo).to.be('bar');
             done();
           }
           var content = {
@@ -425,12 +422,12 @@ describe('jupyter.services - Comm', () => {
         });
       });
 
-      it('should send trigger an onClose', (done) => {
+      it('should trigger an onClose', (done) => {
         var tester = new KernelTester();
         createKernel(tester).then((kernel) => {
           var comm = kernel.connectToComm('test');
-          comm.onClose = (data) => {
-            expect(data.foo).to.be('bar');
+          comm.onClose = (msg) => {
+            expect(msg.content.data.foo).to.be('bar');
             done();
           }
           comm.close({ foo: 'bar' });
