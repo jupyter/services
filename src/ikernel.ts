@@ -398,7 +398,7 @@ interface IKernel extends IDisposable {
   /**
    * A signal emitted for unhandled comm open message.
    */
-  commOpened: ISignal<IKernel, ICommOpen>;
+  commOpened: ISignal<IKernel, IKernelMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -642,9 +642,9 @@ interface IKernelManager {
 export
 interface IKernelFuture extends IDisposable {
   /**
-   * The unique id of the message.
+   * The original outgoing message.
    */
-  msgId: string;
+  msg: IKernelMessage;
 
   /**
    * Test whether the future is done.
@@ -751,14 +751,14 @@ interface IComm extends IDisposable {
    *
    * **See also:** [[ICommClose]], [[close]]
    */
-  onClose: (data?: any) => void;
+  onClose: (msg: IKernelMessage) => void;
 
   /**
    * Callback for a comm message received event.
    *
    * **See also:** [[ICommMsg]]
    */
-  onMsg: (data: any) => void;
+  onMsg: (msg: IKernelMessage) => void;
 
   /**
    * Open a comm with optional data and metadata.

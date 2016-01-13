@@ -307,28 +307,6 @@ function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
  * Implementation of the Kernel object
  */
 class Kernel implements IKernel {
-
-  /**
-   * A signal emitted when the kernel status changes.
-   *
-   * **See also:** [[statusChanged]]
-   */
-  static statusChangedSignal = new Signal<IKernel, KernelStatus>();
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   *
-   * **See also:** [[unhandledMessage]]
-   */
-  static unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
-
-  /**
-   * A signal emitted for unhandled comm open message.
-   *
-   * **See also:** [[commOpened]]
-   */
-  static commOpenedSignal = new Signal<IKernel, ICommOpen>();
-
   /**
    * Construct a kernel object.
    */
@@ -354,21 +332,21 @@ class Kernel implements IKernel {
    * A signal emitted when the kernel status changes.
    */
   get statusChanged(): ISignal<IKernel, KernelStatus> {
-    return Kernel.statusChangedSignal.bind(this);
+    return KernelPrivate.statusChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted for unhandled kernel message.
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
-    return Kernel.unhandledMessageSignal.bind(this);
+    return KernelPrivate.unhandledMessageSignal.bind(this);
   }
 
   /**
    * A signal emitted for unhandled comm open message.
    */
-  get commOpened(): ISignal<IKernel, ICommOpen> {
-    return Kernel.commOpenedSignal.bind(this);
+  get commOpened(): ISignal<IKernel, IKernelMessage> {
+    return KernelPrivate.commOpenedSignal.bind(this);
   }
 
   /**
@@ -488,7 +466,7 @@ class Kernel implements IKernel {
 
     var future = new KernelFutureHandler(() => {
       this._futures.delete(msg.header.msg_id);
-    }, msg.header.msg_id, expectReply, disposeOnDone);
+    }, msg, expectReply, disposeOnDone);
     this._futures.set(msg.header.msg_id, future);
     return future;
   }
@@ -897,7 +875,7 @@ class Kernel implements IKernel {
     }
     var content = msg.content as ICommOpen;
     if (!content.target_module) {
-      this.commOpened.emit(msg.content);
+      this.commOpened.emit(msg);
       return;
     }
     var targetName = content.target_name;
@@ -918,7 +896,7 @@ class Kernel implements IKernel {
           () => { this._unregisterComm(content.comm_id); }
         );
         try {
-          var response = target(comm, content.data);
+          var response = target(comm, msg);
         } catch (e) {
           comm.close();
           this._unregisterComm(comm.commId);
@@ -955,7 +933,7 @@ class Kernel implements IKernel {
       this._unregisterComm(comm.commId);
       try {
         var onClose = comm.onClose;
-        if (onClose) onClose(msg.content.data);
+        if (onClose) onClose(msg);
         (<Comm>comm).dispose();
       } catch (e) {
         console.error("Exception closing comm: ", e, e.stack, msg);
@@ -980,13 +958,13 @@ class Kernel implements IKernel {
         return;
       } else {
         var onMsg = comm.onMsg;
-        if (onMsg) onMsg(msg.content.data);
+        if (onMsg) onMsg(msg);
       }
     } else {
       promise.then((comm) => {
         try {
           var onMsg = comm.onMsg;
-          if (onMsg) onMsg(msg.content.data);
+          if (onMsg) onMsg(msg);
         } catch (e) {
           console.error("Exception handling comm msg: ", e, e.stack, msg);
         }
@@ -1034,6 +1012,36 @@ class Kernel implements IKernel {
   private _futures: Map<string, KernelFutureHandler> = null;
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
+}
+
+
+/**
+ * A private namespace for the Kernel.
+ */
+namespace KernelPrivate {
+  /**
+   * A signal emitted when the kernel status changes.
+   *
+   * **See also:** [[statusChanged]]
+   */
+  export
+  const statusChangedSignal = new Signal<IKernel, KernelStatus>();
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   *
+   * **See also:** [[unhandledMessage]]
+   */
+  export
+  const unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
+
+  /**
+   * A signal emitted for unhandled comm open message.
+   *
+   * **See also:** [[commOpened]]
+   */
+  export
+  const commOpenedSignal = new Signal<IKernel, IKernelMessage>();
 }
 
 
@@ -1188,9 +1196,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Construct a new KernelFutureHandler.
    */
-  constructor(cb: () => void, msgId: string, expectShell: boolean, disposeOnDone: boolean) {
+  constructor(cb: () => void, msg: IKernelMessage, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
-    this._msgId = msgId;
+    this._msg = msg;
     if (!expectShell) {
       this._setFlag(KernelFutureFlag.GotReply);
     }
@@ -1198,10 +1206,10 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   }
 
   /**
-   * Get the id of the message.
+   * Get the original outgoing message.
    */
-  get msgId(): string {
-    return this._msgId;
+  get msg(): IKernelMessage {
+    return this._msg;
   }
 
   /**
@@ -1275,6 +1283,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     this._iopub = null;
     this._reply = null;
     this._done = null;
+    this._msg = null;
     super.dispose();
   }
 
@@ -1355,7 +1364,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     this._status &= ~flag;
   }
 
-  private _msgId = '';
+  private _msg: IKernelMessage = null;
   private _status = 0;
   private _stdin: (msg: IKernelMessage) => void = null;
   private _iopub: (msg: IKernelMessage) => void = null;
@@ -1409,7 +1418,7 @@ class Comm extends DisposableDelegate implements IComm {
    *
    * **See also:** [[ICommClose]], [[close]]
    */
-  get onClose(): (data?: any) => void {
+  get onClose(): (msg: IKernelMessage) => void {
     return this._onClose;
   }
 
@@ -1422,7 +1431,7 @@ class Comm extends DisposableDelegate implements IComm {
    *
    * **See also:** [[ICommClose]], [[close]]
    */
-  set onClose(cb: (data?: any) => void) {
+  set onClose(cb: (msg: IKernelMessage) => void) {
     this._onClose = cb;
   }
 
@@ -1431,7 +1440,7 @@ class Comm extends DisposableDelegate implements IComm {
    *
    * **See also:** [[ICommMsg]]
    */
-  get onMsg(): (data: any) => void {
+  get onMsg(): (msg: IKernelMessage) => void {
     return this._onMsg;
   }
 
@@ -1440,7 +1449,7 @@ class Comm extends DisposableDelegate implements IComm {
    *
    * **See also:** [[ICommMsg]]
    */
-  set onMsg(cb: (data: any) => void) {
+  set onMsg(cb: (msg: IKernelMessage) => void) {
     this._onMsg = cb;
   }
 
@@ -1517,16 +1526,13 @@ class Comm extends DisposableDelegate implements IComm {
     if (this.isDisposed) {
       return;
     }
-    var onClose = this._onClose;
-    if (onClose) onClose(data);
-    if (this._msgFunc === void 0) {
-      return;
-    }
     var content = { comm_id: this._id, data: data || {} };
     var payload = {
       msgType: 'comm_close', content: content, metadata: metadata
     }
     var future = this._msgFunc(payload);
+    let onClose = this._onClose;
+    if (onClose) onClose(future.msg);
     this.dispose();
     return future;
   }
@@ -1544,7 +1550,7 @@ class Comm extends DisposableDelegate implements IComm {
 
   private _target = '';
   private _id = '';
-  private _onClose: (data?: any) => void = null;
-  private _onMsg: (data: any) => void = null;
+  private _onClose: (msg: IKernelMessage) => void = null;
+  private _onMsg: (msg: IKernelMessage) => void = null;
   private _msgFunc: (payload: ICommPayload, disposeOnDone?: boolean) => IKernelFuture = null;
 }

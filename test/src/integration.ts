@@ -153,16 +153,17 @@ describe('jupyter.services - Integration', () => {
         }
         startNewKernel(options).then((kernel) => {
           kernel.commOpened.connect((kernel, msg) => {
-            expect(msg.target_name).to.be('test');
-            var comm = kernel.connectToComm(msg.target_name, msg.comm_id);
+            let content = msg.content;
+            expect(content.target_name).to.be('test');
+            var comm = kernel.connectToComm(content.target_name, content.comm_id);
             comm.onMsg = (msg) => {
-              expect(msg).to.be('hello');
+              expect(msg.content.data).to.be('hello');
               comm.send('0');
               comm.send('1');
               comm.send('2');
             }
             comm.onClose = (msg) => {
-              expect(msg).to.eql(['0', '1', '2']);
+              expect(msg.content.data).to.eql(['0', '1', '2']);
               done();
             }
           });

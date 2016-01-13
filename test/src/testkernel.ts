@@ -1120,11 +1120,11 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
-      it('should have a read-only msgId attribute', (done) => {
+      it('should have a read-only msg attribute', (done) => {
          createKernel().then(kernel => {
            var future = kernel.execute({ code: 'hello' });
-           expect(typeof future.msgId).to.be('string');
-           expect(() => { future.msgId = 'bar'; }).to.throwError();
+           expect(typeof future.msg.header.msg_id).to.be('string');
+           expect(() => { future.msg = null; }).to.throwError();
            done();
          });
       });
