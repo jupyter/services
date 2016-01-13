@@ -8,3 +8,7 @@ export * from './ikernel';
 export * from './isession';
 export * from './kernel';
 export * from './session';
+
+export {
+  IAjaxSettings
+} from 'jupyter-js-utils';
