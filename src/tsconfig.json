@@ -22,7 +22,6 @@
     "isession.ts",
     "serialize.ts",
     "session.ts",
-    "utils.ts",
     "validate.ts"
   ]
 }

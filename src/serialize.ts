@@ -2,7 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import { IKernelMessage } from './ikernel';
+import {
+  IKernelMessage
+} from './ikernel';
 
 
 /**
@@ -27,7 +29,7 @@ function deserialize(data: ArrayBuffer | string): IKernelMessage {
  * Serialize a kernel message for transport.
  *
  * #### Notes
- * If there is binary content, an `ArrayBuffer` is returned, 
+ * If there is binary content, an `ArrayBuffer` is returned,
  * otherwise the message is converted to a JSON string.
  */
 export

@@ -2,9 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 import {
   IAjaxSettings
-} from './utils';
+} from 'jupyter-js-utils';
 
-import * as utils from './utils';
+import * as utils from 'jupyter-js-utils';
 
 import * as validate from './validate';
 
@@ -297,7 +297,7 @@ class ContentsManager implements IContentsManager {
    * @param ajaxSettings - Optional initial ajax settings.
    */
   constructor(baseUrl: string, ajaxSettings?: IAjaxSettings) {
-    baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
+    baseUrl = baseUrl || utils.getBaseUrl();
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }

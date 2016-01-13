@@ -10,7 +10,9 @@ import {
   IKernelId, IKernelMessage, IKernelMessageHeader, IKernelSpecId
 } from './ikernel';
 
-import { INotebookId, ISessionId } from './isession';
+import {
+  INotebookId, ISessionId
+} from './isession';
 
 /**
  * Required fields for comm messages.

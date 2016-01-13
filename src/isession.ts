@@ -16,7 +16,7 @@ import {
 
 import {
   IAjaxSettings
-} from './utils';
+} from 'jupyter-js-utils';
 
 
 /**

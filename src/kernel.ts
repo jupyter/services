@@ -3,6 +3,13 @@
 'use strict';
 
 import {
+  IAjaxSettings
+} from 'jupyter-js-utils';
+
+import * as utils
+  from 'jupyter-js-utils';
+
+import {
   DisposableDelegate
 } from 'phosphor-disposable';
 
@@ -19,13 +26,7 @@ import {
   KernelStatus
 } from './ikernel';
 
-import {
-  IAjaxSettings
-} from './utils';
-
 import * as serialize from './serialize';
-
-import * as utils from './utils';
 
 import * as validate from './validate';
 
@@ -128,7 +129,7 @@ class KernelManager implements IKernelManager {
  */
 export
 function getKernelSpecs(options: IKernelOptions): Promise<IKernelSpecIds> {
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
@@ -170,7 +171,7 @@ function getKernelSpecs(options: IKernelOptions): Promise<IKernelSpecIds> {
  */
 export
 function listRunningKernels(options: IKernelOptions): Promise<IKernelId[]> {
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
@@ -204,7 +205,7 @@ function listRunningKernels(options: IKernelOptions): Promise<IKernelId[]> {
  */
 export
 function startNewKernel(options: IKernelOptions): Promise<IKernel> {
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'POST';
@@ -247,7 +248,7 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
   if (options === void 0) {
     return Promise.reject(new Error('Please specify kernel options'));
   }
-  options.baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  options.baseUrl = options.baseUrl || utils.getBaseUrl();
   return listRunningKernels(options).then(kernelIds => {
     if (!kernelIds.some(k => k.id === id)) {
       throw new Error('No running kernel with id: ' + id);
@@ -314,12 +315,8 @@ class Kernel implements IKernel {
     this.ajaxSettings = options.ajaxSettings || {};
     this._name = options.name;
     this._id = id;
-    this._baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
-    if (options.wsUrl) {
-      this._wsUrl = options.wsUrl;
-    } else {
-        this._wsUrl = 'ws' + this._baseUrl.slice(4);
-    }
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();

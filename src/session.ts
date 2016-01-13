@@ -3,6 +3,13 @@
 'use strict';
 
 import {
+  IAjaxSettings
+} from 'jupyter-js-utils';
+
+import * as utils
+  from 'jupyter-js-utils';
+
+import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
@@ -18,13 +25,8 @@ import {
   connectToKernel
 } from './kernel';
 
-import {
-  IAjaxSettings
-} from './utils';
-
-import * as utils from './utils';
-
-import * as validate from './validate';
+import * as validate
+  from './validate';
 
 
 /**
@@ -107,7 +109,7 @@ class NotebookSessionManager implements INotebookSessionManager {
  */
 export
 function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
@@ -143,7 +145,7 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
  */
 export
 function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
   var model = {
     kernel: { name: options.kernelName },
@@ -209,7 +211,7 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
  */
 function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
 
-  let baseUrl = options.baseUrl || utils.DEFAULT_BASE_URL;
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
   options.notebookPath = sessionId.notebook.path;
 
   let kernelOptions = {
