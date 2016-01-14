@@ -11,4 +11,4 @@ export * from './session';
 
 export {
   IAjaxSettings
-} from './utils';
+} from 'jupyter-js-utils';

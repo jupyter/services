@@ -3,9 +3,9 @@
 
 import {
   IAjaxSettings
-} from './utils';
+} from 'jupyter-js-utils';
 
-import * as utils from './utils';
+import * as utils from 'jupyter-js-utils';
 
 
 /**
@@ -51,7 +51,7 @@ interface IConfigSection {
  */
 export
 function getConfigSection(sectionName: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<IConfigSection> {
-  baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
+  baseUrl = baseUrl || utils.getBaseUrl();
   var section = new ConfigSection(sectionName, baseUrl, ajaxSettings);
   return section.load();
 }
@@ -66,7 +66,7 @@ class ConfigSection implements IConfigSection {
    * Create a config section.
    */
   constructor(sectionName: string, baseUrl: string, ajaxSettings?: IAjaxSettings) {
-    baseUrl = baseUrl || utils.DEFAULT_BASE_URL;
+    baseUrl = baseUrl || utils.getBaseUrl();
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
                                   utils.urlJoinEncode(sectionName));

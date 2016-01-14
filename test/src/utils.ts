@@ -7,12 +7,14 @@ import expect = require('expect.js');
 import encoding = require('text-encoding');
 
 import {
+  IAjaxSettings
+} from 'jupyter-js-utils';
+
+import {
   MockXMLHttpRequest
 } from './mockxhr';
 
-import {
-  IAjaxSettings
-} from '../../lib/index';
+
 
 
 // stub for node global

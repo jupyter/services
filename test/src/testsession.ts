@@ -5,6 +5,10 @@
 import expect = require('expect.js');
 
 import {
+  uuid
+} from 'jupyter-js-utils';
+
+import {
   KernelStatus
 } from '../../lib/ikernel';
 
@@ -18,8 +22,6 @@ import {
 } from '../../lib/isession';
 
 import { deserialize, serialize } from '../../lib/serialize';
-
-import { uuid } from '../../lib/utils';
 
 import { KernelTester } from './testkernel';
 
