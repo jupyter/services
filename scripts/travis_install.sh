@@ -10,8 +10,6 @@ conda info -a
 conda install pip
 conda install jupyter
 
-pip install -U notebook
-
 
 # create jupyter base dir (needed for config retreival)
 mkdir ~/.jupyter
