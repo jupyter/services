@@ -1,11 +1,11 @@
 {
   "name": "jupyter-js-services",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-utils": "^0.2.5",
+    "jupyter-js-utils": "^0.2.7",
     "phosphor-disposable": "^1.0.5",
     "phosphor-signaling": "^1.2.0"
   },
