@@ -531,6 +531,8 @@ class Kernel implements IKernel {
    */
   shutdown(): Promise<void> {
     return shutdownKernel(this, this._baseUrl, this.ajaxSettings).then(() => {
+      // Ignore any socket messages while the socket is closing
+      this._isWebSocketClosing = true;
       this._status = KernelStatus.Dead;
       this._ws.close();
     });
@@ -763,6 +765,10 @@ class Kernel implements IKernel {
    * Handle a websocket message, validating and routing appropriately.
    */
   private _onWSMessage(evt: MessageEvent) {
+    if (this._isWebSocketClosing) {
+      // If the socket is being closed, ignore any messages
+      return;
+    }
     var msg = serialize.deserialize(evt.data);
     var handled = false;
     try {
@@ -773,7 +779,7 @@ class Kernel implements IKernel {
     }
     if (msg.parent_header) {
       var parentHeader = msg.parent_header as IKernelMessageHeader;
-      var future = this._futures.get(parentHeader.msg_id);
+      var future = this._futures && this._futures.get(parentHeader.msg_id);
       if (future) {
         future.handleMsg(msg);
         handled = true;
@@ -783,7 +789,7 @@ class Kernel implements IKernel {
       switch(msg.header.msg_type) {
       case 'status':
         this._updateStatus(msg.content.execution_state);
-        break
+        break;
       case 'comm_open':
         this._handleCommOpen(msg);
         handled = true;
@@ -807,6 +813,9 @@ class Kernel implements IKernel {
    * Handle a websocket close event.
    */
   private _onWSClose(evt: Event) {
+    // The socket is closed, clear the flag
+    this._isWebSocketClosing = false;
+
     if ((this.status !== KernelStatus.Dead) &&
         (this._reconnectAttempt < this._reconnectLimit)) {
       this._updateStatus('reconnecting');
@@ -855,6 +864,8 @@ class Kernel implements IKernel {
       this._status = status;
       if (status === KernelStatus.Dead) {
         runningKernels.delete(this._id);
+        // Ignore any socket messages while the socket is closing
+        this._isWebSocketClosing = true;
         this._ws.close();
       }
       logKernelStatus(this);
@@ -1009,6 +1020,7 @@ class Kernel implements IKernel {
   private _futures: Map<string, KernelFutureHandler> = null;
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
+  private _isWebSocketClosing = false;
 }
 
 
