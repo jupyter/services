@@ -103,6 +103,7 @@ interface IKernelMessage {
   buffers: (ArrayBuffer | ArrayBufferView)[];
 }
 
+
 /**
  * IOPub stream kernel message specification.
  *
@@ -115,6 +116,16 @@ interface IKernelIOPubStreamMessage extends IKernelMessage {
     text: string;
   }
 }
+
+
+/**
+ * Check if an IKernelMessage is an iopub stream message.
+ */
+export
+function isStreamMessage(msg: IKernelMessage): msg is IKernelIOPubStreamMessage {
+  return msg.header.msg_type === "stream";
+}
+
 
 /**
  * IOPub display_data kernel message specification.
@@ -130,12 +141,21 @@ interface IKernelIOPubDisplayDataMessage extends IKernelMessage {
   }
 }
 
+
+/**
+ * Check if an IKernelMessage is an iopub display_data message.
+ */
+export
+function isDisplayDataMessage(msg: IKernelMessage): msg is IKernelIOPubDisplayDataMessage {
+  return msg.header.msg_type === "display_data";
+}
+
+
 /**
  * IOPub execute_input kernel message specification.
  *
  * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
  */
-
 export
 interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
   content: {
@@ -143,6 +163,16 @@ interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
     execution_count: number;
   }
 }
+
+
+/**
+ * Check if an IKernelMessage is an iopub execute_input message.
+ */
+export
+function isExecuteInputMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteInputMessage {
+  return msg.header.msg_type === "execute_input";
+}
+
 
 /**
  * IOPub execute_result kernel message specification.
@@ -157,6 +187,16 @@ interface IKernelIOPubExecuteResultMessage extends IKernelMessage {
     metadata: any;
   }
 }
+
+
+/**
+ * Check if an IKernelMessage is an iopub execute_result message.
+ */
+export
+function isExecuteResultMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteResultMessage {
+  return msg.header.msg_type === "execute_result";
+}
+
 
 /**
  * IOPub error kernel message specification.
@@ -173,6 +213,16 @@ interface IKernelIOPubErrorMessage extends IKernelMessage {
   }
 }
 
+
+/**
+ * Check if an IKernelMessage is an iopub error message.
+ */
+export
+function isErrorMessage(msg: IKernelMessage): msg is IKernelIOPubErrorMessage {
+  return msg.header.msg_type === "error";
+}
+
+
 /**
  * IOPub kernel status message specification.
  *
@@ -185,6 +235,16 @@ interface IKernelIOPubStatusMessage extends IKernelMessage {
   }
 }
 
+
+/**
+ * Check if an IKernelMessage is an iopub status message.
+ */
+export
+function isStatusMessage(msg: IKernelMessage): msg is IKernelIOPubStatusMessage {
+  return msg.header.msg_type === "status";
+}
+
+
 /**
  * IOPub clear_output kernel message specification.
  *
@@ -196,6 +256,16 @@ interface IKernelIOPubClearOutputMessage extends IKernelMessage {
     wait: boolean;
   }
 }
+
+
+/**
+ * Check if an IKernelMessage is an iopub clear_output message.
+ */
+export
+function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutputMessage {
+  return msg.header.msg_type === "clear_output";
+}
+
 
 /**
  * Kernel information specification.
