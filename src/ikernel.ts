@@ -104,6 +104,100 @@ interface IKernelMessage {
 }
 
 /**
+ * IOPub stream kernel message specification.
+ *
+ * See [Streams](http://jupyter-client.readthedocs.org/en/latest/messaging.html#streams-stdout-stderr-etc).
+ */
+export
+interface IKernelIOPubStreamMessage extends IKernelMessage {
+  content: {
+    name: string;
+    text: string;
+  }
+}
+
+/**
+ * IOPub display_data kernel message specification.
+ *
+ * See [Display data](http://jupyter-client.readthedocs.org/en/latest/messaging.html#display-data).
+ */
+export
+interface IKernelIOPubDisplayDataMessage extends IKernelMessage {
+  content: {
+    source: string;
+    data: { [key: string]: string };
+    metadata: any;
+  }
+}
+
+/**
+ * IOPub execute_input kernel message specification.
+ *
+ * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
+ */
+
+export
+interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
+  content: {
+    code: string;
+    execution_count: number;
+  }
+}
+
+/**
+ * IOPub execute_result kernel message specification.
+ *
+ * See [Execution results](http://jupyter-client.readthedocs.org/en/latest/messaging.html#id4).
+ */
+export
+interface IKernelIOPubExecuteResultMessage extends IKernelMessage {
+  content: {
+    execution_count: number;
+    data: { [key: string]: string };
+    metadata: any;
+  }
+}
+
+/**
+ * IOPub error kernel message specification.
+ *
+ * See [Execution errors](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execution-errors).
+ */
+export
+interface IKernelIOPubErrorMessage extends IKernelMessage {
+  content: {
+    execution_count: number;
+    ename: string;
+    evalue: string;
+    traceback: string[];
+  }
+}
+
+/**
+ * IOPub kernel status message specification.
+ *
+ * See [Kernel status](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-status).
+ */
+export
+interface IKernelIOPubStatusMessage extends IKernelMessage {
+  content: {
+    execution_state: string;
+  }
+}
+
+/**
+ * IOPub clear_output kernel message specification.
+ *
+ * See [Clear output](http://jupyter-client.readthedocs.org/en/latest/messaging.html#clear-output).
+ */
+export
+interface IKernelIOPubClearOutputMessage extends IKernelMessage {
+  content: {
+    wait: boolean;
+  }
+}
+
+/**
  * Kernel information specification.
  *
  * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
