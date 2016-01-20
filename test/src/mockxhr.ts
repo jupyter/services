@@ -33,7 +33,7 @@ class MockXMLHttpRequest {
    *
    * It is automatically cleared after the request.
    */
-  static onRequest: () => void = null;
+  static onRequest: (request: MockXMLHttpRequest) => void = null;
 
   /**
    * Ready state of the request.
@@ -130,6 +130,20 @@ class MockXMLHttpRequest {
   }
 
   /**
+   * Get the method of the request.
+   */
+  get method(): string {
+    return this._method;
+  }
+
+  /**
+   * Get the url of the request.
+   */
+  get url(): string {
+    return this._url;
+  }
+
+  /**
    * Initialize a request.
    */
   open(method: string, url: string, async?: boolean, user?: string, password?:string): void {
@@ -166,17 +180,23 @@ class MockXMLHttpRequest {
       this._data = data;
     }
     MockXMLHttpRequest.requests.push(this);
-    var onRequest = MockXMLHttpRequest.onRequest;
-    if (onRequest) onRequest();
-    MockXMLHttpRequest.onRequest = null;
-    if (this._timeout > 0) {
-      setTimeout(() => {
-        if (this._readyState != MockXMLHttpRequest.DONE) {
-          var cb = this._onTimeout;
-          if (cb) cb();
-        }
-      }, this._timeout);
-    }
+    requestAnimationFrame(() => {
+      if (MockXMLHttpRequest.requests.indexOf(this) === -1) {
+        debugger;
+        console.error('Unhandled request:', JSON.stringify(this));
+        return;
+      }
+      var onRequest = MockXMLHttpRequest.onRequest;
+      if (onRequest) onRequest(this);
+      if (this._timeout > 0) {
+        setTimeout(() => {
+          if (this._readyState != MockXMLHttpRequest.DONE) {
+            var cb = this._onTimeout;
+            if (cb) cb();
+          }
+        }, this._timeout);
+      }
+    });
   }
 
   /**

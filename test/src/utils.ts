@@ -26,7 +26,7 @@ class RequestHandler {
   /**
    * Create a new RequestHandler.
    */
-  constructor() {
+  constructor(onRequest?: (request: MockXMLHttpRequest) => void) {
     if (typeof window === 'undefined') {
       global.XMLHttpRequest = MockXMLHttpRequest;
       global.TextEncoder = encoding.TextEncoder;
@@ -35,9 +35,10 @@ class RequestHandler {
       (<any>window).XMLHttpRequest = MockXMLHttpRequest;
     }
     MockXMLHttpRequest.requests = [];
+    this.onRequest = onRequest;
   }
 
-  set onRequest(cb: () => void) {
+  set onRequest(cb: (request: MockXMLHttpRequest) => void) {
     MockXMLHttpRequest.onRequest = cb;
   }
 

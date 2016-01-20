@@ -144,35 +144,38 @@ describe('jupyter.services - Comm', () => {
 
     context('#isDisposed', () => {
 
-      it('should be true after we dispose of the comm', () => {
-        createKernel().then((kernel) => {
+      it('should be true after we dispose of the comm', (done) => {
+        return createKernel().then((kernel) => {
           var comm = kernel.connectToComm('test');
           expect(comm.isDisposed).to.be(false);
           comm.dispose();
           expect(comm.isDisposed).to.be(true);
+          done();
         });
       });
 
-      it('should be safe to call multiple times', () => {
-        createKernel().then((kernel) => {
+      it('should be safe to call multiple times', (done) => {
+        return createKernel().then((kernel) => {
           var comm = kernel.connectToComm('test');
           expect(comm.isDisposed).to.be(false);
           expect(comm.isDisposed).to.be(false);
           comm.dispose();
           expect(comm.isDisposed).to.be(true);
           expect(comm.isDisposed).to.be(true);
+          done();
         });
       });
     });
 
     context('#dispose()', () => {
 
-      it('should dispose of the resources held by the comm', () => {
-        createKernel().then((kernel: IKernel) => {
+      it('should dispose of the resources held by the comm', (done) => {
+        return createKernel().then((kernel: IKernel) => {
           var future = kernel.execute({ code: 'foo' });
           var comm = kernel.connectToComm('foo');
           comm.dispose();
           expect(comm.isDisposed).to.be(true);
+          done();
         });
       });
     });
