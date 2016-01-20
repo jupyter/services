@@ -63,7 +63,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let get = contents.get("/foo", { type: "file", name: "test" });
-      return get.then(model => {
+      get.then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
@@ -75,7 +75,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_DIR);
       });
       let get = contents.get("/foo", { type: "directory", name: "bar" });
-      return get.then(model => {
+      get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
@@ -87,7 +87,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_DIR);
       });
       let get = contents.get("/foo", { type: "directory", name: "bar" });
-      return get.then(model => {
+      get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
@@ -123,7 +123,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_FILE);
       });
-      return contents.newUntitled("/foo").then(model => {
+      contents.newUntitled("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
@@ -136,7 +136,7 @@ describe('jupyter.services - Contents', () => {
       });
       let newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
-      return newDir.then(model => {
+      newDir.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
@@ -149,7 +149,7 @@ describe('jupyter.services - Contents', () => {
       });
       let newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
-      return newDir.then(model => {
+      newDir.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
@@ -184,7 +184,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      return contents.delete("/foo/bar.txt").then(() => {
+      contents.delete("/foo/bar.txt").then(() => {
         done();
       });
     });
@@ -194,7 +194,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      return contents.delete("/foo/bar.txt").then(() => {
+      contents.delete("/foo/bar.txt").then(() => {
         done();
       });
     });
@@ -236,7 +236,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      return rename.then(model => {
+      rename.then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -248,7 +248,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      return rename.then(model => {
+      rename.then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -284,7 +284,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let save = contents.save("/foo", { type: "file", name: "test" });
-      return save.then(model => {
+      save.then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -296,7 +296,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, DEFAULT_FILE);
       });
       let save = contents.save("/foo", { type: "file", name: "test" });
-      return save.then(model => {
+      save.then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -308,7 +308,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let save = contents.save("/foo", { type: "file", name: "test" });
-      return save.then(model => {
+      save.then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -343,7 +343,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_FILE);
       });
-      return contents.copy("/foo/bar.txt", "/baz").then(model => {
+      contents.copy("/foo/bar.txt", "/baz").then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -354,7 +354,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_FILE);
       });
-      return contents.copy("/foo/bar.txt", "/baz").then(model => {
+      contents.copy("/foo/bar.txt", "/baz").then(model => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
@@ -390,7 +390,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, DEFAULT_CP);
       });
       let checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      return checkpoint.then(model => {
+      checkpoint.then(model => {
         expect(model.last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
@@ -402,7 +402,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, DEFAULT_CP);
       });
       let checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      return checkpoint.then(model => {
+      checkpoint.then(model => {
         expect(model.last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
@@ -438,7 +438,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      return checkpoints.then((obj: ICheckpointModel[]) => {
+      checkpoints.then((obj: ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
@@ -450,7 +450,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      return checkpoints.then((obj: ICheckpointModel[]) => {
+      checkpoints.then((obj: ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
@@ -495,7 +495,7 @@ describe('jupyter.services - Contents', () => {
       });
       let checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      return checkpoint.then(() => {
+      checkpoint.then(() => {
         done();
       });
     });
@@ -507,7 +507,7 @@ describe('jupyter.services - Contents', () => {
       });
       let checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      return checkpoint.then(() => {
+      checkpoint.then(() => {
         done();
       });
     });
@@ -531,7 +531,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      return contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
+      contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
       .then(() => { done(); });
     });
 
@@ -540,7 +540,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      return contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
+      contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
       .then(() => { done(); });
     });
 
@@ -563,7 +563,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, DEFAULT_FILE);
       });
-      return contents.listContents("/foo").then(model => {
+      contents.listContents("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
@@ -574,7 +574,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, DEFAULT_FILE);
       });
-      return contents.listContents("/foo").then(model => {
+      contents.listContents("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });

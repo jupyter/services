@@ -64,7 +64,7 @@ describe('jupyter.services - session', () => {
         handler.respond(200, sessionIds);
       });
       let list = listRunningSessions('http://localhost:8888');
-      return list.then((response: ISessionId[]) => {
+      list.then((response: ISessionId[]) => {
         expect(response[0]).to.eql(sessionIds[0]);
         expect(response[1]).to.eql(sessionIds[1]);
         done();
@@ -77,7 +77,7 @@ describe('jupyter.services - session', () => {
         handler.respond(200, sessionIds);
       });
       let list = listRunningSessions({ ajaxSettings: ajaxSettings });
-      return list.then((response: ISessionId[]) => {
+      list.then((response: ISessionId[]) => {
         expect(response[0]).to.eql(sessionIds[0]);
         expect(response[1]).to.eql(sessionIds[1]);
         done();
@@ -133,7 +133,7 @@ describe('jupyter.services - session', () => {
         }
       });
       let options = createSessionOptions(sessionId);
-      return startNewSession(options).then((session) => {
+      startNewSession(options).then(session => {
         expect(session.id).to.be(sessionId.id);
         done();
       });
@@ -151,7 +151,7 @@ describe('jupyter.services - session', () => {
       });
       let options = createSessionOptions(sessionId);
       options.ajaxSettings = ajaxSettings;
-      return startNewSession(options).then((session) => {
+      startNewSession(options).then(session => {
         expect(session.id).to.be(sessionId.id);
         done();
       });
@@ -230,7 +230,7 @@ describe('jupyter.services - session', () => {
     it('should connect to a running session', (done) => {
       let tester = new KernelTester();
       let sessionId = createSessionId();
-      startSession(sessionId).then((session) => {
+      startSession(sessionId).then(session => {
         connectToSession(sessionId.id).then((newSession) => {
           expect(newSession.id).to.be(sessionId.id);
           done();
@@ -249,7 +249,7 @@ describe('jupyter.services - session', () => {
         }
       });
       let options = createSessionOptions(sessionId);
-      connectToSession(sessionId.id, options).then((session) => {
+      connectToSession(sessionId.id, options).then(session => {
         expect(session.id).to.be(sessionId.id);
         done();
       });
@@ -267,7 +267,7 @@ describe('jupyter.services - session', () => {
       });
       let options = createSessionOptions(sessionId);
       options.ajaxSettings = ajaxSettings
-      connectToSession(sessionId.id, options).then((session) => {
+      connectToSession(sessionId.id, options).then(session => {
         expect(session.id).to.be(sessionId.id);
         done();
       });
@@ -300,7 +300,7 @@ describe('jupyter.services - session', () => {
       it('should emit when the session dies', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           session.sessionDied.connect(() => {
             done();
           });
@@ -316,7 +316,7 @@ describe('jupyter.services - session', () => {
 
       it('should be a read only string', (done) => {
         let id = createSessionId();
-        startSession(id).then((session) => {
+        startSession(id).then(session => {
           expect(typeof session.id).to.be('string');
           expect(() => { session.id = "1"; }).to.throwError();
           done();
@@ -328,7 +328,7 @@ describe('jupyter.services - session', () => {
 
       it('should be a read only string', (done) => {
         let id = createSessionId();
-        startSession(id).then((session) => {
+        startSession(id).then(session => {
           expect(typeof session.notebookPath).to.be('string');
           expect(() => { session.notebookPath = '' }).to.throwError();
           done();
@@ -340,7 +340,7 @@ describe('jupyter.services - session', () => {
 
       it('should be a read only IKernel object', (done) => {
         let id = createSessionId();
-        startSession(id).then((session) => {
+        startSession(id).then(session => {
           expect(typeof session.kernel.id).to.be('string');
           expect(() => { session.kernel = null }).to.throwError();
           done();
@@ -352,7 +352,7 @@ describe('jupyter.services - session', () => {
 
       it('should be a read only delegate to the kernel status', (done) => {
         let id = createSessionId();
-        startSession(id).then((session) => {
+        startSession(id).then(session => {
           expect(session.status).to.be(session.kernel.status);
           expect(() => { session.status = 0 }).to.throwError();
           done();
@@ -364,7 +364,7 @@ describe('jupyter.services - session', () => {
 
       it('should be true after we dispose of the session', (done) => {
         let id = createSessionId();
-        return startSession(id).then(session => {
+        startSession(id).then(session => {
           expect(session.isDisposed).to.be(false);
           session.dispose();
           expect(session.isDisposed).to.be(true);
@@ -374,7 +374,7 @@ describe('jupyter.services - session', () => {
 
       it('should be safe to call multiple times', (done) => {
         let id = createSessionId();
-        return startSession(id).then(session => {
+        startSession(id).then(session => {
           expect(session.isDisposed).to.be(false);
           expect(session.isDisposed).to.be(false);
           session.dispose();
@@ -389,7 +389,7 @@ describe('jupyter.services - session', () => {
 
       it('should dispose of the resources held by the session', (done) => {
         let id = createSessionId();
-        return startSession(id).then(session => {
+        startSession(id).then(session => {
           session.dispose();
           expect(session.kernel).to.be(null);
           done();
@@ -405,7 +405,7 @@ describe('jupyter.services - session', () => {
         let newPath = '/foo.ipynb';
         let newId = JSON.parse(JSON.stringify(id));
         newId.notebook.path = newPath;
-        startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(200, newId);
           };
@@ -424,7 +424,7 @@ describe('jupyter.services - session', () => {
         let newPath = '/foo.ipynb';
         let newId = JSON.parse(JSON.stringify(id));
         newId.notebook.path = newPath;
-        startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(200, newId);
           };
@@ -439,7 +439,7 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let id = createSessionId();
         let newPath = '/foo.ipynb';
-        startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           let promise = session.renameNotebook(newPath);
           tester.onRequest = () => {
             tester.respond(201, { });
@@ -452,7 +452,7 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let id = createSessionId();
         let newPath = '/foo.ipynb';
-        return startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           let promise = session.renameNotebook(newPath);
           tester.onRequest = () => {
             tester.respond(500, { });
@@ -465,7 +465,7 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let id = createSessionId();
         let newPath = '/foo.ipynb';
-        return startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           let promise = session.renameNotebook(newPath);
           tester.onRequest = () => {
             tester.respond(200, { });
@@ -477,7 +477,7 @@ describe('jupyter.services - session', () => {
       it('should fail if the session is dead', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
-        return startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           session.dispose();
           let promise = session.renameNotebook('');
           expectFailure(promise, done, 'Session is dead');
@@ -490,11 +490,11 @@ describe('jupyter.services - session', () => {
       it('should shut down properly', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        return startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
-          return session.shutdown().then(() => {
+          session.shutdown().then(() => {
             done();
           });
         });
@@ -503,7 +503,7 @@ describe('jupyter.services - session', () => {
       it('should emit a sessionDied signal', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
@@ -517,7 +517,7 @@ describe('jupyter.services - session', () => {
       it('should accept ajax options', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
@@ -530,7 +530,7 @@ describe('jupyter.services - session', () => {
       it('should fail for an incorrect response status', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(200, { });
           }
@@ -542,7 +542,7 @@ describe('jupyter.services - session', () => {
       it('should handle a specific error status', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(410, { });
           }
@@ -556,7 +556,7 @@ describe('jupyter.services - session', () => {
       it('should fail for an error response status', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
-        startSession(sessionId, tester).then((session) => {
+        startSession(sessionId, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(500, { });
           }
@@ -568,7 +568,7 @@ describe('jupyter.services - session', () => {
       it('should fail if the session is dead', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
-        startSession(id, tester).then((session) => {
+        startSession(id, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
@@ -594,7 +594,7 @@ describe('jupyter.services - session', () => {
 
     describe('#listRunning()', () => {
 
-      it('should return a list of session ids', (done) => {
+      it('should a list of session ids', (done) => {
         let handler = new RequestHandler();
         let manager = new NotebookSessionManager(createSessionOptions());
         let sessionIds = [createSessionId(), createSessionId()];
@@ -602,7 +602,7 @@ describe('jupyter.services - session', () => {
           handler.respond(200, sessionIds);
         }
         let list = manager.listRunning();
-        return list.then((response: ISessionId[]) => {
+        list.then((response: ISessionId[]) => {
           expect(response[0]).to.eql(sessionIds[0]);
           expect(response[1]).to.eql(sessionIds[1]);
           done();
@@ -626,7 +626,7 @@ describe('jupyter.services - session', () => {
                                     id: id.kernel.id }]);
           }
         }
-        return manager.startNew({ notebookPath: 'test.ipynb'}).then(session => {
+        manager.startNew({ notebookPath: 'test.ipynb'}).then(session => {
           expect(session.id).to.be(id.id);
           done();
         });
