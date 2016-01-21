@@ -1053,6 +1053,7 @@ describe('jupyter.services - kernel', () => {
               // trigger onIOPub with a 'stream' message
               msg.channel = 'iopub';
               msg.header.msg_type = 'stream';
+              msg.content = { 'name': 'stdout', 'text': 'foo' };
               tester.send(msg);
             };
 
@@ -1115,6 +1116,7 @@ describe('jupyter.services - kernel', () => {
               // trigger onIOPub with a 'stream' message
               msg.channel = 'iopub';
               msg.header.msg_type = 'stream';
+              msg.content = { 'name': 'stdout', 'text': 'foo' };
               tester.send(msg);
             }
 
