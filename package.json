@@ -29,7 +29,7 @@
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
     "test:coverage": "istanbul cover _mocha -- test/build/index.js",
-    "test:integration": "cd test && python run_test.py",
+    "test:integration": "cd test && python integration_test.py",
     "test": "mocha test/build/index.js"
   },
   "repository": {

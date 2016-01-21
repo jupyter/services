@@ -47,7 +47,7 @@ def start_notebook():
 
 
 def run_mocha(options):
-    mocha_command = ['mocha', '--timeout', '10000', 'build/integration.js']
+    mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js']
     return subprocess.check_call(mocha_command, stderr=subprocess.STDOUT)
 
 
