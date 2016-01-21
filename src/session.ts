@@ -333,7 +333,7 @@ class NotebookSession implements INotebookSession {
    * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
-    return (this._kernel !== null);
+    return (this._kernel === null);
   }
 
   /**
@@ -341,6 +341,7 @@ class NotebookSession implements INotebookSession {
    */
   dispose(): void {
     this._kernel = null;
+    this._isDead = true;
     clearSignalData(this);
     runningSessions.delete(this._id);
   }
@@ -402,7 +403,7 @@ class NotebookSession implements INotebookSession {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       this.sessionDied.emit(void 0);
-      this.kernel.shutdown();
+      this.kernel.dispose();
     }, (rejected: utils.IAjaxError) => {
       this._isDead = false;
       if (rejected.xhr.status === 410) {

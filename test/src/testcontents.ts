@@ -14,7 +14,7 @@ import {
 } from './utils';
 
 
-var DEFAULT_FILE: IContentsModel = {
+let DEFAULT_FILE: IContentsModel = {
   name: "test",
   path: "",
   type: "file",
@@ -26,7 +26,7 @@ var DEFAULT_FILE: IContentsModel = {
   format: "text"
 }
 
-var DEFAULT_DIR: IContentsModel = {
+let DEFAULT_DIR: IContentsModel = {
   name: "bar",
   path: "/foo/bar",
   type: "file",
@@ -38,7 +38,7 @@ var DEFAULT_DIR: IContentsModel = {
   format: "json"
 }
 
-var DEFAULT_CP: ICheckpointModel = {
+let DEFAULT_CP: ICheckpointModel = {
   id: "1234",
   last_modified: "yesterday"
 }
@@ -49,7 +49,7 @@ describe('jupyter.services - Contents', () => {
   describe('#constructor()', () => {
 
     it('should complete properly', (done) => {
-      var contents = new ContentsManager("localhost");
+      let contents = new ContentsManager("localhost");
       done();
     });
 
@@ -58,54 +58,59 @@ describe('jupyter.services - Contents', () => {
   describe('#get()', () => {
 
     it('should get a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var get = contents.get("/foo", { type: "file", name: "test" });
-      handler.respond(200, DEFAULT_FILE);
-      return get.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let get = contents.get("/foo", { type: "file", name: "test" });
+      get.then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should get a directory', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var get = contents.get("/foo", { type: "directory", name: "bar" });
-      handler.respond(200, DEFAULT_DIR);
-      return get.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_DIR);
+      });
+      let get = contents.get("/foo", { type: "directory", name: "bar" });
+      get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var get = contents.get("/foo", { type: "directory", name: "bar" });
-      handler.respond(200, DEFAULT_DIR);
-      return get.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_DIR);
+      });
+      let get = contents.get("/foo", { type: "directory", name: "bar" });
+      get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var get = contents.get("/foo", { type: "directory", name: "bar",
-                                       format: "json", content: false });
-      var dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
+      let contents = new ContentsManager("localhost");
+      let dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
       dir.name = 1
-      handler.respond(200, dir);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, dir);
+      });
+      let get = contents.get("/foo", { type: "directory", name: "bar",
+                                       format: "json", content: false });
       expectFailure(get, done, 'Invalid Contents Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var get = contents.get("/foo", { name: "bar" });
-      handler.respond(201, DEFAULT_DIR);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_DIR);
+      });
+      let get = contents.get("/foo", { name: "bar" });
       expectFailure(get, done, 'Invalid Status: 201');
     });
 
@@ -114,55 +119,59 @@ describe('jupyter.services - Contents', () => {
   describe('#newUntitled()', () => {
 
     it('should create a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var newFile = contents.newUntitled("/foo");
-      handler.respond(201, DEFAULT_FILE);
-      return newFile.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.newUntitled("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should create a directory', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var newDir = contents.newUntitled("/foo", { type: "directory",
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_DIR);
+      });
+      let newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
-      handler.respond(201, DEFAULT_DIR);
-      return newDir.then((model: IContentsModel) => {
+      newDir.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var newDir = contents.newUntitled("/foo", { type: "directory",
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_DIR);
+      });
+      let newDir = contents.newUntitled("/foo", { type: "directory",
                                                   ext: "" });
-      handler.respond(201, DEFAULT_DIR);
-      return newDir.then((model: IContentsModel) => {
+      newDir.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var newFile = contents.newUntitled("/foo", { type: "file", ext: "py" });
-      var dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
+      let contents = new ContentsManager("localhost");
+      let dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
       dir.name = 1
-      handler.respond(201, dir);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, dir);
+      });
+      let newFile = contents.newUntitled("/foo", { type: "file", ext: "py" });
       expectFailure(newFile, done, 'Invalid Contents Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var newDir = contents.newUntitled("/foo", { name: "bar" });
-      handler.respond(200, DEFAULT_DIR);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_DIR);
+      });
+      let newDir = contents.newUntitled("/foo", { name: "bar" });
       expectFailure(newDir, done, 'Invalid Status: 200');
     });
 
@@ -171,46 +180,49 @@ describe('jupyter.services - Contents', () => {
   describe('#delete()', () => {
 
     it('should delete a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var del = contents.delete("/foo/bar.txt");
-      handler.respond(204, { });
-      return del.then(() => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      contents.delete("/foo/bar.txt").then(() => {
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var del = contents.delete("/foo/bar.txt");
-      handler.respond(204, { });
-      return del.then(() => {
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      contents.delete("/foo/bar.txt").then(() => {
         done();
       });
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var del = contents.delete("/foo/bar.txt");
-      handler.respond(200, { });
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, { });
+      });
+      let del = contents.delete("/foo/bar.txt");
       expectFailure(del, done, 'Invalid Status: 200');
     });
 
     it('should throw a specific error', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var del = contents.delete("/foo/");
-      handler.respond(400, { });
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(400, { });
+      });
+      let del = contents.delete("/foo/");
       expectFailure(del, done, 'Directory not found');
     });
 
     it('should throw a general error', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var del = contents.delete("/foo/");
-      handler.respond(500, { });
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(500, { });
+      });
+      let del = contents.delete("/foo/");
       expectFailure(del, done, '');
     });
 
@@ -219,42 +231,46 @@ describe('jupyter.services - Contents', () => {
   describe('#rename()', () => {
 
     it('should rename a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      handler.respond(200, DEFAULT_FILE);
-      return rename.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
+      rename.then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      handler.respond(200, DEFAULT_FILE);
-      return rename.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
+      rename.then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      var dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      let contents = new ContentsManager("localhost");
+      let dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
       delete dir.path;
-      handler.respond(200, dir);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, dir);
+      });
+      let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       expectFailure(rename, done, 'Invalid Contents Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      handler.respond(201, DEFAULT_FILE);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
       expectFailure(rename, done, 'Invalid Status: 201');
     });
 
@@ -263,53 +279,58 @@ describe('jupyter.services - Contents', () => {
   describe('#save()', () => {
 
     it('should save a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var save = contents.save("/foo", { type: "file", name: "test" });
-      handler.respond(200, DEFAULT_FILE);
-      return save.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let save = contents.save("/foo", { type: "file", name: "test" });
+      save.then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should create a new file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var save = contents.save("/foo", { type: "file", name: "test" });
-      handler.respond(201, DEFAULT_FILE);
-      return save.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      let save = contents.save("/foo", { type: "file", name: "test" });
+      save.then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var save = contents.save("/foo", { type: "file", name: "test" });
-      handler.respond(200, DEFAULT_FILE);
-      return save.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let save = contents.save("/foo", { type: "file", name: "test" });
+      save.then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var save = contents.save("/foo", { type: "file", name: "test" });
-      var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      let contents = new ContentsManager("localhost");
+      let file = JSON.parse(JSON.stringify(DEFAULT_FILE));
       delete file.format;
-      handler.respond(200, file);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, file);
+      });
+      let save = contents.save("/foo", { type: "file", name: "test" });
       expectFailure(save, done, 'Invalid Contents Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var save = contents.save("/foo", { type: "file", name: "test" });
-      handler.respond(204, DEFAULT_FILE);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(204, DEFAULT_FILE);
+      });
+      let save = contents.save("/foo", { type: "file", name: "test" });
       expectFailure(save, done, 'Invalid Status: 204');
     });
 
@@ -318,42 +339,44 @@ describe('jupyter.services - Contents', () => {
   describe('#copy()', () => {
 
     it('should copy a file', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var copy = contents.copy("/foo/bar.txt", "/baz");
-      handler.respond(201, DEFAULT_FILE);
-      return copy.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.copy("/foo/bar.txt", "/baz").then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var copy = contents.copy("/foo/bar.txt", "/baz");
-      handler.respond(201, DEFAULT_FILE);
-      return copy.then((obj: IContentsModel) => {
-        expect(obj.created).to.be(DEFAULT_FILE.created);
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.copy("/foo/bar.txt", "/baz").then(model => {
+        expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var copy = contents.copy("/foo/bar.txt", "/baz");
-      var file = JSON.parse(JSON.stringify(DEFAULT_FILE));
+      let contents = new ContentsManager("localhost");
+      let file = JSON.parse(JSON.stringify(DEFAULT_FILE));
       delete file.type;
-      handler.respond(201, file);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, file);
+      });
+      let copy = contents.copy("/foo/bar.txt", "/baz");
       expectFailure(copy, done, 'Invalid Contents Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var copy = contents.copy("/foo/bar.txt", "/baz");
-      handler.respond(200, DEFAULT_FILE);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      let copy = contents.copy("/foo/bar.txt", "/baz");
       expectFailure(copy, done, 'Invalid Status: 200');
     });
 
@@ -362,42 +385,46 @@ describe('jupyter.services - Contents', () => {
   describe('#createCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      handler.respond(201, DEFAULT_CP);
-      return checkpoint.then((obj: ICheckpointModel) => {
-        expect(obj.last_modified).to.be(DEFAULT_CP.last_modified);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_CP);
+      });
+      let checkpoint = contents.createCheckpoint("/foo/bar.txt");
+      checkpoint.then(model => {
+        expect(model.last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      handler.respond(201, DEFAULT_CP);
-      return checkpoint.then((obj: ICheckpointModel) => {
-        expect(obj.last_modified).to.be(DEFAULT_CP.last_modified);
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_CP);
+      });
+      let checkpoint = contents.createCheckpoint("/foo/bar.txt");
+      checkpoint.then(model => {
+        expect(model.last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
+      let contents = new ContentsManager("localhost");
+      let cp = JSON.parse(JSON.stringify(DEFAULT_CP));
       delete cp.last_modified;
-      handler.respond(201, cp);
+      let handler = new RequestHandler(() => {
+        handler.respond(201, cp);
+      });
+      let checkpoint = contents.createCheckpoint("/foo/bar.txt");
       expectFailure(checkpoint, done, 'Invalid Checkpoint Model');
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      handler.respond(200, DEFAULT_CP);
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_CP);
+      });
+      let checkpoint = contents.createCheckpoint("/foo/bar.txt");
       expectFailure(checkpoint, done, 'Invalid Status: 200');
     });
 
@@ -406,38 +433,42 @@ describe('jupyter.services - Contents', () => {
   describe('#listCheckpoints()', () => {
 
     it('should list the checkpoints', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
-      return checkpoints.then((obj: ICheckpointModel[]) => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
+      });
+      let checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      checkpoints.then((obj: ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
-      return checkpoints.then((obj: ICheckpointModel[]) => {
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
+      });
+      let checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      checkpoints.then((obj: ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });
 
     it('should fail for an incorrect model', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      var cp = JSON.parse(JSON.stringify(DEFAULT_CP));
+      let contents = new ContentsManager("localhost");
+      let cp = JSON.parse(JSON.stringify(DEFAULT_CP));
       delete cp.id;
-      handler.respond(200, [cp, DEFAULT_CP]);
-
-      var second = () => {
-        var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-        handler.respond(200, DEFAULT_CP);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, [cp, DEFAULT_CP]);
+      });
+      let checkpoints = contents.listCheckpoints("/foo/bar.txt");
+      let second = () => {
+        handler.onRequest = () => {
+          handler.respond(200, DEFAULT_CP);
+        };
+        let checkpoints = contents.listCheckpoints("/foo/bar.txt");
         expectFailure(checkpoints, done, 'Invalid Checkpoint list');
       }
 
@@ -445,10 +476,11 @@ describe('jupyter.services - Contents', () => {
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoints = contents.listCheckpoints("/foo/bar.txt");
-      handler.respond(201, { });
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(201, { });
+      });
+      let checkpoints = contents.listCheckpoints("/foo/bar.txt");
       expectFailure(checkpoints, done, 'Invalid Status: 201');
     });
 
@@ -457,33 +489,36 @@ describe('jupyter.services - Contents', () => {
   describe('#restoreCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      let checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      handler.respond(204, { });
-      return checkpoint.then(() => {
+      checkpoint.then(() => {
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      let checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      handler.respond(204, { });
-      return checkpoint.then(() => {
+      checkpoint.then(() => {
         done();
       });
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, { });
+      });
+      let checkpoint = contents.restoreCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      handler.respond(200, { });
       expectFailure(checkpoint, done, 'Invalid Status: 200');
     });
 
@@ -492,33 +527,30 @@ describe('jupyter.services - Contents', () => {
   describe('#deleteCheckpoint()', () => {
 
     it('should delete a checkpoint', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
-                                                  DEFAULT_CP.id);
-      handler.respond(204, { });
-      return checkpoint.then(() => {
-        done();
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
       });
+      contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
+      .then(() => { done(); });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
-                                                  DEFAULT_CP.id);
-      handler.respond(204, { });
-      return checkpoint.then(() => {
-        done();
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
       });
+      contents.deleteCheckpoint("/foo/bar.txt", DEFAULT_CP.id)
+      .then(() => { done(); });
     });
 
     it('should fail for an incorrect response', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, { });
+      });
+      let checkpoint = contents.deleteCheckpoint("/foo/bar.txt",
                                                   DEFAULT_CP.id);
-      handler.respond(200, { });
       expectFailure(checkpoint, done, 'Invalid Status: 200');
     });
 
@@ -527,22 +559,22 @@ describe('jupyter.services - Contents', () => {
   describe('#listContents()', () => {
 
     it('should get a directory', (done) => {
-      var contents = new ContentsManager("localhost");
-      var handler = new RequestHandler();
-      var dir = contents.listContents("/foo");
-      handler.respond(200, DEFAULT_FILE);
-      return dir.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost");
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      contents.listContents("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      var contents = new ContentsManager("localhost", ajaxSettings);
-      var handler = new RequestHandler();
-      var dir = contents.listContents("/foo");
-      handler.respond(200, DEFAULT_FILE);
-      return dir.then((model: IContentsModel) => {
+      let contents = new ContentsManager("localhost", ajaxSettings);
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      contents.listContents("/foo").then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });

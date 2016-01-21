@@ -416,7 +416,7 @@ class Kernel implements IKernel {
    * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
-    return (this._futures !== null);
+    return (this._futures === null);
   }
 
   /**
@@ -433,6 +433,7 @@ class Kernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._ws = null;
+    this._status === KernelStatus.Dead
     clearSignalData(this);
     runningKernels.delete(this._id);
   }
