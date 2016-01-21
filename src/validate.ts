@@ -30,6 +30,23 @@ const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
 const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content',
                         'channel', 'buffers'];
 
+/**
+ * Requred fields and types for contents of various types of `IKernelMessage`
+ * messages on the iopub channel.
+ */
+const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
+  'stream': {'name': 'string', 'text': 'string'},
+  'display_data': {'source': 'string', 'data': 'any', 'metadata': 'object'},
+  'execute_input': {'code': 'string', 'execution_count': 'number'},
+  'execute_result': {'execution_count': 'number', 'data': 'any', 'metadata': 'object'},
+  'error': {'execution_count': 'number', 'ename': 'string', 'evalue': 'string', 'traceback': 'object'},
+  'status': {'execution_state': 'string'},
+  'clear_output': {'wait': 'boolean'},
+  'comm_open': { 'comm_id': 'string', 'target_name': 'string',
+                 'data': 'any' },
+  'comm_msg': { 'comm_id': 'string', 'data': 'any' },
+  'comm_close': { 'comm_id': 'string' }
+}
 
 /**
  * Validate an `IKernelMessage` as being a valid Comm Message.
@@ -65,10 +82,10 @@ function validateCommMessage(msg: IKernelMessage): boolean {
 function validateKernelHeader(header: any): void {
   for (var i = 0; i < HEADER_FIELDS.length; i++) {
     if (!header.hasOwnProperty(HEADER_FIELDS[i])) {
-      throw Error('Invalid Kernel message');
+      throw Error(`Invalid Kernel message: header missing field ${HEADER_FIELDS[i]}`);
     }
     if (typeof header[HEADER_FIELDS[i]] !== 'string') {
-      throw Error('Invalid Kernel message');
+      throw Error(`Invalid Kernel message: header field ${HEADER_FIELDS[i]} is not a string`);
     }
   }
 }
@@ -81,7 +98,7 @@ export
 function validateKernelMessage(msg: IKernelMessage) : void {
   for (var i = 0; i < MESSAGE_FIELDS.length; i++) {
     if (!msg.hasOwnProperty(MESSAGE_FIELDS[i])) {
-      throw Error('Invalid Kernel message');
+      throw Error(`Invalid Kernel message: missing field ${MESSAGE_FIELDS[i]}`);
     }
   }
   validateKernelHeader(msg.header);
@@ -89,10 +106,37 @@ function validateKernelMessage(msg: IKernelMessage) : void {
     validateKernelHeader(msg.parent_header as IKernelMessageHeader);
   }
   if (typeof msg.channel !== 'string') {
-    throw Error('Invalid Kernel message');
+    throw Error('Invalid Kernel message: channel is not a string');
+  }
+  if (msg.channel === 'iopub') {
+    validateIOPubKernelMessageContent(msg);
   }
   if (!Array.isArray(msg.buffers)) {
-    throw Error('Invalid Kernel message');
+    throw Error('Invalid Kernel message: buffers is not an array');
+  }
+}
+
+
+/**
+ * Validate content of an IKernelMessage on the iopub channel.
+ */
+export
+function validateIOPubKernelMessageContent(msg: IKernelMessage) : void {
+  if (msg.channel === 'iopub') {
+    let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
+    if (fields === void 0) {
+      throw Error(`Invalid Kernel message: iopub message type ${msg.header.msg_type} not recognized`)
+    }
+    let content = msg.content;
+    let names = Object.keys(fields);
+    for (let i = 0; i < names.length; i++) {
+      if (fields[names[i]] === 'any') {
+        continue
+      }
+      if (typeof msg.content[names[i]] !== fields[names[i]]) {
+        throw Error(`Invalid Kernel message: iopub content field ${names[i]} is not of type ${fields[names[i]]}`);
+      }
+    }
   }
 }
 

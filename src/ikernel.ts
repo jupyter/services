@@ -103,6 +103,170 @@ interface IKernelMessage {
   buffers: (ArrayBuffer | ArrayBufferView)[];
 }
 
+
+/**
+ * IOPub stream kernel message specification.
+ *
+ * See [Streams](http://jupyter-client.readthedocs.org/en/latest/messaging.html#streams-stdout-stderr-etc).
+ */
+export
+interface IKernelIOPubStreamMessage extends IKernelMessage {
+  content: {
+    name: string;
+    text: string;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub stream message.
+ */
+export
+function isStreamMessage(msg: IKernelMessage): msg is IKernelIOPubStreamMessage {
+  return msg.header.msg_type === "stream";
+}
+
+
+/**
+ * IOPub display_data kernel message specification.
+ *
+ * See [Display data](http://jupyter-client.readthedocs.org/en/latest/messaging.html#display-data).
+ */
+export
+interface IKernelIOPubDisplayDataMessage extends IKernelMessage {
+  content: {
+    source: string;
+    data: { [key: string]: string };
+    metadata: any;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub display_data message.
+ */
+export
+function isDisplayDataMessage(msg: IKernelMessage): msg is IKernelIOPubDisplayDataMessage {
+  return msg.header.msg_type === "display_data";
+}
+
+
+/**
+ * IOPub execute_input kernel message specification.
+ *
+ * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
+ */
+export
+interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
+  content: {
+    code: string;
+    execution_count: number;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub execute_input message.
+ */
+export
+function isExecuteInputMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteInputMessage {
+  return msg.header.msg_type === "execute_input";
+}
+
+
+/**
+ * IOPub execute_result kernel message specification.
+ *
+ * See [Execution results](http://jupyter-client.readthedocs.org/en/latest/messaging.html#id4).
+ */
+export
+interface IKernelIOPubExecuteResultMessage extends IKernelMessage {
+  content: {
+    execution_count: number;
+    data: { [key: string]: string };
+    metadata: any;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub execute_result message.
+ */
+export
+function isExecuteResultMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteResultMessage {
+  return msg.header.msg_type === "execute_result";
+}
+
+
+/**
+ * IOPub error kernel message specification.
+ *
+ * See [Execution errors](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execution-errors).
+ */
+export
+interface IKernelIOPubErrorMessage extends IKernelMessage {
+  content: {
+    execution_count: number;
+    ename: string;
+    evalue: string;
+    traceback: string[];
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub error message.
+ */
+export
+function isErrorMessage(msg: IKernelMessage): msg is IKernelIOPubErrorMessage {
+  return msg.header.msg_type === "error";
+}
+
+
+/**
+ * IOPub kernel status message specification.
+ *
+ * See [Kernel status](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-status).
+ */
+export
+interface IKernelIOPubStatusMessage extends IKernelMessage {
+  content: {
+    execution_state: string;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub status message.
+ */
+export
+function isStatusMessage(msg: IKernelMessage): msg is IKernelIOPubStatusMessage {
+  return msg.header.msg_type === "status";
+}
+
+
+/**
+ * IOPub clear_output kernel message specification.
+ *
+ * See [Clear output](http://jupyter-client.readthedocs.org/en/latest/messaging.html#clear-output).
+ */
+export
+interface IKernelIOPubClearOutputMessage extends IKernelMessage {
+  content: {
+    wait: boolean;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub clear_output message.
+ */
+export
+function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutputMessage {
+  return msg.header.msg_type === "clear_output";
+}
+
+
 /**
  * Kernel information specification.
  *
