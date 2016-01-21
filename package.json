@@ -28,7 +28,7 @@
     "docs": "typedoc --options scripts/tdoptions.json",
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
-    "test:coverage": "istanbul cover _mocha -- test/build/index.js",
+    "test:coverage": "cd test && istanbul cover _mocha -- build/index.js",
     "test:integration": "cd test && python integration_test.py",
     "test": "mocha test/build/index.js"
   },
