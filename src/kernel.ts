@@ -634,10 +634,11 @@ class Kernel implements IKernel {
       session: this._clientId
     }
     var defaults = {
-      silent : true,
-      store_history : false,
+      silent : false,
+      store_history : true,
       user_expressions : {},
-      allow_stdin : false
+      allow_stdin : true,
+      stop_on_error : false
     };
     contents = utils.extend(defaults, contents);
     var msg = createKernelMessage(options, contents);
