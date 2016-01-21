@@ -10,7 +10,7 @@ import * as NodeWebSocket
   from 'ws';
 
 
-// stubs for node global
+// stub for node global
 declare var global: any;
 global.XMLHttpRequest = NodeXMLHttpRequest;
 global.WebSocket = NodeWebSocket;
