@@ -180,7 +180,7 @@ class MockXMLHttpRequest {
       this._data = data;
     }
     MockXMLHttpRequest.requests.push(this);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       if (MockXMLHttpRequest.requests.indexOf(this) === -1) {
         console.error('Unhandled request:', JSON.stringify(this));
         throw Error(`Unhandled request: ${JSON.stringify(this)}`)
@@ -195,7 +195,7 @@ class MockXMLHttpRequest {
           }
         }, this._timeout);
       }
-    });
+    }, 0);
   }
 
   /**

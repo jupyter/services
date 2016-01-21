@@ -46,15 +46,9 @@ def start_notebook():
     return nb_server
 
 
-def run_karma(options):
-    if options.debug:
-        options.browsers = 'Chrome'
-    karma_command = ['karma', 'start', '--browsers=' + options.browsers,
-                     'karma-integration.conf.js', '--port=%s' % KARMA_PORT]
-    if options.debug:
-        karma_command += ['--singleRun=false', '--debug=true']
-    print(' '.join(karma_command))
-    return subprocess.check_call(karma_command, stderr=subprocess.STDOUT)
+def run_mocha(options):
+    mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js']
+    return subprocess.check_call(mocha_command, stderr=subprocess.STDOUT)
 
 
 if __name__ == '__main__':
@@ -70,7 +64,7 @@ if __name__ == '__main__':
     nb_server = start_notebook()
 
     try:
-        resp = run_karma(options)
+        resp = run_mocha(options)
     except subprocess.CalledProcessError:
         resp = 1
     finally:
