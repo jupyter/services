@@ -182,9 +182,8 @@ class MockXMLHttpRequest {
     MockXMLHttpRequest.requests.push(this);
     requestAnimationFrame(() => {
       if (MockXMLHttpRequest.requests.indexOf(this) === -1) {
-        debugger;
         console.error('Unhandled request:', JSON.stringify(this));
-        return;
+        throw Error(`Unhandled request: ${JSON.stringify(this)}`)
       }
       var onRequest = MockXMLHttpRequest.onRequest;
       if (onRequest) onRequest(this);
