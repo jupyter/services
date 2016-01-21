@@ -3,6 +3,17 @@
 'use strict';
 
 import expect = require('expect.js');
+import {
+  XMLHttpRequest as NodeXMLHttpRequest
+} from "xmlhttprequest";
+import * as NodeWebSocket
+  from 'ws';
+
+
+// stubs for node global
+declare var global: any;
+global.XMLHttpRequest = NodeXMLHttpRequest;
+global.WebSocket = NodeWebSocket;
 
 import {
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
@@ -213,7 +224,7 @@ describe('jupyter.services - Integration', () => {
     it('should list a directory and get the file contents', (done) => {
       getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         var contents = new ContentsManager(BASEURL);
-        contents.listContents('.').then(listing => {
+        contents.listContents('src').then(listing => {
           var content = listing.content as any;
           for (var i = 0; i < content.length; i++) {
             if (content[i].type === 'file') {

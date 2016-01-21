@@ -27,7 +27,9 @@
     "text-encoding": "^0.5.2",
     "typedoc": "^0.3.11",
     "typescript": "^1.6.2",
-    "webpack": "^1.12.9"
+    "webpack": "^1.12.9",
+    "ws": "^1.0.1",
+    "xmlhttprequest": "^1.8.0"
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
@@ -44,7 +46,7 @@
     "test:firefox": "karma start --browsers=Firefox test/karma.conf.js",
     "test:ie": "karma start --browsers=IE test/karma.conf.js",
     "test:debug": "karma start --browsers=Chrome --singleRun=false --debug=true test/karma.conf.js",
-    "test:integration": "webpack --config test/webpack-integration.conf.js && cd test && python run_test.py",
+    "test:integration": "cd test && python run_test.py",
     "test": "npm run test:firefox"
   },
   "repository": {
