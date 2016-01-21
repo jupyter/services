@@ -5,7 +5,7 @@ Javascript client for the Jupyter services REST APIs
 
 [API Docs](http://jupyter.github.io/jupyter-js-services/)
 
-[REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml)
+[REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml)
 
 Note: All functions and methods using the REST API allow an optional
 `ajaxOptions` parameter to configure the request.
