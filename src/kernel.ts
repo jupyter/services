@@ -433,7 +433,7 @@ class Kernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._ws = null;
-    this._status === KernelStatus.Dead;
+    this._status = KernelStatus.Dead;
     this._targetRegistry = null;
     clearSignalData(this);
     runningKernels.delete(this._id);
