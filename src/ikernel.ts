@@ -765,7 +765,7 @@ interface IKernel extends IDisposable {
    *
    * @param callback - The callback invoked for a comm open message.
    *
-   * @returns A disposable used to unregister the com target.
+   * @returns A disposable used to unregister the comm target.
    *
    * #### Notes
    * Only one comm target can be registered at a time, an existing
