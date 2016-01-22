@@ -711,7 +711,7 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Register a comm target.
+   * Register a comm target handler.
    *
    * @param targetName - The name of the comm target.
    *
@@ -721,9 +721,10 @@ class Kernel implements IKernel {
    *
    * #### Notes
    * Only one comm target can be registered at a time, an existing
-   * callback will be overidden.
+   * callback will be overidden.  A registered comm target handler will take
+   * precidence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable {
+  registerCommHandler(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable {
     this._targetRegistry[targetName] = callback;
     return new DisposableDelegate(() => {
       delete this._targetRegistry[targetName];
@@ -912,10 +913,12 @@ class Kernel implements IKernel {
     var content = msg.content as ICommOpen;
     this.commOpened.emit(msg);
     var targetName = content.target_name;
-    var moduleName = content.target_module;
+    // Registered targets take precidence over `target_module`.
     if (this._targetRegistry[targetName]) {
       this._targetRegistry[targetName](msg);
+      return;
     }
+    var moduleName = content.target_module;
     if (!moduleName) {
       return;
     }

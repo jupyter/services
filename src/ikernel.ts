@@ -759,7 +759,7 @@ interface IKernel extends IDisposable {
   connectToComm(targetName: string, commId?: string): IComm;
 
   /**
-   * Register a comm target.
+   * Register a comm target handler.
    *
    * @param targetName - The name of the comm target.
    *
@@ -769,9 +769,10 @@ interface IKernel extends IDisposable {
    *
    * #### Notes
    * Only one comm target can be registered at a time, an existing
-   * callback will be overidden.
+   * callback will be overidden.  A registered comm target handler will take
+   * precidence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable;
+  registerCommHandler(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable;
 
   /**
    * Optional default settings for ajax requests, if applicable.
