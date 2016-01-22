@@ -10,7 +10,7 @@ import * as utils
   from 'jupyter-js-utils';
 
 import {
-  DisposableDelegate
+  DisposableDelegate, IDisposable
 } from 'phosphor-disposable';
 
 import {
@@ -433,7 +433,8 @@ class Kernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._ws = null;
-    this._status === KernelStatus.Dead
+    this._status === KernelStatus.Dead;
+    this._targetRegistry = null;
     clearSignalData(this);
     runningKernels.delete(this._id);
   }
@@ -710,6 +711,26 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Register a comm target.
+   *
+   * @param targetName - The name of the comm target.
+   *
+   * @param callback - The callback invoked for a comm open message.
+   *
+   * @returns A disposable used to unregister the com target.
+   *
+   * #### Notes
+   * Only one comm target can be registered at a time, an existing
+   * callback will be overidden.
+   */
+  registerCommTarget(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable {
+    this._targetRegistry[targetName] = callback;
+    return new DisposableDelegate(() => {
+      delete this._targetRegistry[targetName];
+    });
+  }
+
+  /**
    * Connect to a comm, or create a new one.
    *
    * #### Notes
@@ -889,12 +910,15 @@ class Kernel implements IKernel {
       return;
     }
     var content = msg.content as ICommOpen;
-    if (!content.target_module) {
-      this.commOpened.emit(msg);
+    this.commOpened.emit(msg);
+    var targetName = content.target_name;
+    var moduleName = content.target_module;
+    if (this._targetRegistry[targetName]) {
+      this._targetRegistry[targetName](msg);
+    }
+    if (!moduleName) {
       return;
     }
-    var targetName = content.target_name;
-    var moduleName = content.target_module
     var promise = new Promise((resolve, reject) => {
       // Try loading the module using require.js
       requirejs([moduleName], (mod: any) => {
@@ -1028,6 +1052,7 @@ class Kernel implements IKernel {
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
   private _isWebSocketClosing = false;
+  private _targetRegistry: { [key: string]: (msg: IKernelMessage) => void; } = Object.create(null);
 }
 
 

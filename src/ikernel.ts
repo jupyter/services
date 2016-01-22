@@ -759,6 +759,21 @@ interface IKernel extends IDisposable {
   connectToComm(targetName: string, commId?: string): IComm;
 
   /**
+   * Register a comm target.
+   *
+   * @param targetName - The name of the comm target.
+   *
+   * @param callback - The callback invoked for a comm open message.
+   *
+   * @returns A disposable used to unregister the com target.
+   *
+   * #### Notes
+   * Only one comm target can be registered at a time, an existing
+   * callback will be overidden.
+   */
+  registerCommTarget(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable;
+
+  /**
    * Optional default settings for ajax requests, if applicable.
    */
   ajaxSettings?: IAjaxSettings;
