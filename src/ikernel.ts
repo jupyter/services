@@ -560,11 +560,6 @@ interface IKernel extends IDisposable {
   unhandledMessage: ISignal<IKernel, IKernelMessage>;
 
   /**
-   * A signal emitted for unhandled comm open message.
-   */
-  commOpened: ISignal<IKernel, IKernelMessage>;
-
-  /**
    * The id of the server-side kernel.
    *
    * #### Notes
@@ -770,9 +765,9 @@ interface IKernel extends IDisposable {
    * #### Notes
    * Only one comm target can be registered at a time, an existing
    * callback will be overidden.  A registered comm target handler will take
-   * precidence over a comm which specifies a `target_module`.
+   * precedence over a comm which specifies a `target_module`.
    */
-  registerCommHandler(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable;
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelMessage) => void): IDisposable;
 
   /**
    * Optional default settings for ajax requests, if applicable.

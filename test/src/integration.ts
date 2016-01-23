@@ -163,10 +163,9 @@ describe('jupyter.services - Integration', () => {
           name: kernelSpecs.default
         }
         startNewKernel(options).then((kernel) => {
-          kernel.commOpened.connect((kernel, msg) => {
+          kernel.registerCommTarget('test', (comm, msg) => {
             let content = msg.content;
             expect(content.target_name).to.be('test');
-            var comm = kernel.connectToComm(content.target_name, content.comm_id);
             comm.onMsg = (msg) => {
               expect(msg.content.data).to.be('hello');
               comm.send('0');

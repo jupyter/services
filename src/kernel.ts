@@ -722,9 +722,9 @@ class Kernel implements IKernel {
    * #### Notes
    * Only one comm target can be registered at a time, an existing
    * callback will be overidden.  A registered comm target handler will take
-   * precidence over a comm which specifies a `target_module`.
+   * precedence over a comm which specifies a `target_module`.
    */
-  registerCommHandler(targetName: string, callback: (msg: IKernelMessage) => void): IDisposable {
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelMessage) => void): IDisposable {
     this._targetRegistry[targetName] = callback;
     return new DisposableDelegate(() => {
       delete this._targetRegistry[targetName];
@@ -911,30 +911,13 @@ class Kernel implements IKernel {
       return;
     }
     var content = msg.content as ICommOpen;
-    this.commOpened.emit(msg);
     var targetName = content.target_name;
-    // Registered targets take precidence over `target_module`.
-    if (this._targetRegistry[targetName]) {
-      this._targetRegistry[targetName](msg);
-      return;
-    }
-    var moduleName = content.target_module;
-    if (!moduleName) {
-      return;
-    }
-    var promise = new Promise((resolve, reject) => {
-      // Try loading the module using require.js
-      requirejs([moduleName], (mod: any) => {
-        if (mod[targetName] === undefined) {
-          reject(new Error(
-            'Target ' + targetName + ' not found in module ' + moduleName
-          ));
-        }
-        var target = mod[targetName];
-        var comm = new Comm(
+    let promise = utils.loadClass(content.target_name, content.target_module,
+      this._targetRegistry).then(target => {
+        let comm = new Comm(
           content.target_name,
           content.comm_id,
-          this._sendCommMessage,
+          this._sendCommMessage.bind(this),
           () => { this._unregisterComm(content.comm_id); }
         );
         try {
@@ -943,12 +926,11 @@ class Kernel implements IKernel {
           comm.close();
           this._unregisterComm(comm.commId);
           console.error("Exception opening new comm");
-          reject(e);
+          throw(e);
         }
         this._commPromises.delete(comm.commId);
         this._comms.set(comm.commId, comm);
-        resolve(comm);
-      });
+        return comm;
     });
     this._commPromises.set(content.comm_id, promise);
   }
@@ -1055,7 +1037,7 @@ class Kernel implements IKernel {
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
   private _isWebSocketClosing = false;
-  private _targetRegistry: { [key: string]: (msg: IKernelMessage) => void; } = Object.create(null);
+  private _targetRegistry: { [key: string]: (comm: IComm, msg: IKernelMessage) => void; } = Object.create(null);
 }
 
 

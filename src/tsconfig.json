@@ -13,7 +13,6 @@
     "../typings/es6-collections/es6-collections.d.ts",
     "../typings/es6-promise/es6-promise.d.ts",
     "../typings/es6-dataview.d.ts",
-    "../typings/requirejs/r.d.ts",
     "index.ts",
     "config.ts",
     "contents.ts",
