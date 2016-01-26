@@ -14,7 +14,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  KernelStatus, IKernel, IKernelOptions
+  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds
 } from './ikernel';
 
 import {
@@ -22,7 +22,7 @@ import {
 } from './isession';
 
 import {
-  connectToKernel
+  connectToKernel, getKernelSpecs
 } from './kernel';
 
 import * as validate
@@ -49,6 +49,15 @@ class NotebookSessionManager implements INotebookSessionManager {
    constructor(options: ISessionOptions) {
      this._options = utils.copy(options);
    }
+
+  /**
+   * Get the available kernel specs. See also [[getKernelSpecs]].
+   *
+   * @param options - Overrides for the default options.
+   */
+  getSpecs(options?: ISessionOptions): Promise<IKernelSpecIds> {
+    return getKernelSpecs(this._getOptions(options));
+  }
 
   /**
    * List the running sessions.  See also [[listRunningSessions]].
