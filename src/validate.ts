@@ -31,7 +31,7 @@ const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content',
                         'channel', 'buffers'];
 
 /**
- * Requred fields and types for contents of various types of `IKernelMessage`
+ * Required fields and types for contents of various types of `IKernelMessage`
  * messages on the iopub channel.
  */
 const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
@@ -44,7 +44,8 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   clear_output: {wait: 'boolean'},
   comm_open: {comm_id: 'string', target_name: 'string', data: 'any'},
   comm_msg: {comm_id: 'string', data: 'any'},
-  comm_close: {comm_id: 'string'}
+  comm_close: {comm_id: 'string'},
+  shutdown_reply: {restart: 'boolean'}
 }
 
 /**

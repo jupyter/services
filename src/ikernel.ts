@@ -268,6 +268,28 @@ function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutp
 
 
 /**
+ * IOPub shutdown_reply kernel message specification.
+ *
+ * See [Shutdown](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-shutdown).
+ */
+export
+interface IKernelIOPubShutdownReplyMessage extends IKernelMessage {
+  content: {
+    restart: boolean;
+  }
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub shutdown_reply message.
+ */
+export
+function isShutdownReplyMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutputMessage {
+  return msg.header.msg_type === "shutdown_reply";
+}
+
+
+/**
  * Kernel information specification.
  *
  * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
