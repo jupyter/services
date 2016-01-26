@@ -39,7 +39,7 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   'display_data': {'source': 'string', 'data': 'any', 'metadata': 'object'},
   'execute_input': {'code': 'string', 'execution_count': 'number'},
   'execute_result': {'execution_count': 'number', 'data': 'any', 'metadata': 'object'},
-  'error': {'execution_count': 'number', 'ename': 'string', 'evalue': 'string', 'traceback': 'object'},
+  'error': {'ename': 'string', 'evalue': 'string', 'traceback': 'object'},
   'status': {'execution_state': 'string'},
   'clear_output': {'wait': 'boolean'},
   'comm_open': { 'comm_id': 'string', 'target_name': 'string',
