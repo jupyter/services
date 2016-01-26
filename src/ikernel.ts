@@ -268,6 +268,26 @@ function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutp
 
 
 /**
+ * IOPub comm_open kernel message specification.
+ *
+ * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+ */
+export
+interface IKernelIOPubCommOpenMessage extends IKernelMessage {
+  content: ICommOpen;
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub comm_open message.
+ */
+export
+function isCommOpenMessage(msg: IKernelMessage): msg is IKernelIOPubCommOpenMessage {
+  return msg.header.msg_type === "comm_open";
+}
+
+
+/**
  * Kernel information specification.
  *
  * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
@@ -767,7 +787,7 @@ interface IKernel extends IDisposable {
    * callback will be overidden.  A registered comm target handler will take
    * precedence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelMessage) => void): IDisposable;
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable;
 
   /**
    * Optional default settings for ajax requests, if applicable.

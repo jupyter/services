@@ -23,7 +23,7 @@ import {
   IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
   IKernelFuture, IKernelId, IKernelInfo, IKernelManager, IKernelMessage,
   IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
-  KernelStatus
+  KernelStatus, IKernelIOPubCommOpenMessage
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -337,13 +337,6 @@ class Kernel implements IKernel {
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
     return KernelPrivate.unhandledMessageSignal.bind(this);
-  }
-
-  /**
-   * A signal emitted for unhandled comm open message.
-   */
-  get commOpened(): ISignal<IKernel, IKernelMessage> {
-    return KernelPrivate.commOpenedSignal.bind(this);
   }
 
   /**
@@ -724,7 +717,7 @@ class Kernel implements IKernel {
    * callback will be overidden.  A registered comm target handler will take
    * precedence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelMessage) => void): IDisposable {
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable {
     this._targetRegistry[targetName] = callback;
     return new DisposableDelegate(() => {
       delete this._targetRegistry[targetName];
@@ -924,7 +917,6 @@ class Kernel implements IKernel {
           var response = target(comm, msg);
         } catch (e) {
           comm.close();
-          this._unregisterComm(comm.commId);
           console.error("Exception opening new comm");
           throw(e);
         }
@@ -1037,7 +1029,7 @@ class Kernel implements IKernel {
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
   private _isWebSocketClosing = false;
-  private _targetRegistry: { [key: string]: (comm: IComm, msg: IKernelMessage) => void; } = Object.create(null);
+  private _targetRegistry: { [key: string]: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void; } = Object.create(null);
 }
 
 
@@ -1060,14 +1052,6 @@ namespace KernelPrivate {
    */
   export
   const unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
-
-  /**
-   * A signal emitted for unhandled comm open message.
-   *
-   * **See also:** [[commOpened]]
-   */
-  export
-  const commOpenedSignal = new Signal<IKernel, IKernelMessage>();
 }
 
 
