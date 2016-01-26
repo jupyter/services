@@ -35,17 +35,16 @@ const MESSAGE_FIELDS = ['header', 'parent_header', 'metadata', 'content',
  * messages on the iopub channel.
  */
 const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
-  'stream': {'name': 'string', 'text': 'string'},
-  'display_data': {'source': 'string', 'data': 'any', 'metadata': 'object'},
-  'execute_input': {'code': 'string', 'execution_count': 'number'},
-  'execute_result': {'execution_count': 'number', 'data': 'any', 'metadata': 'object'},
-  'error': {'ename': 'string', 'evalue': 'string', 'traceback': 'object'},
-  'status': {'execution_state': 'string'},
-  'clear_output': {'wait': 'boolean'},
-  'comm_open': { 'comm_id': 'string', 'target_name': 'string',
-                 'data': 'any' },
-  'comm_msg': { 'comm_id': 'string', 'data': 'any' },
-  'comm_close': { 'comm_id': 'string' }
+  stream: {name: 'string', text: 'string'},
+  display_data: {source: 'string', data: 'any', metadata: 'object'},
+  execute_input: {code: 'string', execution_count: 'number'},
+  execute_result: {execution_count: 'number', data: 'any', metadata: 'object'},
+  error: {ename: 'string', evalue: 'string', traceback: 'object'},
+  status: {execution_state: 'string'},
+  clear_output: {wait: 'boolean'},
+  comm_open: {comm_id: 'string', target_name: 'string', data: 'any'},
+  comm_msg: {comm_id: 'string', data: 'any'},
+  comm_close: {comm_id: 'string'}
 }
 
 /**
