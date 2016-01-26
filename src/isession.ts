@@ -11,7 +11,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  IKernel, IKernelId, KernelStatus
+  IKernel, IKernelId, IKernelSpecIds, KernelStatus
 } from './ikernel';
 
 import {
@@ -95,6 +95,11 @@ interface ISessionOptions {
  */
 export
 interface INotebookSessionManager {
+  /**
+   * Get the available kernel specs.
+   */
+  getSpecs(options?: ISessionOptions): Promise<IKernelSpecIds>;
+
   /*
    * Get the running sessions.
    */
