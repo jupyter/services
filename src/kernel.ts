@@ -815,8 +815,13 @@ class Kernel implements IKernel {
    * Handle a websocket close event.
    */
   private _onWSClose(evt: Event) {
-    // The socket is closed, clear the flag
+    // The socket is closed, clear the flag.
     this._isWebSocketClosing = false;
+
+    // Clear the websocket event handlers and the socket itself.
+    this._ws.onclose = null;
+    this._ws.onerror = null;
+    this._ws = null;
 
     if ((this.status !== KernelStatus.Dead) &&
         (this._reconnectAttempt < this._reconnectLimit)) {
