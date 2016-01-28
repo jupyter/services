@@ -10,7 +10,7 @@ import * as utils
   from 'jupyter-js-utils';
 
 import {
-  DisposableDelegate
+  DisposableDelegate, IDisposable
 } from 'phosphor-disposable';
 
 import {
@@ -23,7 +23,7 @@ import {
   IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
   IKernelFuture, IKernelId, IKernelInfo, IKernelManager, IKernelMessage,
   IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
-  KernelStatus
+  KernelStatus, IKernelIOPubCommOpenMessage
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -340,13 +340,6 @@ class Kernel implements IKernel {
   }
 
   /**
-   * A signal emitted for unhandled comm open message.
-   */
-  get commOpened(): ISignal<IKernel, IKernelMessage> {
-    return KernelPrivate.commOpenedSignal.bind(this);
-  }
-
-  /**
    * The id of the server-side kernel.
    *
    * #### Notes
@@ -433,7 +426,8 @@ class Kernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._ws = null;
-    this._status === KernelStatus.Dead
+    this._status = KernelStatus.Dead;
+    this._targetRegistry = null;
     clearSignalData(this);
     runningKernels.delete(this._id);
   }
@@ -710,6 +704,27 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Register a comm target handler.
+   *
+   * @param targetName - The name of the comm target.
+   *
+   * @param callback - The callback invoked for a comm open message.
+   *
+   * @returns A disposable used to unregister the comm target.
+   *
+   * #### Notes
+   * Only one comm target can be registered at a time, an existing
+   * callback will be overidden.  A registered comm target handler will take
+   * precedence over a comm which specifies a `target_module`.
+   */
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable {
+    this._targetRegistry[targetName] = callback;
+    return new DisposableDelegate(() => {
+      delete this._targetRegistry[targetName];
+    });
+  }
+
+  /**
    * Connect to a comm, or create a new one.
    *
    * #### Notes
@@ -889,39 +904,25 @@ class Kernel implements IKernel {
       return;
     }
     var content = msg.content as ICommOpen;
-    if (!content.target_module) {
-      this.commOpened.emit(msg);
-      return;
-    }
     var targetName = content.target_name;
-    var moduleName = content.target_module
-    var promise = new Promise((resolve, reject) => {
-      // Try loading the module using require.js
-      requirejs([moduleName], (mod: any) => {
-        if (mod[targetName] === undefined) {
-          reject(new Error(
-            'Target ' + targetName + ' not found in module ' + moduleName
-          ));
-        }
-        var target = mod[targetName];
-        var comm = new Comm(
+    let promise = utils.loadClass(content.target_name, content.target_module,
+      this._targetRegistry).then(target => {
+        let comm = new Comm(
           content.target_name,
           content.comm_id,
-          this._sendCommMessage,
+          this._sendCommMessage.bind(this),
           () => { this._unregisterComm(content.comm_id); }
         );
         try {
           var response = target(comm, msg);
         } catch (e) {
           comm.close();
-          this._unregisterComm(comm.commId);
           console.error("Exception opening new comm");
-          reject(e);
+          throw(e);
         }
         this._commPromises.delete(comm.commId);
         this._comms.set(comm.commId, comm);
-        resolve(comm);
-      });
+        return comm;
     });
     this._commPromises.set(content.comm_id, promise);
   }
@@ -1028,6 +1029,7 @@ class Kernel implements IKernel {
   private _commPromises: Map<string, Promise<IComm>> = null;
   private _comms: Map<string, IComm> = null;
   private _isWebSocketClosing = false;
+  private _targetRegistry: { [key: string]: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void; } = Object.create(null);
 }
 
 
@@ -1050,14 +1052,6 @@ namespace KernelPrivate {
    */
   export
   const unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
-
-  /**
-   * A signal emitted for unhandled comm open message.
-   *
-   * **See also:** [[commOpened]]
-   */
-  export
-  const commOpenedSignal = new Signal<IKernel, IKernelMessage>();
 }
 
 

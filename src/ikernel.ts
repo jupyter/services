@@ -268,6 +268,26 @@ function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutp
 
 
 /**
+ * IOPub comm_open kernel message specification.
+ *
+ * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+ */
+export
+interface IKernelIOPubCommOpenMessage extends IKernelMessage {
+  content: ICommOpen;
+}
+
+
+/**
+ * Check if an IKernelMessage is an iopub comm_open message.
+ */
+export
+function isCommOpenMessage(msg: IKernelMessage): msg is IKernelIOPubCommOpenMessage {
+  return msg.header.msg_type === "comm_open";
+}
+
+
+/**
  * Kernel information specification.
  *
  * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
@@ -560,11 +580,6 @@ interface IKernel extends IDisposable {
   unhandledMessage: ISignal<IKernel, IKernelMessage>;
 
   /**
-   * A signal emitted for unhandled comm open message.
-   */
-  commOpened: ISignal<IKernel, IKernelMessage>;
-
-  /**
    * The id of the server-side kernel.
    *
    * #### Notes
@@ -757,6 +772,22 @@ interface IKernel extends IDisposable {
    * If a client-side comm already exists, it is returned.
    */
   connectToComm(targetName: string, commId?: string): IComm;
+
+  /**
+   * Register a comm target handler.
+   *
+   * @param targetName - The name of the comm target.
+   *
+   * @param callback - The callback invoked for a comm open message.
+   *
+   * @returns A disposable used to unregister the comm target.
+   *
+   * #### Notes
+   * Only one comm target can be registered at a time, an existing
+   * callback will be overidden.  A registered comm target handler will take
+   * precedence over a comm which specifies a `target_module`.
+   */
+  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable;
 
   /**
    * Optional default settings for ajax requests, if applicable.
