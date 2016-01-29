@@ -77,6 +77,11 @@ Earlier versions may also work, but come with no guarantees.
 - Chrome 38+
 
 
+Bundling for the Browser
+------------------------
+Specify the following alias: `requirejs: 'requirejs/require'`.
+
+
 Usage from Node.js
 ------------------
 
