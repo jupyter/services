@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-utils": "^0.2.17",
+    "jupyter-js-utils": "^0.3",
     "phosphor-disposable": "^1.0.5",
     "phosphor-signaling": "^1.2.0"
   },
