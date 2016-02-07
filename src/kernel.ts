@@ -887,8 +887,10 @@ class Kernel implements IKernel {
       if (status === KernelStatus.Dead) {
         runningKernels.delete(this._id);
         // Ignore any socket messages while the socket is closing
-        this._isWebSocketClosing = true;
-        this._ws.close();
+        if (this._ws != null) {
+          this._isWebSocketClosing = true;
+          this._ws.close();
+        }
       }
       logKernelStatus(this);
       this.statusChanged.emit(status);
