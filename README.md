@@ -81,7 +81,7 @@ Starting the Notebook Server
 ----------------------------
 The library requires a running Jupyter Notebook server, v4.1+, launched as:
 
-```python
+```bash
 python -m notebook --NotebookApp.allow_origin="*"
 ```
 
