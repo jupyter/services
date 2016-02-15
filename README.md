@@ -77,6 +77,17 @@ Earlier versions may also work, but come with no guarantees.
 - Chrome 38+
 
 
+Starting the Notebook Server
+----------------------------
+The library requires a running Jupyter Notebook server, v4.1+, launched as:
+
+```python
+python -m notebook --NotebookApp.allow_origin="*"
+```
+
+The origin can be specified directly instead of using `*` if desired.
+
+
 Bundling for the Browser
 ------------------------
 Specify the following alias: `requirejs: 'requirejs/require'`.
