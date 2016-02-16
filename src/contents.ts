@@ -414,7 +414,9 @@ class ContentsManager implements IContentsManager {
         // that error types can be detected here with certainty.
         if (error.xhr.status === 400) {
           let err = JSON.parse(error.xhr.response);
-          throw new Error(err.message);
+          if (err.message) {
+            throw new Error(err.message);
+          }
         }
         throw new Error(error.xhr.statusText);
       }

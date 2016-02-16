@@ -214,7 +214,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(400, { });
       });
       let del = contents.delete("/foo/");
-      expectFailure(del, done, 'Directory not found');
+      expectFailure(del, done, '');
     });
 
     it('should throw a general error', (done) => {
