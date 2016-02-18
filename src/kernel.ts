@@ -527,9 +527,11 @@ class Kernel implements IKernel {
   shutdown(): Promise<void> {
     return shutdownKernel(this, this._baseUrl, this.ajaxSettings).then(() => {
       // Ignore any socket messages while the socket is closing
-      this._isWebSocketClosing = true;
       this._status = KernelStatus.Dead;
-      this._ws.close();
+      if (this._ws != null) {
+        this._isWebSocketClosing = true;
+        this._ws.close();
+      }
     });
   }
 
