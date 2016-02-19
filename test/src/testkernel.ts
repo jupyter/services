@@ -60,13 +60,13 @@ const EXAMPLE_KERNEL_INFO: IKernelInfo = {
 
 const KERNEL_OPTIONS: IKernelOptions = {
   baseUrl: 'http://localhost:8888',
-  name: 'test',
+  name: 'python',
   username: 'testUser',
 }
 
 const AJAX_KERNEL_OPTIONS: IKernelOptions = {
   baseUrl: 'http://localhost:8888',
-  name: 'test',
+  name: 'python',
   username: 'testUser',
   ajaxSettings: ajaxSettings
 }
@@ -1147,6 +1147,30 @@ describe('jupyter.services - kernel', () => {
       });
 
     });
+
+    describe('#getKernelSpec()', () => {
+
+      it('should load the kernelspec', (done) => {
+        let ids = {
+          'python': PYTHON_SPEC,
+          'python3': PYTHON3_SPEC
+        }
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          tester.onRequest = () => {
+            tester.respond(200, { 'default': 'python',
+                                 'kernelspecs': ids });
+          };
+          debugger;
+          kernel.getKernelSpec().then(spec => {
+            expect(spec.language).to.be('python');
+            done();
+          });
+        });
+      });
+
+    });
+
   });
 
   describe('KernelManager', () => {

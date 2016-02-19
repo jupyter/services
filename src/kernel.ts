@@ -23,7 +23,7 @@ import {
   IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
   IKernelFuture, IKernelId, IKernelInfo, IKernelManager, IKernelMessage,
   IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
-  KernelStatus, IKernelIOPubCommOpenMessage
+  KernelStatus, IKernelIOPubCommOpenMessage, IKernelSpec
 } from './ikernel';
 
 import * as serialize from './serialize';
@@ -747,6 +747,24 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Get the kernel spec associated with the kernel.
+   *
+   * #### Notes
+   * This value is cached and only fetched the first time it is requested.
+   */
+  getKernelSpec(): Promise<IKernelSpec> {
+    if (this._spec) {
+      return Promise.resolve(this._spec);
+    }
+    let name = this.name;
+    let options = { baseUrl: this._baseUrl, ajaxSettings: this._ajaxSettings };
+    return getKernelSpecs(options).then(ids => {
+      this._spec = ids.kernelspecs[name].spec
+      return this._spec;
+    });
+  }
+
+  /**
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket() {
@@ -1034,6 +1052,7 @@ class Kernel implements IKernel {
   private _comms: Map<string, IComm> = null;
   private _isWebSocketClosing = false;
   private _targetRegistry: { [key: string]: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void; } = Object.create(null);
+  private _spec: IKernelSpec = null;
 }
 
 
