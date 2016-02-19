@@ -759,7 +759,11 @@ class Kernel implements IKernel {
     let name = this.name;
     let options = { baseUrl: this._baseUrl, ajaxSettings: this._ajaxSettings };
     return getKernelSpecs(options).then(ids => {
-      this._spec = ids.kernelspecs[name].spec
+      let id = ids.kernelspecs[name];
+      if (!id) {
+        throw new Error(`Could not find kernel spec for ${name}`);
+      }
+      this._spec = id.spec;
       return this._spec;
     });
   }
