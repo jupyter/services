@@ -413,7 +413,10 @@ class ContentsManager implements IContentsManager {
         // TODO: update IPEP27 to specify errors more precisely, so
         // that error types can be detected here with certainty.
         if (error.xhr.status === 400) {
-          throw new Error('Directory not found');
+          let err = JSON.parse(error.xhr.response);
+          if (err.message) {
+            throw new Error(err.message);
+          }
         }
         throw new Error(error.xhr.statusText);
       }
