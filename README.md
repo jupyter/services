@@ -275,11 +275,10 @@ getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
     name: kernelSpecs.default,
   });
 }).then(kernel => {
-  kernel.commOpened.connect((kernel, commMsg) => {
-    if (commMsg.target_name !== 'test2') {
+  kernel.registerCommTarget('test2', (comm, commMsg) => {
+    if (commMsg.content.target_name !== 'test2') {
        return;
     }
-    var comm = kernel.connectToComm('test2', commMsg.comm_id);
     comm.onMsg = (msg) => {
       console.log(msg);  // 'hello'
     }
