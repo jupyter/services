@@ -1161,7 +1161,6 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200, { 'default': 'python',
                                  'kernelspecs': ids });
           };
-          debugger;
           kernel.getKernelSpec().then(spec => {
             expect(spec.language).to.be('python');
             done();
