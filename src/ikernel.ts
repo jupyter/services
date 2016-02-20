@@ -790,6 +790,11 @@ interface IKernel extends IDisposable {
   registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable;
 
   /**
+   * Get the kernel spec associated with the kernel.
+   */
+  getKernelSpec(): Promise<IKernelSpec>;
+
+  /**
    * Optional default settings for ajax requests, if applicable.
    */
   ajaxSettings?: IAjaxSettings;
