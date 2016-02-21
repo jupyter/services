@@ -20,13 +20,16 @@
     "ws": "^1.0.1",
     "xmlhttprequest": "^1.8.0"
   },
+  "peerDependencies": {
+    "phosphor-disposable": "^1.0.5",
+    "phosphor-signaling": "^1.2.0"
+  },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
     "build:src": "tsc --project src",
     "build:test": "tsc --project test/src",
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
-    "postinstall": "npm dedupe",
     "prepublish": "npm run build",
     "test:coverage": "cd test && istanbul cover _mocha -- build/index.js",
     "test:integration": "cd test && python integration_test.py",
