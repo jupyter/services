@@ -11,7 +11,8 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  IKernel, IKernelId, IKernelSpecIds, KernelStatus
+  IKernel, IKernelId, IKernelSpecIds, IKernelOptions, IKernelMessage, 
+  KernelStatus
 } from './ikernel';
 
 import {
@@ -123,9 +124,14 @@ interface INotebookSessionManager {
 export
 interface INotebookSession extends IDisposable {
   /**
-   * A signal emitted when the session dies.
+   * A signal emitted when the session status changes.
    */
-  sessionDied: ISignal<INotebookSession, void>;
+  statusChanged: ISignal<INotebookSession, KernelStatus>;
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   */
+  unhandledMessage: ISignal<INotebookSession, IKernelMessage>;
 
   /**
    * Unique id of the session.
@@ -147,7 +153,9 @@ interface INotebookSession extends IDisposable {
    * The kernel.
    *
    * #### Notes
-   * This is a read-only property.
+   * This is a read-only property, and can be altered by [changeKernel].
+   * Use the [statusChanged] and [unhandledMessage] signals on the session
+   * instead of the ones on the kernel.
    */
   kernel: IKernel;
 
@@ -169,6 +177,17 @@ interface INotebookSession extends IDisposable {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   renameNotebook(path: string, ajaxSettings?: IAjaxSettings): Promise<void>;
+
+  /**
+   * Change the kernel.
+   *
+   * @params options - The options to give to the new kernel.  At a minimum,
+   *  the `name` is required.  Other options will override the defaults 
+   *  provided by the session.
+   *
+   * @params id - The optional id of an existing kernel.
+   */
+  changeKernel(options: IKernelOptions, id?: string): Promise<IKernel>;
 
   /**
    * Kill the kernel and shutdown the session.
