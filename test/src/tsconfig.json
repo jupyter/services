@@ -17,7 +17,6 @@
     "../../typings/requirejs/r.d.ts",
     "../../typings/ws/ws.d.ts",
     "../../typings/xmlhttprequest/xmlhttprequest.d.ts",
-    "index.ts",
     "integration.ts",
     "mocksocket.ts",
     "mockxhr.ts",

@@ -11,11 +11,14 @@ import {
   IComm, ICommInfoReply, IKernel, IKernelMessageOptions
 } from '../../lib/ikernel';
 
-import {  createKernelMessage } from '../../lib/kernel';
+import {
+  createKernelMessage 
+} from '../../lib/kernel';
 
-import { createKernel, KernelTester } from './testkernel';
+import { 
+  RequestHandler, expectFailure, doLater, createKernel, KernelTester
+} from './utils';
 
-import { RequestHandler, expectFailure, doLater } from './utils';
 
 // stub for node global
 declare let global: any;

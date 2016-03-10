@@ -532,8 +532,7 @@ namespace Private {
        runningSessions.set(session.id, session);
        return session;
     }).catch(error => {
-      throw Error('Session failed to start: ' + error.message);
-      return null;
+      return typedThrow('Session failed to start: ' + error.message);
     });
   }
 

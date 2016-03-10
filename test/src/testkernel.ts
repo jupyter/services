@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import {
-  PromiseDelegate, uuid
+  uuid
 } from 'jupyter-js-utils';
 
 import {
@@ -28,48 +28,14 @@ import {
 } from './mocksocket';
 
 import {
-  RequestHandler, ajaxSettings, doLater, expectFailure
+  RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
+  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO
 } from './utils';
 
 
 // Abnormal websocket close.
 const CLOSE_ABNORMAL = 1006;
 
-
-overrideWebSocket();
-
-
-const EXAMPLE_KERNEL_INFO: IKernelInfo = {
-  protocol_version: '1',
-  implementation: 'a',
-  implementation_version: '1',
-  language_info: {
-    name: 'test',
-    version: '',
-    mimetype: '',
-    file_extension: '',
-    pygments_lexer: '',
-    codemirror_mode: '',
-    nbconverter_exporter: ''
-  },
-  banner: '',
-  help_links: {
-  }
-}
-
-
-const KERNEL_OPTIONS: IKernelOptions = {
-  baseUrl: 'http://localhost:8888',
-  name: 'python',
-  username: 'testUser',
-}
-
-const AJAX_KERNEL_OPTIONS: IKernelOptions = {
-  baseUrl: 'http://localhost:8888',
-  name: 'python',
-  username: 'testUser',
-  ajaxSettings: ajaxSettings
-}
 
 let PYTHON_SPEC: IKernelSpecId = {
   name: "Python",
@@ -87,104 +53,6 @@ let PYTHON_SPEC: IKernelSpecId = {
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
 PYTHON3_SPEC.name = "Python3";
 PYTHON3_SPEC.spec.display_name = "python3"
-
-
-/**
- * Kernel class test rig.
- */
-export
-class KernelTester extends RequestHandler {
-  /**
-   * Create a new Kernel tester.
-   */
-  constructor(onRequest?: (request: any) => void) {
-    super(onRequest);
-    this._promiseDelegate = new PromiseDelegate<void>();
-    MockSocketServer.onConnect = (server: MockSocketServer) => {
-      this._server = server;
-      this.sendStatus(this._initialStatus);
-      this._promiseDelegate.resolve();
-      this._server.onmessage = (msg: any) => {
-        let data = deserialize(msg.data);
-        if (data.header.msg_type === 'kernel_info_request') {
-          data.parent_header = data.header;
-          data.header.msg_type = 'kernel_info_reply';
-          data.content = EXAMPLE_KERNEL_INFO;
-          this.send(data);
-        } else {
-          let onMessage = this._onMessage;
-          if (onMessage) onMessage(data);
-        }
-      }
-    }
-  }
-
-  get initialStatus(): string {
-    return this._initialStatus;
-  }
-
-  set initialStatus(status: string) {
-    this._initialStatus = status;
-  }
-
-  sendStatus(status: string) {
-    let options: IKernelMessageOptions = {
-      msgType: 'status',
-      channel: 'iopub',
-      session: uuid(),
-    }
-    let msg = createKernelMessage(options, { execution_state: status } );
-    this.send(msg);
-  }
-
-  /**
-   * Register a connection callback with the websocket server.
-   */
-  onConnect(cb: (server: MockSocketServer) => void) {
-    this._promiseDelegate.promise.then(() => {
-      cb(this._server);
-    });
-  }
-
-  /**
-   * Register a message callback with the websocket server.
-   */
-  onMessage(cb: (msg: IKernelMessage) => void) {
-    this._onMessage = cb;
-  }
-
-  /**
-   * Register a close with the websocket server.
-   */
-  onClose(cb: (ws: MockSocket) => void) {
-    this._promiseDelegate.promise.then(() => {
-      this._server.onWSClose = cb;
-    });
-  }
-
-  /**
-   * Send a message to the server.
-   */
-  send(msg: IKernelMessage) {
-    this._promiseDelegate.promise.then(() => {
-      this._server.send(serialize(msg));
-    });
-  }
-
-  /**
-   * Trigger an error on the server.
-   */
-  triggerError(msg: string) {
-    this._promiseDelegate.promise.then(() => {
-      this._server.triggerError(msg);
-    })
-  }
-
-  private _server: MockSocketServer = null;
-  private _onMessage: (msg: IKernelMessage) => void = null;
-  private _promiseDelegate: PromiseDelegate<void> = null;
-  private _initialStatus = 'starting';
-}
 
 
 describe('jupyter.services - kernel', () => {
@@ -409,6 +277,26 @@ describe('jupyter.services - kernel', () => {
             done();
           });
           tester.sendStatus('busy');
+        });
+      });
+    });
+
+    context('#unhandledMessage', () => {
+
+      it('should be emitted for an unhandled message', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          expect(kernel.status).to.be(KernelStatus.Starting);
+          kernel.unhandledMessage.connect((k, msg) => {
+            expect(msg.header.msg_type).to.be('foo');
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'foo',
+            channel: 'bar',
+            session: 'baz'
+          });
+          tester.send(msg);
         });
       });
     });
@@ -1392,16 +1280,3 @@ describe('jupyter.services - kernel', () => {
 
 });
 
-
-/**
- * Convenience function to start a kernel fully.
- */
-export
-function createKernel(tester?: KernelTester): Promise<IKernel> {
-  tester = tester || new KernelTester();
-  tester.onRequest = () => {
-    tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
-  };
-  let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-  return kernelPromise;
-}
