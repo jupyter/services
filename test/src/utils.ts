@@ -81,14 +81,6 @@ function doLater(cb: () => void): void {
 
 
 /**
- * Throw a typed error.
- */
-function typedThrow<T>(msg: string): T {
-  throw new Error(msg);
-}
-
-
-/**
  * Optional ajax arguments.
  */
 export
