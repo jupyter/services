@@ -190,13 +190,15 @@ interface INotebookSession extends IDisposable {
   /**
    * Change the kernel.
    *
-   * @params options - The options to give to the new kernel.  At a minimum,
-   *  the `name` is required.  Other options will override the defaults 
-   *  provided by the session.
+   * @params name - The name of the new kernel.
    *
-   * @params id - The optional id of an existing kernel.
+   * @returns - A promise that resolves with the new kernel.
+   *
+   * #### Notes
+   * This shuts down the existing kernel and creates a new kernel,
+   * keeping the existing session ID and notebook path.
    */
-  changeKernel(options: IKernelOptions, id?: string): Promise<IKernel>;
+  changeKernel(name: string): Promise<IKernel>;
 
   /**
    * Kill the kernel and shutdown the session.
