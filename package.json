@@ -31,7 +31,7 @@
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
     "prepublish": "npm run build",
-    "test:coverage": "cd test && istanbul cover _mocha -- build/index.js",
+    "test:coverage": "cd test && istanbul cover _mocha -- build/test*.js",
     "test:integration": "cd test && python integration_test.py",
     "test:debug": "mocha test/build/test*.js --debug-brk",
     "test": "mocha test/build/test*.js"
