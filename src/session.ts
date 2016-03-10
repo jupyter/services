@@ -206,7 +206,7 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
   return listRunningSessions(options).then(sessionIds => {
     sessionIds = sessionIds.filter(k => k.id === id);
     if (!sessionIds.length) {
-      throw new Error('No running session with id: ' + id);
+      return typedThrow('No running session with id: ' + id);
     }
     return createSession(sessionIds[0], options);
   });
@@ -237,8 +237,7 @@ function createSession(sessionId: ISessionId, options: ISessionOptions): Promise
      runningSessions.set(session.id, session);
      return session;
   }).catch(error => {
-    throw Error('Session failed to start: ' + error.message);
-    return null;
+    return typedThrow('Session failed to start: ' + error.message);
   });
 }
 
@@ -446,4 +445,12 @@ class NotebookSession implements INotebookSession {
 function onSessionError(error: utils.IAjaxError): any {
   console.error("API request failed (" + error.statusText + "): ");
   throw Error(error.statusText);
+}
+
+
+/**
+ * Throw a typed error.
+ */
+function typedThrow<T>(msg: string): T {
+  throw new Error(msg);
 }

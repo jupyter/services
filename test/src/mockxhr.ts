@@ -112,7 +112,7 @@ class MockXMLHttpRequest {
    */
   set onprogress(cb: () => void) {
     throw Error('Not implemented');
-    this._onProgress = cb;
+    //this._onProgress = cb;
   }
 
   /**
