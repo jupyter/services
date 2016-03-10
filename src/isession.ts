@@ -53,7 +53,6 @@ interface ISessionId {
  */
 export
 interface ISessionOptions {
-
   /**
    * The path (not including name) to the notebook.
    */
@@ -124,6 +123,11 @@ interface INotebookSessionManager {
 export
 interface INotebookSession extends IDisposable {
   /**
+   * A signal emitted when the session is shut down.
+   */
+  sessionDied: ISignal<INotebookSession, void>;
+
+  /**
    * A signal emitted when the session status changes.
    */
   statusChanged: ISignal<INotebookSession, KernelStatus>;
@@ -168,6 +172,11 @@ interface INotebookSession extends IDisposable {
   status: KernelStatus;
 
   /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
+
+  /**
    * Rename or move a notebook.
    *
    * @param path - The new notebook path.
@@ -197,9 +206,4 @@ interface INotebookSession extends IDisposable {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   shutdown(ajaxSettings?: IAjaxSettings): Promise<void>;
-
-  /**
-   * Optional default settings for ajax requests, if applicable.
-   */
-  ajaxSettings?: IAjaxSettings;
 }

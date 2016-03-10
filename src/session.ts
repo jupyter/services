@@ -153,27 +153,9 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
  */
 export
 function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
-  let baseUrl = options.baseUrl || utils.getBaseUrl();
-  let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-  var model = {
-    kernel: { name: options.kernelName },
-    notebook: { path: options.notebookPath }
-  }
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
-  ajaxSettings.method = 'POST';
-  ajaxSettings.dataType = 'json';
-  ajaxSettings.data = JSON.stringify(model);
-  ajaxSettings.contentType = 'application/json';
-  ajaxSettings.cache = false;
-
-  return utils.ajaxRequest(url, ajaxSettings).then(success => {
-    if (success.xhr.status !== 201) {
-      throw Error('Invalid Status: ' + success.xhr.status);
-    }
-    var sessionId = <ISessionId>success.data;
-    validate.validateSessionId(success.data);
+  return Private.startSession(options).then(sessionId => {
     return Private.createSession(sessionId, options);
-  }, Private.onSessionError);
+  });
 }
 
 
@@ -229,16 +211,18 @@ class NotebookSession implements INotebookSession {
     this._url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL, this._id);
     this._kernel.statusChanged.connect(this.onKernelStatus, this);
     this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-    this._kernelOptions = {
-      baseUrl: options.baseUrl,
-      wsUrl: options.wsUrl,
-      clientId: options.clientId,
-      username: options.username
-    };
+    this._options = utils.copy(options);
   }
 
   /**
-   * A signal emitted when the session status changes.
+   * A signal emitted when the session dies.
+   */
+  get sessionDied(): ISignal<INotebookSession, void> {
+    return Private.sessionDiedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the kernel status changes.
    */
   get statusChanged(): ISignal<INotebookSession, KernelStatus> {
     return Private.statusChangedSignal.bind(this);
@@ -274,16 +258,6 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * The current status of the session, and is a delegate to the kernel status.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get status(): KernelStatus {
-    return this._kernel.status;
-  }
-
-  /**
    * Get the notebook path.
    *
    * #### Notes
@@ -291,6 +265,16 @@ class NotebookSession implements INotebookSession {
    */
   get notebookPath(): string {
     return this._notebookPath;
+  }
+
+  /**
+   * The current status of the session.
+   *
+   * #### Notes
+   * This is a read-only property, and is a delegate to the kernel status.
+   */
+  get status(): KernelStatus {
+    return this._kernel.status;
   }
 
   /**
@@ -314,15 +298,16 @@ class NotebookSession implements INotebookSession {
    * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
-    return (this._kernel === null);
+    return this._options === null;
   }
 
   /**
    * Dispose of the resources held by the session.
    */
   dispose(): void {
+    this._kernel.dispose();
+    this._options = null;
     this._kernel = null;
-    this._isDead = true;
     clearSignalData(this);
     Private.runningSessions.delete(this._id);
   }
@@ -337,8 +322,8 @@ class NotebookSession implements INotebookSession {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   renameNotebook(path: string): Promise<void> {
-    if (this.status === KernelStatus.Dead) {
-      return Promise.reject(new Error('Session is dead'));
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
     }
     let model = {
       kernel: { name: this._kernel.name, id: this._kernel.id },
@@ -355,7 +340,7 @@ class NotebookSession implements INotebookSession {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      var data = <ISessionId>success.data;
+      let data = success.data as ISessionId;
       validate.validateSessionId(data);
       this._notebookPath = data.notebook.path;
     }, Private.onSessionError);
@@ -366,39 +351,57 @@ class NotebookSession implements INotebookSession {
    *
    * @params name - The name of the new kernel.
    *
-   * @params id - The optional id of an existing kernel.
+   * @returns - A promise that resolves with the new kernel.
+   *
+   * #### Notes
+   * This shuts down the existing kernel and creates a new kernel,
+   * keeping the existing session ID and notebook path.
    */
-  changeKernel(options: IKernelOptions, id?: string): Promise<IKernel> {
-    let defaults = utils.copy(this._kernelOptions);
-    defaults.ajaxSettings = this.ajaxSettings;
-    options = utils.extend(defaults, options);
-    let promise: Promise<IKernel>;
-    if (id !== void 0) {
-      promise = connectToKernel(id, options);
-    } else {
-      promise = startNewKernel(options);
+  changeKernel(name: string): Promise<IKernel> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
     }
-    return promise.then(kernel => {
-      this._kernel.dispose();
+    let options = utils.copy(this._options) as ISessionOptions;
+    options.ajaxSettings = this.ajaxSettings;
+    options.kernelName = name;
+    options.notebookPath = this.notebookPath;
+    return this.delete().then(() => {
+      return Private.startSession(options);
+    }).then(sessionId => {
+      return Private.createKernel(sessionId, options);
+    }).then(kernel => {
+      kernel.statusChanged.connect(this.onKernelStatus, this);
+      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
       this._kernel = kernel;
-      this._kernel.statusChanged.connect(this.onKernelStatus, this);
-      this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
       return kernel;
     });
   }
 
   /**
-   * Kill the kernel and shutdown the session.
+   * Kill the kernel and shutdown the session. 
+   *
+   * @returns - The promise fulfilled on a valid response from the server.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
-   *
-   * The promise is fulfilled on a valid response and rejected otherwise.
+   * Emits a [sessionDied] signal on success.
    */
   shutdown(): Promise<void> {
-    if (this._isDead) {
-      return Promise.reject(new Error('Session is dead'));
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
     }
+    return this.delete().then(() => {
+      this.sessionDied.emit(void 0);
+    });
+  }
+
+  /**
+   * Shut down the existing session.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+   */
+  protected delete(): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
@@ -408,9 +411,9 @@ class NotebookSession implements INotebookSession {
       if (success.xhr.status !== 204) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      this._isDead = true;
-      this.statusChanged.emit(this.status);
-      this.kernel.dispose();
+      this._kernel.dispose();
+      this._kernel = null;
+      this._options = null;
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
@@ -423,9 +426,6 @@ class NotebookSession implements INotebookSession {
    * Handle to changes in the Kernel status.
    */
   protected onKernelStatus(sender: IKernel, state: KernelStatus) {
-    if (state == KernelStatus.Dead) {
-      this.shutdown();
-    }
     this.statusChanged.emit(state);
   }
 
@@ -441,8 +441,7 @@ class NotebookSession implements INotebookSession {
   private _ajaxSettings = '';
   private _kernel: IKernel = null;
   private _url = '';
-  private _isDead = false;
-  private _kernelOptions: IKernelOptions = null;
+  private _options: ISessionOptions = null;
 }
 
 
@@ -451,7 +450,13 @@ class NotebookSession implements INotebookSession {
  */
 namespace Private {
   /**
-   * A signal emitted when the session status changes.
+   * A signal emitted when the session is shut down.
+   */
+  export
+  const sessionDiedSignal = new Signal<INotebookSession, void>();
+
+  /**
+   * A signal emitted when the session kernel status changes.
    */
   export
   const statusChangedSignal = new Signal<INotebookSession, KernelStatus>();
@@ -469,13 +474,38 @@ namespace Private {
   const runningSessions = new Map<string, NotebookSession>();
 
   /**
-   * Create a Promise for a NotebookSession object.
-   *
-   * Fulfilled when the NotebookSession is Starting, or rejected if Dead.
+   * Create a new session, or return an existing session if a session if 
+   * the notebook path already exists
    */
   export
-  function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
+  function startSession(options: ISessionOptions): Promise<ISessionId> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
+    let model = {
+      kernel: { name: options.kernelName },
+      notebook: { path: options.notebookPath }
+    }
+    let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+    ajaxSettings.method = 'POST';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.data = JSON.stringify(model);
+    ajaxSettings.contentType = 'application/json';
+    ajaxSettings.cache = false;
 
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 201) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      validate.validateSessionId(success.data);
+      return success.data as ISessionId;
+    }, onSessionError);
+  }
+
+  /**
+   * Create a Promise for a kernel object given a sessionId and options.
+   */
+  export
+  function createKernel(sessionId: ISessionId, options: ISessionOptions): Promise<IKernel> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     options.notebookPath = sessionId.notebook.path;
 
@@ -487,10 +517,19 @@ namespace Private {
       clientId: options.clientId,
       ajaxSettings: options.ajaxSettings
     }
-    return connectToKernel(sessionId.kernel.id, kernelOptions
-    ).then(kernel => {
+    return connectToKernel(sessionId.kernel.id, kernelOptions);
+  }
+
+  /**
+   * Create a NotebookSession object.
+   *
+   * @returns - A promise that resolves with a started session.
+   */
+  export
+  function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
+    return createKernel(sessionId, options).then(kernel => {
        let session = new NotebookSession(options, sessionId.id, kernel);
-       Private.runningSessions.set(session.id, session);
+       runningSessions.set(session.id, session);
        return session;
     }).catch(error => {
       throw Error('Session failed to start: ' + error.message);

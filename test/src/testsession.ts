@@ -297,7 +297,7 @@ describe('jupyter.services - session', () => {
 
     context('#sessionDied', () => {
 
-      it('should emit when the session dies', (done) => {
+      it('should emit when the session is shut down', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
@@ -306,8 +306,9 @@ describe('jupyter.services - session', () => {
           });
           tester.onRequest = () => {
             tester.respond(204, { });
+            
           }
-          tester.sendStatus('dead');
+          session.shutdown();
         });
       });
     });
@@ -480,7 +481,7 @@ describe('jupyter.services - session', () => {
         startSession(id, tester).then(session => {
           session.dispose();
           let promise = session.renameNotebook('');
-          expectFailure(promise, done, 'Session is dead');
+          expectFailure(promise, done, 'Session is disposed');
         });
       });
     });
@@ -574,7 +575,7 @@ describe('jupyter.services - session', () => {
           }
           let shutdown = session.shutdown();
           shutdown.then(() => {
-            expectFailure(session.shutdown(), done, 'Session is dead');
+            expectFailure(session.shutdown(), done, 'Session is disposed');
           });
         });
       });
