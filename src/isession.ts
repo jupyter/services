@@ -128,6 +128,11 @@ interface INotebookSession extends IDisposable {
   sessionDied: ISignal<INotebookSession, void>;
 
   /**
+   * A signal emitted when the kernel changes.
+   */
+  kernelChanged: ISignal<INotebookSession, IKernel>;
+
+  /**
    * A signal emitted when the session status changes.
    */
   statusChanged: ISignal<INotebookSession, KernelStatus>;
