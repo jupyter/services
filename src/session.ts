@@ -187,7 +187,7 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
   return listRunningSessions(options).then(sessionIds => {
     sessionIds = sessionIds.filter(k => k.id === id);
     if (!sessionIds.length) {
-      return typedThrow('No running session with id: ' + id);
+      return Private.typedThrow('No running session with id: ' + id);
     }
     return Private.createSession(sessionIds[0], options);
   });
@@ -219,6 +219,13 @@ class NotebookSession implements INotebookSession {
    */
   get sessionDied(): ISignal<INotebookSession, void> {
     return Private.sessionDiedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the kernel changes.
+   */
+  get kernelChanged(): ISignal<INotebookSession, IKernel> {
+    return Private.kernelChangedSignal.bind(this);
   }
 
   /**
@@ -373,6 +380,7 @@ class NotebookSession implements INotebookSession {
       kernel.statusChanged.connect(this.onKernelStatus, this);
       kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
       this._kernel = kernel;
+      this.kernelChanged.emit(kernel);
       return kernel;
     });
   }
@@ -454,6 +462,12 @@ namespace Private {
    */
   export
   const sessionDiedSignal = new Signal<INotebookSession, void>();
+
+  /**
+   * A signal emitted when the kernel changes.
+   */
+  export
+  const kernelChangedSignal = new Signal<INotebookSession, IKernel>();
 
   /**
    * A signal emitted when the session kernel status changes.
@@ -544,12 +558,15 @@ namespace Private {
     console.error("API request failed (" + error.statusText + "): ");
     throw Error(error.statusText);
   }
+
+  /**
+   * Throw a typed error.
+   */
+  export
+  function typedThrow<T>(msg: string): T {
+    throw new Error(msg);
+  }
 }
 
 
-/**
- * Throw a typed error.
- */
-function typedThrow<T>(msg: string): T {
-  throw new Error(msg);
-}
+
