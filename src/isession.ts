@@ -11,7 +11,8 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  IKernel, IKernelId, IKernelSpecIds, KernelStatus
+  IKernel, IKernelId, IKernelSpecIds, IKernelOptions, IKernelMessage, 
+  KernelStatus
 } from './ikernel';
 
 import {
@@ -52,7 +53,6 @@ interface ISessionId {
  */
 export
 interface ISessionOptions {
-
   /**
    * The path (not including name) to the notebook.
    */
@@ -123,9 +123,19 @@ interface INotebookSessionManager {
 export
 interface INotebookSession extends IDisposable {
   /**
-   * A signal emitted when the session dies.
+   * A signal emitted when the session is shut down.
    */
   sessionDied: ISignal<INotebookSession, void>;
+
+  /**
+   * A signal emitted when the session status changes.
+   */
+  statusChanged: ISignal<INotebookSession, KernelStatus>;
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   */
+  unhandledMessage: ISignal<INotebookSession, IKernelMessage>;
 
   /**
    * Unique id of the session.
@@ -147,7 +157,9 @@ interface INotebookSession extends IDisposable {
    * The kernel.
    *
    * #### Notes
-   * This is a read-only property.
+   * This is a read-only property, and can be altered by [changeKernel].
+   * Use the [statusChanged] and [unhandledMessage] signals on the session
+   * instead of the ones on the kernel.
    */
   kernel: IKernel;
 
@@ -158,6 +170,11 @@ interface INotebookSession extends IDisposable {
    * This is a read-only property, and is a delegate to the kernel status.
    */
   status: KernelStatus;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
 
   /**
    * Rename or move a notebook.
@@ -171,6 +188,19 @@ interface INotebookSession extends IDisposable {
   renameNotebook(path: string, ajaxSettings?: IAjaxSettings): Promise<void>;
 
   /**
+   * Change the kernel.
+   *
+   * @params name - The name of the new kernel.
+   *
+   * @returns - A promise that resolves with the new kernel.
+   *
+   * #### Notes
+   * This shuts down the existing kernel and creates a new kernel,
+   * keeping the existing session ID and notebook path.
+   */
+  changeKernel(name: string): Promise<IKernel>;
+
+  /**
    * Kill the kernel and shutdown the session.
    *
    * #### Notes
@@ -178,9 +208,4 @@ interface INotebookSession extends IDisposable {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   shutdown(ajaxSettings?: IAjaxSettings): Promise<void>;
-
-  /**
-   * Optional default settings for ajax requests, if applicable.
-   */
-  ajaxSettings?: IAjaxSettings;
 }

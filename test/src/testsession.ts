@@ -13,6 +13,10 @@ import {
 } from '../../lib/ikernel';
 
 import {
+  createKernelMessage
+} from '../../lib/kernel';
+
+import {
   NotebookSessionManager, connectToSession, listRunningSessions,
   startNewSession
 } from '../../lib/session';
@@ -21,11 +25,13 @@ import {
   INotebookId, INotebookSession, ISessionId, ISessionOptions
 } from '../../lib/isession';
 
-import { deserialize, serialize } from '../../lib/serialize';
+import {
+  deserialize, serialize 
+} from '../../lib/serialize';
 
-import { KernelTester } from './testkernel';
-
-import { RequestHandler, ajaxSettings, expectFailure, doLater } from './utils';
+import { 
+  RequestHandler, ajaxSettings, expectFailure, doLater, KernelTester
+} from './utils';
 
 
 /**
@@ -297,7 +303,7 @@ describe('jupyter.services - session', () => {
 
     context('#sessionDied', () => {
 
-      it('should emit when the session dies', (done) => {
+      it('should emit when the session is shut down', (done) => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
@@ -307,7 +313,45 @@ describe('jupyter.services - session', () => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
-          tester.sendStatus('dead');
+          session.shutdown();
+        });
+      });
+    });
+
+    context('#statusChanged', () => {
+
+      it('should emit when the kernel status changes', (done) => {
+        let tester = new KernelTester();
+        let sessionId = createSessionId();
+        startSession(sessionId, tester).then(session => {
+          session.statusChanged.connect((s, status) => {
+            expect(status).to.be(KernelStatus.Busy);
+            done();
+          });
+          tester.onRequest = () => {
+            tester.respond(204, { });
+          }
+          tester.sendStatus('busy');
+        });
+      });
+    });
+
+    context('#unhandledMessage', () => {
+
+      it('should be emitted for an unhandled message', (done) => {
+        let tester = new KernelTester();
+        let sessionId = createSessionId();
+        startSession(sessionId, tester).then(session => {
+          session.unhandledMessage.connect((s, msg) => {
+            expect(msg.header.msg_type).to.be('foo');
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'foo',
+            channel: 'bar',
+            session: 'baz'
+          });
+          tester.send(msg);
         });
       });
     });
@@ -480,9 +524,40 @@ describe('jupyter.services - session', () => {
         startSession(id, tester).then(session => {
           session.dispose();
           let promise = session.renameNotebook('');
-          expectFailure(promise, done, 'Session is dead');
+          expectFailure(promise, done, 'Session is disposed');
         });
       });
+
+    });
+
+    context('#changeKernel()', () => {
+
+      it('should create a new kernel with the new name', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          let previous = session.kernel;
+          session.changeKernel(newName).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(session.kernel).to.not.be(previous);
+            done();
+          });
+          id.kernel.id = uuid();
+          id.kernel.name = newName;
+          tester.onRequest = request => {
+            if (request.method === 'DELETE') {
+              tester.respond(204, {});
+            } else if (request.method === 'POST') {
+              tester.respond(201, id);
+            } else {
+              tester.respond(200, [ { name: id.kernel.name,
+                                      id: id.kernel.id }]);
+            }
+          }
+        });
+      });
+
     });
 
     context('#shutdown()', () => {
@@ -518,10 +593,11 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
+          session.ajaxSettings = ajaxSettings;
           tester.onRequest = () => {
             tester.respond(204, { });
           }
-          session.shutdown(ajaxSettings).then(() => {
+          session.shutdown().then(() => {
             done();
           })
         });
@@ -574,7 +650,7 @@ describe('jupyter.services - session', () => {
           }
           let shutdown = session.shutdown();
           shutdown.then(() => {
-            expectFailure(session.shutdown(), done, 'Session is dead');
+            expectFailure(session.shutdown(), done, 'Session is disposed');
           });
         });
       });
