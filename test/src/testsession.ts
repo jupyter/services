@@ -318,6 +318,34 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#kernelChanged', () => {
+
+      it('should emit when the kernel changes', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          session.changeKernel(newName);
+          id.kernel.name = newName;
+          tester.onRequest = request => {
+            if (request.method === 'DELETE') {
+              tester.respond(204, {});
+            } else if (request.method === 'POST') {
+              tester.respond(201, id);
+            } else {
+              tester.respond(200, [ { name: id.kernel.name,
+                                      id: id.kernel.id }]);
+            }
+          }
+          session.kernelChanged.connect((s, kernel) => {
+            expect(kernel.name).to.be(newName);
+            done();
+          });
+        });
+      });
+
+    });
+
     context('#statusChanged', () => {
 
       it('should emit when the kernel status changes', (done) => {
