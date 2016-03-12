@@ -45,7 +45,8 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   clear_output: { wait: 'boolean' },
   comm_open: { comm_id: 'string', target_name: 'string', data: 'any' },
   comm_msg: { comm_id: 'string', data: 'any' },
-  comm_close: { comm_id: 'string' }
+  comm_close: { comm_id: 'string' },
+  shutdown_reply: { restart : 'boolean' }  // Emitted by the IPython kernel.
 }
 
 /**
