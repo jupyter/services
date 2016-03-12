@@ -399,6 +399,7 @@ class NotebookSession implements INotebookSession {
       return Promise.reject(new Error('Session is disposed'));
     }
     return this.delete().then(() => {
+      this._options = null;
       this.sessionDied.emit(void 0);
     });
   }
@@ -421,7 +422,6 @@ class NotebookSession implements INotebookSession {
       }
       this._kernel.dispose();
       this._kernel = null;
-      this._options = null;
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
