@@ -372,7 +372,9 @@ class NotebookSession implements INotebookSession {
     options.ajaxSettings = this.ajaxSettings;
     options.kernelName = name;
     options.notebookPath = this.notebookPath;
-    return this.delete().then(() => {
+    return this.kernel.shutdown().then(() => {
+      this._kernel.dispose();
+      this._kernel = null;
       return Private.startSession(options);
     }).then(sessionId => {
       return Private.createKernel(sessionId, options);
@@ -398,19 +400,6 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    return this.delete().then(() => {
-      this._options = null;
-      this.sessionDied.emit(void 0);
-    });
-  }
-
-  /**
-   * Shut down the existing session.
-   *
-   * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
-   */
-  protected delete(): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
@@ -422,6 +411,7 @@ class NotebookSession implements INotebookSession {
       }
       this._kernel.dispose();
       this._kernel = null;
+      this.sessionDied.emit(void 0);
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
