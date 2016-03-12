@@ -369,7 +369,10 @@ class NotebookSession implements INotebookSession {
       return Promise.reject(new Error('Session is disposed'));
     }
     // Attempt to shutdown the kernel, but change the kernel either way.
-    return this.kernel.shutdown().then(this._changeKernel, this._changeKernel);
+    return this.kernel.shutdown().then(
+      () => { return this._changeKernel(name); }, 
+      () => { return this._changeKernel(name); }
+    );
   }
 
   /**
@@ -422,7 +425,7 @@ class NotebookSession implements INotebookSession {
   /**
    * Change the kernel.
    */
-  private _changeKernel(): Promise<IKernel> {
+  private _changeKernel(name: string): Promise<IKernel> {
     let options = utils.copy(this._options) as ISessionOptions;
     options.ajaxSettings = this.ajaxSettings;
     options.kernelName = name;
