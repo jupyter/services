@@ -368,23 +368,8 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let options = utils.copy(this._options) as ISessionOptions;
-    options.ajaxSettings = this.ajaxSettings;
-    options.kernelName = name;
-    options.notebookPath = this.notebookPath;
-    return this.kernel.shutdown().then(() => {
-      this._kernel.dispose();
-      this._kernel = null;
-      return Private.startSession(options);
-    }).then(sessionId => {
-      return Private.createKernel(sessionId, options);
-    }).then(kernel => {
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-      this._kernel = kernel;
-      this.kernelChanged.emit(kernel);
-      return kernel;
-    });
+    // Attempt to shutdown the kernel, but change the kernel either way.
+    return this.kernel.shutdown().then(this._changeKernel, this._changeKernel);
   }
 
   /**
@@ -432,6 +417,26 @@ class NotebookSession implements INotebookSession {
    */
   protected onUnhandledMessage(sender: IKernel, msg: IKernelMessage) {
     this.unhandledMessage.emit(msg);
+  }
+
+  /**
+   * Change the kernel.
+   */
+  private _changeKernel(): Promise<IKernel> {
+    let options = utils.copy(this._options) as ISessionOptions;
+    options.ajaxSettings = this.ajaxSettings;
+    options.kernelName = name;
+    options.notebookPath = this.notebookPath;
+    this._kernel.dispose();
+    return Private.startSession(options).then(sessionId => {
+      return Private.createKernel(sessionId, options);
+    }).then(kernel => {
+      kernel.statusChanged.connect(this.onKernelStatus, this);
+      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      this._kernel = kernel;
+      this.kernelChanged.emit(kernel);
+      return kernel;
+    });
   }
 
   private _id = '';
@@ -557,6 +562,3 @@ namespace Private {
     throw new Error(msg);
   }
 }
-
-
-
