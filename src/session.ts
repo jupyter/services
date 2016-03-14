@@ -328,28 +328,13 @@ class NotebookSession implements INotebookSession {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   renameNotebook(path: string): Promise<void> {
-    if (this.isDisposed) {
-      return Promise.reject(new Error('Session is disposed'));
-    }
-    let model = {
+    let data = JSON.stringify({
       kernel: { name: this._kernel.name, id: this._kernel.id },
-      notebook: { path: path }
-    }
-    let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'PATCH';
-    ajaxSettings.dataType = 'json';
-    ajaxSettings.data = JSON.stringify(model);
-    ajaxSettings.contentType = 'application/json';
-    ajaxSettings.cache = false;
-
-    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
-      let data = success.data as ISessionId;
-      validate.validateSessionId(data);
-      this._notebookPath = data.notebook.path;
-    }, Private.onSessionError);
+      notebook: { path }
+    });
+    return this._patch(data).then(id => {
+      this._notebookPath = id.notebook.path;
+    });
   }
 
   /**
@@ -360,18 +345,26 @@ class NotebookSession implements INotebookSession {
    * @returns - A promise that resolves with the new kernel.
    *
    * #### Notes
-   * This shuts down the existing kernel and creates a new kernel,
-   * keeping the existing session ID and notebook path.
+   * This changes the [kernel], but preserves the current session id.
    */
   changeKernel(name: string): Promise<IKernel> {
-    if (this.isDisposed) {
-      return Promise.reject(new Error('Session is disposed'));
-    }
-    // Attempt to shutdown the kernel, but change the kernel either way.
-    return this.kernel.shutdown().then(
-      () => { return this._changeKernel(name); }, 
-      () => { return this._changeKernel(name); }
-    );
+    let data = JSON.stringify({
+      kernel: { name },
+      notebook: { path: this.notebookPath }
+    });
+    return this._patch(data).then(id => {
+      let options = utils.copy(this._options) as ISessionOptions;
+      options.ajaxSettings = this.ajaxSettings;
+      options.kernelName = name;
+      options.notebookPath = this.notebookPath;
+      return Private.createKernel(id, options);
+    }).then(kernel => {
+      this._kernel.dispose();
+      this._kernel = kernel;
+      kernel.statusChanged.connect(this.onKernelStatus, this);
+      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      return kernel;
+    });
   }
 
   /**
@@ -422,23 +415,27 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * Change the kernel.
+   * Send a PATCH to the server, updating the notebook path or the kernel.
    */
-  private _changeKernel(name: string): Promise<IKernel> {
-    let options = utils.copy(this._options) as ISessionOptions;
-    options.ajaxSettings = this.ajaxSettings;
-    options.kernelName = name;
-    options.notebookPath = this.notebookPath;
-    this._kernel.dispose();
-    return Private.startSession(options).then(sessionId => {
-      return Private.createKernel(sessionId, options);
-    }).then(kernel => {
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-      this._kernel = kernel;
-      this.kernelChanged.emit(kernel);
-      return kernel;
-    });
+  private _patch(data: string): Promise<ISessionId> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
+    }
+    let ajaxSettings = this.ajaxSettings;
+    ajaxSettings.method = 'PATCH';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.data = data;
+    ajaxSettings.contentType = 'application/json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      let data = success.data as ISessionId;
+      validate.validateSessionId(data);
+      return data;
+    }, Private.onSessionError);
   }
 
   private _id = '';

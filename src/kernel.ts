@@ -408,6 +408,7 @@ class Kernel implements IKernel {
     this._futures = null;
     this._commPromises = null;
     this._comms = null;
+    this._status = KernelStatus.Dead;
     this._targetRegistry = null;
     clearSignalData(this);
     Private.runningKernels.delete(this._id);
@@ -768,6 +769,7 @@ class Kernel implements IKernel {
    */
   private _onWSMessage(evt: MessageEvent) {
     if (this.status === KernelStatus.Dead) {
+      // If the socket is being closed, ignore any messages
       return;
     }
     let msg = serialize.deserialize(evt.data);
