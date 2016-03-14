@@ -546,7 +546,7 @@ describe('jupyter.services - session', () => {
         })
       });
 
-      it('should fail if the session is dead', (done) => {
+      it('should fail if the session is disposed', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
         startSession(id, tester).then(session => {
@@ -669,17 +669,15 @@ describe('jupyter.services - session', () => {
         });
       });
 
-      it('should fail if the session is dead', (done) => {
+      it('should fail if the session is disposed', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
         startSession(id, tester).then(session => {
           tester.onRequest = () => {
             tester.respond(204, { });
           }
-          let shutdown = session.shutdown();
-          shutdown.then(() => {
-            expectFailure(session.shutdown(), done, 'Session is disposed');
-          });
+          session.dispose();
+          expectFailure(session.shutdown(), done, 'Session is disposed');
         });
       });
     });

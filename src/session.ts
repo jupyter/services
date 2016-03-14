@@ -368,21 +368,11 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let options = utils.copy(this._options) as ISessionOptions;
-    options.ajaxSettings = this.ajaxSettings;
-    options.kernelName = name;
-    options.notebookPath = this.notebookPath;
-    return this.delete().then(() => {
-      return Private.startSession(options);
-    }).then(sessionId => {
-      return Private.createKernel(sessionId, options);
-    }).then(kernel => {
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-      this._kernel = kernel;
-      this.kernelChanged.emit(kernel);
-      return kernel;
-    });
+    // Attempt to shutdown the kernel, but change the kernel either way.
+    return this.kernel.shutdown().then(
+      () => { return this._changeKernel(name); }, 
+      () => { return this._changeKernel(name); }
+    );
   }
 
   /**
@@ -398,19 +388,6 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    return this.delete().then(() => {
-      this._options = null;
-      this.sessionDied.emit(void 0);
-    });
-  }
-
-  /**
-   * Shut down the existing session.
-   *
-   * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
-   */
-  protected delete(): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
@@ -422,6 +399,7 @@ class NotebookSession implements INotebookSession {
       }
       this._kernel.dispose();
       this._kernel = null;
+      this.sessionDied.emit(void 0);
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
@@ -442,6 +420,26 @@ class NotebookSession implements INotebookSession {
    */
   protected onUnhandledMessage(sender: IKernel, msg: IKernelMessage) {
     this.unhandledMessage.emit(msg);
+  }
+
+  /**
+   * Change the kernel.
+   */
+  private _changeKernel(name: string): Promise<IKernel> {
+    let options = utils.copy(this._options) as ISessionOptions;
+    options.ajaxSettings = this.ajaxSettings;
+    options.kernelName = name;
+    options.notebookPath = this.notebookPath;
+    this._kernel.dispose();
+    return Private.startSession(options).then(sessionId => {
+      return Private.createKernel(sessionId, options);
+    }).then(kernel => {
+      kernel.statusChanged.connect(this.onKernelStatus, this);
+      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      this._kernel = kernel;
+      this.kernelChanged.emit(kernel);
+      return kernel;
+    });
   }
 
   private _id = '';
@@ -567,6 +565,3 @@ namespace Private {
     throw new Error(msg);
   }
 }
-
-
-
