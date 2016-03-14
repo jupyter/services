@@ -1176,6 +1176,45 @@ namespace Private {
     }
     console.log('Kernel: ' + status + ' (' + kernel.id + ')');
   }
+}
+
+
+/**
+ * Log the current kernel status.
+ */
+function logKernelStatus(kernel: IKernel): void {
+  if (kernel.status == KernelStatus.Idle ||
+      kernel.status === KernelStatus.Busy ||
+      kernel.status === KernelStatus.Unknown) {
+    return;
+  }
+  var status = '';
+  switch (kernel.status) {
+  case KernelStatus.Starting:
+    status = 'starting';
+    break;
+  case KernelStatus.Restarting:
+    status = 'restarting';
+    break;
+  case KernelStatus.Dead:
+    status = 'dead';
+    break;
+  }
+  console.log('Kernel: ' + status + ' (' + kernel.id + ')');
+}
+
+
+/**
+ * Handle an error on a kernel Ajax call.
+ */
+function onKernelError(error: utils.IAjaxError): any {
+    let text = (error.statusText || 
+                error.error.message ||
+                error.xhr.responseText);
+    console.error(`API request failed (${error.xhr.status}):  ${text}`);
+    throw Error(text);
+}
+>>>>>>> a6b2d4f... Cleanup, update tests, and improve error messages
 
   /**
    * Handle an error on a kernel Ajax call.

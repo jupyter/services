@@ -328,6 +328,9 @@ class NotebookSession implements INotebookSession {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   renameNotebook(path: string): Promise<void> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
+    }
     let data = JSON.stringify({
       kernel: { name: this._kernel.name, id: this._kernel.id },
       notebook: { path }
@@ -348,21 +351,27 @@ class NotebookSession implements INotebookSession {
    * This changes the [kernel], but preserves the current session id.
    */
   changeKernel(name: string): Promise<IKernel> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
+    }
     let data = JSON.stringify({
       kernel: { name },
       notebook: { path: this.notebookPath }
     });
+    this._kernel.dispose();
+    this._kernel = null;
     return this._patch(data).then(id => {
       let options = utils.copy(this._options) as ISessionOptions;
       options.ajaxSettings = this.ajaxSettings;
-      options.kernelName = name;
-      options.notebookPath = this.notebookPath;
+      options.kernelName = id.kernel.name;
+      options.notebookPath = id.notebook.path;
+      this._notebookPath = id.notebook.path;
       return Private.createKernel(id, options);
     }).then(kernel => {
-      this._kernel.dispose();
       this._kernel = kernel;
       kernel.statusChanged.connect(this.onKernelStatus, this);
       kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      this.kernelChanged.emit(kernel);
       return kernel;
     });
   }
@@ -418,9 +427,6 @@ class NotebookSession implements INotebookSession {
    * Send a PATCH to the server, updating the notebook path or the kernel.
    */
   private _patch(data: string): Promise<ISessionId> {
-    if (this.isDisposed) {
-      return Promise.reject(new Error('Session is disposed'));
-    }
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
@@ -514,12 +520,9 @@ namespace Private {
    */
   export
   function createKernel(sessionId: ISessionId, options: ISessionOptions): Promise<IKernel> {
-    let baseUrl = options.baseUrl || utils.getBaseUrl();
-    options.notebookPath = sessionId.notebook.path;
-
     let kernelOptions = {
       name: sessionId.kernel.name,
-      baseUrl: options.baseUrl,
+      baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
       username: options.username,
       clientId: options.clientId,
@@ -549,8 +552,11 @@ namespace Private {
    */
   export
   function onSessionError(error: utils.IAjaxError): any {
-    console.error("API request failed (" + error.statusText + "): ");
-    throw Error(error.statusText);
+    let text = (error.statusText || 
+                error.error.message ||
+                error.xhr.responseText);
+    console.error(`API request failed (${error.xhr.status}):  ${text}`);
+    throw Error(text);
   }
 
   /**

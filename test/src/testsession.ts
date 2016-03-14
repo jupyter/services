@@ -350,10 +350,8 @@ describe('jupyter.services - session', () => {
           session.changeKernel(newName);
           id.kernel.name = newName;
           tester.onRequest = request => {
-            if (request.method === 'DELETE') {
-              tester.respond(204, {});
-            } else if (request.method === 'POST') {
-              tester.respond(201, id);
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
             } else {
               tester.respond(200, [ { name: id.kernel.name,
                                       id: id.kernel.id }]);
@@ -590,23 +588,21 @@ describe('jupyter.services - session', () => {
         let newName = 'foo';
         startSession(id, tester).then(session => {
           let previous = session.kernel;
-          session.changeKernel(newName).then(kernel => {
-            expect(kernel.name).to.be(newName);
-            expect(session.kernel).to.not.be(previous);
-            done();
-          });
           id.kernel.id = uuid();
           id.kernel.name = newName;
           tester.onRequest = request => {
-            if (request.method === 'DELETE') {
-              tester.respond(204, {});
-            } else if (request.method === 'POST') {
-              tester.respond(201, id);
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
             } else {
               tester.respond(200, [ { name: id.kernel.name,
                                       id: id.kernel.id }]);
             }
           }
+          session.changeKernel(newName).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(session.kernel).to.not.be(previous);
+            done();
+          });
         });
       });
 
