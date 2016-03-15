@@ -606,6 +606,32 @@ describe('jupyter.services - session', () => {
         });
       });
 
+      it('should accept the id of the new kernel', (done) => {
+                let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          let previous = session.kernel;
+          let newId = uuid();
+          id.kernel.id = newId;
+          id.kernel.name = newName;
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
+            } else {
+              tester.respond(200, [ { name: id.kernel.name,
+                                      id: id.kernel.id }]);
+            }
+          }
+          session.changeKernel(newName, newId).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(kernel.id).to.be(newId);
+            expect(session.kernel).to.not.be(previous);
+            done();
+          });
+        });
+      });
+
     });
 
     context('#shutdown()', () => {
