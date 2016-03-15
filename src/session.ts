@@ -345,17 +345,20 @@ class NotebookSession implements INotebookSession {
    *
    * @params name - The name of the new kernel.
    *
+   * @params id - If given, the id of an existing kernel.
+   *
    * @returns - A promise that resolves with the new kernel.
    *
    * #### Notes
-   * This changes the [kernel], but preserves the current session id.
+   * This shuts down the existing kernel and creates a new kernel,
+   * keeping the existing session ID and notebook path.
    */
-  changeKernel(name: string): Promise<IKernel> {
+  changeKernel(name: string, id?: string): Promise<IKernel> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
     let data = JSON.stringify({
-      kernel: { name },
+      kernel: { name, id: id || null },
       notebook: { path: this.notebookPath }
     });
     this._kernel.dispose();
