@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "browser-example",
+  "dependencies": {
+    "jupyter-js-services": "file:../.."
+  },
+  "scripts": {
+    "build": "tsc && webpack --config webpack.conf.js",
+    "clean": "rimraf build && rimraf node_modules",
+    "update": "rimraf node_modules/jupyter-js-services && npm install"
+  },
+  "devDependencies": {
+    "rimraf": "^2.5.2",
+    "webpack": "^1.12.14"
+  }
+}
