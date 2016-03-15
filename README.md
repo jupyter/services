@@ -362,6 +362,7 @@ contents.listCheckpoints("/foo/bar.txt").then((models) => {
 **Configuration**
 
 ```typescript
+import {
   startNewKernel, getKernelSpecs, getConfigSection, ConfigWithDefaults
 } from 'jupyter-js-services';
 
