@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "node-example",
+  "dependencies": {
+    "jupyter-js-services": "file:../.."
+  },
+  "scripts": {
+    "clean": "rimraf node_modules",
+    "update": "rimraf node_modules/jupyter-js-services && npm install"
+  },
+  "devDependencies": {
+    "rimraf": "^2.5.2"
+  }
+}
