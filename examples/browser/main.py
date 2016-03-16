@@ -22,8 +22,8 @@ class MainPageHandler(tornado.web.RequestHandler):
                            base_url=self.base_url)
 
 
-def main(argv):
-
+def main():
+    # Start a notebook server with cross-origin access.
     url = "http://localhost:%s" % PORT
 
     nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
@@ -31,7 +31,8 @@ def main(argv):
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
-    # wait for notebook server to start up
+    # Wait for notebook server to start up.
+    # Extract the url used by the server.
     while 1:
         line = nb_server.stdout.readline().decode('utf-8').strip()
         if not line:
@@ -41,6 +42,7 @@ def main(argv):
             base_url = re.search('(http.*?)$', line).groups()[0]
             break
 
+    # Wait for the server to finish starting up.
     while 1:
         line = nb_server.stdout.readline().decode('utf-8').strip()
         if not line:
@@ -49,16 +51,20 @@ def main(argv):
         if 'Control-C' in line:
             break
 
-    def print_thread():
+    def print_server_output():
+        """Print output from the notebook server"""
         while 1:
             line = nb_server.stdout.readline().decode('utf-8').strip()
             if not line:
                 continue
             print(line)
-    thread = threading.Thread(target=print_thread)
+
+    # Start a thread to print output from the notebook server.
+    thread = threading.Thread(target=print_server_output)
     thread.setDaemon(True)
     thread.start()
 
+    # Set up the web server and start the event loop.
     handlers = [
         (r"/", MainPageHandler, {'base_url': base_url}),
         (r'/(.*)', tornado.web.StaticFileHandler, {'path': '.'}),
@@ -80,4 +86,4 @@ def main(argv):
         loop.close()
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
