@@ -90,7 +90,7 @@ The origin can be specified directly instead of using `*` if desired.
 
 Bundling for the Browser
 ------------------------
-Specify the following alias: `requirejs: 'requirejs/require'`.
+See `examples/browser` for an example of using Webpack to bundle the library.
 
 
 Usage from Node.js
@@ -102,7 +102,7 @@ Follow the package install instructions first.
 npm install --save xmlhttprequest ws
 ```
 
-Override the global `XMLHttpRequest` and `WebSocket`:
+Override the global `XMLHttpRequest` and `WebSocket` (in ES6 syntax):
 
 ```typescript
 import { XMLHttpRequest } from "xmlhttprequest";
@@ -112,13 +112,16 @@ global.XMLHttpRequest = XMLHttpRequest;
 global.WebSocket = WebSocket;
 ```
 
+See `examples/node` for an example of using an ES5 node script.
+
 
 Usage Examples
 --------------
 
-**Note:** This module is fully compatible with Node/Babel/ES6/ES5. Simply
+**Note:** This module is fully compatible with Node/Babel/ES6/ES5. The
+examples below are written in TypeScript using ES6 syntax.  Simply
 omit the type declarations when using a language other than TypeScript.
-
+A translator such as Babel can be used to convert from ES6 -> ES5.
 
 **Kernel**
 
@@ -127,11 +130,14 @@ import {
   listRunningKernels, connectToKernel, startNewKernel, getKernelSpecs
 } from 'jupyter-js-services';
 
-// get a list of available kernels and connect to one
-listRunningKernels({ baseUrl: 'http://localhost:8000' }).then(kernelModels => {
-  var options = {
-    baseUrl: 'http://localhost:8000',
-    wsUrl: 'ws://localhost:8000',
+// The base url of the notebook server.
+const BASE_URL = 'http://localhost:8000';
+
+
+// Get a list of available kernels and connect to one.
+listRunningKernels({ baseUrl: BASE_URL }).then(kernelModels => {
+  let options = {
+    baseUrl: BASE_URL,
     name: kernelModels[0].name
   }
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
@@ -140,47 +146,46 @@ listRunningKernels({ baseUrl: 'http://localhost:8000' }).then(kernelModels => {
 });
 
 
-// get info about the available kernels and start a new one
-getKernelSpecs({ baseUrl: 'http://localhost:8888' }).then(kernelSpecs => {
+// Get info about the available kernels and start a new one.
+getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   console.log('Default spec:', kernelSpecs.default);
   console.log('Available specs', Object.keys(kernelSpecs.kernelspecs));
   // use the default name
-  var options = {
-    baseUrl: 'http://localhost:8888',
-    wsUrl: 'ws://localhost:8888',
+  let options = {
+    baseUrl: BASE_URL,
     name: kernelSpecs.default
   }
-  startNewKernel(options).then((kernel) => {
-    // execute and handle replies
-    var future = kernel.execute({ code: 'a = 1' } );
+  startNewKernel(options).then(kernel => {
+    // Execute and handle replies.
+    let future = kernel.execute({ code: 'a = 1' } );
     future.onDone = () => {
       console.log('Future is fulfilled');
     }
     future.onIOPub = (msg) => {
-      console.log(msg.content);  // rich output data
+      console.log(msg.content);  // Print rich output data.
     }
 
-    // restart the kernel and then send an inspect message
+    // Restart the kernel and then send an inspect message.
     kernel.restart().then(() => {
-      var request = { code: 'hello', cursor_pos: 4, detail_level: 0};
-      kernel.inspect(request).then((reply) => {
+      let request = { code: 'hello', cursor_pos: 4, detail_level: 0};
+      kernel.inspect(request).then(reply => {
         console.log(reply.data);
       });
     });
 
-    // interrupt the kernel and then send a complete message
+    // Interrupt the kernel and then send a complete message.
     kernel.interrupt().then(() => {
       kernel.complete({ code: 'impor', cursor_pos: 4 } ).then((reply) => {
         console.log(reply.matches);
       });
     });
 
-    // register a callback for when the kernel changes state
+    // Register a callback for when the kernel changes state.
     kernel.statusChanged.connect((status) => {
       console.log('status', status);
     });
 
-    // kill the kernel
+    // Kill the kernel.
     kernel.shutdown().then(() => {
       console.log('Kernel shut down');
     });
@@ -195,12 +200,14 @@ import {
   listRunningSessions, connectToSession, startNewSession
 } from 'jupyter-js-services';
 
-// get a list of available sessions and connect to one
-listRunningSessions({ baseUrl: 'http://localhost:8000' }
-).then(sessionModels => {
-  var options = {
-    baseUrl: 'http://localhost:8000',
-    wsUrl: 'ws://localhost:8000',
+// The base url of the notebook server.
+const BASE_URL = 'http://localhost:8000';
+
+
+// Get a list of available sessions and connect to one.
+listRunningSessions({ baseUrl: BASE_URL }).then(sessionModels => {
+  let options = {
+    baseUrl: BASE_URL,
     kernelName: sessionModels[0].kernel.name,
     notebookPath: sessionModels[0].notebook.path
   }
@@ -209,31 +216,30 @@ listRunningSessions({ baseUrl: 'http://localhost:8000' }
   });
 });
 
-// start a new session
-var options = {
-  baseUrl: 'http://localhost:8000',
-  wsUrl: 'ws://localhost:8000',
+// Start a new session.
+let options = {
+  baseUrl: BASE_URL,
   kernelName: 'python',
   notebookPath: '/tmp/foo.ipynb'
 }
-startNewSession(options).then((session) => {
-  // execute and handle replies on the kernel
-  var future = session.kernel.execute({ code: 'a = 1' });
+startNewSession(options).then(session => {
+  // Execute and handle replies on the kernel.
+  let future = session.kernel.execute({ code: 'a = 1' });
   future.onDone = () => {
     console.log('Future is fulfilled');
   }
 
-  // rename the notebook
+  // Rename the notebook.
   session.renameNotebook('/local/bar.ipynb').then(() => {
     console.log('Notebook renamed to', session.notebookPath);
   });
 
-  // register a callback for when the session dies
+  // Register a callback for when the session dies.
   session.sessionDied.connect(() => {
     console.log('session died');
   });
 
-  // kill the session
+  // Kill the session.
   session.shutdown().then(() => {
     console.log('session closed');
   });
@@ -248,30 +254,29 @@ import {
   getKernelSpecs, startNewKernel
 } from 'jupyter-js-services';
 
-var BASEURL = 'http://localhost:8888';
-var WSURL = 'ws://localhost:8888';
+// The base url of the notebook server.
+const BASE_URL = 'http://localhost:8000';
+
 
 // Create a comm from the server side.
 //
-// get info about the available kernels and connect to one
-getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
+// Get info about the available kernels and connect to one.
+getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   return startNewKernel({
-    baseUrl: BASEURL,
-    wsUrl: WSURL,
+    baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
 }).then(kernel => {
-  var comm = kernel.connectToComm('test');
+  let comm = kernel.connectToComm('test');
   comm.open('initial state');
   comm.send('test');
   comm.close('bye');
 });
 
 // Create a comm from the client side.
-getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
+getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   return startNewKernel({
-    baseUrl: BASEURL,
-    wsUrl: WSURL,
+    baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
 }).then(kernel => {
@@ -286,7 +291,7 @@ getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
       console.log(msg);  // 'bye'
     }
   });
-  var code = [
+  let code = [
     "from ipykernel.comm import Comm",
     "comm = Comm(target_name='test2')",
     "comm.send(data='hello')",
@@ -303,48 +308,52 @@ import {
   ContentsManager
 } from 'jupyter-js-services';
 
-var contents = new ContentsManager('http://localhost:8000');
+// The base url of the notebook server.
+const BASE_URL = 'http://localhost:8000';
 
-// create a new python file
+
+let contents = new ContentsManager(BASE_URL);
+
+// Create a new python file.
 contents.newUntitled("/foo", { type: "file", ext: "py" }).then(
   (model) => {
     console.log(model.path);
   }
 );
 
-// get the contents of a directory
+// Get the contents of a directory.
 contents.get("/foo", { type: "directory", name: "bar" }).then(
   (model) => {
-    var files = model.content;
+    let files = model.content;
   }
 )
 
-// rename a file
+// Rename a file.
 contents.rename("/foo/bar.txt", "/foo/baz.txt");
 
-// save a file
+// Save a file.
 contents.save("/foo", { type: "file", name: "test.py" });
 
-// delete a file
+// Delete a file.
 contents.delete("/foo/bar.txt");
 
-// copy a file
+// Copy a file.
 contents.copy("/foo/bar.txt", "/baz").then((model) => {
-    var newPath = model.path;
+    let newPath = model.path;
 });
 
-// create a checkpoint
+// Create a checkpoint.
 contents.createCheckpoint("/foo/bar.ipynb").then((model) => {
-  var checkpoint = model;
+  let checkpoint = model;
 
-  // restore a checkpoint
+  // Restore a checkpoint.
   contents.restoreCheckpoint("/foo/bar.ipynb", checkpoint.id);
 
-  // delete a checkpoint
+  // Delete a checkpoint.
   contents.deleteCheckpoint("/foo/bar.ipynb", checkpoint.id);
 });
 
-// list checkpoints for a file
+// List checkpoints for a file.
 contents.listCheckpoints("/foo/bar.txt").then((models) => {
     console.log(models[0].id);
 });
@@ -356,19 +365,19 @@ contents.listCheckpoints("/foo/bar.txt").then((models) => {
   startNewKernel, getKernelSpecs, getConfigSection, ConfigWithDefaults
 } from 'jupyter-js-services';
 
-var BASEURL = 'http://localhost:8888';
-var WSURL = 'ws://localhost:8888';
+// The base url of the notebook server.
+const BASE_URL = 'http://localhost:8000';
 
-getKernelSpecs({ baseUrl: BASEURL }).then(kernelSpecs => {
+
+getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   return startNewKernel({
-    baseUrl: BASEURL,
-    wsUrl: WSURL,
+    baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
 }).then(kernel => {
-  getConfigSection('notebook', BASEURL).then(section => {
-    var defaults = { default_cell_type: 'code' };
-    var config = new ConfigWithDefaults(section, defaults, 'Notebook');
+  getConfigSection('notebook', BASE_URL).then(section => {
+    let defaults = { default_cell_type: 'code' };
+    let config = new ConfigWithDefaults(section, defaults, 'Notebook');
     console.log(config.get('default_cell_type'));   // 'code'
     config.set('foo', 'bar').then(data => {
        console.log(data.foo); // 'bar'
