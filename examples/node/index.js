@@ -17,19 +17,6 @@ global.WebSocket = ws;
 var BASE_URL = utils.getBaseUrl();
 var WS_URL = utils.getWsUrl();
 
-// Get a list of available sessions and connect to one.
-services.listRunningSessions({ baseUrl: BASE_URL }).then(function(sessionModels) {
-  var options = {
-    baseUrl: BASE_URL,
-    wsUrl: WS_URL,
-    kernelName: sessionModels[0].kernel.name,
-    notebookPath: sessionModels[0].notebook.path
-  }
-  return services.connectToSession(sessionModels[0].id, options);
-}).then(function(session) {
-  console.log(session.kernel.name);
-});
-
 // Start a new session.
 var options = {
   baseUrl: BASE_URL,
