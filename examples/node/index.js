@@ -11,9 +11,11 @@ var ws = require('ws');
 var xhr = require('xmlhttprequest');
 
 
+// Override the global request and socket functions.
 global.XMLHttpRequest = xhr.XMLHttpRequest;
 global.WebSocket = ws;
 
+// Retrieve the base url and websocket url based on t command line arguments.
 var BASE_URL = utils.getBaseUrl();
 var WS_URL = utils.getWsUrl();
 
