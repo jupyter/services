@@ -451,14 +451,10 @@ class Kernel implements IKernel {
    * If the kernel status is `Dead`, this will throw an error.
    */
   sendShellMessage(msg: IKernelMessage, expectReply=false, disposeOnDone=true): IKernelFuture {
-    switch (this._status) {
-    case KernelStatus.Idle:
-    case KernelStatus.Busy:
+    if (!this._isReady) {
       this._pendingMessages.push(msg);
-      break;
-    default:
+    } else {
       this._ws.send(serialize.serialize(msg));
-      break;
     }
     let future = new KernelFutureHandler(() => {
       this._futures.delete(msg.header.msg_id);
