@@ -163,7 +163,7 @@ describe('jupyter.services - session', () => {
       });
     });
 
-    it('should fail if the websocket fails', (done) => {
+    it('should start even if the websocket fails', (done) => {
       let tester = new KernelTester(request => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
@@ -175,8 +175,7 @@ describe('jupyter.services - session', () => {
       tester.initialStatus = 'dead';
       let sessionId = createSessionId();
       let options = createSessionOptions(sessionId);
-      let sessionPromise = startNewSession(options);
-      expectFailure(sessionPromise, done, 'Session failed to start');
+      startNewSession(options).then(() => { done(); });
     });
 
     it('should fail for wrong response status', (done) => {
@@ -353,8 +352,10 @@ describe('jupyter.services - session', () => {
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
           session.statusChanged.connect((s, status) => {
-            expect(status).to.be(KernelStatus.Busy);
-            done();
+            if (status === KernelStatus.Busy) {
+              s.dispose();
+              done();
+            }
           });
           tester.onRequest = () => {
             tester.respond(204, { });

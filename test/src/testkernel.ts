@@ -130,7 +130,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       startNewKernel(KERNEL_OPTIONS).then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Starting);
+        expect(kernel.status).to.be(KernelStatus.Unknown);
         done();
       });
     });
@@ -141,18 +141,23 @@ describe('jupyter.services - kernel', () => {
       });
       let kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
       kernelPromise.then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Starting);
+        expect(kernel.status).to.be(KernelStatus.Unknown);
         done();
       });
     });
 
-    it('should throw an error if the kernel dies', (done) => {
+    it('should still start if the kernel dies', (done) => {
       let tester = new KernelTester(() => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       tester.initialStatus ='dead';
-      let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, 'Kernel failed to start');
+      startNewKernel(KERNEL_OPTIONS).then(kernel => {
+        kernel.statusChanged.connect((kernel, state) => {
+          if (state == KernelStatus.Dead) {
+            done();
+          }
+        });
+      });
     });
 
     it('should throw an error for an invalid kernel id', (done) => {
@@ -195,15 +200,21 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       startNewKernel(KERNEL_OPTIONS).then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Starting);
+        expect(kernel.status).to.be(KernelStatus.Unknown);
         kernel.statusChanged.connect(() => {
-          if (kernel.status === KernelStatus.Starting) {
+          if (kernel.status === KernelStatus.Reconnecting) {
             done();
+            kernel.dispose();
+            return;
+          }
+          if (kernel.status === KernelStatus.Starting) {
+            tester.triggerError('Error event');
           }
         });
-        tester.triggerError('Error event');
       });
+
     });
+
   });
 
   describe('connectToKernel()', () => {
@@ -213,13 +224,14 @@ describe('jupyter.services - kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
       });
+      debugger;
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         connectToKernel(id).then(newKernel => {
           expect(newKernel.name).to.be(kernel.name);
           expect(newKernel.id).to.be(kernel.id);
           done();
         });
-      });
+      })
     });
 
     it('should connect to a running kernel if given kernel options', (done) => {
@@ -269,12 +281,14 @@ describe('jupyter.services - kernel', () => {
 
     context('#statusChanged', () => {
 
-      it('should be be an signal following the Kernel status', (done) => {
+      it('should be a signal following the Kernel status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            done();
+            if (kernel.status === KernelStatus.Busy) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('busy');
         });
@@ -286,7 +300,6 @@ describe('jupyter.services - kernel', () => {
       it('should be emitted for an unhandled message', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.unhandledMessage.connect((k, msg) => {
             expect(msg.header.msg_type).to.be('foo');
             done();
@@ -353,22 +366,24 @@ describe('jupyter.services - kernel', () => {
       it('should get an idle status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Idle);
-            done();
+            if (kernel.status === KernelStatus.Idle) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('idle');
         });
       });
 
-      it('should get an restarting status', (done) => {
+      it('should get a restarting status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Restarting);
-            done();
+            if (kernel.status === KernelStatus.Restarting) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('restarting');
         });
@@ -377,10 +392,11 @@ describe('jupyter.services - kernel', () => {
       it('should get a busy status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Busy);
-            done();
+            if (kernel.status === KernelStatus.Busy) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('busy');
         });
@@ -389,10 +405,11 @@ describe('jupyter.services - kernel', () => {
       it('should get a reconnecting status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Reconnecting);
-            done();
+            if (kernel.status === KernelStatus.Reconnecting) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.triggerError('Error event');
         });
@@ -401,10 +418,11 @@ describe('jupyter.services - kernel', () => {
       it('should get a dead status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Dead);
-            done();
+            if (kernel.status === KernelStatus.Dead) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('dead');
         });
@@ -413,10 +431,11 @@ describe('jupyter.services - kernel', () => {
       it('should handle an invalid status', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
           kernel.statusChanged.connect(() => {
-            expect(kernel.status).to.be(KernelStatus.Idle);
-            done();
+            if (kernel.status === KernelStatus.Idle) {
+              kernel.dispose();
+              done();
+            }
           });
           tester.sendStatus('celebrating');
           tester.sendStatus('idle');
@@ -612,7 +631,9 @@ describe('jupyter.services - kernel', () => {
         createKernel(tester).then(kernel => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
-            expectFailure(kernel.interrupt(), done, 'Kernel is dead');
+            if (kernel.status === KernelStatus.Dead) {
+              expectFailure(kernel.interrupt(), done, 'Kernel is dead');
+            }
           });
         });
       });
@@ -756,7 +777,9 @@ describe('jupyter.services - kernel', () => {
         createKernel(tester).then(kernel => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
-            expectFailure(kernel.shutdown(), done, 'Kernel is dead');
+            if (kernel.status === KernelStatus.Dead) {
+              expectFailure(kernel.shutdown(), done, 'Kernel is dead');
+            }
           });
         });
       });
@@ -1130,8 +1153,13 @@ describe('jupyter.services - kernel', () => {
           tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         });
         manager.startNew().then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Starting);
-          done();
+          expect(kernel.status).to.be(KernelStatus.Unknown);
+          kernel.statusChanged.connect(() => {
+            if (kernel.status === KernelStatus.Starting) {
+              kernel.dispose();
+              done();
+            }
+          });
         });
 
       });

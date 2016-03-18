@@ -148,8 +148,8 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
  * The promise is fulfilled on a valid response and rejected otherwise.
 
  * Wrap the result in an NotebookSession object. The promise is fulfilled
- * when the session is fully ready to send the first message. If
- * the session fails to become ready, the promise is rejected.
+ * when the session is created on the server, otherwise the promise is 
+ * rejected.
  */
 export
 function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
@@ -168,9 +168,8 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * session found by calling `listRunningSessions`.
- * The promise is fulfilled when the session is fully ready to send
- * the first message. If the session fails to become ready, the promise is
- * rejected.
+ * The promise is fulfilled when the session is ready on the server, 
+ * otherwise the promise is rejected.
  *
  * If the session was not already started and no `options` are given,
  * the promise is rejected.

@@ -200,8 +200,7 @@ function listRunningKernels(options: IKernelOptions): Promise<IKernelId[]> {
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
  *
  * Wraps the result in a Kernel object. The promise is fulfilled
- * when the kernel is fully ready to send the first message. If
- * the kernel fails to become ready, the promise is rejected.
+ * when the kernel is started by the server, otherwise the promise is rejected.
  */
 export
 function startNewKernel(options: IKernelOptions): Promise<IKernel> {
@@ -218,7 +217,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
     validate.validateKernelId(success.data);
-    return Private.createKernel(options, success.data.id);
+    return new Kernel(options, success.data.id);
   }, Private.onKernelError);
 }
 
@@ -232,9 +231,8 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * kernel found by calling `listRunningKernels`.
- * The promise is fulfilled when the kernel is fully ready to send
- * the first message. If the kernel fails to become ready, the promise is
- * rejected.
+ * The promise is fulfilled when the kernel is running on the server, 
+ * otherwise the promise is rejected.
  *
  * If the kernel was not already started and no `options` are given,
  * the promise is rejected.
@@ -253,7 +251,7 @@ function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel>
     if (!kernelIds.some(k => k.id === id)) {
       throw new Error('No running kernel with id: ' + id);
     }
-    return Private.createKernel(options, id);
+    return new Kernel(options, id);
   });
 }
 
@@ -299,6 +297,7 @@ class Kernel implements IKernel {
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket();
+    Private.runningKernels.set(this._id, this);
   }
 
   /**
@@ -730,7 +729,7 @@ class Kernel implements IKernel {
   /**
    * Create the kernel websocket connection and add socket status handlers.
    */
-  private _createSocket() {
+  private _createSocket(): void {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        utils.urlJoinEncode(this._id));
     console.log('Starting WebSocket:', partialUrl);
@@ -1068,30 +1067,6 @@ namespace Private {
    */
   export
   const runningKernels = new Map<string, Kernel>();
-
-  /**
-   * Create a Promise for a Kernel object.
-   *
-   * #### Notes
-   * Fulfilled when the Kernel is Starting, or rejected if Dead.
-   */
-  export
-  function createKernel(options: IKernelOptions, id: string): Promise<IKernel> {
-    return new Promise<IKernel>((resolve, reject) => {
-      let kernel = new Kernel(options, id);
-      let callback = (sender: IKernel, status: KernelStatus) => {
-        if (status === KernelStatus.Starting || status === KernelStatus.Idle) {
-          kernel.statusChanged.disconnect(callback);
-          Private.runningKernels.set(kernel.id, kernel);
-          resolve(kernel);
-        } else if (status === KernelStatus.Dead) {
-          kernel.statusChanged.disconnect(callback);
-          reject(new Error('Kernel failed to start'));
-        }
-      }
-      kernel.statusChanged.connect(callback);
-    });
-  }
 
   /**
    * Restart a kernel.
