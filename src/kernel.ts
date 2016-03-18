@@ -757,8 +757,11 @@ class Kernel implements IKernel {
    */
   private _onWSOpen(evt: Event) {
     this._reconnectAttempt = 0;
+    // Allow the message to get through.
+    this._isReady = true;
     // Trigger a status response.
     this.kernelInfo();
+    this._isReady = false;
   }
 
   /**
