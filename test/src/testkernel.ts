@@ -16,7 +16,7 @@ import {
 import {
   ICompleteRequest, IExecuteRequest, IInspectRequest, IIsCompleteRequest,
   IKernel, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageOptions,
-  IKernelOptions, IKernelSpecId, KernelStatus
+  IKernelOptions, IKernelSpecId, KernelStatus, IInspectReply
 } from '../../lib/ikernel';
 
 import {
@@ -506,7 +506,7 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
-      it('should fail if the kernel is closed', (done) => {
+      it('should fail if the kernel is dead', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           let options: IKernelMessageOptions = {
@@ -521,9 +521,7 @@ describe('jupyter.services - kernel', () => {
             try {
               kernel.sendShellMessage(msg, true);
             } catch(err) {
-              expect(err.message).to.be(
-                'Kernel is not ready to send a message'
-              );
+              expect(err.message).to.be('Kernel is dead');
               done();
             }
           });
@@ -807,8 +805,7 @@ describe('jupyter.services - kernel', () => {
           kernel.statusChanged.connect(() => {
             if (kernel.status === KernelStatus.Dead) {
               let promise = kernel.complete(options);
-              expectFailure(promise, done,
-                            'Kernel is not ready to send a message');
+              expectFailure(promise, done, 'Kernel is dead');
             }
           });
         });
@@ -834,7 +831,7 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
-      it('should reject the promise if the kernel is reconnecting', (done) => {
+      it('should delay the promise if the kernel is reconnecting', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           let options: IInspectRequest = {
@@ -843,11 +840,25 @@ describe('jupyter.services - kernel', () => {
             detail_level: 0
           }
           tester.triggerError('foo');
+          let called = false;
+          tester.onMessage((msg) => {
+            called = true;
+            expect(msg.header.msg_type).to.be('inspect_request');
+            msg.parent_header = msg.header;
+            tester.send(msg);
+          });
+          let promise: Promise<IInspectReply>;
           kernel.statusChanged.connect(() => {
             if (kernel.status === KernelStatus.Reconnecting) {
-              let promise = kernel.inspect(options);
-              expectFailure(promise, done,
-                            'Kernel is not ready to send a message');
+              promise = kernel.inspect(options);
+              tester.sendStatus('idle');
+            }
+            if (kernel.status === KernelStatus.Idle) {
+              expect(called).to.be(false);
+              promise.then(() => { 
+                expect(called).to.be(true);
+                done(); 
+              });
             }
           });
         });
@@ -894,9 +905,7 @@ describe('jupyter.services - kernel', () => {
             try {
               kernel.sendInputReply({ value: 'test' });
             } catch(err) {
-              expect(err.message).to.be(
-                'Kernel is not ready to send a message'
-              );
+              expect(err.message).to.be('Kernel is dead');
               done();
             }
           });
