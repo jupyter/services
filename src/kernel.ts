@@ -297,6 +297,7 @@ class Kernel implements IKernel {
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket();
+    Private.runningKernels.set(this._id, this);
   }
 
   /**
