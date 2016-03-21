@@ -355,7 +355,8 @@ class NotebookSession implements INotebookSession {
     }
     this._kernel.dispose();
     this._kernel = null;
-    return this._patch(JSON.stringify(options)).then(id => {
+    let data = JSON.stringify({ kernel: options });
+    return this._patch(data).then(id => {
       let options = utils.copy(this._options) as ISessionOptions;
       options.ajaxSettings = this.ajaxSettings;
       options.kernelName = id.kernel.name;

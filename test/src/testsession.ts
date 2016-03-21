@@ -347,7 +347,7 @@ describe('jupyter.services - session', () => {
         let id = createSessionId();
         let newName = 'foo';
         startSession(id, tester).then(session => {
-          session.changeKernel(newName);
+          session.changeKernel({ name: newName });
           id.kernel.name = newName;
           tester.onRequest = request => {
             if (request.method === 'PATCH') {
@@ -581,7 +581,7 @@ describe('jupyter.services - session', () => {
                                       id: id.kernel.id }]);
             }
           }
-          session.changeKernel(newName).then(kernel => {
+          session.changeKernel({ name: newName }).then(kernel => {
             expect(kernel.name).to.be(newName);
             expect(session.kernel).to.not.be(previous);
             done();
@@ -606,7 +606,7 @@ describe('jupyter.services - session', () => {
                                       id: id.kernel.id }]);
             }
           }
-          session.changeKernel(newName).then(kernel => {
+          session.changeKernel({ id: newId }).then(kernel => {
             expect(kernel.name).to.be(newName);
             expect(kernel.id).to.be(newId);
             expect(session.kernel).to.not.be(previous);
