@@ -332,7 +332,6 @@ class NotebookSession implements INotebookSession {
       return Promise.reject(new Error('Session is disposed'));
     }
     let data = JSON.stringify({
-      kernel: { name: this._kernel.name, id: this._kernel.id },
       notebook: { path }
     });
     return this._patch(data).then(id => {
@@ -357,10 +356,10 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let data = JSON.stringify({
-      kernel: { name, id: id || null },
-      notebook: { path: this.notebookPath }
-    });
+    let data = JSON.stringify({ kernel: { name } });
+    if (id !== void 0) {
+      data = JSON.stringify({ kernel: { id } });
+    }
     this._kernel.dispose();
     this._kernel = null;
     return this._patch(data).then(id => {

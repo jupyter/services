@@ -623,7 +623,7 @@ describe('jupyter.services - session', () => {
                                       id: id.kernel.id }]);
             }
           }
-          session.changeKernel(newName, newId).then(kernel => {
+          session.changeKernel(newName).then(kernel => {
             expect(kernel.name).to.be(newName);
             expect(kernel.id).to.be(newId);
             expect(session.kernel).to.not.be(previous);
