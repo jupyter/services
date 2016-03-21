@@ -167,7 +167,6 @@ describe('jupyter.services - Integration', () => {
           }
           startNewSession(sessionOptions).then(session => {
             console.log('Hello Session: ', session.id);
-            expect(session.kernel.id).to.be(kernel.id);
             done();
           });
         });
