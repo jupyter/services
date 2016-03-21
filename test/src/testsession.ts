@@ -30,7 +30,8 @@ import {
 } from '../../lib/serialize';
 
 import { 
-  RequestHandler, ajaxSettings, expectFailure, doLater, KernelTester
+  RequestHandler, ajaxSettings, expectFailure, doLater, KernelTester,
+  createKernel
 } from './utils';
 
 
@@ -142,6 +143,28 @@ describe('jupyter.services - session', () => {
       startNewSession(options).then(session => {
         expect(session.id).to.be(sessionId.id);
         done();
+      });
+    });
+
+    it('should be able connect to an existing kernel', (done) => {
+      let sessionId = createSessionId();
+      let tester = new KernelTester();
+      createKernel(tester).then(kernel => {
+        sessionId.kernel.id = kernel.id;
+        sessionId.kernel.name = kernel.name;
+        tester.onRequest = request => {
+          if (request.method === 'POST') {
+            tester.respond(201, sessionId);
+          } else {
+            tester.respond(200, [ { name: sessionId.kernel.name,
+                                    id: sessionId.kernel.id }]);
+          }
+        };
+        let options = createSessionOptions(sessionId);
+        startNewSession(options).then(session => {
+          expect(session.id).to.be(sessionId.id);
+          done();
+        });
       });
     });
 
