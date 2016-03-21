@@ -195,22 +195,18 @@ interface INotebookSession extends IDisposable {
    * This uses the Notebook REST API, and the response is validated.
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  renameNotebook(path: string, ajaxSettings?: IAjaxSettings): Promise<void>;
+  renameNotebook(path: string): Promise<void>;
 
   /**
    * Change the kernel.
    *
-   * @params name - The name of the new kernel.
-   *
-   * @params id - If given, the id of an existing kernel.
-   *
-   * @returns - A promise that resolves with the new kernel.
+   * @params options - The name or id of the new kernel.
    *
    * #### Notes
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and notebook path.
    */
-  changeKernel(name: string, id?: string): Promise<IKernel>;
+  changeKernel(options: IKernelId): Promise<IKernel>;
 
   /**
    * Kill the kernel and shutdown the session.
@@ -219,5 +215,5 @@ interface INotebookSession extends IDisposable {
    * This uses the Notebook REST API, and the response is validated.
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  shutdown(ajaxSettings?: IAjaxSettings): Promise<void>;
+  shutdown(): Promise<void>;
 }

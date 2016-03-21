@@ -14,7 +14,8 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds, IKernelMessage
+  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds, IKernelMessage,
+  IKernelId
 } from './ikernel';
 
 import {
@@ -342,27 +343,19 @@ class NotebookSession implements INotebookSession {
   /**
    * Change the kernel.
    *
-   * @params name - The name of the new kernel.
-   *
-   * @params id - If given, the id of an existing kernel.
-   *
-   * @returns - A promise that resolves with the new kernel.
+   * @params options - The name or id of the new kernel.
    *
    * #### Notes
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and notebook path.
    */
-  changeKernel(name: string, id?: string): Promise<IKernel> {
+  changeKernel(options: IKernelId): Promise<IKernel> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let data = JSON.stringify({ kernel: { name } });
-    if (id !== void 0) {
-      data = JSON.stringify({ kernel: { id } });
-    }
     this._kernel.dispose();
     this._kernel = null;
-    return this._patch(data).then(id => {
+    return this._patch(JSON.stringify(options)).then(id => {
       let options = utils.copy(this._options) as ISessionOptions;
       options.ajaxSettings = this.ajaxSettings;
       options.kernelName = id.kernel.name;

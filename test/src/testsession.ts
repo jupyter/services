@@ -512,23 +512,6 @@ describe('jupyter.services - session', () => {
         });
       });
 
-      it('should accept ajax options', (done) => {
-        let tester = new KernelTester();
-        let id = createSessionId();
-        let newPath = '/foo.ipynb';
-        let newId = JSON.parse(JSON.stringify(id));
-        newId.notebook.path = newPath;
-        startSession(id, tester).then(session => {
-          tester.onRequest = () => {
-            tester.respond(200, newId);
-          };
-          session.renameNotebook(newPath, ajaxSettings).then(() => {
-            expect(session.notebookPath).to.be(newPath);
-            done();
-          });
-        })
-      });
-
       it('should fail for improper response status', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
