@@ -493,7 +493,7 @@ namespace Private {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let model = {
-      kernel: { name: options.kernelName },
+      kernel: { name: options.kernelName, id: options.kernelId },
       notebook: { path: options.notebookPath }
     }
     let ajaxSettings = utils.copy(options.ajaxSettings) || {};

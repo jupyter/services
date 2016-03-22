@@ -151,6 +151,27 @@ describe('jupyter.services - Integration', () => {
         });
       });
     });
+
+    it('should connect to an existing kernel', (done) => {
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
+        let options = {
+          baseUrl: BASEURL,
+          kernelName: kernelSpecs.default,
+          notebookPath: 'Untitled1.ipynb'
+        }
+        startNewKernel(options).then(kernel => {
+          let sessionOptions = {
+            baseUrl: BASEURL,
+            kernelId: kernel.id,
+            notebookPath: 'Untitled1.ipynb'
+          }
+          startNewSession(sessionOptions).then(session => {
+            console.log('Hello Session: ', session.id);
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('Comm', () => {

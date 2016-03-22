@@ -64,6 +64,11 @@ interface ISessionOptions {
   kernelName?: string;
 
   /**
+   * The id of an existing kernel.
+   */
+  kernelId?: string;
+
+  /**
    * The root url of the notebook server.
    */
   baseUrl?: string;
