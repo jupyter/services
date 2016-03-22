@@ -172,6 +172,49 @@ describe('jupyter.services - Integration', () => {
         });
       });
     });
+
+    it('should be able to switch to an existing kernel by id', (done) => {
+      // get info about the available kernels and connect to one
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
+        let options = {
+          baseUrl: BASEURL,
+          name: kernelSpecs.default
+        }
+        startNewKernel(options).then(kernel => {
+          let sessionOptions = {
+            baseUrl: BASEURL,
+            kernelName: kernelSpecs.default,
+            notebookPath: 'Untitled1.ipynb'
+          }
+          startNewSession(sessionOptions).then(session => {
+            session.changeKernel({ id: kernel.id }).then(newKernel => {
+              expect(newKernel.id).to.be(kernel.id);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should be able to switch to a new kernel by name', (done) => {
+      // get info about the available kernels and connect to one
+      getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
+        let kernelName = kernelSpecs.default;
+        let options = {
+          baseUrl: BASEURL,
+          kernelName,
+          notebookPath: 'Untitled1.ipynb'
+        }
+        startNewSession(options).then(session => {
+          let id = session.kernel.id;
+          session.changeKernel({ name: kernelName }).then(newKernel => {
+            expect(newKernel.id).to.not.be(id);
+            done();
+          });
+        });
+      });
+    });
+
   });
 
   describe('Comm', () => {

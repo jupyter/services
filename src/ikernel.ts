@@ -62,12 +62,12 @@ interface IKernelId {
   /**
    * Unique identifier of the kernel server session.
    */
-  id: string;
+  id?: string;
 
   /**
    * The name of the kernel.
    */
-  name: string;
+  name?: string;
 }
 
 

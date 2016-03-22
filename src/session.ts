@@ -14,7 +14,8 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds, IKernelMessage
+  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds, IKernelMessage,
+  IKernelId
 } from './ikernel';
 
 import {
@@ -331,47 +332,44 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let model = {
-      kernel: { name: this._kernel.name, id: this._kernel.id },
-      notebook: { path: path }
-    }
-    let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'PATCH';
-    ajaxSettings.dataType = 'json';
-    ajaxSettings.data = JSON.stringify(model);
-    ajaxSettings.contentType = 'application/json';
-    ajaxSettings.cache = false;
-
-    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
-      let data = success.data as ISessionId;
-      validate.validateSessionId(data);
-      this._notebookPath = data.notebook.path;
-    }, Private.onSessionError);
+    let data = JSON.stringify({
+      notebook: { path }
+    });
+    return this._patch(data).then(id => {
+      this._notebookPath = id.notebook.path;
+    });
   }
 
   /**
    * Change the kernel.
    *
-   * @params name - The name of the new kernel.
-   *
-   * @returns - A promise that resolves with the new kernel.
+   * @params options - The name or id of the new kernel.
    *
    * #### Notes
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and notebook path.
    */
-  changeKernel(name: string): Promise<IKernel> {
+  changeKernel(options: IKernelId): Promise<IKernel> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    // Attempt to shutdown the kernel, but change the kernel either way.
-    return this.kernel.shutdown().then(
-      () => { return this._changeKernel(name); }, 
-      () => { return this._changeKernel(name); }
-    );
+    this._kernel.dispose();
+    this._kernel = null;
+    let data = JSON.stringify({ kernel: options });
+    return this._patch(data).then(id => {
+      let options = utils.copy(this._options) as ISessionOptions;
+      options.ajaxSettings = this.ajaxSettings;
+      options.kernelName = id.kernel.name;
+      options.notebookPath = id.notebook.path;
+      this._notebookPath = id.notebook.path;
+      return Private.createKernel(id, options);
+    }).then(kernel => {
+      this._kernel = kernel;
+      kernel.statusChanged.connect(this.onKernelStatus, this);
+      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      this.kernelChanged.emit(kernel);
+      return kernel;
+    });
   }
 
   /**
@@ -422,23 +420,24 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * Change the kernel.
+   * Send a PATCH to the server, updating the notebook path or the kernel.
    */
-  private _changeKernel(name: string): Promise<IKernel> {
-    let options = utils.copy(this._options) as ISessionOptions;
-    options.ajaxSettings = this.ajaxSettings;
-    options.kernelName = name;
-    options.notebookPath = this.notebookPath;
-    this._kernel.dispose();
-    return Private.startSession(options).then(sessionId => {
-      return Private.createKernel(sessionId, options);
-    }).then(kernel => {
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-      this._kernel = kernel;
-      this.kernelChanged.emit(kernel);
-      return kernel;
-    });
+  private _patch(data: string): Promise<ISessionId> {
+    let ajaxSettings = this.ajaxSettings;
+    ajaxSettings.method = 'PATCH';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.data = data;
+    ajaxSettings.contentType = 'application/json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      let data = success.data as ISessionId;
+      validate.validateSessionId(data);
+      return data;
+    }, Private.onSessionError);
   }
 
   private _id = '';
@@ -517,12 +516,9 @@ namespace Private {
    */
   export
   function createKernel(sessionId: ISessionId, options: ISessionOptions): Promise<IKernel> {
-    let baseUrl = options.baseUrl || utils.getBaseUrl();
-    options.notebookPath = sessionId.notebook.path;
-
     let kernelOptions = {
       name: sessionId.kernel.name,
-      baseUrl: options.baseUrl,
+      baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
       username: options.username,
       clientId: options.clientId,
@@ -552,8 +548,11 @@ namespace Private {
    */
   export
   function onSessionError(error: utils.IAjaxError): any {
-    console.error("API request failed (" + error.statusText + "): ");
-    throw Error(error.statusText);
+    let text = (error.statusText || 
+                error.error.message ||
+                error.xhr.responseText);
+    console.error(`API request failed (${error.xhr.status}):  ${text}`);
+    throw Error(text);
   }
 
   /**

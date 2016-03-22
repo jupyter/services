@@ -224,7 +224,6 @@ describe('jupyter.services - kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
       });
-      debugger;
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         connectToKernel(id).then(newKernel => {
           expect(newKernel.name).to.be(kernel.name);

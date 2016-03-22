@@ -347,13 +347,11 @@ describe('jupyter.services - session', () => {
         let id = createSessionId();
         let newName = 'foo';
         startSession(id, tester).then(session => {
-          session.changeKernel(newName);
+          session.changeKernel({ name: newName });
           id.kernel.name = newName;
           tester.onRequest = request => {
-            if (request.method === 'DELETE') {
-              tester.respond(204, {});
-            } else if (request.method === 'POST') {
-              tester.respond(201, id);
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
             } else {
               tester.respond(200, [ { name: id.kernel.name,
                                       id: id.kernel.id }]);
@@ -514,23 +512,6 @@ describe('jupyter.services - session', () => {
         });
       });
 
-      it('should accept ajax options', (done) => {
-        let tester = new KernelTester();
-        let id = createSessionId();
-        let newPath = '/foo.ipynb';
-        let newId = JSON.parse(JSON.stringify(id));
-        newId.notebook.path = newPath;
-        startSession(id, tester).then(session => {
-          tester.onRequest = () => {
-            tester.respond(200, newId);
-          };
-          session.renameNotebook(newPath, ajaxSettings).then(() => {
-            expect(session.notebookPath).to.be(newPath);
-            done();
-          });
-        })
-      });
-
       it('should fail for improper response status', (done) => {
         let tester = new KernelTester();
         let id = createSessionId();
@@ -590,23 +571,47 @@ describe('jupyter.services - session', () => {
         let newName = 'foo';
         startSession(id, tester).then(session => {
           let previous = session.kernel;
-          session.changeKernel(newName).then(kernel => {
-            expect(kernel.name).to.be(newName);
-            expect(session.kernel).to.not.be(previous);
-            done();
-          });
           id.kernel.id = uuid();
           id.kernel.name = newName;
           tester.onRequest = request => {
-            if (request.method === 'DELETE') {
-              tester.respond(204, {});
-            } else if (request.method === 'POST') {
-              tester.respond(201, id);
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
             } else {
               tester.respond(200, [ { name: id.kernel.name,
                                       id: id.kernel.id }]);
             }
           }
+          session.changeKernel({ name: newName }).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(session.kernel).to.not.be(previous);
+            done();
+          });
+        });
+      });
+
+      it('should accept the id of the new kernel', (done) => {
+                let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          let previous = session.kernel;
+          let newId = uuid();
+          id.kernel.id = newId;
+          id.kernel.name = newName;
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
+            } else {
+              tester.respond(200, [ { name: id.kernel.name,
+                                      id: id.kernel.id }]);
+            }
+          }
+          session.changeKernel({ id: newId }).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(kernel.id).to.be(newId);
+            expect(session.kernel).to.not.be(previous);
+            done();
+          });
         });
       });
 
