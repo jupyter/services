@@ -79,17 +79,24 @@ class NotebookSessionManager implements INotebookSessionManager {
   }
 
   /**
+   * Find a session by id.
+   */
+  findById(id: string, options?: ISessionOptions): Promise<ISessionId> {
+    return findSessionById(id, this._getOptions(options));
+  }
+
+  /**
+   * Find a session by notebook path.
+   */
+  findByPath(path: string, options?: ISessionOptions): Promise<ISessionId> {
+    return findSessionByPath(path, this._getOptions(options));
+  }
+
+  /*
    * Connect to a running session.  See also [[connectToSession]].
-   *
-   * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession> {
-    if (options) {
-      options = this._getOptions(options);
-    } else {
-      options = utils.copy(this._options);
-    }
-    return connectToSession(id, options);
+    return connectToSession(id, this._getOptions(options));
   }
 
   /**
@@ -160,6 +167,92 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
 
 
 /**
+ * Find a session by id.
+ *
+ * #### Notes
+ * If the session was already started via `startNewSession`, the existing
+ * NotebookSession object is used as the fulfillment value.
+ *
+ * Otherwise, if `options` are given, we attempt to find to the existing
+ * session using [listRunningSessions].
+ * The promise is fulfilled when the session is found, 
+ * otherwise the promise is rejected.
+ *
+ * If the session was not already started and no `options` are given,
+ * the promise is rejected.
+ */
+export
+function findSessionById(id: string, options?: ISessionOptions): Promise<ISessionId> {
+  let sessions = Private.runningSessions;
+  for (let sessionId in sessions.keys()) {
+    let session = sessions.get(sessionId);
+    if (sessionId === id) {
+      let sessionId = {
+        id,
+        notebook: { path: session.notebookPath },
+        kernel: { name: session.kernel.name, id: session.kernel.id }
+      }
+      return Promise.resolve(sessionId);
+    }
+  }
+  if (options === void 0) {
+    return Promise.reject(new Error('Please specify session options'));
+  }
+  return listRunningSessions(this._getOptions()).then(sessionIds => {
+    sessionIds = sessionIds.filter(k => k.id === id);
+    if (sessionIds.length > 0) {
+      return Promise.resolve(sessionIds[0]);
+    } else {
+      return Promise.reject(new Error('Session not found'));
+    }
+  });
+}
+
+
+/**
+ * Find a session by notebook path.
+ *
+ * #### Notes
+ * If the session was already started via `startNewSession`, the existing
+ * NotebookSession object is used as the fulfillment value.
+ *
+ * Otherwise, if `options` are given, we attempt to find to the existing
+ * session using [listRunningSessions].
+ * The promise is fulfilled when the session is found, 
+ * otherwise the promise is rejected.
+ *
+ * If the session was not already started and no `options` are given,
+ * the promise is rejected.
+ */
+export
+function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISessionId> {
+  let sessions = Private.runningSessions;
+  for (let id in sessions.keys()) {
+    let session = sessions.get(id);
+    if (session.notebookPath === path) {
+      let sessionId = {
+        id,
+        notebook: { path: session.notebookPath },
+        kernel: { name: session.kernel.name, id: session.kernel.id }
+      }
+      return Promise.resolve(sessionId);
+    }
+  }
+  if (options === void 0) {
+    return Promise.reject(new Error('Please specify session options'));
+  }
+  return listRunningSessions(options).then(sessionIds => {
+    for (let sessionId of sessionIds) {
+      if (sessionId.notebook.path === path) {
+        return sessionId;
+      }
+    }
+    return Promise.reject(new Error('No session found'));
+  });
+}
+
+
+/**
  * Connect to a running notebook session.
  *
  * #### Notes
@@ -167,8 +260,8 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  * NotebookSession object is used as the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
- * session found by calling `listRunningSessions`.
- * The promise is fulfilled when the session is ready on the server,
+ * session.
+ * The promise is fulfilled when the session is ready on the server, 
  * otherwise the promise is rejected.
  *
  * If the session was not already started and no `options` are given,
@@ -183,13 +276,12 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
   if (options === void 0) {
     return Promise.reject(new Error('Please specify session options'));
   }
-  return listRunningSessions(options).then(sessionIds => {
-    sessionIds = sessionIds.filter(k => k.id === id);
-    if (!sessionIds.length) {
-      return Private.typedThrow('No running session with id: ' + id);
-    }
-    return Private.createSession(sessionIds[0], options);
-  });
+  let sessionId = { 
+    id, 
+    notebook: { path: options.notebookPath },
+    kernel: { name: options.kernelName, id: options.kernelId }
+  };
+  return Private.createSession(sessionId, options);
 }
 
 
