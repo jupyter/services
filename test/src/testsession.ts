@@ -18,7 +18,7 @@ import {
 
 import {
   NotebookSessionManager, connectToSession, listRunningSessions,
-  startNewSession
+  startNewSession, findSessionById, findSessionByPath
 } from '../../lib/session';
 
 import {
@@ -258,6 +258,37 @@ describe('jupyter.services - session', () => {
       let sessionPromise = startNewSession(options);
       expectFailure(sessionPromise, done, 'Session failed to start');
     });
+  });
+
+  describe('findSessionByPath()', () => {
+
+    it('should find an existing session by path', (done) => {
+      let sessionId = createSessionId();
+      let tester = new KernelTester(request => {
+        tester.respond(200, [sessionId]);
+      });
+      debugger;
+      findSessionByPath(sessionId.notebook.path).then(newId => {
+        expect(newId.notebook.path).to.be(sessionId.notebook.path);
+        done();
+      });
+    });
+
+  });
+
+  describe('findSessionById()', () => {
+
+    it('should find an existing session by id', (done) => {
+      let sessionId = createSessionId();
+      let tester = new KernelTester(request => {
+        tester.respond(200, sessionId);
+      });
+      findSessionById(sessionId.id).then(newId => {
+        expect(newId.id).to.be(sessionId.id);
+        done();
+      });
+    });
+
   });
 
   describe('connectToSession()', () => {

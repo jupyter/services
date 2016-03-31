@@ -10,7 +10,7 @@ import {
 
 import {
   KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
-  listRunningKernels, startNewKernel
+  listRunningKernels, startNewKernel, findKernelById
 } from '../../lib/kernel';
 
 import {
@@ -213,6 +213,23 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+    });
+
+  });
+
+  describe('findKernelById()', () => {
+
+    it('should find an existing kernel by id', (done) => {
+      let manager = new KernelManager(KERNEL_OPTIONS);
+      let id = uuid();
+      let tester = new KernelTester(() => {
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
+      });
+      manager.findById(id).then(newKernel => {
+        expect(newKernel.name).to.be(KERNEL_OPTIONS.name);
+        expect(newKernel.id).to.be(id);
+        done();
+      });
     });
 
   });
@@ -1154,6 +1171,25 @@ describe('jupyter.services - kernel', () => {
           });
         });
 
+      });
+
+    });
+
+    describe('#findById()', () => {
+
+      it('should find an existing kernel by id', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let id = uuid();
+        let tester = new KernelTester(() => {
+          tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
+        });
+        manager.startNew().then(kernel => {
+          manager.findById(id).then(newKernel => {
+            expect(newKernel.name).to.be(kernel.name);
+            expect(newKernel.id).to.be(kernel.id);
+            done();
+          });
+        });
       });
 
     });
