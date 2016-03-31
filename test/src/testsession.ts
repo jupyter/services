@@ -142,6 +142,7 @@ describe('jupyter.services - session', () => {
       let options = createSessionOptions(sessionId);
       startNewSession(options).then(session => {
         expect(session.id).to.be(sessionId.id);
+        session.dispose();
         done();
       });
     });
@@ -163,6 +164,7 @@ describe('jupyter.services - session', () => {
         let options = createSessionOptions(sessionId);
         startNewSession(options).then(session => {
           expect(session.id).to.be(sessionId.id);
+          session.dispose();
           done();
         });
       });
@@ -182,6 +184,7 @@ describe('jupyter.services - session', () => {
       options.ajaxSettings = ajaxSettings;
       startNewSession(options).then(session => {
         expect(session.id).to.be(sessionId.id);
+        session.dispose();
         done();
       });
     });
@@ -198,7 +201,10 @@ describe('jupyter.services - session', () => {
       tester.initialStatus = 'dead';
       let sessionId = createSessionId();
       let options = createSessionOptions(sessionId);
-      startNewSession(options).then(() => { done(); });
+      startNewSession(options).then(session => { 
+        session.dispose();
+        done(); 
+      });
     });
 
     it('should fail for wrong response status', (done) => {
@@ -262,6 +268,7 @@ describe('jupyter.services - session', () => {
       startSession(sessionId).then(session => {
         connectToSession(sessionId.id).then((newSession) => {
           expect(newSession.id).to.be(sessionId.id);
+          session.dispose();
           done();
         });
       });
@@ -280,6 +287,7 @@ describe('jupyter.services - session', () => {
       let options = createSessionOptions(sessionId);
       connectToSession(sessionId.id, options).then(session => {
         expect(session.id).to.be(sessionId.id);
+        session.dispose();
         done();
       });
     });
@@ -298,6 +306,7 @@ describe('jupyter.services - session', () => {
       options.ajaxSettings = ajaxSettings
       connectToSession(sessionId.id, options).then(session => {
         expect(session.id).to.be(sessionId.id);
+        session.dispose();
         done();
       });
     });
@@ -353,6 +362,7 @@ describe('jupyter.services - session', () => {
           }
           session.kernelChanged.connect((s, kernel) => {
             expect(kernel.name).to.be(newName);
+            session.dispose();
             done();
           });
         });
@@ -388,6 +398,7 @@ describe('jupyter.services - session', () => {
         startSession(sessionId, tester).then(session => {
           session.unhandledMessage.connect((s, msg) => {
             expect(msg.header.msg_type).to.be('foo');
+            session.dispose();
             done();
           });
           let msg = createKernelMessage({
@@ -407,6 +418,7 @@ describe('jupyter.services - session', () => {
         startSession(id).then(session => {
           expect(typeof session.id).to.be('string');
           expect(() => { session.id = "1"; }).to.throwError();
+          session.dispose();
           done();
         });
       });
@@ -419,6 +431,7 @@ describe('jupyter.services - session', () => {
         startSession(id).then(session => {
           expect(typeof session.notebookPath).to.be('string');
           expect(() => { session.notebookPath = '' }).to.throwError();
+          session.dispose();
           done();
         });
       });
@@ -431,6 +444,7 @@ describe('jupyter.services - session', () => {
         startSession(id).then(session => {
           expect(typeof session.kernel.id).to.be('string');
           expect(() => { session.kernel = null }).to.throwError();
+          session.dispose();
           done();
         });
       });
@@ -443,6 +457,7 @@ describe('jupyter.services - session', () => {
         startSession(id).then(session => {
           expect(session.status).to.be(session.kernel.status);
           expect(() => { session.status = 0 }).to.throwError();
+          session.dispose();
           done();
         });
       });
@@ -499,6 +514,7 @@ describe('jupyter.services - session', () => {
           };
           session.renameNotebook(newPath).then(() => {
             expect(session.notebookPath).to.be(newPath);
+            session.dispose();
             done();
           });
         }, error => {
@@ -578,6 +594,7 @@ describe('jupyter.services - session', () => {
           session.changeKernel({ name: newName }).then(kernel => {
             expect(kernel.name).to.be(newName);
             expect(session.kernel).to.not.be(previous);
+            session.dispose();
             done();
           });
         });
@@ -604,6 +621,7 @@ describe('jupyter.services - session', () => {
             expect(kernel.name).to.be(newName);
             expect(kernel.id).to.be(newId);
             expect(session.kernel).to.not.be(previous);
+            session.dispose();
             done();
           });
         });
@@ -753,7 +771,61 @@ describe('jupyter.services - session', () => {
         }
         manager.startNew({ notebookPath: 'test.ipynb'}).then(session => {
           expect(session.id).to.be(id.id);
+          session.dispose();
           done();
+        });
+      });
+
+    });
+
+    describe('#findByPath()', () => {
+
+      it('should find an existing session by path', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let manager = new NotebookSessionManager(createSessionOptions(id));
+        tester.onRequest = (request) => {
+          if (request.method === 'POST') {
+            tester.respond(201, id)
+          } else {
+            tester.respond(200, { name: id.kernel.name,
+                                    id: id.kernel.id });
+          }
+        }
+        manager.startNew({ notebookPath: 'test.ipynb' }
+        ).then(session => {
+          manager.findByPath(session.notebookPath).then(newId => {
+            expect(newId.id).to.be(session.id);
+            session.dispose();
+            done();
+          });
+        });
+      });
+
+    });
+
+
+    describe('#findById()', () => {
+
+      it('should find an existing session by id', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let manager = new NotebookSessionManager(createSessionOptions(id));
+        tester.onRequest = (request) => {
+          if (request.method === 'POST') {
+            tester.respond(201, id)
+          } else {
+            tester.respond(200, { name: id.kernel.name,
+                                    id: id.kernel.id });
+          }
+        }
+        manager.startNew({ notebookPath: 'test.ipynb' }
+        ).then(session => {
+          manager.findById(session.id).then(newId => {
+            expect(newId.id).to.be(session.id);
+            session.dispose();
+            done();
+          });
         });
       });
 
@@ -777,6 +849,7 @@ describe('jupyter.services - session', () => {
         ).then(session => {
           manager.connectTo(session.id).then(newSession => {
             expect(newSession).to.be(session);
+            session.dispose();
             done();
           });
         });
