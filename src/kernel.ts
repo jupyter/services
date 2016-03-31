@@ -233,14 +233,15 @@ function listRunningKernels(options?: IKernelOptions): Promise<IKernelId[]> {
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
  *
+ * If no options are given or the kernel name is not given, the 
+ * default kernel will by started by the server.
+ *
  * Wraps the result in a Kernel object. The promise is fulfilled
  * when the kernel is started by the server, otherwise the promise is rejected.
  */
 export
-function startNewKernel(options: IKernelOptions): Promise<IKernel> {
-  if (options.name === void 0) {
-    return Promise.reject(new Error('Must specify a kernel name'));
-  }
+function startNewKernel(options?: IKernelOptions): Promise<IKernel> {
+  options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};

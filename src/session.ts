@@ -153,6 +153,10 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
  *
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+ * 
+ * A notebook path must be provided.  If a kernel id is given, it will
+ * connect to an existing kernel.  If no kernel id or name is given,
+ * the server will start the default kernel type.
  *
  * The promise is fulfilled on a valid response and rejected otherwise.
 
@@ -289,7 +293,8 @@ class NotebookSession implements INotebookSession {
     this._id = id;
     this._notebookPath = options.notebookPath;
     this._kernel = kernel;
-    this._url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL, this._id);
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, this._id);
     this._kernel.statusChanged.connect(this.onKernelStatus, this);
     this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
     this._options = utils.copy(options);

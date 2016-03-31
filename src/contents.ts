@@ -296,7 +296,7 @@ class ContentsManager implements IContentsManager {
    *
    * @param ajaxSettings - Optional initial ajax settings.
    */
-  constructor(baseUrl: string, ajaxSettings?: IAjaxSettings) {
+  constructor(baseUrl?: string, ajaxSettings?: IAjaxSettings) {
     baseUrl = baseUrl || utils.getBaseUrl();
     if (ajaxSettings) this.ajaxSettings = ajaxSettings;
     this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
