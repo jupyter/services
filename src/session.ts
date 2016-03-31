@@ -186,8 +186,8 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
 export
 function findSessionById(id: string, options?: ISessionOptions): Promise<ISessionId> {
   let sessions = Private.runningSessions;
-  for (let sessionId in sessions.keys()) {
-    let session = sessions.get(sessionId);
+  for (let sessionId in sessions) {
+    let session = sessions[sessionId];
     if (sessionId === id) {
       let sessionId = {
         id,
@@ -222,8 +222,8 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
 export
 function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISessionId> {
   let sessions = Private.runningSessions;
-  for (let id in sessions.keys()) {
-    let session = sessions.get(id);
+  for (let id in sessions) {
+    let session = sessions[id];
     if (session.notebookPath === path) {
       let sessionId = {
         id,
@@ -262,7 +262,7 @@ function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISe
  */
 export
 function connectToSession(id: string, options?: ISessionOptions): Promise<INotebookSession> {
-  let session = Private.runningSessions.get(id);
+  let session = Private.runningSessions[id];
   if (session) {
     return Promise.resolve(session);
   }
@@ -397,7 +397,7 @@ class NotebookSession implements INotebookSession {
     this._options = null;
     this._kernel = null;
     clearSignalData(this);
-    Private.runningSessions.delete(this._id);
+    delete Private.runningSessions[this._id];
   }
 
   /**
@@ -562,7 +562,7 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions = new Map<string, NotebookSession>();
+  const runningSessions: { [key: string]: INotebookSession; } = Object.create(null);
 
   /**
    * Create a new session, or return an existing session if a session if
@@ -617,7 +617,7 @@ namespace Private {
   function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
     return createKernel(sessionId, options).then(kernel => {
        let session = new NotebookSession(options, sessionId.id, kernel);
-       runningSessions.set(session.id, session);
+       runningSessions[session.id] = session;
        return session;
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
