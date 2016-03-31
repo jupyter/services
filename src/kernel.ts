@@ -140,8 +140,8 @@ class KernelManager implements IKernelManager {
 export
 function findKernelById(id: string, options?: IKernelOptions): Promise<IKernelId> {
   let kernels = Private.runningKernels;
-  for (let kernelId in kernels.keys()) {
-    let kernel = kernels.get(kernelId);
+  for (let kernelId in kernels) {
+    let kernel = kernels[kernelId];
     if (kernelId === id) {
       let result = { id: kernel.id, name: kernel.name };
       return Promise.resolve(result);
@@ -276,7 +276,7 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  */
 export
 function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
-  let kernel = Private.runningKernels.get(id);
+  let kernel = Private.runningKernels[id];
   if (kernel) {
     return Promise.resolve(kernel);
   }
@@ -329,7 +329,7 @@ class Kernel implements IKernel {
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket();
-    Private.runningKernels.set(this._id, this);
+    Private.runningKernels[this._id] = this;
   }
 
   /**
@@ -443,7 +443,7 @@ class Kernel implements IKernel {
     this._status = KernelStatus.Dead;
     this._targetRegistry = null;
     clearSignalData(this);
-    Private.runningKernels.delete(this._id);
+    delete Private.runningKernels[this._id];
   }
 
   /**
@@ -1099,7 +1099,7 @@ namespace Private {
    * A module private store for running kernels.
    */
   export
-  const runningKernels = new Map<string, Kernel>();
+  const runningKernels: { [key: string]: IKernel; } = Object.create(null);
 
   /**
    * Restart a kernel.
