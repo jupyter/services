@@ -222,7 +222,7 @@ describe('jupyter.services - kernel', () => {
     it('should reuse an exisiting kernel', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         connectToKernel(id).then(newKernel => {
@@ -236,7 +236,7 @@ describe('jupyter.services - kernel', () => {
     it('should connect to a running kernel if given kernel options', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
@@ -248,7 +248,7 @@ describe('jupyter.services - kernel', () => {
     it('should accept ajax options', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, AJAX_KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
@@ -257,19 +257,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-
-    it('should fail if no existing kernel and no options', (done) => {
-      let tester = new KernelTester();
-      let id = uuid();
-      let kernelPromise = connectToKernel(id);
-      expectFailure(kernelPromise, done, 'Please specify kernel options');
-    });
-
     it('should fail if no running kernel available', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: uuid(), name: KERNEL_OPTIONS.name }]);
+        tester.respond(400, { });
       });
+      debugger;
       let kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
     });

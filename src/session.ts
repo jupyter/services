@@ -46,8 +46,8 @@ class NotebookSessionManager implements INotebookSessionManager {
    *
    * @param options - The default options for each session.
    */
-   constructor(options: ISessionOptions) {
-     this._options = utils.copy(options);
+   constructor(options?: ISessionOptions) {
+     this._options = utils.copy(options || {});
    }
 
   /**
@@ -124,8 +124,10 @@ class NotebookSessionManager implements INotebookSessionManager {
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
-  let url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL);
+function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
+  options = options || {};
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
+  let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
@@ -160,6 +162,9 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
  */
 export
 function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
+  if (options.notebookPath === void 0) {
+    return Promise.reject(new Error('Must specify a notebook path'));
+  }
   return Private.startSession(options).then(sessionId => {
     return Private.createSession(sessionId, options);
   });
@@ -174,12 +179,9 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  * NotebookSession object is used as the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
- * session using [listRunningSessions].
+ * session.
  * The promise is fulfilled when the session is found, 
  * otherwise the promise is rejected.
- *
- * If the session was not already started and no `options` are given,
- * the promise is rejected.
  */
 export
 function findSessionById(id: string, options?: ISessionOptions): Promise<ISessionId> {
@@ -195,16 +197,9 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
       return Promise.resolve(sessionId);
     }
   }
-  if (options === void 0) {
-    return Promise.reject(new Error('Please specify session options'));
-  }
-  return listRunningSessions(this._getOptions()).then(sessionIds => {
-    sessionIds = sessionIds.filter(k => k.id === id);
-    if (sessionIds.length > 0) {
-      return Promise.resolve(sessionIds[0]);
-    } else {
-      return Promise.reject(new Error('Session not found'));
-    }
+  return Private.getSessionId(id, options).catch(() => {
+    let msg = `No running session for id: ${id}`;
+    return Private.typedThrow<ISessionId>(msg);
   });
 }
 
@@ -238,16 +233,14 @@ function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISe
       return Promise.resolve(sessionId);
     }
   }
-  if (options === void 0) {
-    return Promise.reject(new Error('Please specify session options'));
-  }
   return listRunningSessions(options).then(sessionIds => {
     for (let sessionId of sessionIds) {
       if (sessionId.notebook.path === path) {
         return sessionId;
       }
     }
-    return Promise.reject(new Error('No session found'));
+    let msg = `No running session for path: ${path}`;
+    return Private.typedThrow<ISessionId>(msg);
   });
 }
 
@@ -273,15 +266,12 @@ function connectToSession(id: string, options?: ISessionOptions): Promise<INoteb
   if (session) {
     return Promise.resolve(session);
   }
-  if (options === void 0) {
-    return Promise.reject(new Error('Please specify session options'));
-  }
-  let sessionId = { 
-    id, 
-    notebook: { path: options.notebookPath },
-    kernel: { name: options.kernelName, id: options.kernelId }
-  };
-  return Private.createSession(sessionId, options);
+  return Private.getSessionId(id, options).then(sessionId => {
+    return Private.createSession(sessionId, options);
+  }).catch(() => {
+    let msg = `No running session with id: ${id}`;
+    return Private.typedThrow<INotebookSession>(msg);
+  });
 }
 
 
@@ -632,6 +622,29 @@ namespace Private {
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
     });
+  }
+
+  /**
+   * Get a full session id model from the server by session id string.
+   */
+  export
+  function getSessionId(id: string, options?: ISessionOptions): Promise<ISessionId> {
+    options = options || {};
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, id);
+    let ajaxSettings = options.ajaxSettings || {};
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      let data = success.data as ISessionId;
+      validate.validateSessionId(data);
+      return data;
+    }, Private.onSessionError);
   }
 
   /**

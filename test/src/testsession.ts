@@ -135,8 +135,8 @@ describe('jupyter.services - session', () => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
         } else {
-          tester.respond(200, [ { name: sessionId.kernel.name,
-                                  id: sessionId.kernel.id }]);
+          tester.respond(200, { name: sessionId.kernel.name,
+                                  id: sessionId.kernel.id });
         }
       });
       let options = createSessionOptions(sessionId);
@@ -156,8 +156,8 @@ describe('jupyter.services - session', () => {
           if (request.method === 'POST') {
             tester.respond(201, sessionId);
           } else {
-            tester.respond(200, [ { name: sessionId.kernel.name,
-                                    id: sessionId.kernel.id }]);
+            tester.respond(200, { name: sessionId.kernel.name,
+                                    id: sessionId.kernel.id });
           }
         };
         let options = createSessionOptions(sessionId);
@@ -174,8 +174,8 @@ describe('jupyter.services - session', () => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
         } else {
-          tester.respond(200, [ { name: sessionId.kernel.name,
-                                  id: sessionId.kernel.id }]);
+          tester.respond(200, { name: sessionId.kernel.name,
+                                  id: sessionId.kernel.id });
         }
       });
       let options = createSessionOptions(sessionId);
@@ -191,8 +191,8 @@ describe('jupyter.services - session', () => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
         } else {
-          tester.respond(200, [ { name: sessionId.kernel.name,
-                                  id: sessionId.kernel.id }]);
+          tester.respond(200, { name: sessionId.kernel.name,
+                                  id: sessionId.kernel.id });
         }
       });
       tester.initialStatus = 'dead';
@@ -230,12 +230,13 @@ describe('jupyter.services - session', () => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
         } else {
-          tester.respond(200, [data]);
+          tester.respond(200, data);
         }
       });
       let options = createSessionOptions(sessionId);
       let sessionPromise = startNewSession(options);
-      expectFailure(sessionPromise, done, 'Invalid kernel id');
+      let msg = `Session failed to start: No running kernel with id: ${sessionId.kernel.id}`
+      expectFailure(sessionPromise, done, msg);
     });
 
     it('should fail if the kernel is not running', (done) => {
@@ -244,7 +245,7 @@ describe('jupyter.services - session', () => {
         if (request.method === 'POST') {
           tester.respond(201, sessionId);
         } else {
-          tester.respond(200, []);
+          tester.respond(400, {});
         }
       });
       let options = createSessionOptions(sessionId);
@@ -270,10 +271,10 @@ describe('jupyter.services - session', () => {
       let sessionId = createSessionId();
       let tester = new KernelTester(request => {
         if (request.url.indexOf('session') !== -1) {
-          tester.respond(200, [sessionId]);
+          tester.respond(200, sessionId);
         } else {
-          tester.respond(200, [ { name: sessionId.kernel.name,
-                                id: sessionId.kernel.id }]);
+          tester.respond(200, { name: sessionId.kernel.name,
+                                id: sessionId.kernel.id });
         }
       });
       let options = createSessionOptions(sessionId);
@@ -287,10 +288,10 @@ describe('jupyter.services - session', () => {
       let sessionId = createSessionId();
       let tester = new KernelTester(request => {
         if (request.url.indexOf('session') !== -1) {
-          tester.respond(200, [sessionId]);
+          tester.respond(200, sessionId);
         } else {
-          tester.respond(200, [ { name: sessionId.kernel.name,
-                                id: sessionId.kernel.id }]);
+          tester.respond(200, { name: sessionId.kernel.name,
+                                id: sessionId.kernel.id });
         }
       });
       let options = createSessionOptions(sessionId);
@@ -301,16 +302,9 @@ describe('jupyter.services - session', () => {
       });
     });
 
-    it('should fail if not given session options', (done) => {
-      let tester = new KernelTester();
-      let sessionId = createSessionId();
-      let sessionPromise = connectToSession(sessionId.id);
-      expectFailure(sessionPromise, done, 'Please specify session options');
-    });
-
     it('should fail if session is not available', (done) => {
       let tester = new KernelTester(() => {
-        tester.respond(200, []);
+        tester.respond(500, {});
       });
       let sessionId = createSessionId();
       let options = createSessionOptions(sessionId);
@@ -353,8 +347,8 @@ describe('jupyter.services - session', () => {
             if (request.method === 'PATCH') {
               tester.respond(200, id);
             } else {
-              tester.respond(200, [ { name: id.kernel.name,
-                                      id: id.kernel.id }]);
+              tester.respond(200, { name: id.kernel.name,
+                                      id: id.kernel.id });
             }
           }
           session.kernelChanged.connect((s, kernel) => {
@@ -577,8 +571,8 @@ describe('jupyter.services - session', () => {
             if (request.method === 'PATCH') {
               tester.respond(200, id);
             } else {
-              tester.respond(200, [ { name: id.kernel.name,
-                                      id: id.kernel.id }]);
+              tester.respond(200, { name: id.kernel.name,
+                                      id: id.kernel.id });
             }
           }
           session.changeKernel({ name: newName }).then(kernel => {
@@ -602,8 +596,8 @@ describe('jupyter.services - session', () => {
             if (request.method === 'PATCH') {
               tester.respond(200, id);
             } else {
-              tester.respond(200, [ { name: id.kernel.name,
-                                      id: id.kernel.id }]);
+              tester.respond(200, { name: id.kernel.name,
+                                      id: id.kernel.id });
             }
           }
           session.changeKernel({ id: newId }).then(kernel => {
@@ -753,8 +747,8 @@ describe('jupyter.services - session', () => {
           if (request.method === 'POST') {
             tester.respond(201, id)
           } else {
-            tester.respond(200, [ { name: id.kernel.name,
-                                    id: id.kernel.id }]);
+            tester.respond(200, { name: id.kernel.name,
+                                    id: id.kernel.id });
           }
         }
         manager.startNew({ notebookPath: 'test.ipynb'}).then(session => {
@@ -775,8 +769,8 @@ describe('jupyter.services - session', () => {
           if (request.method === 'POST') {
             tester.respond(201, id)
           } else {
-            tester.respond(200, [ { name: id.kernel.name,
-                                    id: id.kernel.id }]);
+            tester.respond(200, { name: id.kernel.name,
+                                    id: id.kernel.id });
           }
         }
         manager.startNew({ notebookPath: 'test.ipynb' }
@@ -804,8 +798,8 @@ function startSession(sessionId: ISessionId, tester?: KernelTester): Promise<INo
     if (request.method === 'POST') {
       tester.respond(201, sessionId);
     } else {
-      tester.respond(200, [ { name: sessionId.kernel.name,
-                              id: sessionId.kernel.id }]);
+      tester.respond(200, { name: sessionId.kernel.name,
+                              id: sessionId.kernel.id });
     }
   }
   let options = createSessionOptions(sessionId);
