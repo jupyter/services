@@ -156,8 +156,7 @@ describe('jupyter.services - Integration', () => {
       getKernelSpecs({ baseUrl: BASEURL }).then((kernelSpecs) => {
         let options = {
           baseUrl: BASEURL,
-          kernelName: kernelSpecs.default,
-          notebookPath: 'Untitled1.ipynb'
+          name: kernelSpecs.default,
         }
         startNewKernel(options).then(kernel => {
           let sessionOptions = {
@@ -167,6 +166,7 @@ describe('jupyter.services - Integration', () => {
           }
           startNewSession(sessionOptions).then(session => {
             console.log('Hello Session: ', session.id);
+            expect(session.kernel.id).to.be(kernel.id);
             done();
           });
         });
