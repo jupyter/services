@@ -7,7 +7,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal
+  ISignal
 } from 'phosphor-signaling';
 
 import {
@@ -114,7 +114,7 @@ interface IKernelIOPubStreamMessage extends IKernelMessage {
   content: {
     name: string;
     text: string;
-  }
+  };
 }
 
 
@@ -123,7 +123,7 @@ interface IKernelIOPubStreamMessage extends IKernelMessage {
  */
 export
 function isStreamMessage(msg: IKernelMessage): msg is IKernelIOPubStreamMessage {
-  return msg.header.msg_type === "stream";
+  return msg.header.msg_type === 'stream';
 }
 
 
@@ -138,7 +138,7 @@ interface IKernelIOPubDisplayDataMessage extends IKernelMessage {
     source: string;
     data: { [key: string]: string };
     metadata: any;
-  }
+  };
 }
 
 
@@ -147,7 +147,7 @@ interface IKernelIOPubDisplayDataMessage extends IKernelMessage {
  */
 export
 function isDisplayDataMessage(msg: IKernelMessage): msg is IKernelIOPubDisplayDataMessage {
-  return msg.header.msg_type === "display_data";
+  return msg.header.msg_type === 'display_data';
 }
 
 
@@ -161,7 +161,7 @@ interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
   content: {
     code: string;
     execution_count: number;
-  }
+  };
 }
 
 
@@ -170,7 +170,7 @@ interface IKernelIOPubExecuteInputMessage extends IKernelMessage {
  */
 export
 function isExecuteInputMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteInputMessage {
-  return msg.header.msg_type === "execute_input";
+  return msg.header.msg_type === 'execute_input';
 }
 
 
@@ -185,7 +185,7 @@ interface IKernelIOPubExecuteResultMessage extends IKernelMessage {
     execution_count: number;
     data: { [key: string]: string };
     metadata: any;
-  }
+  };
 }
 
 
@@ -194,7 +194,7 @@ interface IKernelIOPubExecuteResultMessage extends IKernelMessage {
  */
 export
 function isExecuteResultMessage(msg: IKernelMessage): msg is IKernelIOPubExecuteResultMessage {
-  return msg.header.msg_type === "execute_result";
+  return msg.header.msg_type === 'execute_result';
 }
 
 
@@ -210,7 +210,7 @@ interface IKernelIOPubErrorMessage extends IKernelMessage {
     ename: string;
     evalue: string;
     traceback: string[];
-  }
+  };
 }
 
 
@@ -219,7 +219,7 @@ interface IKernelIOPubErrorMessage extends IKernelMessage {
  */
 export
 function isErrorMessage(msg: IKernelMessage): msg is IKernelIOPubErrorMessage {
-  return msg.header.msg_type === "error";
+  return msg.header.msg_type === 'error';
 }
 
 
@@ -232,7 +232,7 @@ export
 interface IKernelIOPubStatusMessage extends IKernelMessage {
   content: {
     execution_state: string;
-  }
+  };
 }
 
 
@@ -241,7 +241,7 @@ interface IKernelIOPubStatusMessage extends IKernelMessage {
  */
 export
 function isStatusMessage(msg: IKernelMessage): msg is IKernelIOPubStatusMessage {
-  return msg.header.msg_type === "status";
+  return msg.header.msg_type === 'status';
 }
 
 
@@ -254,7 +254,7 @@ export
 interface IKernelIOPubClearOutputMessage extends IKernelMessage {
   content: {
     wait: boolean;
-  }
+  };
 }
 
 
@@ -263,7 +263,7 @@ interface IKernelIOPubClearOutputMessage extends IKernelMessage {
  */
 export
 function isClearOutputMessage(msg: IKernelMessage): msg is IKernelIOPubClearOutputMessage {
-  return msg.header.msg_type === "clear_output";
+  return msg.header.msg_type === 'clear_output';
 }
 
 
@@ -283,7 +283,7 @@ interface IKernelIOPubCommOpenMessage extends IKernelMessage {
  */
 export
 function isCommOpenMessage(msg: IKernelMessage): msg is IKernelIOPubCommOpenMessage {
-  return msg.header.msg_type === "comm_open";
+  return msg.header.msg_type === 'comm_open';
 }
 
 

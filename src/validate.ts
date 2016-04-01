@@ -38,7 +38,7 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   stream: { name: 'string', text: 'string' },
   display_data: { data: 'any', metadata: 'object' },
   execute_input: { code: 'string', execution_count: 'number' },
-  execute_result: { execution_count: 'number', data: 'any', 
+  execute_result: { execution_count: 'number', data: 'any',
                     metadata: 'object' },
   error: { ename: 'string', evalue: 'string', traceback: 'object' },
   status: { execution_state: 'string' },
@@ -47,14 +47,14 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   comm_msg: { comm_id: 'string', data: 'any' },
   comm_close: { comm_id: 'string' },
   shutdown_reply: { restart : 'boolean' }  // Emitted by the IPython kernel.
-}
+};
 
 /**
  * Validate an `IKernelMessage` as being a valid Comm Message.
  */
 export
 function validateCommMessage(msg: IKernelMessage): boolean {
-  for (var i = 0; i < COMM_FIELDS.length; i++) {
+  for (let i = 0; i < COMM_FIELDS.length; i++) {
     if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
       return false;
     }
@@ -81,7 +81,7 @@ function validateCommMessage(msg: IKernelMessage): boolean {
  * Validate the header of an `IKernelMessage`.
  */
 function validateKernelHeader(header: any): void {
-  for (var i = 0; i < HEADER_FIELDS.length; i++) {
+  for (let i = 0; i < HEADER_FIELDS.length; i++) {
     if (!header.hasOwnProperty(HEADER_FIELDS[i])) {
       throw Error(`Invalid Kernel message: header missing field ${HEADER_FIELDS[i]}`);
     }
@@ -97,7 +97,7 @@ function validateKernelHeader(header: any): void {
  */
 export
 function validateKernelMessage(msg: IKernelMessage) : void {
-  for (var i = 0; i < MESSAGE_FIELDS.length; i++) {
+  for (let i = 0; i < MESSAGE_FIELDS.length; i++) {
     if (!msg.hasOwnProperty(MESSAGE_FIELDS[i])) {
       throw Error(`Invalid Kernel message: missing field ${MESSAGE_FIELDS[i]}`);
     }
@@ -126,13 +126,12 @@ function validateIOPubKernelMessageContent(msg: IKernelMessage) : void {
   if (msg.channel === 'iopub') {
     let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
     if (fields === void 0) {
-      throw Error(`Invalid Kernel message: iopub message type ${msg.header.msg_type} not recognized`)
+      throw Error(`Invalid Kernel message: iopub message type ${msg.header.msg_type} not recognized`);
     }
-    let content = msg.content;
     let names = Object.keys(fields);
     for (let i = 0; i < names.length; i++) {
       if (fields[names[i]] === 'any') {
-        continue
+        continue;
       }
       if (typeof msg.content[names[i]] !== fields[names[i]]) {
         throw Error(`Invalid Kernel message: iopub content field ${names[i]} is not of type ${fields[names[i]]}`);
@@ -190,7 +189,7 @@ function validateNotebookId(model: INotebookId): void {
  */
  export
 function validateKernelSpec(info: IKernelSpecId): void {
-  var err = new Error("Invalid KernelSpec Model");
+  var err = new Error('Invalid KernelSpec Model');
   if (!info.hasOwnProperty('name') || typeof info.name !== 'string') {
     throw err;
   }

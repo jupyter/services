@@ -7,11 +7,11 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal
+  ISignal
 } from 'phosphor-signaling';
 
 import {
-  IKernel, IKernelId, IKernelSpecIds, IKernelOptions, IKernelMessage, 
+  IKernel, IKernelId, IKernelSpecIds, IKernelMessage,
   KernelStatus
 } from './ikernel';
 

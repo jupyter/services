@@ -16,7 +16,7 @@ import {
 export
 function deserialize(data: ArrayBuffer | string): IKernelMessage {
   var value: IKernelMessage;
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     value = JSON.parse(data);
   } else {
     value = deserializeBinary(data);
@@ -53,16 +53,16 @@ function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
   var nbufs = data.getUint32(0);
   var offsets: number[] = [];
   if (nbufs < 2) {
-    throw new Error("Invalid incoming Kernel Message");
+    throw new Error('Invalid incoming Kernel Message');
   }
-  for (var i = 1; i <= nbufs; i++) {
+  for (let i = 1; i <= nbufs; i++) {
     offsets.push(data.getUint32(i * 4));
   }
   var json_bytes = new Uint8Array(buf.slice(offsets[0], offsets[1]));
   var msg = JSON.parse((new TextDecoder('utf8')).decode(json_bytes));
   // the remaining chunks are stored as DataViews in msg.buffers
   msg.buffers = [];
-  for (var i = 1; i < nbufs; i++) {
+  for (let i = 1; i < nbufs; i++) {
     var start = offsets[i];
     var stop = offsets[i + 1] || buf.byteLength;
     msg.buffers.push(new DataView(buf.slice(start, stop)));
@@ -116,7 +116,7 @@ function serializeBinary(msg: IKernelMessage): ArrayBuffer {
  * Filter `"buffers"` key for `JSON.stringify`.
  */
 function replace_buffers(key: string, value: any) {
-  if (key === "buffers") {
+  if (key === 'buffers') {
     return undefined;
   }
   return value;

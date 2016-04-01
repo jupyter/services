@@ -147,7 +147,7 @@ class ConfigSection implements IConfigSection {
     });
   }
 
-  private _url = "unknown";
+  private _url = 'unknown';
   private _data: any = { };
   private _ajaxSettings = '{}';
 }
@@ -172,7 +172,7 @@ class ConfigWithDefaults {
    * Get data from the config section or fall back to defaults.
    */
   get(key: string): any {
-    return this._classData()[key] || this._defaults[key]
+    return this._classData()[key] || this._defaults[key];
   }
 
   /**
@@ -208,11 +208,11 @@ class ConfigWithDefaults {
     if (this._className) {
       return this._section.data[this._className] || {};
     } else {
-      return this._section.data
+      return this._section.data;
     }
   }
 
   private _section: IConfigSection = null;
   private _defaults: any = null;
-  private _className = "unknown";
+  private _className = 'unknown';
 }
