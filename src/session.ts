@@ -14,7 +14,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  KernelStatus, IKernel, IKernelOptions, IKernelSpecIds, IKernelMessage,
+  KernelStatus, IKernel, IKernelSpecIds, IKernelMessage,
   IKernelId
 } from './ikernel';
 
@@ -23,7 +23,7 @@ import {
 } from './isession';
 
 import {
-  connectToKernel, getKernelSpecs, startNewKernel
+  connectToKernel, getKernelSpecs
 } from './kernel';
 
 import * as validate
@@ -118,7 +118,6 @@ class NotebookSessionManager implements INotebookSessionManager {
  */
 export
 function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
-  let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
   ajaxSettings.method = 'GET';
@@ -132,7 +131,7 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
     if (!Array.isArray(success.data)) {
       throw Error('Invalid Session list');
     }
-    for (var i = 0; i < success.data.length; i++) {
+    for (let i = 0; i < success.data.length; i++) {
       validate.validateSessionId(success.data[i]);
     }
     return success.data;
@@ -149,7 +148,7 @@ function listRunningSessions(options: ISessionOptions): Promise<ISessionId[]> {
  * The promise is fulfilled on a valid response and rejected otherwise.
 
  * Wrap the result in an NotebookSession object. The promise is fulfilled
- * when the session is created on the server, otherwise the promise is 
+ * when the session is created on the server, otherwise the promise is
  * rejected.
  */
 export
@@ -169,7 +168,7 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * session found by calling `listRunningSessions`.
- * The promise is fulfilled when the session is ready on the server, 
+ * The promise is fulfilled when the session is ready on the server,
  * otherwise the promise is rejected.
  *
  * If the session was not already started and no `options` are given,
@@ -373,7 +372,7 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
-   * Kill the kernel and shutdown the session. 
+   * Kill the kernel and shutdown the session.
    *
    * @returns - The promise fulfilled on a valid response from the server.
    *
@@ -484,7 +483,7 @@ namespace Private {
   const runningSessions = new Map<string, NotebookSession>();
 
   /**
-   * Create a new session, or return an existing session if a session if 
+   * Create a new session, or return an existing session if a session if
    * the notebook path already exists
    */
   export
@@ -494,7 +493,7 @@ namespace Private {
     let model = {
       kernel: { name: options.kernelName, id: options.kernelId },
       notebook: { path: options.notebookPath }
-    }
+    };
     let ajaxSettings = utils.copy(options.ajaxSettings) || {};
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -523,7 +522,7 @@ namespace Private {
       username: options.username,
       clientId: options.clientId,
       ajaxSettings: options.ajaxSettings
-    }
+    };
     return connectToKernel(sessionId.kernel.id, kernelOptions);
   }
 
@@ -548,7 +547,7 @@ namespace Private {
    */
   export
   function onSessionError(error: utils.IAjaxError): any {
-    let text = (error.statusText || 
+    let text = (error.statusText ||
                 error.error.message ||
                 error.xhr.responseText);
     console.error(`API request failed (${error.xhr.status}):  ${text}`);

@@ -6,7 +6,7 @@
 'use strict';
 
 import {
-  listRunningSessions, connectToSession, startNewSession
+  startNewSession
 } from 'jupyter-js-services';
 
 import {
@@ -25,7 +25,7 @@ function main() {
     wsUrl: WS_URL,
     kernelName: 'python',
     notebookPath: 'foo.ipynb'
-  }
+  };
   startNewSession(options).then(session => {
     // Rename the notebook.
     session.renameNotebook('bar.ipynb').then(() => {
@@ -34,14 +34,14 @@ function main() {
       var future = session.kernel.execute({ code: 'a = 1' });
       future.onReply = (reply) => {
         console.log('Got execute reply');
-      }
+      };
       future.onDone = () => {
         console.log('Future is fulfilled');
         // Shut down the session.
         session.shutdown().then(() => {
           console.log('Session shut down');
         });
-      }
+      };
     });
   });
 }

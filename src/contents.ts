@@ -548,7 +548,7 @@ class ContentsManager implements IContentsManager {
   createCheckpoint(path: string): Promise<ICheckpointModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
-    ajaxSettings.dataType = 'json'
+    ajaxSettings.dataType = 'json';
 
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -585,7 +585,7 @@ class ContentsManager implements IContentsManager {
       if (!Array.isArray(success.data)) {
         throw Error('Invalid Checkpoint list');
       }
-      for (var i = 0; i < success.data.length; i++) {
+      for (let i = 0; i < success.data.length; i++) {
         validate.validateCheckpointModel(success.data[i]);
       }
       return success.data;
@@ -653,6 +653,6 @@ class ContentsManager implements IContentsManager {
                              utils.urlJoinEncode.apply(null, url_parts));
   }
 
-  private _apiUrl = "unknown";
+  private _apiUrl = 'unknown';
   private _ajaxSettings = '{}';
 }
