@@ -887,9 +887,9 @@ describe('jupyter.services - kernel', () => {
             }
             if (kernel.status === KernelStatus.Idle) {
               expect(called).to.be(false);
-              promise.then(() => { 
+              promise.then(() => {
                 expect(called).to.be(true);
-                done(); 
+                done();
               });
             }
           });

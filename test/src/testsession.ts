@@ -26,10 +26,10 @@ import {
 } from '../../lib/isession';
 
 import {
-  deserialize, serialize 
+  deserialize, serialize
 } from '../../lib/serialize';
 
-import { 
+import {
   RequestHandler, ajaxSettings, expectFailure, doLater, KernelTester,
   createKernel
 } from './utils';
@@ -201,9 +201,9 @@ describe('jupyter.services - session', () => {
       tester.initialStatus = 'dead';
       let sessionId = createSessionId();
       let options = createSessionOptions(sessionId);
-      startNewSession(options).then(session => { 
+      startNewSession(options).then(session => {
         session.dispose();
-        done(); 
+        done();
       });
     });
 
