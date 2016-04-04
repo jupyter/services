@@ -116,6 +116,16 @@ interface INotebookSessionManager {
   startNew(options: ISessionOptions): Promise<INotebookSession>;
 
   /**
+   * Find a session by id.
+   */
+  findById(id: string, options?: ISessionOptions): Promise<ISessionId>;
+
+  /**
+   * Find a session by notebook path.
+   */
+  findByPath(id: string, options?: ISessionOptions): Promise<ISessionId>;
+
+  /**
    * Connect to a running notebook session.
    */
   connectTo(id: string, options?: ISessionOptions): Promise<INotebookSession>;

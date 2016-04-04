@@ -822,6 +822,11 @@ interface IKernelManager {
   startNew(options?: IKernelOptions): Promise<IKernel>;
 
   /**
+   * Find a kernel by id.
+   */
+  findById(id: string, options?: IKernelOptions): Promise<IKernelId>;
+
+  /**
    * Connect to an existing kernel.
    */
   connectTo(id: string, options?: IKernelOptions): Promise<IKernel>;

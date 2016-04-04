@@ -10,7 +10,7 @@ import {
 
 import {
   KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
-  listRunningKernels, startNewKernel
+  listRunningKernels, startNewKernel, findKernelById
 } from '../../lib/kernel';
 
 import {
@@ -217,12 +217,29 @@ describe('jupyter.services - kernel', () => {
 
   });
 
+  describe('findKernelById()', () => {
+
+    it('should find an existing kernel by id', (done) => {
+      let manager = new KernelManager(KERNEL_OPTIONS);
+      let id = uuid();
+      let tester = new KernelTester(() => {
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
+      });
+      manager.findById(id).then(newKernel => {
+        expect(newKernel.name).to.be(KERNEL_OPTIONS.name);
+        expect(newKernel.id).to.be(id);
+        done();
+      });
+    });
+
+  });
+
   describe('connectToKernel()', () => {
 
     it('should reuse an exisiting kernel', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         connectToKernel(id).then(newKernel => {
@@ -236,7 +253,7 @@ describe('jupyter.services - kernel', () => {
     it('should connect to a running kernel if given kernel options', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
@@ -248,7 +265,7 @@ describe('jupyter.services - kernel', () => {
     it('should accept ajax options', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: id, name: KERNEL_OPTIONS.name }]);
+        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
       connectToKernel(id, AJAX_KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
@@ -257,19 +274,12 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-
-    it('should fail if no existing kernel and no options', (done) => {
-      let tester = new KernelTester();
-      let id = uuid();
-      let kernelPromise = connectToKernel(id);
-      expectFailure(kernelPromise, done, 'Please specify kernel options');
-    });
-
     it('should fail if no running kernel available', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
-        tester.respond(200, [{ id: uuid(), name: KERNEL_OPTIONS.name }]);
+        tester.respond(400, { });
       });
+      debugger;
       let kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
     });
@@ -877,9 +887,9 @@ describe('jupyter.services - kernel', () => {
             }
             if (kernel.status === KernelStatus.Idle) {
               expect(called).to.be(false);
-              promise.then(() => { 
+              promise.then(() => {
                 expect(called).to.be(true);
-                done(); 
+                done();
               });
             }
           });
@@ -1161,6 +1171,25 @@ describe('jupyter.services - kernel', () => {
           });
         });
 
+      });
+
+    });
+
+    describe('#findById()', () => {
+
+      it('should find an existing kernel by id', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let id = uuid();
+        let tester = new KernelTester(() => {
+          tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
+        });
+        manager.startNew().then(kernel => {
+          manager.findById(id).then(newKernel => {
+            expect(newKernel.name).to.be(kernel.name);
+            expect(newKernel.id).to.be(kernel.id);
+            done();
+          });
+        });
       });
 
     });

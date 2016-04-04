@@ -54,8 +54,8 @@ class KernelManager implements IKernelManager {
    *
    * @param options - The default options for kernel.
    */
-   constructor(options: IKernelOptions) {
-     this._options = utils.copy(options);
+   constructor(options?: IKernelOptions) {
+     this._options = utils.copy(options || {});
    }
 
   /**
@@ -83,6 +83,15 @@ class KernelManager implements IKernelManager {
    */
   startNew(options?: IKernelOptions): Promise<IKernel> {
     return startNewKernel(this._getOptions(options));
+  }
+
+  /**
+   * Find a kernel by id.
+   *
+   * @param options - Overrides for the default options.
+   */
+  findById(id: string, options?: IKernelOptions): Promise<IKernelId> {
+    return findKernelById(id, this._getOptions(options));
   }
 
   /**
@@ -117,13 +126,42 @@ class KernelManager implements IKernelManager {
 
 
 /**
+ * Find a kernel by id.
+ *
+ * #### Notes
+ * If the kernel was already started via `startNewKernel`, the existing
+ * IKernel object is used as the fulfillment value.
+ *
+ * Otherwise, if `options` are given, we attempt to find to the existing
+ * kernel.
+ * The promise is fulfilled when the kernel is found,
+ * otherwise the promise is rejected.
+ */
+export
+function findKernelById(id: string, options?: IKernelOptions): Promise<IKernelId> {
+  let kernels = Private.runningKernels;
+  for (let kernelId in kernels) {
+    let kernel = kernels[kernelId];
+    if (kernelId === id) {
+      let result = { id: kernel.id, name: kernel.name };
+      return Promise.resolve(result);
+    }
+  }
+  return Private.getKernelId(id, options).catch(() => {
+    return Private.typedThrow<IKernelId>(`No running kernel with id: ${id}`);
+  });
+}
+
+
+/**
  * Fetch the kernel specs.
  *
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernelspecs).
  */
 export
-function getKernelSpecs(options: IKernelOptions): Promise<IKernelSpecIds> {
+function getKernelSpecs(options?: IKernelOptions): Promise<IKernelSpecIds> {
+  options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
@@ -165,7 +203,8 @@ function getKernelSpecs(options: IKernelOptions): Promise<IKernelSpecIds> {
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningKernels(options: IKernelOptions): Promise<IKernelId[]> {
+function listRunningKernels(options?: IKernelOptions): Promise<IKernelId[]> {
+  options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
@@ -194,11 +233,15 @@ function listRunningKernels(options: IKernelOptions): Promise<IKernelId[]> {
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
  *
+ * If no options are given or the kernel name is not given, the
+ * default kernel will by started by the server.
+ *
  * Wraps the result in a Kernel object. The promise is fulfilled
  * when the kernel is started by the server, otherwise the promise is rejected.
  */
 export
-function startNewKernel(options: IKernelOptions): Promise<IKernel> {
+function startNewKernel(options?: IKernelOptions): Promise<IKernel> {
+  options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
   let ajaxSettings = utils.copy(options.ajaxSettings) || {};
@@ -234,19 +277,14 @@ function startNewKernel(options: IKernelOptions): Promise<IKernel> {
  */
 export
 function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
-  let kernel = Private.runningKernels.get(id);
+  let kernel = Private.runningKernels[id];
   if (kernel) {
     return Promise.resolve(kernel);
   }
-  if (options === void 0) {
-    return Promise.reject(new Error('Please specify kernel options'));
-  }
-  options.baseUrl = options.baseUrl || utils.getBaseUrl();
-  return listRunningKernels(options).then(kernelIds => {
-    if (!kernelIds.some(k => k.id === id)) {
-      throw new Error('No running kernel with id: ' + id);
-    }
+  return Private.getKernelId(id, options).then(kernelId => {
     return new Kernel(options, id);
+  }).catch(() => {
+    return Private.typedThrow<IKernelId>(`No running kernel with id: ${id}`);
   });
 }
 
@@ -292,7 +330,7 @@ class Kernel implements IKernel {
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket();
-    Private.runningKernels.set(this._id, this);
+    Private.runningKernels[this._id] = this;
   }
 
   /**
@@ -406,7 +444,7 @@ class Kernel implements IKernel {
     this._status = KernelStatus.Dead;
     this._targetRegistry = null;
     clearSignalData(this);
-    Private.runningKernels.delete(this._id);
+    delete Private.runningKernels[this._id];
   }
 
   /**
@@ -1062,7 +1100,7 @@ namespace Private {
    * A module private store for running kernels.
    */
   export
-  const runningKernels = new Map<string, Kernel>();
+  const runningKernels: { [key: string]: IKernel; } = Object.create(null);
 
   /**
    * Restart a kernel.
@@ -1147,6 +1185,29 @@ namespace Private {
   }
 
   /**
+   * Get a full kernel id model from the server by kernel id string.
+   */
+  export
+  function getKernelId(id: string, options?: IKernelOptions): Promise<IKernelOptions> {
+    options = options || {};
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, id);
+    let ajaxSettings = options.ajaxSettings || {};
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+      let data = success.data as IKernelId;
+      validate.validateKernelId(data);
+      return data;
+    }, Private.onKernelError);
+  }
+
+  /**
    * Log the current kernel status.
    */
   export
@@ -1207,6 +1268,14 @@ namespace Private {
     GotIdle = 0x2,
     IsDone = 0x4,
     DisposeOnDone = 0x8,
+  }
+
+  /**
+   * Throw a typed error.
+   */
+  export
+  function typedThrow<T>(msg: string): T {
+    throw new Error(msg);
   }
 }
 
