@@ -153,7 +153,7 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
  *
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
- * 
+ *
  * A notebook path must be provided.  If a kernel id is given, it will
  * connect to an existing kernel.  If no kernel id or name is given,
  * the server will start the default kernel type.
@@ -184,7 +184,7 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * session.
- * The promise is fulfilled when the session is found, 
+ * The promise is fulfilled when the session is found,
  * otherwise the promise is rejected.
  */
 export
@@ -217,7 +217,7 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * session using [listRunningSessions].
- * The promise is fulfilled when the session is found, 
+ * The promise is fulfilled when the session is found,
  * otherwise the promise is rejected.
  *
  * If the session was not already started and no `options` are given,
@@ -258,7 +258,7 @@ function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISe
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * session.
- * The promise is fulfilled when the session is ready on the server, 
+ * The promise is fulfilled when the session is ready on the server,
  * otherwise the promise is rejected.
  *
  * If the session was not already started and no `options` are given,

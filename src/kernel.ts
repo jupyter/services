@@ -134,7 +134,7 @@ class KernelManager implements IKernelManager {
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * kernel.
- * The promise is fulfilled when the kernel is found, 
+ * The promise is fulfilled when the kernel is found,
  * otherwise the promise is rejected.
  */
 export
@@ -233,7 +233,7 @@ function listRunningKernels(options?: IKernelOptions): Promise<IKernelId[]> {
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/kernels) and validates the response model.
  *
- * If no options are given or the kernel name is not given, the 
+ * If no options are given or the kernel name is not given, the
  * default kernel will by started by the server.
  *
  * Wraps the result in a Kernel object. The promise is fulfilled
