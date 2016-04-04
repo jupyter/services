@@ -197,7 +197,7 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
         id,
         notebook: { path: session.notebookPath },
         kernel: { name: session.kernel.name, id: session.kernel.id }
-      }
+      };
       return Promise.resolve(sessionId);
     }
   }
@@ -233,7 +233,7 @@ function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISe
         id,
         notebook: { path: session.notebookPath },
         kernel: { name: session.kernel.name, id: session.kernel.id }
-      }
+      };
       return Promise.resolve(sessionId);
     }
   }
