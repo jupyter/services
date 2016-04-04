@@ -440,7 +440,6 @@ class NotebookSession implements INotebookSession {
       return Promise.reject(new Error('Session is disposed'));
     }
     this._kernel.dispose();
-    this._kernel = null;
     let data = JSON.stringify({ kernel: options });
     return this._patch(data).then(id => {
       let options = utils.copy(this._options) as ISessionOptions;
