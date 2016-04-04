@@ -279,7 +279,6 @@ describe('jupyter.services - kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(400, { });
       });
-      debugger;
       let kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
     });
