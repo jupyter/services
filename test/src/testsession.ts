@@ -362,7 +362,7 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
-          session.sessionDied.connect(() => {
+          INotebookSession.sessionDied.connect(session, () => {
             done();
           });
           tester.onRequest = () => {
@@ -390,7 +390,7 @@ describe('jupyter.services - session', () => {
                                       id: id.kernel.id });
             }
           }
-          session.kernelChanged.connect((s, kernel) => {
+          INotebookSession.kernelChanged.connect(session, kernel => {
             expect(kernel.name).to.be(newName);
             session.dispose();
             done();
@@ -406,9 +406,9 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
-          session.statusChanged.connect((s, status) => {
+          INotebookSession.statusChanged.connect(session, status => {
             if (status === KernelStatus.Busy) {
-              s.dispose();
+              session.dispose();
               done();
             }
           });
@@ -426,7 +426,7 @@ describe('jupyter.services - session', () => {
         let tester = new KernelTester();
         let sessionId = createSessionId();
         startSession(sessionId, tester).then(session => {
-          session.unhandledMessage.connect((s, msg) => {
+          INotebookSession.unhandledMessage.connect(session, msg => {
             expect(msg.header.msg_type).to.be('foo');
             session.dispose();
             done();
@@ -706,7 +706,7 @@ describe('jupyter.services - session', () => {
             tester.respond(204, { });
           }
           let promise = session.shutdown();
-          session.sessionDied.connect(() => {
+          INotebookSession.sessionDied.connect(session, () => {
             done();
           });
         });
