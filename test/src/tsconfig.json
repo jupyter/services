@@ -7,27 +7,5 @@
     "moduleResolution": "node",
     "target": "ES5",
     "outDir": "../build"
-  },
-  "files": [
-    "../../typings/expect.js/expect.js.d.ts",
-    "../../typings/mocha/mocha.d.ts",
-    "../../typings/es6-collections/es6-collections.d.ts",
-    "../../typings/es6-promise/es6-promise.d.ts",
-    "../../typings/text-encoding/text-encoding.d.ts",
-    "../../typings/requirejs/r.d.ts",
-    "../../typings/ws/ws.d.ts",
-    "../../typings/xmlhttprequest/xmlhttprequest.d.ts",
-    "integration.ts",
-    "mocksocket.ts",
-    "mockxhr.ts",
-    "target.ts",
-    "testcomm.ts",
-    "testconfig.ts",
-    "testcontents.ts",
-    "testkernel.ts",
-    "testsession.ts",
-    "testmocksocket.ts",
-    "testmockxhr.ts",
-    "utils.ts"
-  ]
+  }
 }

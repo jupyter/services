@@ -8,8 +8,7 @@
     "src/index.ts",
     "typings/es6-promise/es6-promise.d.ts",
     "typings/text-encoding/text-encoding.d.ts",
-    "typings/es6-container-shim.d.ts",
-    "typings/es6-dataview.d.ts",
+    "typings/es6-collections/es6-collections.d.ts",
     "typings/requirejs/r.d.ts"
   ]
 }

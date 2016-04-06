@@ -7,20 +7,5 @@
     "moduleResolution": "node",
     "target": "ES5",
     "outDir": "../lib"
-  },
-  "files": [
-    "../typings/text-encoding/text-encoding.d.ts",
-    "../typings/es6-collections/es6-collections.d.ts",
-    "../typings/es6-promise/es6-promise.d.ts",
-    "../typings/es6-dataview.d.ts",
-    "index.ts",
-    "config.ts",
-    "contents.ts",
-    "kernel.ts",
-    "ikernel.ts",
-    "isession.ts",
-    "serialize.ts",
-    "session.ts",
-    "validate.ts"
-  ]
+  }
 }
