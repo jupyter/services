@@ -6,9 +6,5 @@
     "moduleResolution": "node",
     "target": "ES5",
     "outDir": "build"
-  },
-  "files": [
-    "../../typings/es6-promise/es6-promise.d.ts",
-    "index.ts"
-  ]
+  }
 }
