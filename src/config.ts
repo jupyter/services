@@ -98,7 +98,7 @@ class ConfigSection implements IConfigSection {
    * Load the initial data for this section.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/config).
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
@@ -120,7 +120,7 @@ class ConfigSection implements IConfigSection {
    * Modify the stored config values.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/config).
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
@@ -178,7 +178,7 @@ class ConfigWithDefaults {
    * Set a config value.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/config).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/config).
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    *
