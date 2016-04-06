@@ -4,11 +4,11 @@
 
 import {
   IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor-core/lib/patterns/disposable';
 
 import {
-  ISignal
-} from 'phosphor-signaling';
+  Signal
+} from 'phosphor-core/lib/patterns/signaling';
 
 import {
   IKernel, IKernelId, IKernelSpecIds, IKernelMessage,
@@ -138,26 +138,6 @@ interface INotebookSessionManager {
 export
 interface INotebookSession extends IDisposable {
   /**
-   * A signal emitted when the session is shut down.
-   */
-  sessionDied: ISignal<INotebookSession, void>;
-
-  /**
-   * A signal emitted when the kernel changes.
-   */
-  kernelChanged: ISignal<INotebookSession, IKernel>;
-
-  /**
-   * A signal emitted when the session status changes.
-   */
-  statusChanged: ISignal<INotebookSession, KernelStatus>;
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   */
-  unhandledMessage: ISignal<INotebookSession, IKernelMessage>;
-
-  /**
    * Unique id of the session.
    *
    * #### Notes
@@ -226,4 +206,35 @@ interface INotebookSession extends IDisposable {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   shutdown(): Promise<void>;
+}
+
+
+/**
+ * A namespace for the signals associated with a notebook session.
+ */
+export
+namespace INotebookSession {
+  /**
+   * A signal emitted when the session is shut down.
+   */
+  export
+  const sessionDied = new Signal<INotebookSession, void>();
+
+  /**
+   * A signal emitted when the kernel changes.
+   */
+  export
+  const kernelChanged = new Signal<INotebookSession, IKernel>();
+
+  /**
+   * A signal emitted when the session status changes.
+   */
+  export
+  const statusChanged = new Signal<INotebookSession, KernelStatus>();
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   */
+  export
+  const unhandledMessage = new Signal<INotebookSession, IKernelMessage>();
 }

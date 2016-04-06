@@ -10,8 +10,8 @@ import * as utils
   from 'jupyter-js-utils';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  Signal, clearSignalData
+} from 'phosphor-core/lib/patterns/signaling';
 
 import {
   KernelStatus, IKernel, IKernelSpecIds, IKernelMessage,
@@ -295,37 +295,11 @@ class NotebookSession implements INotebookSession {
     this._kernel = kernel;
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     this._url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, this._id);
-    this._kernel.statusChanged.connect(this.onKernelStatus, this);
-    this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+    IKernel.statusChanged.connect(this._kernel, this.onKernelStatus, this);
+    IKernel.unhandledMessage.connect(
+      this._kernel, this.onUnhandledMessage, this
+    );
     this._options = utils.copy(options);
-  }
-
-  /**
-   * A signal emitted when the session dies.
-   */
-  get sessionDied(): ISignal<INotebookSession, void> {
-    return Private.sessionDiedSignal.bind(this);
-  }
-
-  /**
-   * A signal emitted when the kernel changes.
-   */
-  get kernelChanged(): ISignal<INotebookSession, IKernel> {
-    return Private.kernelChangedSignal.bind(this);
-  }
-
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  get statusChanged(): ISignal<INotebookSession, KernelStatus> {
-    return Private.statusChangedSignal.bind(this);
-  }
-
-  /**
-   * A signal emitted for an unhandled kernel message.
-   */
-  get unhandledMessage(): ISignal<INotebookSession, IKernelMessage> {
-    return Private.unhandledMessageSignal.bind(this);
   }
 
   /**
@@ -450,9 +424,9 @@ class NotebookSession implements INotebookSession {
       return Private.createKernel(id, options);
     }).then(kernel => {
       this._kernel = kernel;
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
-      this.kernelChanged.emit(kernel);
+      IKernel.statusChanged.connect(kernel, this.onKernelStatus, this);
+      IKernel.unhandledMessage.connect(kernel, this.onUnhandledMessage, this);
+      INotebookSession.kernelChanged.emit(this, kernel);
       return kernel;
     });
   }
@@ -481,7 +455,7 @@ class NotebookSession implements INotebookSession {
       }
       this._kernel.dispose();
       this._kernel = null;
-      this.sessionDied.emit(void 0);
+      INotebookSession.sessionDied.emit(this, void 0);
     }, (rejected: utils.IAjaxError) => {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
@@ -493,15 +467,15 @@ class NotebookSession implements INotebookSession {
   /**
    * Handle to changes in the Kernel status.
    */
-  protected onKernelStatus(sender: IKernel, state: KernelStatus) {
-    this.statusChanged.emit(state);
+  protected onKernelStatus(state: KernelStatus, sender: IKernel) {
+    INotebookSession.statusChanged.emit(this, state);
   }
 
   /**
    * Handle unhandled kernel messages.
    */
-  protected onUnhandledMessage(sender: IKernel, msg: IKernelMessage) {
-    this.unhandledMessage.emit(msg);
+  protected onUnhandledMessage(msg: IKernelMessage, sender: IKernel) {
+    INotebookSession.unhandledMessage.emit(this, msg);
   }
 
   /**

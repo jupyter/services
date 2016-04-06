@@ -4,11 +4,11 @@
 
 import {
   IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor-core/lib/patterns/disposable';
 
 import {
-  ISignal
-} from 'phosphor-signaling';
+  Signal
+} from 'phosphor-core/lib/patterns/signaling';
 
 import {
   IAjaxSettings
@@ -569,15 +569,6 @@ interface IKernelMessageOptions {
  */
 export
 interface IKernel extends IDisposable {
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  statusChanged: ISignal<IKernel, KernelStatus>;
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   */
-  unhandledMessage: ISignal<IKernel, IKernelMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -798,6 +789,25 @@ interface IKernel extends IDisposable {
    * Optional default settings for ajax requests, if applicable.
    */
   ajaxSettings?: IAjaxSettings;
+}
+
+
+/**
+ * A namespace for the signals associated with a kernel.
+ */
+export
+namespace IKernel {
+  /**
+   * A signal emitted when the kernel status changes.
+   */
+  export
+  const statusChanged = new Signal<IKernel, KernelStatus>();
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   */
+  export
+  const unhandledMessage = new Signal<IKernel, IKernelMessage>();
 }
 
 

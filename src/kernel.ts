@@ -11,11 +11,11 @@ import * as utils
 
 import {
   DisposableDelegate, IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor-core/lib/patterns/disposable';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  Signal, clearSignalData
+} from 'phosphor-core/lib/patterns/signaling';
 
 import {
   IComm, ICommInfoRequest, ICommInfoReply, ICommOpen, ICompleteReply,
@@ -332,20 +332,6 @@ class Kernel implements IKernel {
     this._comms = new Map<string, IComm>();
     this._createSocket();
     Private.runningKernels[this._id] = this;
-  }
-
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  get statusChanged(): ISignal<IKernel, KernelStatus> {
-    return Private.statusChangedSignal.bind(this);
-  }
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   */
-  get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
-    return Private.unhandledMessageSignal.bind(this);
   }
 
   /**
@@ -842,7 +828,7 @@ class Kernel implements IKernel {
       }
     }
     if (!handled) {
-      this.unhandledMessage.emit(msg);
+      IKernel.unhandledMessage.emit(this, msg);
     }
   }
 
@@ -904,7 +890,7 @@ class Kernel implements IKernel {
     if (status !== this._status) {
       this._status = status;
       Private.logKernelStatus(this);
-      this.statusChanged.emit(status);
+      IKernel.statusChanged.emit(this, status);
       if (status === KernelStatus.Dead) this.dispose();
     }
     if (this._isReady) {
