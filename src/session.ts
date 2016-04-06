@@ -119,7 +119,7 @@ class NotebookSessionManager implements INotebookSessionManager {
  * List the running sessions.
  *
  * #### Notes
- * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
  *
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
@@ -152,7 +152,7 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
  * Start a new session.
  *
  * #### Notes
- * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+ * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
  *
  * A notebook path must be provided.  If a kernel id is given, it will
  * connect to an existing kernel.  If no kernel id or name is given,
@@ -463,7 +463,7 @@ class NotebookSession implements INotebookSession {
    * @returns - The promise fulfilled on a valid response from the server.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/sessions), and validates the response.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
    * Emits a [sessionDied] signal on success.
    */
   shutdown(): Promise<void> {

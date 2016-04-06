@@ -326,7 +326,7 @@ class ContentsManager implements IContentsManager {
    * @returns A promise which resolves with the file content.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   get(path: string, options?: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -364,7 +364,7 @@ class ContentsManager implements IContentsManager {
    *    file is created.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   newUntitled(path: string, options?: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -396,7 +396,7 @@ class ContentsManager implements IContentsManager {
    * @returns A promise which resolves when the file is deleted.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents).
    */
   delete(path: string): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
@@ -434,7 +434,7 @@ class ContentsManager implements IContentsManager {
    *   the file is renamed.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   rename(path: string, newPath: string): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -466,7 +466,7 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * Ensure that `model.content` is populated for the file.
    *
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   save(path: string, model: IContentsOpts): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -500,7 +500,7 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * The server will select the name of the copied file.
    *
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   copy(fromFile: string, toDir: string): Promise<IContentsModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -528,7 +528,7 @@ class ContentsManager implements IContentsManager {
    *    contents.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   listContents(path: string): Promise<IContentsModel> {
     return this.get(path, {type: 'directory'});
@@ -543,7 +543,7 @@ class ContentsManager implements IContentsManager {
    *   checkpoint is created.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   createCheckpoint(path: string): Promise<ICheckpointModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -569,7 +569,7 @@ class ContentsManager implements IContentsManager {
    *    the file.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents) and validates the response model.
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
   listCheckpoints(path: string): Promise<ICheckpointModel[]> {
     let ajaxSettings = this.ajaxSettings;
@@ -602,7 +602,7 @@ class ContentsManager implements IContentsManager {
    * @returns A promise which resolves when the checkpoint is restored.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents).
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
@@ -628,7 +628,7 @@ class ContentsManager implements IContentsManager {
    * @returns A promise which resolves when the checkpoint is deleted.
    *
    * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/jupyter-js-services/master/rest_api.yaml#!/contents).
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents).
    */
   deleteCheckpoint(path: string, checkpointID: string): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
