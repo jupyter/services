@@ -25,7 +25,7 @@
     "phosphor-signaling": "^1.2.0"
   },
   "scripts": {
-    "clean": "rimraf docs && rimraf lib && rimraf test/build",
+    "clean": "rimraf docs && rimraf lib && rimraf test/build && rimraf test/coverage",
     "build:src": "tsc --project src",
     "build:test": "tsc --project test/src",
     "build": "npm run build:src && npm run build:test",
