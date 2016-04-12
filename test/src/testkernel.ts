@@ -32,26 +32,14 @@ import {
 
 import {
   RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
-  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO
+  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
+  PYTHON_SPEC
 } from './utils';
 
 
 // Abnormal websocket close.
 const CLOSE_ABNORMAL = 1006;
 
-
-let PYTHON_SPEC: IKernelSpecId = {
-  name: "Python",
-  spec: {
-    language: "python",
-    argv: [],
-    display_name: "python",
-    codemirror_mode: "python",
-    env: {},
-    help_links: [ { text: "re", url: "reUrl" }]
-  },
-  resources: { foo: 'bar' },
-}
 
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
 PYTHON3_SPEC.name = "Python3";
@@ -169,7 +157,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "Invalid kernel id");
+      expectFailure(kernelPromise, done);
     });
 
     it('should throw an error for another invalid kernel id', (done) => {
@@ -178,7 +166,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "Invalid kernel id");
+      expectFailure(kernelPromise, done);
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -714,7 +702,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200, { });
           };
           let restart = kernel.restart();
-          expectFailure(restart, done, "Invalid kernel id");
+          expectFailure(restart, done);
         });
       });
 
@@ -1258,7 +1246,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for missing kernelspecs parameter', (done) => {
@@ -1267,7 +1255,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       }
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for incorrect kernelspecs parameter type', (done) => {
@@ -1277,7 +1265,7 @@ describe('jupyter.services - kernel', () => {
                            });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper name', (done) => {
@@ -1288,7 +1276,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper language', (done) => {
@@ -1299,7 +1287,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper argv', (done) => {
@@ -1310,7 +1298,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper display_name', (done) => {
@@ -1321,7 +1309,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for missing resources', (done) => {
@@ -1332,7 +1320,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for an invalid response', (done) => {

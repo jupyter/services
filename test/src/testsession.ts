@@ -97,7 +97,7 @@ describe('jupyter.services - session', () => {
         handler.respond(200, data);
       });
       let list = listRunningSessions('http://localhost:8888');
-      expectFailure(list, done, "Invalid Session list");
+      expectFailure(list, done);
     });
 
     it('should throw an error for another invalid model', (done) => {
@@ -106,7 +106,7 @@ describe('jupyter.services - session', () => {
         handler.respond(200, data);
       });
       let list = listRunningSessions('http://localhost:8888');
-      expectFailure(list, done, "Invalid Notebook Model");
+      expectFailure(list, done);
     });
 
     it('should fail for wrong response status', (done) => {
@@ -586,7 +586,7 @@ describe('jupyter.services - session', () => {
           let promise = session.renameNotebook(newPath);
           tester.onRequest = () => {
             tester.respond(200, { });
-            expectFailure(promise, done, 'Invalid Session Model');
+            expectFailure(promise, done);
           }
         })
       });
