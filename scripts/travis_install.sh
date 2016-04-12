@@ -9,9 +9,10 @@ conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda info -a
 conda install pip pyzmq
-# Install the latest version of the notebook
-pip install --pre notebook
-
+# Install the development version of the notebook
+git clone https://github.com/jupyter/notebook
+cd notebook
+pip install --pre -e .
 
 # Create jupyter base dir (needed for config retrieval).
 mkdir ~/.jupyter
