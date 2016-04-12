@@ -9,6 +9,10 @@ import {
 } from 'jupyter-js-utils';
 
 import {
+  MockSocket, MockSocketServer, overrideWebSocket
+} from 'jupyter-js-utils/lib/mocksocket';
+
+import {
   KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
   listRunningKernels, startNewKernel, findKernelById
 } from '../../lib/kernel';
@@ -25,10 +29,6 @@ import {
 import {
   deserialize, serialize
 } from '../../lib/serialize';
-
-import {
-  MockSocket, MockSocketServer, overrideWebSocket
-} from './mocksocket';
 
 import {
   RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,

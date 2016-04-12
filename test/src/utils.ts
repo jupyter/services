@@ -11,6 +11,14 @@ import {
 } from 'jupyter-js-utils';
 
 import {
+  MockSocket, MockSocketServer, overrideWebSocket
+} from 'jupyter-js-utils/lib/mocksocket';
+
+import {
+  MockXMLHttpRequest
+} from 'jupyter-js-utils/lib/mockxhr';
+
+import {
   IContentsModel, IKernel, IKernelInfo, IKernelSpecId, IKernelMessage,
   IKernelMessageOptions, IKernelOptions, createKernelMessage, startNewKernel
 } from '../../lib';
@@ -18,14 +26,6 @@ import {
 import {
   deserialize, serialize
 } from '../../lib/serialize';
-
-import {
-  MockSocket, MockSocketServer, overrideWebSocket
-} from './mocksocket';
-
-import {
-  MockXMLHttpRequest
-} from './mockxhr';
 
 
 // stub for node global
