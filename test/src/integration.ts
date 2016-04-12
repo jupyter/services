@@ -271,6 +271,7 @@ describe('jupyter.services - Integration', () => {
         });
       });
     });
+
   });
 
 });

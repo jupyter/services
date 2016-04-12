@@ -163,9 +163,9 @@ function validateContentsModel(model: IContentsModel): void {
   validateProperty(model, 'type', 'string');
   validateProperty(model, 'created', 'string');
   validateProperty(model, 'last_modified', 'string');
-  validateProperty(model, 'mimetype', 'string');
+  validateProperty(model, 'mimetype', 'any');
   validateProperty(model, 'content', 'any');
-  validateProperty(model, 'format', 'string');
+  validateProperty(model, 'format', 'any');
 }
 
 
