@@ -8,7 +8,7 @@ hash -r
 conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda info -a
-conda install pip notebook
+conda install pip pyzmq
 # Install the latest version of the notebook
 pip install --pre notebook
 
