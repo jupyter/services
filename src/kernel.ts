@@ -952,7 +952,7 @@ class Kernel implements IKernel {
    */
   private _handleCommOpen(msg: IKernelMessage): void {
     let content = msg.content as ICommOpen;
-    let promise = utils.loadClass(content.target_name, content.target_module,
+    let promise = utils.loadObject(content.target_name, content.target_module,
       this._targetRegistry).then(target => {
         let comm = new Comm(
           content.target_name,
