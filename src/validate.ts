@@ -20,6 +20,11 @@ import {
 const COMM_FIELDS = ['comm_id', 'data'];
 
 /**
+ * The valid types of comm messages
+ */
+const COMM_MSGS = ['comm_open', 'comm_msg', 'comm_close'];
+
+/**
  * Required fields for `IKernelHeader`.
  */
 const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
@@ -54,12 +59,16 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
  */
 export
 function validateCommMessage(msg: IKernelMessage): boolean {
+  let msgType = msg.header.msg_type;
+  if (COMM_MSGS.indexOf(msgType) === -1) {
+    return false;
+  }
   for (let i = 0; i < COMM_FIELDS.length; i++) {
     if (!msg.content.hasOwnProperty(COMM_FIELDS[i])) {
       return false;
     }
   }
-  if (msg.header.msg_type === 'comm_open') {
+  if (msgType === 'comm_open') {
     if (!msg.content.hasOwnProperty('target_name') ||
         typeof msg.content.target_name !== 'string') {
       return false;
