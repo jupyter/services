@@ -16,7 +16,10 @@ import {
 import {
   ICompleteRequest, IExecuteRequest, IInspectRequest, IIsCompleteRequest,
   IKernel, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageOptions,
-  IKernelOptions, IKernelSpecId, KernelStatus, IInspectReply
+  IKernelOptions, IKernelSpecId, KernelStatus, IInspectReply,
+  isExecuteResultMessage, isDisplayDataMessage, isExecuteInputMessage,
+  isClearOutputMessage, isStreamMessage, isStatusMessage, isCommOpenMessage,
+  isErrorMessage
 } from '../../lib/ikernel';
 
 import {
@@ -29,26 +32,14 @@ import {
 
 import {
   RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
-  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO
+  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
+  PYTHON_SPEC
 } from './utils';
 
 
 // Abnormal websocket close.
 const CLOSE_ABNORMAL = 1006;
 
-
-let PYTHON_SPEC: IKernelSpecId = {
-  name: "Python",
-  spec: {
-    language: "python",
-    argv: [],
-    display_name: "python",
-    codemirror_mode: "python",
-    env: {},
-    help_links: [ { text: "re", url: "reUrl" }]
-  },
-  resources: { foo: 'bar' },
-}
 
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
 PYTHON3_SPEC.name = "Python3";
@@ -166,7 +157,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "Invalid kernel id");
+      expectFailure(kernelPromise, done);
     });
 
     it('should throw an error for another invalid kernel id', (done) => {
@@ -175,7 +166,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "Invalid kernel id");
+      expectFailure(kernelPromise, done);
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -711,7 +702,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200, { });
           };
           let restart = kernel.restart();
-          expectFailure(restart, done, "Invalid kernel id");
+          expectFailure(restart, done);
         });
       });
 
@@ -1255,7 +1246,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for missing kernelspecs parameter', (done) => {
@@ -1264,7 +1255,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       }
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for incorrect kernelspecs parameter type', (done) => {
@@ -1274,7 +1265,7 @@ describe('jupyter.services - kernel', () => {
                            });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpecs Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper name', (done) => {
@@ -1285,7 +1276,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper language', (done) => {
@@ -1296,7 +1287,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper argv', (done) => {
@@ -1307,7 +1298,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for improper display_name', (done) => {
@@ -1318,7 +1309,7 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for missing resources', (done) => {
@@ -1329,7 +1320,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid KernelSpec Model");
+      expectFailure(promise, done);
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -1338,6 +1329,126 @@ describe('jupyter.services - kernel', () => {
       });
       let promise = getKernelSpecs('localhost');
       expectFailure(promise, done, "Invalid Response: 201");
+    });
+
+  });
+
+  describe('#isStreamMessage()', () => {
+
+    it('should check for a stream message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'stream', channel: 'bar', session: 'baz'
+      });
+      expect(isStreamMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isStreamMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isDisplayDataMessage()', () => {
+
+    it('should check for a display data message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'display_data', channel: 'bar', session: 'baz'
+      });
+      expect(isDisplayDataMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isDisplayDataMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isExecuteInputMessage()', () => {
+
+    it('should check for a execute input message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'execute_input', channel: 'bar', session: 'baz'
+      });
+      expect(isExecuteInputMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isExecuteInputMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isExecuteResultMessage()', () => {
+
+    it('should check for an execute result message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'execute_result', channel: 'bar', session: 'baz'
+      });
+      expect(isExecuteResultMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isExecuteResultMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isStatusMessage()', () => {
+
+    it('should check for a status message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'status', channel: 'bar', session: 'baz'
+      });
+      expect(isStatusMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isStatusMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isClearOutputMessage()', () => {
+
+    it('should check for a clear output message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'clear_output', channel: 'bar', session: 'baz'
+      });
+      expect(isClearOutputMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isClearOutputMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isCommOpenMessage()', () => {
+
+    it('should check for a comm open message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'comm_open', channel: 'bar', session: 'baz'
+      });
+      expect(isCommOpenMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isCommOpenMessage(msg)).to.be(false);
+    });
+
+  });
+
+  describe('#isErrorMessage()', () => {
+
+    it('should check for an message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'error', channel: 'bar', session: 'baz'
+      });
+      expect(isErrorMessage(msg)).to.be(true);
+       msg = createKernelMessage({
+        msgType: 'foo', channel: 'bar', session: 'baz'
+      });
+      expect(isErrorMessage(msg)).to.be(false);
     });
 
   });

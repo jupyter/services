@@ -11,8 +11,8 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  IKernel, IKernelInfo, IKernelMessage, IKernelMessageOptions,
-  IKernelOptions, createKernelMessage, startNewKernel
+  IContentsModel, IKernel, IKernelInfo, IKernelSpecId, IKernelMessage,
+  IKernelMessageOptions, IKernelOptions, createKernelMessage, startNewKernel
 } from '../../lib';
 
 import {
@@ -67,7 +67,7 @@ class RequestHandler {
 }
 
 
-export 
+export
 const EXAMPLE_KERNEL_INFO: IKernelInfo = {
   protocol_version: '1',
   implementation: 'a',
@@ -100,6 +100,35 @@ const AJAX_KERNEL_OPTIONS: IKernelOptions = {
   name: 'python',
   username: 'testUser',
   ajaxSettings: ajaxSettings
+}
+
+
+export
+const PYTHON_SPEC: IKernelSpecId = {
+  name: "Python",
+  spec: {
+    language: "python",
+    argv: [],
+    display_name: "python",
+    codemirror_mode: "python",
+    env: {},
+    help_links: [ { text: "re", url: "reUrl" }]
+  },
+  resources: { foo: 'bar' },
+}
+
+
+export
+const DEFAULT_FILE: IContentsModel = {
+  name: "test",
+  path: "",
+  type: "file",
+  created: "yesterday",
+  last_modified: "today",
+  writable: true,
+  mimetype: "text/plain",
+  content: "hello, world!",
+  format: "text"
 }
 
 
@@ -219,12 +248,12 @@ function createKernel(tester?: KernelTester): Promise<IKernel> {
  * Expect a failure on a promise with the given message, then call `done`.
  */
 export
-function expectFailure(promise: Promise<any>, done: () => void, message: string): Promise<any> {
+function expectFailure(promise: Promise<any>, done: () => void, message?: string): Promise<any> {
   return promise.then((msg: any) => {
     console.error('***should not reach this point');
     throw Error('Should not reach this point');
   }).catch((error) => {
-    if (error.message.indexOf(message) === -1) {
+    if (message && error.message.indexOf(message) === -1) {
       console.error('****', message, 'not in:', error.message);
       return;
     }

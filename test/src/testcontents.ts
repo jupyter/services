@@ -10,21 +10,9 @@ import {
 
 
 import {
-  RequestHandler, ajaxSettings, expectFailure
+  DEFAULT_FILE, RequestHandler, ajaxSettings, expectFailure
 } from './utils';
 
-
-let DEFAULT_FILE: IContentsModel = {
-  name: "test",
-  path: "",
-  type: "file",
-  created: "yesterday",
-  last_modified: "today",
-  writable: true,
-  mimetype: "text/plain",
-  content: "hello, world!",
-  format: "text"
-}
 
 let DEFAULT_DIR: IContentsModel = {
   name: "bar",
@@ -102,7 +90,7 @@ describe('jupyter.services - Contents', () => {
       });
       let get = contents.get("/foo", { type: "directory", name: "bar",
                                        format: "json", content: false });
-      expectFailure(get, done, 'Invalid Contents Model');
+      expectFailure(get, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -163,7 +151,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, dir);
       });
       let newFile = contents.newUntitled("/foo", { type: "file", ext: "py" });
-      expectFailure(newFile, done, 'Invalid Contents Model');
+      expectFailure(newFile, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -262,7 +250,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, dir);
       });
       let rename = contents.rename("/foo/bar.txt", "/foo/baz.txt");
-      expectFailure(rename, done, 'Invalid Contents Model');
+      expectFailure(rename, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -322,7 +310,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, file);
       });
       let save = contents.save("/foo", { type: "file", name: "test" });
-      expectFailure(save, done, 'Invalid Contents Model');
+      expectFailure(save, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -368,7 +356,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, file);
       });
       let copy = contents.copy("/foo/bar.txt", "/baz");
-      expectFailure(copy, done, 'Invalid Contents Model');
+      expectFailure(copy, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -416,7 +404,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, cp);
       });
       let checkpoint = contents.createCheckpoint("/foo/bar.txt");
-      expectFailure(checkpoint, done, 'Invalid Checkpoint Model');
+      expectFailure(checkpoint, done);
     });
 
     it('should fail for an incorrect response', (done) => {
@@ -472,7 +460,7 @@ describe('jupyter.services - Contents', () => {
         expectFailure(checkpoints, done, 'Invalid Checkpoint list');
       }
 
-      expectFailure(checkpoints, second, 'Invalid Checkpoint Model');
+      expectFailure(checkpoints, second);
     });
 
     it('should fail for an incorrect response', (done) => {

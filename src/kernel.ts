@@ -951,10 +951,6 @@ class Kernel implements IKernel {
    * Handle a `comm_open` kernel message.
    */
   private _handleCommOpen(msg: IKernelMessage): void {
-    if (!validate.validateCommMessage(msg)) {
-      console.error('Invalid comm message');
-      return;
-    }
     let content = msg.content as ICommOpen;
     let promise = utils.loadClass(content.target_name, content.target_module,
       this._targetRegistry).then(target => {
@@ -982,10 +978,6 @@ class Kernel implements IKernel {
    * Handle 'comm_close' kernel message.
    */
   private _handleCommClose(msg: IKernelMessage): void {
-    if (!validate.validateCommMessage(msg)) {
-      console.error('Invalid comm message');
-      return;
-    }
     let content = msg.content;
     let promise = this._commPromises.get(content.comm_id);
     if (!promise) {
@@ -1012,10 +1004,6 @@ class Kernel implements IKernel {
    * Handle a 'comm_msg' kernel message.
    */
   private _handleCommMsg(msg: IKernelMessage): void {
-    if (!validate.validateCommMessage(msg)) {
-      console.error('Invalid comm message');
-      return;
-    }
     let content = msg.content;
     let promise = this._commPromises.get(content.comm_id);
     if (!promise) {
