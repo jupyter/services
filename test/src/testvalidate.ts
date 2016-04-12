@@ -176,7 +176,7 @@ describe('jupyter.services', () => {
 
     it('should fail on incorrect data', () => {
       let model = JSON.parse(JSON.stringify(DEFAULT_FILE));
-      model.format = 1;
+      model.type = 1;
       expect(() => validateContentsModel(model)).to.throwError();
     });
 
