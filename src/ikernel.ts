@@ -397,6 +397,40 @@ interface IInspectReply {
 
 
 /**
+ * Contents of an `history_request` message.
+ *
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+ *
+ * **See also:** [[IHistoryReply]], [[[IKernel.history]]]
+ */
+export
+interface IHistoryRequest {
+  output: boolean;
+  raw: boolean;
+  hist_access_type: string;
+  session: number;
+  start: number;
+  stop: number;
+  n: number;
+  pattern: string;
+  unique: boolean;
+}
+
+
+/**
+ * Contents of an `history_reply` message.
+ *
+ * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+ *
+ * **See also:** [[IHistoryRequest]], [[IKernel.history]]
+ */
+export
+interface IHistoryReply {
+  history: any[];
+}
+
+
+/**
  * Contents of an `is_complete_request` message.
  *
  * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
@@ -721,6 +755,17 @@ interface IKernel extends IDisposable {
    * received and validated.
    */
   inspect(contents: IInspectRequest): Promise<IInspectReply>;
+
+  /**
+   * Send a `history_request` message.
+   *
+   * #### Notes
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+   *
+   * Fulfills with the `history_reply` content when the shell reply is
+   * received and validated.
+   */
+  history(contents: IHistoryRequest): Promise<IHistoryReply>;
 
   /**
    * Send an `execute_request` message.

@@ -18,7 +18,7 @@ global.WebSocket = NodeWebSocket;
 import {
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
   connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults, ContentsManager
+  ConfigWithDefaults, ContentsManager, IKernel, IHistoryRequest
 } from '../../lib';
 
 
@@ -73,22 +73,37 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should handle other kernel messages', (done) => {
-      startNewKernel().then((kernel) => {
+      startNewKernel().then(kernel => {
         console.log('Kernel started');
-        kernel.complete({ code: 'impor', cursor_pos: 4 }).then((completions) => {
+        return kernel.complete({ code: 'impor', cursor_pos: 4 })
+        .then(completions => {
           console.log('Got completions: ', completions.matches);
-          kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 }).then((info) => {
-            console.log('Got inspect: ', info.data);
-            kernel.isComplete({ code: 'from numpy import (\n' }).then((result) => {
-              console.log('Got isComplete: ', result.status);
-              let future = kernel.execute({ code: 'a = 1\n' });
-              future.onDone = () => {
-                console.log('Execute finished');
-                kernel.shutdown().then(() => { done(); });
-              }
-            });
-          });
-        });
+          return kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 })
+        }).then(inspect => {
+          console.log('Got inspect: ', inspect.data);
+          return kernel.isComplete({ code: 'from numpy import (\n' })
+        }).then(isComplete => {
+          console.log('Got isComplete: ', isComplete.status);
+          let options: IHistoryRequest = {
+            output: true,
+            raw: true,
+            hist_access_type: 'search',
+            session: 0,
+            start: 1,
+            stop: 2,
+            n: 1,
+            pattern: '*',
+            unique: true,
+          };
+          return kernel.history(options)
+        }).then(history => {
+          console.log('Got history');
+          let future = kernel.execute({ code: 'a = 1\n' });
+          future.onDone = () => {
+            console.log('Execute finished');
+            return kernel.shutdown();
+          }
+        }).then(() => done()).catch(error => console.log(error));
       });
     });
   });

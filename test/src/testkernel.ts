@@ -23,7 +23,7 @@ import {
   IKernelOptions, IKernelSpecId, KernelStatus, IInspectReply,
   isExecuteResultMessage, isDisplayDataMessage, isExecuteInputMessage,
   isClearOutputMessage, isStreamMessage, isStatusMessage, isCommOpenMessage,
-  isErrorMessage
+  isErrorMessage, IHistoryRequest
 } from '../../lib/ikernel';
 
 import {
@@ -898,6 +898,33 @@ describe('jupyter.services - kernel', () => {
           let promise = kernel.isComplete(options);
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('is_complete_request');
+            msg.parent_header = msg.header;
+            tester.send(msg);
+          });
+          promise.then(() => { done(); });
+        });
+      });
+    });
+
+    context('#history()', () => {
+
+      it('should resolve the promise', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          let options: IHistoryRequest = {
+            output: true,
+            raw: true,
+            hist_access_type: 'search',
+            session: 0,
+            start: 1,
+            stop: 2,
+            n: 1,
+            pattern: '*',
+            unique: true,
+          };
+          let promise = kernel.history(options);
+          tester.onMessage((msg) => {
+            expect(msg.header.msg_type).to.be('history_request');
             msg.parent_header = msg.header;
             tester.send(msg);
           });
