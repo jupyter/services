@@ -23,7 +23,8 @@ import {
   IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
   IKernelFuture, IKernelId, IKernelInfo, IKernelManager, IKernelMessage,
   IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
-  KernelStatus, IKernelIOPubCommOpenMessage, IKernelSpec
+  KernelStatus, IKernelIOPubCommOpenMessage, IKernelSpec,
+  IHistoryRequest, IHistoryReply
 } from './ikernel';
 
 import {
@@ -598,6 +599,26 @@ class Kernel implements IKernel {
   inspect(contents: IInspectRequest): Promise<IInspectReply> {
     let options: IKernelMessageOptions = {
       msgType: 'inspect_request',
+      channel: 'shell',
+      username: this._username,
+      session: this._clientId
+    };
+    let msg = createKernelMessage(options, contents);
+    return Private.sendKernelMessage(this, msg);
+  }
+
+  /**
+   * Send a `history_request` message.
+   *
+   * #### Notes
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+   *
+   * Fulfills with the `history_reply` content when the shell reply is
+   * received and validated.
+   */
+  history(contents: IHistoryRequest): Promise<IHistoryReply> {
+    let options: IKernelMessageOptions = {
+      msgType: 'history_request',
       channel: 'shell',
       username: this._username,
       session: this._clientId
