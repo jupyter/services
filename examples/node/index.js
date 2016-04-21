@@ -9,6 +9,11 @@ var services = require('jupyter-js-services');
 var utils = require('jupyter-js-utils');
 var ws = require('ws');
 var xhr = require('xmlhttprequest');
+var requirejs = require('requirejs');
+
+// Set up the global requirejs.
+// Normally this would then be configured.
+global.requirejs = requirejs;
 
 
 // Override the global request and socket functions.
