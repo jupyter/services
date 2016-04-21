@@ -7,8 +7,8 @@ Javascript client for the Jupyter services REST APIs
 
 [REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml)
 
-Note: All functions and methods using the REST API allow an optional
-`ajaxOptions` parameter to configure the request.
+Note: All functions and classes using the REST API allow an `ajaxOptions` 
+parameter to configure requests.
 
 
 Package Install
@@ -16,9 +16,11 @@ Package Install
 
 **Prerequisites**
 - [node](http://nodejs.org/)
+- [python](https://www.continuum.io/downloads)
 
 ```bash
 npm install --save jupyter-js-services
+conda install notebook  # notebook 4.2+ required
 ```
 
 
@@ -28,12 +30,14 @@ Source Build
 **Prerequisites**
 - [git](http://git-scm.com/)
 - [node 0.12+](http://nodejs.org/)
+- [python](https://www.continuum.io/downloads)
 
 ```bash
 git clone https://github.com/jupyter/jupyter-js-services.git
 cd jupyter-js-services
 npm install
 npm run build
+conda install notebook  # notebook 4.2+ required
 ```
 
 **Rebuild**
@@ -76,10 +80,15 @@ Earlier versions may also work, but come with no guarantees.
 - Firefox 32+
 - Chrome 38+
 
+Note: "requirejs" must be included in a global context for Comm targets.
+
 
 Starting the Notebook Server
 ----------------------------
-The library requires a running Jupyter Notebook server (development version), launched as:
+
+Follow the package install instructions first.
+
+The library requires a running Jupyter Notebook server, launched as:
 
 ```bash
 python -m notebook --NotebookApp.allow_origin="*"
@@ -90,6 +99,9 @@ The origin can be specified directly instead of using `*` if desired.
 
 Bundling for the Browser
 ------------------------
+
+Follow the package install instructions first.
+
 See `examples/browser` for an example of using Webpack to bundle the library.
 
 
