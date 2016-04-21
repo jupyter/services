@@ -80,7 +80,10 @@ Earlier versions may also work, but come with no guarantees.
 - Firefox 32+
 - Chrome 38+
 
-Note: "requirejs" must be included in a global context for Comm targets.
+Note: "requirejs" must be included in a global context for Comm targets.  
+This can be as a `<script>` tag in the browser or by using the `requirejs`
+package in node (`npm install -g requirejs`).  See the `examples` folder
+for usage.
 
 
 Starting the Notebook Server

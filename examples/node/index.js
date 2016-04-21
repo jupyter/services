@@ -10,6 +10,8 @@ var utils = require('jupyter-js-utils');
 var ws = require('ws');
 var xhr = require('xmlhttprequest');
 
+global.requirejs = require('requirejs');
+
 
 // Override the global request and socket functions.
 global.XMLHttpRequest = xhr.XMLHttpRequest;
