@@ -82,7 +82,8 @@ Earlier versions may also work, but come with no guarantees.
 
 Note: "requirejs" must be included in a global context for Comm targets.  
 This can be as a `<script>` tag in the browser or by using the `requirejs`
-package in node (`npm install -g requirejs`).  See the `examples` folder
+package in node (`npm install requirejs` and setting 
+`global.requirejs = require('requirejs');`).  See the `examples` folder
 for usage.
 
 
