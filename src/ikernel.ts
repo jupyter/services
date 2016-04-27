@@ -16,7 +16,7 @@ import {
 
 
 export
-type hist_access_type = 'range' | 'tail' | 'search';
+type HistAccessType = 'range' | 'tail' | 'search';
 
 
 /**
@@ -411,7 +411,7 @@ export
 interface IHistoryRequest {
   output: boolean;
   raw: boolean;
-  hist_access_type: hist_access_type;
+  hist_access_type: HistAccessType;
   session?: number;
   start?: number;
   stop?: number;
