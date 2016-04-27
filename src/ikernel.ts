@@ -15,6 +15,10 @@ import {
 } from 'jupyter-js-utils';
 
 
+export
+type hist_access_type = 'range' | 'tail' | 'search';
+
+
 /**
  * The options object used to initialize a kernel.
  */
@@ -407,13 +411,13 @@ export
 interface IHistoryRequest {
   output: boolean;
   raw: boolean;
-  hist_access_type: string;
-  session: number;
-  start: number;
-  stop: number;
-  n: number;
-  pattern: string;
-  unique: boolean;
+  hist_access_type: hist_access_type;
+  session?: number;
+  start?: number;
+  stop?: number;
+  n?: number;
+  pattern?: string;
+  unique?: boolean;
 }
 
 
