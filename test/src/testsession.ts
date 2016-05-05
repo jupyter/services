@@ -423,6 +423,29 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#iopubMessage', () => {
+
+      it('should be emitted for an iopub message', (done) => {
+        let tester = new KernelTester();
+        let sessionId = createSessionId();
+        startSession(sessionId, tester).then(session => {
+          session.iopubMessage.connect((s, msg) => {
+            expect(msg.header.msg_type).to.be('status');
+            session.dispose();
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'status',
+            channel: 'iopub',
+            session: ''
+          });
+          msg.content.execution_state = 'idle';
+          msg.parent_header = msg.header;
+          tester.send(msg);
+        });
+      });
+    });
+
     context('#unhandledMessage', () => {
 
       it('should be emitted for an unhandled message', (done) => {

@@ -297,8 +297,7 @@ class NotebookSession implements INotebookSession {
     this._kernel = kernel;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._url = utils.urlPathJoin(this._baseUrl, SESSION_SERVICE_URL, this._id);
-    this._kernel.statusChanged.connect(this.onKernelStatus, this);
-    this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+    this.connectKernelSignals(kernel);
     this._options = utils.copy(options);
   }
 
@@ -321,6 +320,13 @@ class NotebookSession implements INotebookSession {
    */
   get statusChanged(): ISignal<INotebookSession, KernelStatus> {
     return Private.statusChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted for a kernel messages.
+   */
+  get iopubMessage(): ISignal<INotebookSession, IKernelMessage> {
+    return Private.iopubMessageSignal.bind(this);
   }
 
   /**
@@ -466,8 +472,7 @@ class NotebookSession implements INotebookSession {
       return Private.createKernel(id, options);
     }).then(kernel => {
       this._kernel = kernel;
-      kernel.statusChanged.connect(this.onKernelStatus, this);
-      kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+      this.connectKernelSignals(kernel);
       this.kernelChanged.emit(kernel);
       return kernel;
     });
@@ -507,10 +512,26 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
+   * Handle connections to a kernel.
+   */
+  protected connectKernelSignals(kernel: IKernel): void {
+    kernel.statusChanged.connect(this.onKernelStatus, this);
+    kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+    kernel.iopubMessage.connect(this.onIopubMessage, this);
+  }
+
+  /**
    * Handle to changes in the Kernel status.
    */
   protected onKernelStatus(sender: IKernel, state: KernelStatus) {
     this.statusChanged.emit(state);
+  }
+
+  /**
+   * Handle iopub kernel messages.
+   */
+  protected onIopubMessage(sender: IKernel, msg: IKernelMessage) {
+    this.iopubMessage.emit(msg);
   }
 
   /**
@@ -572,6 +593,12 @@ namespace Private {
    */
   export
   const statusChangedSignal = new Signal<INotebookSession, KernelStatus>();
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  export
+  const iopubMessageSignal = new Signal<INotebookSession, IKernelMessage>();
 
   /**
    * A signal emitted for an unhandled kernel message.
