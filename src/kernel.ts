@@ -349,6 +349,13 @@ class Kernel implements IKernel {
   }
 
   /**
+   * A signal emitted for iopub kernel messages.
+   */
+  get iopubMessage(): ISignal<IKernel, IKernelMessage> {
+    return Private.iopubMessageSignal.bind(this);
+  }
+
+  /**
    * A signal emitted for unhandled kernel message.
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
@@ -860,7 +867,12 @@ class Kernel implements IKernel {
       let future = this._futures && this._futures.get(parentHeader.msg_id);
       if (future) {
         future.handleMsg(msg);
-        handled = true;
+      } else {
+        // If the message was sent by us and was not iopub, it is orphaned.
+        let owned = parentHeader.session === this.clientId;
+        if (msg.channel !== 'iopub' && owned) {
+          this.unhandledMessage.emit(msg);
+        }
       }
     }
     if (msg.channel === 'iopub') {
@@ -870,20 +882,15 @@ class Kernel implements IKernel {
         break;
       case 'comm_open':
         this._handleCommOpen(msg);
-        handled = true;
         break;
       case 'comm_msg':
         this._handleCommMsg(msg);
-        handled = true;
         break;
       case 'comm_close':
         this._handleCommClose(msg);
-        handled = true;
         break;
       }
-    }
-    if (!handled) {
-      this.unhandledMessage.emit(msg);
+      this.iopubMessage.emit(msg);
     }
   }
 
@@ -1119,6 +1126,12 @@ namespace Private {
    */
   export
   const statusChangedSignal = new Signal<IKernel, KernelStatus>();
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  export
+  const iopubMessageSignal = new Signal<IKernel, IKernelMessage>();
 
   /**
    * A signal emitted for unhandled kernel message.

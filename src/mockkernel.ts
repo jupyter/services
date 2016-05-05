@@ -61,6 +61,13 @@ class MockKernel implements IKernel {
   }
 
   /**
+   * A signal emitted for iopub kernel messages.
+   */
+  get iopubMessage(): ISignal<IKernel, IKernelMessage> {
+    return Private.iopubMessageSignal.bind(this);
+  }
+
+  /**
    * A signal emitted for unhandled kernel message.
    */
   get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
@@ -290,6 +297,12 @@ namespace Private {
    */
   export
   const statusChangedSignal = new Signal<IKernel, KernelStatus>();
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  export
+  const iopubMessageSignal = new Signal<IKernel, IKernelMessage>();
 
   /**
    * A signal emitted for unhandled kernel message.

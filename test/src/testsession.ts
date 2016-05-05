@@ -437,8 +437,9 @@ describe('jupyter.services - session', () => {
           let msg = createKernelMessage({
             msgType: 'foo',
             channel: 'bar',
-            session: 'baz'
+            session: session.kernel.clientId
           });
+          msg.parent_header = msg.header;
           tester.send(msg);
         });
       });
