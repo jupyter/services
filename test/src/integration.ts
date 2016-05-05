@@ -56,8 +56,11 @@ describe('jupyter.services - Integration', () => {
         // should grab the same kernel object
         connectToKernel(kernel.id).then((kernel2) => {
           console.log('Should have gotten the same kernel');
-          if (kernel2.clientId !== kernel.clientId) {
-            throw Error('Did not reuse kernel');
+          if (kernel2.clientId === kernel.clientId) {
+            throw Error('Did create new kernel');
+          }
+          if (kernel2.id !== kernel.id) {
+            throw Error('Did clone kernel');
           }
           listRunningKernels().then((kernels) => {
             if (!kernels.length) {
@@ -120,8 +123,11 @@ describe('jupyter.services - Integration', () => {
           // should grab the same session object
           connectToSession(session.id, options).then((session2) => {
             console.log('Should have gotten the same kernel');
-            if (session2.kernel.clientId !== session.kernel.clientId) {
-              throw Error('Did not reuse session');
+            if (session2.kernel.clientId === session.kernel.clientId) {
+              throw Error('Did not clone the session');
+            }
+            if (session2.kernel.id !== session.kernel.id) {
+              throw Error('Did not clone the session');
             }
 
             listRunningSessions().then((sessions) => {
