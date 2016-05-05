@@ -180,7 +180,7 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
  *
  * #### Notes
  * If the session was already started via `startNewSession`, the existing
- * NotebookSession object is used as the fulfillment value.
+ * NotebookSession object's information is used in the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * session.
@@ -190,9 +190,9 @@ function startNewSession(options: ISessionOptions): Promise<INotebookSession> {
 export
 function findSessionById(id: string, options?: ISessionOptions): Promise<ISessionId> {
   let sessions = Private.runningSessions;
-  for (let sessionId in sessions) {
-    let session = sessions[sessionId];
-    if (sessionId === id) {
+  for (let clientId in sessions) {
+    let session = sessions[clientId];
+    if (session.id === id) {
       let sessionId = {
         id,
         notebook: { path: session.notebookPath },
@@ -213,7 +213,7 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
  *
  * #### Notes
  * If the session was already started via `startNewSession`, the existing
- * NotebookSession object is used as the fulfillment value.
+ * NotebookSession object's info is used in the fulfillment value.
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * session using [listRunningSessions].
@@ -226,11 +226,11 @@ function findSessionById(id: string, options?: ISessionOptions): Promise<ISessio
 export
 function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISessionId> {
   let sessions = Private.runningSessions;
-  for (let id in sessions) {
-    let session = sessions[id];
+  for (let clientId in sessions) {
+    let session = sessions[clientId];
     if (session.notebookPath === path) {
       let sessionId = {
-        id,
+        id: session.id,
         notebook: { path: session.notebookPath },
         kernel: { name: session.kernel.name, id: session.kernel.id }
       };
@@ -266,9 +266,11 @@ function findSessionByPath(path: string, options?: ISessionOptions): Promise<ISe
  */
 export
 function connectToSession(id: string, options?: ISessionOptions): Promise<INotebookSession> {
-  let session = Private.runningSessions[id];
-  if (session) {
-    return Promise.resolve(session);
+  for (let clientId in Private.runningSessions) {
+    let session = Private.runningSessions[clientId];
+    if (session.id === id) {
+      return session.clone();
+    }
   }
   return Private.getSessionId(id, options).then(sessionId => {
     return Private.createSession(sessionId, options);
@@ -293,8 +295,8 @@ class NotebookSession implements INotebookSession {
     this._id = id;
     this._notebookPath = options.notebookPath;
     this._kernel = kernel;
-    let baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, this._id);
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._url = utils.urlPathJoin(this._baseUrl, SESSION_SERVICE_URL, this._id);
     this._kernel.statusChanged.connect(this.onKernelStatus, this);
     this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
     this._options = utils.copy(options);
@@ -395,14 +397,28 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
+   * Clone the current session with a new clientId.
+   */
+  clone(): Promise<INotebookSession> {
+    return connectToKernel(this.kernel.id).then(kernel => {
+      let options = {
+        baseUrl: this._baseUrl,
+        notebookPath: this._notebookPath,
+        ajaxSettings: this.ajaxSettings
+      }
+      return new NotebookSession(options, this._id, kernel);
+    });
+  }
+
+  /**
    * Dispose of the resources held by the session.
    */
   dispose(): void {
     this._kernel.dispose();
     this._options = null;
+    delete Private.runningSessions[this.kernel.clientId];
     this._kernel = null;
     clearSignalData(this);
-    delete Private.runningSessions[this._id];
   }
 
   /**
@@ -529,6 +545,7 @@ class NotebookSession implements INotebookSession {
   private _notebookPath = '';
   private _ajaxSettings = '';
   private _kernel: IKernel = null;
+  private _baseUrl = '';
   private _url = '';
   private _options: ISessionOptions = null;
 }
@@ -566,7 +583,7 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions: { [key: string]: INotebookSession; } = Object.create(null);
+  const runningSessions: { [key: string]: NotebookSession; } = Object.create(null);
 
   /**
    * Create a new session, or return an existing session if a session if
@@ -621,7 +638,7 @@ namespace Private {
   function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
     return createKernel(sessionId, options).then(kernel => {
        let session = new NotebookSession(options, sessionId.id, kernel);
-       runningSessions[session.id] = session;
+       runningSessions[session.kernel.clientId] = session;
        return session;
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);

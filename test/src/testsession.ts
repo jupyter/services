@@ -298,6 +298,9 @@ describe('jupyter.services - session', () => {
       startSession(sessionId).then(session => {
         connectToSession(sessionId.id).then((newSession) => {
           expect(newSession.id).to.be(sessionId.id);
+          expect(newSession.kernel.id).to.be(sessionId.kernel.id);
+          expect(newSession).to.not.be(session);
+          expect(newSession.kernel).to.not.be(session.kernel);
           session.dispose();
           done();
         });
@@ -902,7 +905,10 @@ describe('jupyter.services - session', () => {
         manager.startNew({ notebookPath: 'test.ipynb' }
         ).then(session => {
           manager.connectTo(session.id).then(newSession => {
-            expect(newSession).to.be(session);
+            expect(newSession.id).to.be(session.id);
+            expect(newSession.kernel.id).to.be(session.kernel.id);
+            expect(newSession).to.not.be(session);
+            expect(newSession.kernel).to.not.be(session.kernel);
             session.dispose();
             done();
           });

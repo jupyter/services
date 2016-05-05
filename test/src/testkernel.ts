@@ -1223,6 +1223,7 @@ describe('jupyter.services - kernel', () => {
           manager.connectTo(id).then(newKernel => {
             expect(newKernel.name).to.be(kernel.name);
             expect(newKernel.id).to.be(kernel.id);
+            expect(newKernel).to.not.be(kernel);
             done();
           });
         });
