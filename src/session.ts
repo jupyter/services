@@ -46,9 +46,9 @@ class NotebookSessionManager implements INotebookSessionManager {
    *
    * @param options - The default options for each session.
    */
-   constructor(options?: ISessionOptions) {
-     this._options = utils.copy(options || {});
-   }
+  constructor(options?: ISessionOptions) {
+    this._options = utils.copy(options || {});
+  }
 
   /**
    * Get the available kernel specs. See also [[getKernelSpecs]].
@@ -121,6 +121,8 @@ class NotebookSessionManager implements INotebookSessionManager {
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
  *
+ * All client-side sessions are updated with current information.
+ *
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
@@ -143,8 +145,28 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
     for (let i = 0; i < success.data.length; i++) {
       validate.validateSessionId(success.data[i]);
     }
+    updateRunningSessions(success.data);
     return success.data;
   }, Private.onSessionError);
+}
+
+
+/**
+ * Update the running sessions based on new data from the server.
+ */
+function updateRunningSessions(sessions: ISessionId[]): void {
+  for (let session in Private.runningSessions) {
+    let updated = false;
+    for (let sId of sessions) {
+      if (sId.id === session.id) {
+        session.update(sId);
+        updated = true;
+        break;
+      }
+    }
+    // If session is no longer running on disk, emit dead signal.
+    if (!updated) session.sessionDied.emit(void 0);
+  }
 }
 
 
@@ -294,10 +316,9 @@ class NotebookSession implements INotebookSession {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._notebookPath = options.notebookPath;
-    this._kernel = kernel;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._url = utils.urlPathJoin(this._baseUrl, SESSION_SERVICE_URL, this._id);
-    this.connectKernelSignals(kernel);
+    this.setupKernel(kernel);
     this._options = utils.copy(options);
   }
 
@@ -406,14 +427,52 @@ class NotebookSession implements INotebookSession {
    * Clone the current session with a new clientId.
    */
   clone(): Promise<INotebookSession> {
-    return connectToKernel(this.kernel.id).then(kernel => {
+    return this._connectToKernel(this.kernel.id).then(kernel => {
       let options = {
         baseUrl: this._baseUrl,
-        notebookPath: this._notebookPath,
         ajaxSettings: this.ajaxSettings
       }
       return new NotebookSession(options, this._id, kernel);
     });
+  }
+
+  /**
+   * Update the session based on a session model from the server.
+   */
+  update(id: ISessionId): void {
+    this._notebookPath = id.notebook.path;
+    let options = this._getKernelOptions();
+    if (id.kernel.id !== this._kernel.id) {
+      connectToKernel(id.kernel.id, options).then(kernel => {
+        this.setupKernel(kernel);
+        this.kernelChanged.emit(kernel);
+      });
+    } else if (id.kernel.name !== this._kernel.name) {
+      options.name = id.kernel.name;
+      startNewKernel(options).then(kernel => {
+        this.setupKernel(kernel);
+        this.kernelChanged.emit(kernel);
+      });
+    }
+  }
+
+  private _getKernelOptions(): IKernelOptions {
+    return {
+      baseUrl: this._baseUrl,
+      wsUrl: this._wsUrl,
+      username: this.kernel.username,
+      ajaxSettings: this.ajaxSettings
+    }
+  }
+  /**
+   * Connect to an existing kernel.
+   */
+  private _connectToKernel(id: string): Promise<IKernel> {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    }
+    return connectToKernel(id, options);
   }
 
   /**
@@ -471,8 +530,7 @@ class NotebookSession implements INotebookSession {
       this._notebookPath = id.notebook.path;
       return Private.createKernel(id, options);
     }).then(kernel => {
-      this._kernel = kernel;
-      this.connectKernelSignals(kernel);
+      this.setupKernel(kernel);
       this.kernelChanged.emit(kernel);
       return kernel;
     });

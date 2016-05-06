@@ -224,6 +224,11 @@ interface INotebookSession extends IDisposable {
   changeKernel(options: IKernelId): Promise<IKernel>;
 
   /**
+   * Update the session based on a session model from the server.
+   */
+  update(id: ISessionId): void;
+
+  /**
    * Kill the kernel and shutdown the session.
    *
    * #### Notes
