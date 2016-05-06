@@ -58,6 +58,13 @@ class MockSession implements INotebookSession {
   }
 
   /**
+   * A signal emitted for a kernel messages.
+   */
+  get iopubMessage(): ISignal<INotebookSession, IKernelMessage> {
+    return Private.iopubMessageSignal.bind(this);
+  }
+
+  /**
    * A signal emitted for an unhandled kernel message.
    */
   get unhandledMessage(): ISignal<INotebookSession, IKernelMessage> {
@@ -163,6 +170,12 @@ namespace Private {
    */
   export
   const statusChangedSignal = new Signal<INotebookSession, KernelStatus>();
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  export
+  const iopubMessageSignal = new Signal<INotebookSession, IKernelMessage>();
 
   /**
    * A signal emitted for an unhandled kernel message.

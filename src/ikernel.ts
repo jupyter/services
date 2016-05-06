@@ -613,6 +613,11 @@ interface IKernel extends IDisposable {
   statusChanged: ISignal<IKernel, KernelStatus>;
 
   /**
+   * A signal emitted for iopub kernel messages.
+   */
+  iopubMessage: ISignal<IKernel, IKernelMessage>;
+
+  /**
    * A signal emitted for unhandled kernel message.
    */
   unhandledMessage: ISignal<IKernel, IKernelMessage>;

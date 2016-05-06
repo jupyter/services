@@ -153,6 +153,11 @@ interface INotebookSession extends IDisposable {
   statusChanged: ISignal<INotebookSession, KernelStatus>;
 
   /**
+   * A signal emitted for iopub kernel messages.
+   */
+  iopubMessage: ISignal<INotebookSession, IKernelMessage>;
+
+  /**
    * A signal emitted for unhandled kernel message.
    */
   unhandledMessage: ISignal<INotebookSession, IKernelMessage>;

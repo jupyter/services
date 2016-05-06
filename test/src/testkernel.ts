@@ -294,6 +294,48 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
+    context('#iopubMessage', () => {
+
+      it('should be emitted for an iopub message', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          kernel.iopubMessage.connect((k, msg) => {
+            expect(msg.header.msg_type).to.be('status');
+            kernel.dispose();
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'status',
+            channel: 'iopub',
+            session: kernel.clientId
+          });
+          msg.content.execution_state = 'idle';
+          msg.parent_header = msg.header;
+          tester.send(msg);
+        });
+      });
+
+      it('should be emitted regardless of the sender', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          kernel.iopubMessage.connect((k, msg) => {
+            expect(msg.header.msg_type).to.be('status');
+            kernel.dispose();
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'status',
+            channel: 'iopub',
+            session: 'baz'
+          });
+          msg.content.execution_state = 'idle';
+          msg.parent_header = msg.header;
+          tester.send(msg);
+        });
+      });
+
+    });
+
     context('#unhandledMessage', () => {
 
       it('should be emitted for an unhandled message', (done) => {
@@ -306,11 +348,52 @@ describe('jupyter.services - kernel', () => {
           let msg = createKernelMessage({
             msgType: 'foo',
             channel: 'bar',
-            session: 'baz'
+            session: kernel.clientId
           });
+          msg.parent_header = msg.header;
           tester.send(msg);
         });
       });
+
+      it('should not be emitted for an iopub signal', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          let called = false;
+          kernel.unhandledMessage.connect((k, msg) => {
+            called = true;
+          });
+          let msg = createKernelMessage({
+            msgType: 'status',
+            channel: 'iopub',
+            session: kernel.clientId
+          });
+          msg.content.execution_state = 'idle';
+          msg.parent_header = msg.header;
+          tester.send(msg);
+          expect(called).to.be(false);
+          done();
+        });
+      });
+
+      it('should not be emitted for a different client session', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          let called = false;
+          kernel.unhandledMessage.connect((k, msg) => {
+            called = true;
+          });
+          let msg = createKernelMessage({
+            msgType: 'foo',
+            channel: 'bar',
+            session: 'baz'
+          });
+          msg.parent_header = msg.header;
+          tester.send(msg);
+          expect(called).to.be(false);
+          done();
+        });
+      });
+
     });
 
     context('#id', () => {
@@ -1223,6 +1306,7 @@ describe('jupyter.services - kernel', () => {
           manager.connectTo(id).then(newKernel => {
             expect(newKernel.name).to.be(kernel.name);
             expect(newKernel.id).to.be(kernel.id);
+            expect(newKernel).to.not.be(kernel);
             done();
           });
         });

@@ -298,6 +298,9 @@ describe('jupyter.services - session', () => {
       startSession(sessionId).then(session => {
         connectToSession(sessionId.id).then((newSession) => {
           expect(newSession.id).to.be(sessionId.id);
+          expect(newSession.kernel.id).to.be(sessionId.kernel.id);
+          expect(newSession).to.not.be(session);
+          expect(newSession.kernel).to.not.be(session.kernel);
           session.dispose();
           done();
         });
@@ -420,6 +423,29 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#iopubMessage', () => {
+
+      it('should be emitted for an iopub message', (done) => {
+        let tester = new KernelTester();
+        let sessionId = createSessionId();
+        startSession(sessionId, tester).then(session => {
+          session.iopubMessage.connect((s, msg) => {
+            expect(msg.header.msg_type).to.be('status');
+            session.dispose();
+            done();
+          });
+          let msg = createKernelMessage({
+            msgType: 'status',
+            channel: 'iopub',
+            session: ''
+          });
+          msg.content.execution_state = 'idle';
+          msg.parent_header = msg.header;
+          tester.send(msg);
+        });
+      });
+    });
+
     context('#unhandledMessage', () => {
 
       it('should be emitted for an unhandled message', (done) => {
@@ -434,8 +460,9 @@ describe('jupyter.services - session', () => {
           let msg = createKernelMessage({
             msgType: 'foo',
             channel: 'bar',
-            session: 'baz'
+            session: session.kernel.clientId
           });
+          msg.parent_header = msg.header;
           tester.send(msg);
         });
       });
@@ -902,7 +929,10 @@ describe('jupyter.services - session', () => {
         manager.startNew({ notebookPath: 'test.ipynb' }
         ).then(session => {
           manager.connectTo(session.id).then(newSession => {
-            expect(newSession).to.be(session);
+            expect(newSession.id).to.be(session.id);
+            expect(newSession.kernel.id).to.be(session.kernel.id);
+            expect(newSession).to.not.be(session);
+            expect(newSession.kernel).to.not.be(session.kernel);
             session.dispose();
             done();
           });

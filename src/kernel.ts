@@ -134,8 +134,8 @@ class KernelManager implements IKernelManager {
  * Find a kernel by id.
  *
  * #### Notes
- * If the kernel was already started via `startNewKernel`, the existing
- * IKernel object is used as the fulfillment value.
+ * If the kernel was already started via `startNewKernel`, we return its
+ * `IKernelId`.
  *
  * Otherwise, if `options` are given, we attempt to find to the existing
  * kernel.
@@ -145,9 +145,9 @@ class KernelManager implements IKernelManager {
 export
 function findKernelById(id: string, options?: IKernelOptions): Promise<IKernelId> {
   let kernels = Private.runningKernels;
-  for (let kernelId in kernels) {
-    let kernel = kernels[kernelId];
-    if (kernelId === id) {
+  for (let clientId in kernels) {
+    let kernel = kernels[clientId];
+    if (kernel.id === id) {
       let result = { id: kernel.id, name: kernel.name };
       return Promise.resolve(result);
     }
@@ -271,7 +271,7 @@ function startNewKernel(options?: IKernelOptions): Promise<IKernel> {
  *
  * #### Notes
  * If the kernel was already started via `startNewKernel`, the existing
- * Kernel object is used as the fulfillment value.
+ * Kernel object info is used to create another instance.
  *
  * Otherwise, if `options` are given, we attempt to connect to the existing
  * kernel found by calling `listRunningKernels`.
@@ -283,9 +283,11 @@ function startNewKernel(options?: IKernelOptions): Promise<IKernel> {
  */
 export
 function connectToKernel(id: string, options?: IKernelOptions): Promise<IKernel> {
-  let kernel = Private.runningKernels[id];
-  if (kernel) {
-    return Promise.resolve(kernel);
+  for (let clientId in Private.runningKernels) {
+    let kernel = Private.runningKernels[clientId];
+    if (kernel.id === id) {
+      return Promise.resolve(kernel.clone());
+    }
   }
   return Private.getKernelId(id, options).then(kernelId => {
     return new Kernel(options, id);
@@ -336,7 +338,7 @@ class Kernel implements IKernel {
     this._commPromises = new Map<string, Promise<IComm>>();
     this._comms = new Map<string, IComm>();
     this._createSocket();
-    Private.runningKernels[this._id] = this;
+    Private.runningKernels[this._clientId] = this;
   }
 
   /**
@@ -344,6 +346,13 @@ class Kernel implements IKernel {
    */
   get statusChanged(): ISignal<IKernel, KernelStatus> {
     return Private.statusChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  get iopubMessage(): ISignal<IKernel, IKernelMessage> {
+    return Private.iopubMessageSignal.bind(this);
   }
 
   /**
@@ -427,6 +436,20 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Clone the current kernel with a new clientId.
+   */
+  clone(): IKernel {
+    let options = {
+      baseUrl: this._baseUrl,
+      wsUrl: this._wsUrl,
+      name: this._name,
+      username: this._username,
+      ajaxSettings: this.ajaxSettings
+    }
+    return new Kernel(options, this._id);
+  }
+
+  /**
    * Dispose of the resources held by the kernel.
    */
   dispose(): void {
@@ -450,7 +473,7 @@ class Kernel implements IKernel {
     this._status = KernelStatus.Dead;
     this._targetRegistry = null;
     clearSignalData(this);
-    delete Private.runningKernels[this._id];
+    delete Private.runningKernels[this._clientId];
   }
 
   /**
@@ -844,7 +867,12 @@ class Kernel implements IKernel {
       let future = this._futures && this._futures.get(parentHeader.msg_id);
       if (future) {
         future.handleMsg(msg);
-        handled = true;
+      } else {
+        // If the message was sent by us and was not iopub, it is orphaned.
+        let owned = parentHeader.session === this.clientId;
+        if (msg.channel !== 'iopub' && owned) {
+          this.unhandledMessage.emit(msg);
+        }
       }
     }
     if (msg.channel === 'iopub') {
@@ -854,20 +882,15 @@ class Kernel implements IKernel {
         break;
       case 'comm_open':
         this._handleCommOpen(msg);
-        handled = true;
         break;
       case 'comm_msg':
         this._handleCommMsg(msg);
-        handled = true;
         break;
       case 'comm_close':
         this._handleCommClose(msg);
-        handled = true;
         break;
       }
-    }
-    if (!handled) {
-      this.unhandledMessage.emit(msg);
+      this.iopubMessage.emit(msg);
     }
   }
 
@@ -1105,6 +1128,12 @@ namespace Private {
   const statusChangedSignal = new Signal<IKernel, KernelStatus>();
 
   /**
+   * A signal emitted for iopub kernel messages.
+   */
+  export
+  const iopubMessageSignal = new Signal<IKernel, IKernelMessage>();
+
+  /**
    * A signal emitted for unhandled kernel message.
    */
   export
@@ -1114,7 +1143,7 @@ namespace Private {
    * A module private store for running kernels.
    */
   export
-  const runningKernels: { [key: string]: IKernel; } = Object.create(null);
+  const runningKernels: { [key: string]: Kernel; } = Object.create(null);
 
   /**
    * Restart a kernel.
