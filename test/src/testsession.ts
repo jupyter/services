@@ -410,6 +410,7 @@ describe('jupyter.services - session', () => {
         startSession(id, tester).then(session => {
           session.changeKernel({ name: newName });
           id.kernel.name = newName;
+          id.kernel.id = 'baz';
           tester.onRequest = request => {
             if (request.method === 'PATCH') {
               tester.respond(200, id);
@@ -727,6 +728,32 @@ describe('jupyter.services - session', () => {
           }
           session.changeKernel({ name: newName }).then(kernel => {
             expect(kernel.name).to.be(newName);
+            session.dispose();
+            done();
+          });
+        });
+      });
+
+      it('should update the notebook path if it has changed', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          session.kernel.dispose();
+          id.kernel.id = uuid();
+          id.kernel.name = newName;
+          id.notebook.path = 'fizz/buzz.ipynb';
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
+            } else {
+              tester.respond(200, { name: id.kernel.name,
+                                      id: id.kernel.id });
+            }
+          }
+          session.changeKernel({ name: newName }).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(session.notebookPath).to.be(id.notebook.path);
             session.dispose();
             done();
           });

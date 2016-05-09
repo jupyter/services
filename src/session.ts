@@ -145,32 +145,8 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
     for (let i = 0; i < success.data.length; i++) {
       validate.validateSessionId(success.data[i]);
     }
-    return updateRunningSessions(success.data);
+    return Private.updateRunningSessions(success.data);
   }, Private.onSessionError);
-}
-
-
-/**
- * Update the running sessions based on new data from the server.
- */
-function updateRunningSessions(sessions: ISessionId[]): Promise<ISessionId[]> {
-  let promises: Promise<void>[] = [];
-  for (let uuid in Private.runningSessions) {
-    let session = Private.runningSessions[uuid];
-    let updated = false;
-    for (let sId of sessions) {
-      if (sId.id === session.id) {
-        promises.push(session.update(sId));
-        updated = true;
-        break;
-      }
-    }
-    // If session is no longer running on disk, emit dead signal.
-    if (!updated && session.status !== KernelStatus.Dead) {
-      session.sessionDied.emit(void 0);
-    }
-  }
-  return Promise.all(promises).then(() => { return sessions; });
 }
 
 
@@ -514,17 +490,8 @@ class NotebookSession implements INotebookSession {
     }
     this._kernel.dispose();
     let data = JSON.stringify({ kernel: options });
-    return this._patch(data).then(id => {
-      let options = utils.copy(this._options) as ISessionOptions;
-      options.ajaxSettings = this.ajaxSettings;
-      options.kernelName = id.kernel.name;
-      options.notebookPath = id.notebook.path;
-      this._notebookPath = id.notebook.path;
-      return Private.createKernel(id, options);
-    }).then(kernel => {
-      this.setupKernel(kernel);
-      this.kernelChanged.emit(kernel);
-      return kernel;
+    return this._patch(data).then(() => {
+      return this.kernel;
     });
   }
 
@@ -623,7 +590,7 @@ class NotebookSession implements INotebookSession {
       let data = success.data as ISessionId;
       validate.validateSessionId(data);
       this._updating = false;
-      return data;
+      return Private.updateById(data);
     }, error => {
       this._updating = false;
       return Private.onSessionError(error);
@@ -705,7 +672,8 @@ namespace Private {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       validate.validateSessionId(success.data);
-      return success.data as ISessionId;
+      let data = success.data as ISessionId;
+      return updateById(data);
     }, onSessionError);
   }
 
@@ -758,8 +726,47 @@ namespace Private {
       }
       let data = success.data as ISessionId;
       validate.validateSessionId(data);
-      return data;
+      return updateById(data);
     }, Private.onSessionError);
+  }
+
+  /**
+   * Update the running sessions based on new data from the server.
+   */
+  export
+  function updateRunningSessions(sessions: ISessionId[]): Promise<ISessionId[]> {
+    let promises: Promise<void>[] = [];
+    for (let uuid in runningSessions) {
+      let session = runningSessions[uuid];
+      let updated = false;
+      for (let sId of sessions) {
+        if (sId.id === session.id) {
+          promises.push(session.update(sId));
+          updated = true;
+          break;
+        }
+      }
+      // If session is no longer running on disk, emit dead signal.
+      if (!updated && session.status !== KernelStatus.Dead) {
+        session.sessionDied.emit(void 0);
+      }
+    }
+    return Promise.all(promises).then(() => { return sessions; });
+  }
+
+  /**
+   * Update the running sessions given an updated session Id.
+   */
+  export
+  function updateById(sessionId: ISessionId): Promise<ISessionId> {
+    let promises: Promise<void>[] = [];
+    for (let uuid in runningSessions) {
+      let session = runningSessions[uuid];
+      if (session.id === sessionId.id) {
+        promises.push(session.update(sessionId));
+      }
+    }
+    return Promise.all(promises).then(() => { return sessionId; });
   }
 
   /**
