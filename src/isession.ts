@@ -153,6 +153,11 @@ interface INotebookSession extends IDisposable {
   statusChanged: ISignal<INotebookSession, KernelStatus>;
 
   /**
+   * A signal emitted when the notebook path changes.
+   */
+  notebookPathChanged: ISignal<INotebookSession, string>;
+
+  /**
    * A signal emitted for iopub kernel messages.
    */
   iopubMessage: ISignal<INotebookSession, IKernelMessage>;

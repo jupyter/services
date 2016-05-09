@@ -340,6 +340,13 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
+   * A signal emitted when the notebook path changes.
+   */
+  get notebookPathChanged(): ISignal<INotebookSession, string> {
+    return Private.notebookPathChangedSignal.bind(this);
+  }
+
+  /**
    * Get the session id.
    *
    * #### Notes
@@ -425,6 +432,9 @@ class NotebookSession implements INotebookSession {
     if (this._updating) {
       return Promise.resolve(void 0);
     }
+    if (this._notebookPath !== id.notebook.path) {
+      this.notebookPathChanged.emit(id.notebook.path);
+    }
     this._notebookPath = id.notebook.path;
     let options = this._getKernelOptions();
     if (id.kernel.id !== this._kernel.id) {
@@ -470,9 +480,7 @@ class NotebookSession implements INotebookSession {
     let data = JSON.stringify({
       notebook: { path }
     });
-    return this._patch(data).then(id => {
-      this._notebookPath = id.notebook.path;
-    });
+    return this._patch(data).then(() => { return void 0; });
   }
 
   /**
@@ -641,6 +649,12 @@ namespace Private {
    */
   export
   const unhandledMessageSignal = new Signal<INotebookSession, IKernelMessage>();
+
+  /**
+   * A signal emitted when the notebook path changes.
+   */
+  export
+  const notebookPathChangedSignal = new Signal<INotebookSession, string>();
 
   /**
    * The running sessions.

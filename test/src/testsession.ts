@@ -494,6 +494,28 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#notebookPathChanged', () => {
+
+      it('should be emitted when the notebook path changes', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newPath = '/foo.ipynb';
+        let newId = JSON.parse(JSON.stringify(id));
+        newId.notebook.path = newPath;
+        startSession(id, tester).then(session => {
+          tester.onRequest = () => {
+            tester.respond(200, newId);
+          };
+          session.notebookPathChanged.connect((s, path) => {
+            expect(path).to.be(newPath);
+            done();
+          });
+          session.renameNotebook(newPath);
+        });
+      });
+
+    });
+
     context('#id', () => {
 
       it('should be a read only string', (done) => {

@@ -72,6 +72,13 @@ class MockSession implements INotebookSession {
   }
 
   /**
+   * A signal emitted when the notebook path changes.
+   */
+  get notebookPathChanged(): ISignal<INotebookSession, string> {
+    return Private.notebookPathChangedSignal.bind(this);
+  }
+
+  /**
    * Get the session kernel object.
    */
   get kernel(): IKernel {
@@ -182,4 +189,11 @@ namespace Private {
    */
   export
   const unhandledMessageSignal = new Signal<INotebookSession, IKernelMessage>();
+
+  /**
+   * A signal emitted when the notebook path changes.
+   */
+  export
+  const notebookPathChangedSignal = new Signal<INotebookSession, string>();
+
 }

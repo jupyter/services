@@ -37,8 +37,8 @@
     "prepublish": "npm run build",
     "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js",
     "test:integration": "cd test && python integration_test.py",
-    "test:debug": "mocha test/build/testsession.js --debug-brk",
-    "test": "mocha test/build/testsession.js"
+    "test:debug": "mocha test/build/test*.js --debug-brk",
+    "test": "mocha test/build/test*.js"
   },
   "repository": {
     "type": "git",
