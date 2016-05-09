@@ -436,16 +436,10 @@ class NotebookSession implements INotebookSession {
       this.notebookPathChanged.emit(id.notebook.path);
     }
     this._notebookPath = id.notebook.path;
-    let options = this._getKernelOptions();
     if (id.kernel.id !== this._kernel.id) {
+      let options = this._getKernelOptions();
       options.name = id.kernel.name;
       return connectToKernel(id.kernel.id, options).then(kernel => {
-        this.setupKernel(kernel);
-        this.kernelChanged.emit(kernel);
-      });
-    } else if (id.kernel.name !== this._kernel.name) {
-      options.name = id.kernel.name;
-      return startNewKernel(options).then(kernel => {
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
       });
