@@ -125,6 +125,31 @@ describe('jupyter.services - session', () => {
       expectFailure(list, done, '');
     });
 
+    it('should update an existing session', (done) => {
+      let sessionId = createSessionId();
+      let tester = new KernelTester();
+      let newKernel = { name: 'fizz', id: 'buzz' };
+      startSession(sessionId, tester).then(session => {
+        tester.onRequest = request => {
+          tester.respond(200, [ {
+            id: sessionId.id,
+            notebook: { path : 'foo/bar.ipynb' },
+            kernel: newKernel
+          } ]);
+          tester.onRequest = request => {
+            tester.respond(200, newKernel);
+          }
+        }
+        session.kernelChanged.connect((s, kernel) => {
+          expect(kernel.name).to.be(newKernel.name);
+          expect(kernel.id).to.be(newKernel.id);
+          expect(s.notebookPath).to.be('foo/bar.ipynb');
+          done();
+        });
+        listRunningSessions('htttp://localhost:8888');
+      });
+    });
+
   });
 
   describe('startNewSession()', () => {
@@ -385,6 +410,7 @@ describe('jupyter.services - session', () => {
         startSession(id, tester).then(session => {
           session.changeKernel({ name: newName });
           id.kernel.name = newName;
+          id.kernel.id = 'baz';
           tester.onRequest = request => {
             if (request.method === 'PATCH') {
               tester.respond(200, id);
@@ -466,6 +492,28 @@ describe('jupyter.services - session', () => {
           tester.send(msg);
         });
       });
+    });
+
+    context('#notebookPathChanged', () => {
+
+      it('should be emitted when the notebook path changes', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newPath = '/foo.ipynb';
+        let newId = JSON.parse(JSON.stringify(id));
+        newId.notebook.path = newPath;
+        startSession(id, tester).then(session => {
+          tester.onRequest = () => {
+            tester.respond(200, newId);
+          };
+          session.notebookPathChanged.connect((s, path) => {
+            expect(path).to.be(newPath);
+            done();
+          });
+          session.renameNotebook(newPath);
+        });
+      });
+
     });
 
     context('#id', () => {
@@ -708,6 +756,32 @@ describe('jupyter.services - session', () => {
         });
       });
 
+      it('should update the notebook path if it has changed', (done) => {
+        let tester = new KernelTester();
+        let id = createSessionId();
+        let newName = 'foo';
+        startSession(id, tester).then(session => {
+          session.kernel.dispose();
+          id.kernel.id = uuid();
+          id.kernel.name = newName;
+          id.notebook.path = 'fizz/buzz.ipynb';
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, id);
+            } else {
+              tester.respond(200, { name: id.kernel.name,
+                                      id: id.kernel.id });
+            }
+          }
+          session.changeKernel({ name: newName }).then(kernel => {
+            expect(kernel.name).to.be(newName);
+            expect(session.notebookPath).to.be(id.notebook.path);
+            session.dispose();
+            done();
+          });
+        });
+      });
+
     });
 
     context('#shutdown()', () => {
@@ -818,15 +892,14 @@ describe('jupyter.services - session', () => {
 
     describe('#listRunning()', () => {
 
-      it('should a list of session ids', (done) => {
+      it('should a return list of session ids', (done) => {
         let handler = new RequestHandler();
         let manager = new NotebookSessionManager(createSessionOptions());
         let sessionIds = [createSessionId(), createSessionId()];
         handler.onRequest = () => {
           handler.respond(200, sessionIds);
         }
-        let list = manager.listRunning();
-        list.then((response: ISessionId[]) => {
+        manager.listRunning().then((response: ISessionId[]) => {
           expect(response[0]).to.eql(sessionIds[0]);
           expect(response[1]).to.eql(sessionIds[1]);
           done();
@@ -952,13 +1025,12 @@ describe('jupyter.services - session', () => {
 function startSession(sessionId: ISessionId, tester?: KernelTester): Promise<INotebookSession> {
   tester = tester || new KernelTester();
   tester.onRequest = request => {
-    if (request.method === 'POST') {
-      tester.respond(201, sessionId);
-    } else {
+    tester.respond(200, sessionId);
+    tester.onRequest = request => {
       tester.respond(200, { name: sessionId.kernel.name,
                               id: sessionId.kernel.id });
     }
   }
   let options = createSessionOptions(sessionId);
-  return startNewSession(options);
+  return connectToSession(sessionId.id, options);
 }
