@@ -15,7 +15,7 @@ import {
 
 import {
   KernelStatus, IKernel, IKernelSpecIds, IKernelMessage,
-  IKernelId
+  IKernelId, IKernelOptions
 } from './ikernel';
 
 import {
@@ -23,7 +23,7 @@ import {
 } from './isession';
 
 import {
-  connectToKernel, getKernelSpecs
+  connectToKernel, getKernelSpecs, startNewKernel
 } from './kernel';
 
 import * as validate
@@ -145,8 +145,7 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
     for (let i = 0; i < success.data.length; i++) {
       validate.validateSessionId(success.data[i]);
     }
-    updateRunningSessions(success.data);
-    return success.data;
+    return updateRunningSessions(success.data);
   }, Private.onSessionError);
 }
 
@@ -154,19 +153,24 @@ function listRunningSessions(options?: ISessionOptions): Promise<ISessionId[]> {
 /**
  * Update the running sessions based on new data from the server.
  */
-function updateRunningSessions(sessions: ISessionId[]): void {
-  for (let session in Private.runningSessions) {
+function updateRunningSessions(sessions: ISessionId[]): Promise<ISessionId[]> {
+  let promises: Promise<void>[] = [];
+  for (let uuid in Private.runningSessions) {
+    let session = Private.runningSessions[uuid];
     let updated = false;
     for (let sId of sessions) {
       if (sId.id === session.id) {
-        session.update(sId);
+        promises.push(session.update(sId));
         updated = true;
         break;
       }
     }
     // If session is no longer running on disk, emit dead signal.
-    if (!updated) session.sessionDied.emit(void 0);
+    if (!updated && session.status !== KernelStatus.Dead) {
+      session.sessionDied.emit(void 0);
+    }
   }
+  return Promise.all(promises).then(() => { return sessions; });
 }
 
 
@@ -316,8 +320,10 @@ class NotebookSession implements INotebookSession {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._notebookPath = options.notebookPath;
-    this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._url = utils.urlPathJoin(this._baseUrl, SESSION_SERVICE_URL, this._id);
+    options.baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL, this._id);
+    this._uuid = utils.uuid();
+    Private.runningSessions[this._uuid] = this;
     this.setupKernel(kernel);
     this._options = utils.copy(options);
   }
@@ -396,7 +402,7 @@ class NotebookSession implements INotebookSession {
    * This is a read-only property, and is a delegate to the kernel status.
    */
   get status(): KernelStatus {
-    return this._kernel.status;
+    return this._kernel ? this._kernel.status : KernelStatus.Dead;
   }
 
   /**
@@ -427,11 +433,10 @@ class NotebookSession implements INotebookSession {
    * Clone the current session with a new clientId.
    */
   clone(): Promise<INotebookSession> {
-    return this._connectToKernel(this.kernel.id).then(kernel => {
-      let options = {
-        baseUrl: this._baseUrl,
-        ajaxSettings: this.ajaxSettings
-      }
+    let options = this._getKernelOptions();
+    return connectToKernel(this.kernel.id, options).then(kernel => {
+      let options = utils.copy(this._options);
+      options.ajaxSettings = this.ajaxSettings;
       return new NotebookSession(options, this._id, kernel);
     });
   }
@@ -439,40 +444,27 @@ class NotebookSession implements INotebookSession {
   /**
    * Update the session based on a session model from the server.
    */
-  update(id: ISessionId): void {
+  update(id: ISessionId): Promise<void> {
+    // Avoid a race condition if we are waiting for a REST call return.
+    if (this._updating) {
+      return Promise.resolve(void 0);
+    }
     this._notebookPath = id.notebook.path;
     let options = this._getKernelOptions();
     if (id.kernel.id !== this._kernel.id) {
-      connectToKernel(id.kernel.id, options).then(kernel => {
+      options.name = id.kernel.name;
+      return connectToKernel(id.kernel.id, options).then(kernel => {
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
       });
     } else if (id.kernel.name !== this._kernel.name) {
       options.name = id.kernel.name;
-      startNewKernel(options).then(kernel => {
+      return startNewKernel(options).then(kernel => {
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
       });
     }
-  }
-
-  private _getKernelOptions(): IKernelOptions {
-    return {
-      baseUrl: this._baseUrl,
-      wsUrl: this._wsUrl,
-      username: this.kernel.username,
-      ajaxSettings: this.ajaxSettings
-    }
-  }
-  /**
-   * Connect to an existing kernel.
-   */
-  private _connectToKernel(id: string): Promise<IKernel> {
-    let options = {
-      baseUrl: this._baseUrl,
-      ajaxSettings: this.ajaxSettings
-    }
-    return connectToKernel(id, options);
+    return Promise.resolve(void 0);
   }
 
   /**
@@ -481,7 +473,7 @@ class NotebookSession implements INotebookSession {
   dispose(): void {
     this._kernel.dispose();
     this._options = null;
-    delete Private.runningSessions[this.kernel.clientId];
+    delete Private.runningSessions[this._uuid];
     this._kernel = null;
     clearSignalData(this);
   }
@@ -572,7 +564,8 @@ class NotebookSession implements INotebookSession {
   /**
    * Handle connections to a kernel.
    */
-  protected connectKernelSignals(kernel: IKernel): void {
+  protected setupKernel(kernel: IKernel): void {
+    this._kernel = kernel;
     kernel.statusChanged.connect(this.onKernelStatus, this);
     kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
     kernel.iopubMessage.connect(this.onIopubMessage, this);
@@ -600,6 +593,18 @@ class NotebookSession implements INotebookSession {
   }
 
   /**
+   * Get the options used to create a new kernel.
+   */
+  private _getKernelOptions(): IKernelOptions {
+    return {
+      baseUrl: this._options.baseUrl,
+      wsUrl: this._options.wsUrl,
+      username: this.kernel.username,
+      ajaxSettings: this.ajaxSettings
+    }
+  }
+
+  /**
    * Send a PATCH to the server, updating the notebook path or the kernel.
    */
   private _patch(data: string): Promise<ISessionId> {
@@ -609,6 +614,7 @@ class NotebookSession implements INotebookSession {
     ajaxSettings.data = data;
     ajaxSettings.contentType = 'application/json';
     ajaxSettings.cache = false;
+    this._updating = true;
 
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
@@ -616,17 +622,22 @@ class NotebookSession implements INotebookSession {
       }
       let data = success.data as ISessionId;
       validate.validateSessionId(data);
+      this._updating = false;
       return data;
-    }, Private.onSessionError);
+    }, error => {
+      this._updating = false;
+      return Private.onSessionError(error);
+    });
   }
 
   private _id = '';
   private _notebookPath = '';
   private _ajaxSettings = '';
   private _kernel: IKernel = null;
-  private _baseUrl = '';
+  private _uuid = '';
   private _url = '';
   private _options: ISessionOptions = null;
+  private _updating = false;
 }
 
 
@@ -722,9 +733,7 @@ namespace Private {
   export
   function createSession(sessionId: ISessionId, options: ISessionOptions): Promise<NotebookSession> {
     return createKernel(sessionId, options).then(kernel => {
-       let session = new NotebookSession(options, sessionId.id, kernel);
-       runningSessions[session.kernel.clientId] = session;
-       return session;
+       return new NotebookSession(options, sessionId.id, kernel);
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
     });

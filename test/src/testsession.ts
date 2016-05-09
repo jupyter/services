@@ -125,6 +125,31 @@ describe('jupyter.services - session', () => {
       expectFailure(list, done, '');
     });
 
+    it('should update an existing session', (done) => {
+      let sessionId = createSessionId();
+      let tester = new KernelTester();
+      let newKernel = { name: 'fizz', id: 'buzz' };
+      startSession(sessionId, tester).then(session => {
+        tester.onRequest = request => {
+          tester.respond(200, [ {
+            id: sessionId.id,
+            notebook: { path : 'foo/bar.ipynb' },
+            kernel: newKernel
+          } ]);
+          tester.onRequest = request => {
+            tester.respond(200, newKernel);
+          }
+        }
+        session.kernelChanged.connect((s, kernel) => {
+          expect(kernel.name).to.be(newKernel.name);
+          expect(kernel.id).to.be(newKernel.id);
+          expect(s.notebookPath).to.be('foo/bar.ipynb');
+          done();
+        });
+        listRunningSessions('htttp://localhost:8888');
+      });
+    });
+
   });
 
   describe('startNewSession()', () => {
@@ -818,15 +843,14 @@ describe('jupyter.services - session', () => {
 
     describe('#listRunning()', () => {
 
-      it('should a list of session ids', (done) => {
+      it('should a return list of session ids', (done) => {
         let handler = new RequestHandler();
         let manager = new NotebookSessionManager(createSessionOptions());
         let sessionIds = [createSessionId(), createSessionId()];
         handler.onRequest = () => {
           handler.respond(200, sessionIds);
         }
-        let list = manager.listRunning();
-        list.then((response: ISessionId[]) => {
+        manager.listRunning().then((response: ISessionId[]) => {
           expect(response[0]).to.eql(sessionIds[0]);
           expect(response[1]).to.eql(sessionIds[1]);
           done();
@@ -952,13 +976,12 @@ describe('jupyter.services - session', () => {
 function startSession(sessionId: ISessionId, tester?: KernelTester): Promise<INotebookSession> {
   tester = tester || new KernelTester();
   tester.onRequest = request => {
-    if (request.method === 'POST') {
-      tester.respond(201, sessionId);
-    } else {
+    tester.respond(200, sessionId);
+    tester.onRequest = request => {
       tester.respond(200, { name: sessionId.kernel.name,
                               id: sessionId.kernel.id });
     }
   }
   let options = createSessionOptions(sessionId);
-  return startNewSession(options);
+  return connectToSession(sessionId.id, options);
 }
