@@ -395,6 +395,7 @@ interface IInspectRequest {
 export
 interface IInspectReply {
   status: string;
+  found: boolean;
   data: any;
   metadata: any;
 }
