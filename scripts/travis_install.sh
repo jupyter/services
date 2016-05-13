@@ -9,10 +9,15 @@ conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda info -a
 conda install pip pyzmq
-# Install the development version of the notebook
-git clone https://github.com/jupyter/notebook
-cd notebook
-pip install --pre -e .
+
+if [[ $TRAVIS_NODE_VERSION == "0.12" ]]; then
+    conda install notebook
+else 
+    # Install the development version of the notebook
+    git clone https://github.com/jupyter/notebook
+    cd notebook
+    pip install --pre -e .
+fi
 
 # Create jupyter base dir (needed for config retrieval).
 mkdir ~/.jupyter
