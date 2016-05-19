@@ -1004,16 +1004,19 @@ class Kernel implements IKernel {
           this._sendCommMessage.bind(this),
           () => { this._unregisterComm(content.comm_id); }
         );
+        var response : any;
         try {
-          target(comm, msg);
+          response = target(comm, msg);
         } catch (e) {
           comm.close();
           console.error('Exception opening new comm');
           throw(e);
         }
-        this._commPromises.delete(comm.commId);
-        this._comms.set(comm.commId, comm);
-        return comm;
+        return Promise.resolve(response).then(() => {
+          this._commPromises.delete(comm.commId);
+          this._comms.set(comm.commId, comm);
+          return comm;
+        });
     });
     this._commPromises.set(content.comm_id, promise);
   }
