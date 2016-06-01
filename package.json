@@ -1,6 +1,6 @@
 {
   "name": "jupyter-js-services",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
