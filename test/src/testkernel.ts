@@ -562,6 +562,24 @@ describe('jupyter.services - kernel', () => {
           done();
         });
       });
+
+      it('should be save to call twice', (done) => {
+         createKernel().then(kernel => {
+          let future = kernel.execute({ code: 'foo' });
+          let comm = kernel.connectToComm('foo');
+          expect(future.isDisposed).to.be(false);
+          expect(comm.isDisposed).to.be(false);
+          kernel.dispose();
+          expect(future.isDisposed).to.be(true);
+          expect(comm.isDisposed).to.be(true);
+          expect(kernel.isDisposed).to.be(true);
+          kernel.dispose();
+          expect(future.isDisposed).to.be(true);
+          expect(comm.isDisposed).to.be(true);
+          expect(kernel.isDisposed).to.be(true);
+          done();
+        });
+      });
     });
 
     context('#sendShellMessage()', () => {
