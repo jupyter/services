@@ -603,6 +603,19 @@ describe('jupyter.services - session', () => {
           done();
         });
       });
+
+      it('should be safe to call twice', (done) => {
+        let id = createSessionId();
+        startSession(id).then(session => {
+          session.dispose();
+          expect(session.isDisposed).to.be(true);
+          expect(session.kernel).to.be(null);
+          session.dispose();
+          expect(session.isDisposed).to.be(true);
+          expect(session.kernel).to.be(null);
+          done();
+        });
+      });
     });
 
     context('#renameNotebook()', () => {

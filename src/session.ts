@@ -451,6 +451,9 @@ class NotebookSession implements INotebookSession {
    * Dispose of the resources held by the session.
    */
   dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
     this._kernel.dispose();
     this._options = null;
     delete Private.runningSessions[this._uuid];

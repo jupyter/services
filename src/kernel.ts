@@ -1484,6 +1484,9 @@ class Comm extends DisposableDelegate implements IComm {
    * Dispose of the resources held by the comm.
    */
   dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
     this._onClose = null;
     this._onMsg = null;
     this._msgFunc = null;
