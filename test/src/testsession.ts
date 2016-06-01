@@ -616,6 +616,17 @@ describe('jupyter.services - session', () => {
           done();
         });
       });
+
+      it('should be safe to call if the kernel is disposed', (done) => {
+        let id = createSessionId();
+        startSession(id).then(session => {
+          session.kernel.dispose();
+          session.dispose();
+          expect(session.kernel).to.be(null);
+          done();
+        });
+      });
+
     });
 
     context('#renameNotebook()', () => {

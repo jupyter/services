@@ -454,7 +454,9 @@ class NotebookSession implements INotebookSession {
     if (this.isDisposed) {
       return;
     }
-    this._kernel.dispose();
+    if (this._kernel) {
+      this._kernel.dispose();
+    }
     this._options = null;
     delete Private.runningSessions[this._uuid];
     this._kernel = null;
