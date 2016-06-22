@@ -1,16 +1,16 @@
-import {
-  IAjaxSettings
-} from 'jupyter-js-utils';
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+'use strict';
 
 import * as utils
   from 'jupyter-js-utils';
 
 import {
-  DisposableDelegate, IDisposable
+  IDisposable
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal, clearSignalData
+  ISignal, Signal
 } from 'phosphor-signaling';
 
 import {
@@ -18,13 +18,12 @@ import {
 } from './kernelfuture';
 
 import {
-  IComm, ICommInfoRequest, ICommInfoReply, ICommOpen, ICompleteReply,
+  IComm, ICommInfoRequest, ICommInfoReply, ICompleteReply,
   ICompleteRequest, IExecuteRequest, IInspectReply,
   IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
-  IKernelFuture, IKernelId, IKernelInfo, IKernelManager, IKernelMessage,
-  IKernelMessageHeader, IKernelMessageOptions, IKernelOptions, IKernelSpecIds,
-  KernelStatus, IKernelIOPubCommOpenMessage, IKernelSpec,
-  IHistoryRequest, IHistoryReply
+  IKernelFuture, IKernelId, IKernelInfo, IKernelMessage,
+  IKernelMessageOptions, KernelStatus, IKernelIOPubCommOpenMessage,
+  IKernelSpec, IHistoryRequest, IHistoryReply
 } from './ikernel';
 
 import {
@@ -33,7 +32,7 @@ import {
 
 
 /**
- * A mock kernel object that only handles execution requests.
+ * A mock kernel object.
  * It only keeps one kernel future at a time.
  */
 export
@@ -85,7 +84,7 @@ class MockKernel implements IKernel {
    * Test whether the kernel has been disposed.
    */
   get isDisposed(): boolean {
-    return this._isDisposed
+    return this._isDisposed;
   }
 
   /**
@@ -120,7 +119,7 @@ class MockKernel implements IKernel {
       channel,
       username: this.username,
       session: this.clientId
-    }
+    };
     let msg = createKernelMessage(options, contents);
     future.handleMsg(msg);
   }
@@ -169,7 +168,14 @@ class MockKernel implements IKernel {
    * Send a `kernel_info_request` message.
    */
   kernelInfo(): Promise<IKernelInfo> {
-    return this._sendKernelMessage('kernel_info_request', 'shell', {});
+    return Promise.resolve(this._kernelInfo);
+  }
+
+  /**
+   * Set the kernel info for the mock kernel.
+   */
+  setKernelInfo(value: IKernelInfo): void {
+    this._kernelInfo = value;
   }
 
   /**
@@ -196,6 +202,9 @@ class MockKernel implements IKernel {
 
   /**
    * Send an `execute_request` message.
+   *
+   * #### Notes
+   * This simulatates an actual exection on the server.
    */
   execute(contents: IExecuteRequest, disposeOnDone: boolean = true): IKernelFuture {
     let options: IKernelMessageOptions = {
@@ -213,7 +222,25 @@ class MockKernel implements IKernel {
     };
     contents = utils.extend(defaults, contents);
     let msg = createKernelMessage(options, contents);
-    return this.sendShellMessage(msg, true, disposeOnDone);
+    let future = this.sendShellMessage(msg, true, disposeOnDone);
+    Promise.resolve(void 0).then(() => {
+      this.sendServerMessage('status', 'iopub', {
+        execution_state: 'busy'
+      });
+      this.sendServerMessage('stream', 'iopub', {
+        name: 'stdout',
+        text: 'foo'
+      });
+      this.sendServerMessage('status', 'iopub', {
+        execution_state: 'idle'
+      });
+      this.sendServerMessage('execute_reply', 'shell', {
+        execution_count: ++this._executionCount,
+        data: {},
+        metadata: {}
+      });
+    });
+    return future;
   }
 
   /**
@@ -253,7 +280,14 @@ class MockKernel implements IKernel {
    * Get the kernel spec associated with the kernel.
    */
   getKernelSpec(): Promise<IKernelSpec> {
-    return Promise.resolve(void 0);
+    return Promise.resolve(this._kernelspec);
+  }
+
+  /**
+   * Set the kernel spec associated with the kernel.
+   */
+  setKernelSpec(value: IKernelSpec): void {
+    this._kernelspec = value;
   }
 
   private _sendKernelMessage(msgType: string, channel: string, contents: any): Promise<any> {
@@ -271,8 +305,8 @@ class MockKernel implements IKernel {
       return Promise.reject(e);
     }
     return new Promise<IKernelInfo>((resolve, reject) => {
-      future.onReply = (msg: IKernelMessage) => {
-        resolve(msg.content);
+      future.onReply = (reply: IKernelMessage) => {
+        resolve(reply.content);
       };
     });
   }
@@ -288,6 +322,9 @@ class MockKernel implements IKernel {
   private _status = KernelStatus.Unknown;
   private _isDisposed = false;
   private _future: KernelFutureHandler = null;
+  private _kernelspec: IKernelSpec = null;
+  private _kernelInfo: IKernelInfo = null;
+  private _executionCount = 0;
 }
 
 
