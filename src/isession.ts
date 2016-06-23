@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  IAjaxSettings
+} from 'jupyter-js-utils';
+
+import {
   IDisposable
 } from 'phosphor-disposable';
 
@@ -14,13 +18,9 @@ import {
   kernel
 } from './ikernel';
 
-import {
-  IAjaxSettings
-} from 'jupyter-js-utils';
-
 
 /**
- * A namespace for session types, interfaces, and type checker functions.
+ * A namespace for session interfaces.
  */
 export
 namespace session {
