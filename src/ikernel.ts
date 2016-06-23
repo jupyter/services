@@ -181,7 +181,7 @@ namespace kernel {
      * Fulfills with the `complete_reply` content when the shell reply is
      * received and validated.
      */
-    complete(The contents: ICompleteRequest): Promise<ICompleteReply>;
+    complete(contents: ICompleteRequest): Promise<ICompleteReply>;
 
     /**
      * Send an `inspect_request` message.
@@ -192,7 +192,7 @@ namespace kernel {
      * Fulfills with the `inspect_reply` content when the shell reply is
      * received and validated.
      */
-    inspect(The contents: IInspectRequest): Promise<IInspectReply>;
+    inspect(contents: IInspectRequest): Promise<IInspectReply>;
 
     /**
      * Send a `history_request` message.
@@ -203,7 +203,7 @@ namespace kernel {
      * Fulfills with the `history_reply` content when the shell reply is
      * received and validated.
      */
-    history(The contents: IHistoryRequest): Promise<IHistoryReply>;
+    history(contents: IHistoryRequest): Promise<IHistoryReply>;
 
     /**
      * Send an `execute_request` message.
@@ -216,7 +216,7 @@ namespace kernel {
      *
      * **See also:** [[IExecuteReply]]
      */
-    execute(The contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
+    execute(contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
 
     /**
      * Send an `is_complete_request` message.
@@ -227,7 +227,7 @@ namespace kernel {
      * Fulfills with the `is_complete_response` content when the shell reply is
      * received and validated.
      */
-    isComplete(The contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
+    isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
 
     /**
      * Send a `comm_info_request` message.
@@ -238,7 +238,7 @@ namespace kernel {
      * Fulfills with the `comm_info_reply` content when the shell reply is
      * received and validated.
      */
-    commInfo(The contents: ICommInfoRequest): Promise<ICommInfoReply>;
+    commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
 
     /**
      * Send an `input_reply` message.
@@ -246,7 +246,7 @@ namespace kernel {
      * #### Notes
      * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
      */
-    sendInputReply(The contents: IInputReply): void;
+    sendInputReply(contents: IInputReply): void;
 
     /**
      * Connect to a comm, or create a new one.
