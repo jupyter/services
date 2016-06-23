@@ -19,19 +19,10 @@ import {
 } from './json';
 
 
-
-
-
 /**
  * A namespace for kernel types, interfaces, and type checker functions.
  */
 export namespace kernel {
-  /**
-   * The history access settings.
-   */
-  export
-  type HistAccess = 'range' | 'tail' | 'search';
-
   /**
    * Kernel model specification.
    */
@@ -380,6 +371,12 @@ export namespace kernel {
   interface IHistoryReply {
     history: JSONValue[];
   }
+
+  /**
+   * The history access settings.
+   */
+  export
+  type HistAccess = 'range' | 'tail' | 'search';
 
   /**
    * Contents of an `is_complete_request` message.
