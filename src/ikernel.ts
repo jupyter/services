@@ -471,6 +471,12 @@ export namespace kernel {
   }
 
   /**
+   * The  valid Kernel status states.
+   */
+  export
+  type Status = 'unknown' | 'starting' | 'reconnecting' | 'idle' | 'busy' | 'restarting' | 'dead';
+
+  /**
    * The kernel model provided by the server.
    *
    * #### Notes
@@ -725,12 +731,6 @@ export namespace kernel {
     codemirror_mode?: string | JSONObject;
     nbconverter_exporter?: string;
   }
-
-  /**
-   * The  valid Kernel status states.
-   */
-  export
-  type Status = 'unknown' | 'starting' | 'reconnecting' | 'idle' | 'busy' | 'restarting' | 'dead';
 
   /**
    * Contents of a `complete_request` message.
