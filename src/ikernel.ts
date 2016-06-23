@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  IAjaxSettings
+} from 'jupyter-js-utils';
+
+import {
   IDisposable
 } from 'phosphor-disposable';
 
@@ -11,11 +15,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  IAjaxSettings
-} from 'jupyter-js-utils';
-
-import {
-  JSONObject, JSONPrimitive, JSONValue
+  JSONObject, JSONValue
 } from './json';
 
 
@@ -580,7 +580,7 @@ export namespace kernel {
   export
   interface IIOPubExecuteInputMessage extends IMessage {
     content: {
-      [ key: string ]: JSONPrimitive;
+      [ key: string ]: string | number;
       code: string;
       execution_count: number;
     };
@@ -625,7 +625,7 @@ export namespace kernel {
   export
   interface IIOPubErrorMessage extends IMessage {
     content: {
-      [ key: string ]: JSONValue;
+      [ key: string ]: number | string | string[];
       execution_count: number;
       ename: string;
       evalue: string;
@@ -932,7 +932,7 @@ export namespace kernel {
    */
   export
   interface ICommOpen {
-    [ key: string ]: JSONValue;
+    [ key: string ]: string | JSONObject;
     comm_id: string;
     target_name: string;
     data: JSONObject;
@@ -948,7 +948,7 @@ export namespace kernel {
    */
   export
   interface ICommMsg {
-    [ key: string ]: JSONValue;
+    [ key: string ]: string | JSONObject;
     comm_id: string;
     data: JSONObject;
   }
@@ -962,7 +962,7 @@ export namespace kernel {
    */
   export
   interface ICommClose {
-    [ key: string ]: JSONValue;
+    [ key: string ]: string | JSONObject;
     comm_id: string;
     data: JSONObject;
   }
