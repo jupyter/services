@@ -270,12 +270,12 @@ namespace kernel {
      * callback will be overidden.  A registered comm target handler will take
      * precedence over a comm which specifies a `target_module`.
      */
-    registerCommTarget(targetName: string, callback: (comm: IComm, msg: IIOPubCommOpenMessage) => void): IDisposable;
+    registerCommTarget(targetName: string, callback: (comm: IComm, msg: ICommOpenMessage) => void): IDisposable;
 
     /**
      * Get the kernel spec associated with the kernel.
      */
-    getKernelSpec(): Promise<ISpecModel>;
+    getKernelSpec(): Promise<ISpec>;
 
     /**
      * Optional default settings for ajax requests, if applicable.
@@ -380,22 +380,22 @@ namespace kernel {
     /**
      * The reply handler for the kernel future.
      */
-    onReply: (msg: IMessage) => void;
+    onReply: (msg: IShellMessage) => void;
 
     /**
      * The stdin handler for the kernel future.
      */
-    onStdin: (msg: IMessage) => void;
+    onStdin: (msg: IStdinMessage) => void;
 
     /**
      * The iopub handler for the kernel future.
      */
-    onIOPub: (msg: IMessage) => void;
+    onIOPub: (msg: IIOPubMessage) => void;
 
     /**
      * The done handler for the kernel future.
      */
-    onDone: (msg: IMessage) => void;
+    onDone: () => void;
   }
 
   /**
@@ -523,8 +523,38 @@ namespace kernel {
     parent_header: IMessageHeader | {};
     metadata: JSONObject;
     content: JSONObject;
-    channel: string;
+    channel: Channel;
     buffers: (ArrayBuffer | ArrayBufferView)[];
+  }
+
+  /**
+   * The valid channel names.
+   */
+  export
+  type Channel = 'shell' | 'iopub' | 'stdin';
+
+  /**
+   * Kernel shell message specification.
+   */
+  export
+  interface IShellMessage extends IMessage {
+    channel: 'shell';
+  }
+
+  /**
+   * Kernel iopub message specification.
+   */
+  export
+  interface IIOPubMessage extends IMessage {
+    channel: 'iopub';
+  }
+
+  /**
+   * Kernel stdin message specification.
+   */
+  export
+  interface IStdinMessage extends IMessage {
+    channel: 'stdin';
   }
 
   /**
@@ -533,9 +563,9 @@ namespace kernel {
    * See [Streams](http://jupyter-client.readthedocs.org/en/latest/messaging.html#streams-stdout-stderr-etc).
    */
   export
-  interface IIOPubStreamMessage extends IMessage {
+  interface IStreamMessage extends IIOPubMessage {
     content: {
-      [ key: string ]: string;
+      [ key: string ]: JSONValue;
       name: string;
       text: string;
     };
@@ -545,7 +575,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub stream message.
    */
   export
-  function isStreamMessage(msg: IMessage): msg is IIOPubStreamMessage {
+  function isStreamMessage(msg: IMessage): msg is IStreamMessage {
     return msg.header.msg_type === 'stream';
   }
 
@@ -555,7 +585,7 @@ namespace kernel {
    * See [Display data](http://jupyter-client.readthedocs.org/en/latest/messaging.html#display-data).
    */
   export
-  interface IIOPubDisplayDataMessage extends IMessage {
+  interface IDisplayDataMessage extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       source: string;
@@ -568,7 +598,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub display_data message.
    */
   export
-  function isDisplayDataMessage(msg: IMessage): msg is IIOPubDisplayDataMessage {
+  function isDisplayDataMessage(msg: IMessage): msg is IDisplayDataMessage {
     return msg.header.msg_type === 'display_data';
   }
 
@@ -578,9 +608,9 @@ namespace kernel {
    * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
    */
   export
-  interface IIOPubExecuteInputMessage extends IMessage {
+  interface IExecuteInputMessage extends IIOPubMessage {
     content: {
-      [ key: string ]: string | number;
+      [ key: string ]: JSONValue;
       code: string;
       execution_count: number;
     };
@@ -590,7 +620,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub execute_input message.
    */
   export
-  function isExecuteInputMessage(msg: IMessage): msg is IIOPubExecuteInputMessage {
+  function isExecuteInputMessage(msg: IMessage): msg is IExecuteInputMessage {
     return msg.header.msg_type === 'execute_input';
   }
 
@@ -600,7 +630,7 @@ namespace kernel {
    * See [Execution results](http://jupyter-client.readthedocs.org/en/latest/messaging.html#id4).
    */
   export
-  interface IIOPubExecuteResultMessage extends IMessage {
+  interface IExecuteResultMessage extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       execution_count: number;
@@ -613,7 +643,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub execute_result message.
    */
   export
-  function isExecuteResultMessage(msg: IMessage): msg is IIOPubExecuteResultMessage {
+  function isExecuteResultMessage(msg: IMessage): msg is IExecuteResultMessage {
     return msg.header.msg_type === 'execute_result';
   }
 
@@ -623,9 +653,9 @@ namespace kernel {
    * See [Execution errors](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execution-errors).
    */
   export
-  interface IIOPubErrorMessage extends IMessage {
+  interface IErrorMessage extends IIOPubMessage {
     content: {
-      [ key: string ]: number | string | string[];
+      [ key: string ]: JSONValue;
       execution_count: number;
       ename: string;
       evalue: string;
@@ -637,7 +667,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub error message.
    */
   export
-  function isErrorMessage(msg: IMessage): msg is IIOPubErrorMessage {
+  function isErrorMessage(msg: IMessage): msg is IIOPubMessage {
     return msg.header.msg_type === 'error';
   }
 
@@ -647,10 +677,10 @@ namespace kernel {
    * See [Kernel status](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-status).
    */
   export
-  interface IIOPubStatusMessage extends IMessage {
+  interface IStatusMessage extends IIOPubMessage {
     content: {
-      [ key: string ]: string;
-      execution_state: string;
+      [ key: string ]: JSONValue;
+      execution_state: Status;
     };
   }
 
@@ -658,7 +688,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub status message.
    */
   export
-  function isStatusMessage(msg: IMessage): msg is IIOPubStatusMessage {
+  function isStatusMessage(msg: IMessage): msg is IStatusMessage {
     return msg.header.msg_type === 'status';
   }
 
@@ -668,9 +698,9 @@ namespace kernel {
    * See [Clear output](http://jupyter-client.readthedocs.org/en/latest/messaging.html#clear-output).
    */
   export
-  interface IIOPubClearOutputMessage extends IMessage {
+  interface IClearOutputMessage extends IIOPubMessage {
     content: {
-      [ key: string ]: boolean;
+      [ key: string ]: JSONValue;
       wait: boolean;
     };
   }
@@ -679,7 +709,7 @@ namespace kernel {
    * Test whether a kernel message is an iopub clear_output message.
    */
   export
-  function isClearOutputMessage(msg: IMessage): msg is IIOPubClearOutputMessage {
+  function isClearOutputMessage(msg: IMessage): msg is IClearOutputMessage {
     return msg.header.msg_type === 'clear_output';
   }
 
@@ -689,7 +719,7 @@ namespace kernel {
    * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
    */
   export
-  interface IIOPubCommOpenMessage extends IMessage {
+  interface ICommOpenMessage extends IIOPubMessage {
     content: ICommOpen;
   }
 
@@ -697,8 +727,44 @@ namespace kernel {
    * Test whether a kernel message is an iopub comm_open message.
    */
   export
-  function isCommOpenMessage(msg: IMessage): msg is IIOPubCommOpenMessage {
+  function isCommOpenMessage(msg: IMessage): msg is ICommOpenMessage {
     return msg.header.msg_type === 'comm_open';
+  }
+
+  /**
+   * IOPub comm_close kernel message specification.
+   *
+   * See [Comm close](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   */
+  export
+  interface ICommCloseMessage extends IIOPubMessage {
+    content: ICommClose;
+  }
+
+  /**
+   * Test whether a kernel message is an iopub comm_close message.
+   */
+  export
+  function isCommCloseMessage(msg: IMessage): msg is ICommCloseMessage {
+    return msg.header.msg_type === 'comm_close';
+  }
+
+  /**
+   * IOPub comm_msg kernel message specification.
+   *
+   * See [Comm msg](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   */
+  export
+  interface ICommMsgMessage extends IIOPubMessage {
+    content: ICommMsg;
+  }
+
+  /**
+   * Test whether a kernel message is an iopub comm_msg message.
+   */
+  export
+  function isCommMsgMessage(msg: IMessage): msg is ICommMsgMessage {
+    return msg.header.msg_type === 'comm_msg';
   }
 
   /**
@@ -708,6 +774,7 @@ namespace kernel {
    */
   export
   interface IInfo {
+    [ key: string ]: JSONValue;
     protocol_version: string;
     implementation: string;
     implementation_version: string;
@@ -723,6 +790,7 @@ namespace kernel {
    */
   export
   interface ILanguageInfo {
+    [ key: string ]: JSONValue;
     name: string;
     version: string;
     mimetype: string;
@@ -741,6 +809,7 @@ namespace kernel {
    */
   export
   interface ICompleteRequest {
+    [ key: string ]: JSONValue;
     code: string;
     cursor_pos: number;
   }
@@ -754,6 +823,7 @@ namespace kernel {
    */
   export
   interface ICompleteReply {
+    [ key: string ]: JSONValue;
     matches: string[];
     cursor_start: number;
     cursor_end: number;
@@ -770,6 +840,7 @@ namespace kernel {
    */
   export
   interface IInspectRequest {
+    [ key: string ]: JSONValue;
     code: string;
     cursor_pos: number;
     detail_level: number;
@@ -784,6 +855,7 @@ namespace kernel {
    */
   export
   interface IInspectReply {
+    [ key: string ]: JSONValue;
     status: string;
     found: boolean;
     data: JSONObject;
@@ -799,6 +871,7 @@ namespace kernel {
    */
   export
   interface IHistoryRequest {
+    [ key: string ]: JSONValue;
     output: boolean;
     raw: boolean;
     hist_access_type: HistAccess;
@@ -819,6 +892,7 @@ namespace kernel {
    */
   export
   interface IHistoryReply {
+    [ key: string ]: JSONValue;
     history: JSONValue[];
   }
 
@@ -837,6 +911,7 @@ namespace kernel {
    */
   export
   interface IIsCompleteRequest {
+    [ key: string ]: JSONValue;
     code: string;
   }
 
@@ -849,6 +924,7 @@ namespace kernel {
    */
   export
   interface IIsCompleteReply {
+    [ key: string ]: JSONValue;
     status: string;
     indent: string;
   }
@@ -862,6 +938,7 @@ namespace kernel {
    */
   export
   interface IExecuteRequest {
+    [ key: string ]: JSONValue;
     code: string;
     silent?: boolean;
     store_history?: boolean;
@@ -879,6 +956,7 @@ namespace kernel {
    */
   export
   interface IExecuteReply {
+    [ key: string ]: JSONValue;
     execution_count: number;
     data: JSONObject;
     metadata: JSONObject;
@@ -893,6 +971,7 @@ namespace kernel {
    */
   export
   interface IInputReply {
+    [ key: string ]: JSONValue;
     value: string;
   }
 
@@ -905,6 +984,7 @@ namespace kernel {
    */
   export
   interface ICommInfoRequest {
+    [ key: string ]: JSONValue;
     target?: string;
   }
 
@@ -917,6 +997,7 @@ namespace kernel {
    */
   export
   interface ICommInfoReply {
+    [ key: string ]: JSONValue;
     /**
      * Mapping of comm ids to target names.
      */
@@ -932,7 +1013,7 @@ namespace kernel {
    */
   export
   interface ICommOpen {
-    [ key: string ]: string | JSONObject;
+    [ key: string ]: JSONValue;
     comm_id: string;
     target_name: string;
     data: JSONObject;
@@ -948,7 +1029,7 @@ namespace kernel {
    */
   export
   interface ICommMsg {
-    [ key: string ]: string | JSONObject;
+    [ key: string ]: JSONValue;
     comm_id: string;
     data: JSONObject;
   }
@@ -962,7 +1043,7 @@ namespace kernel {
    */
   export
   interface ICommClose {
-    [ key: string ]: string | JSONObject;
+    [ key: string ]: JSONValue;
     comm_id: string;
     data: JSONObject;
   }
@@ -974,8 +1055,9 @@ namespace kernel {
    */
   export
   interface IMessageOptions {
+    [ key: string ]: JSONValue;
     msgType: string;
-    channel: string;
+    channel: Channel;
     session: string;
     username?: string;
     msgId?: string;
@@ -986,6 +1068,7 @@ namespace kernel {
    */
   export
   interface ISpecHelpLink {
+    [ key: string ]: JSONValue;
     text: string;
     url: string;
   }
@@ -998,6 +1081,7 @@ namespace kernel {
    */
   export
   interface ISpec {
+    [ key: string ]: JSONValue;
     language: string;
     argv: string[];
     display_name: string;
