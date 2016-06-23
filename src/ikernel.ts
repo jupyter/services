@@ -24,7 +24,454 @@ import {
  */
 export namespace kernel {
   /**
-   * Kernel model specification.
+   * Interface of a Kernel object.
+   *
+   * #### Notes
+   * The Kernel object is tied to the lifetime of the Kernel id, which is
+   * a unique id for the Kernel session on the server.  The Kernel object
+   * manages a websocket connection internally, and will auto-restart if the
+   * websocket temporarily loses connection.  Restarting creates a new Kernel
+   * process on the server, but preserves the Kernel id.
+   */
+  export
+  interface IKernel extends IDisposable {
+    /**
+     * A signal emitted when the kernel status changes.
+     */
+    statusChanged: ISignal<IKernel, Status>;
+
+    /**
+     * A signal emitted for iopub kernel messages.
+     */
+    iopubMessage: ISignal<IKernel, IMessage>;
+
+    /**
+     * A signal emitted for unhandled kernel message.
+     */
+    unhandledMessage: ISignal<IKernel, IMessage>;
+
+    /**
+     * The id of the server-side kernel.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    id: string;
+
+    /**
+     * The name of the server-side kernel.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    name: string;
+
+    /**
+     * The client username.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+     username: string;
+
+    /**
+     * The client unique id.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    clientId: string;
+
+    /**
+     * The current status of the kernel.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    status: Status;
+
+    /**
+     * Send a shell message to the kernel.
+     *
+     * #### Notes
+     * Send a message to the kernel's shell channel, yielding a future object
+     * for accepting replies.
+     *
+     * If `expectReply` is given and `true`, the future is disposed when both a
+     * shell reply and an idle status message are received. If `expectReply`
+     * is not given or is `false`, the future is disposed when an idle status
+     * message is received.
+     *
+     * If `disposeOnDone` is given and `false`, the Future will not be disposed
+     * of when the future is done, instead relying on the caller to dispose of it.
+     * This allows for the handling of out-of-order output from ill-behaved kernels.
+     *
+     * All replies are validated as valid kernel messages.
+     *
+     * If the kernel status is `Dead`, this will throw an error.
+     */
+    sendShellMessage(msg: IMessage, expectReply?: boolean, disposeOnDone?: boolean): IFuture;
+
+    /**
+     * Interrupt a kernel.
+     *
+     * #### Notes
+     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
+     *
+     * The promise is fulfilled on a valid response and rejected otherwise.
+     *
+     * It is assumed that the API call does not mutate the kernel id or name.
+     *
+     * The promise will be rejected if the kernel status is `Dead` or if the
+     * request fails or the response is invalid.
+     */
+    interrupt(): Promise<void>;
+
+    /**
+     * Restart a kernel.
+     *
+     * #### Notes
+     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
+     *
+     * Any existing Future or Comm objects are cleared.
+     *
+     * The promise is fulfilled on a valid response and rejected otherwise.
+     *
+     * It is assumed that the API call does not mutate the kernel id or name.
+     *
+     * The promise will be rejected if the kernel status is `Dead` or if the
+     * request fails or the response is invalid.
+     */
+    restart(): Promise<void>;
+
+    /**
+     * Shutdown a kernel.
+     *
+     * #### Notes
+     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
+     *
+     * The promise is fulfilled on a valid response and rejected otherwise.
+     *
+     * On a valid response, closes the websocket and disposes of the kernel
+     * object, and fulfills the promise.
+     *
+     * The promise will be rejected if the kernel status is `Dead` or if the
+     * request fails or the response is invalid.
+     */
+    shutdown(): Promise<void>;
+
+    /**
+     * Send a `kernel_info_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+     *
+     * Fulfills with the `kernel_info_response` content when the shell reply is
+     * received and validated.
+     */
+    kernelInfo(): Promise<IInfo>;
+
+    /**
+     * Send a `complete_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
+     *
+     * Fulfills with the `complete_reply` content when the shell reply is
+     * received and validated.
+     */
+    complete(contents: ICompleteRequest): Promise<ICompleteReply>;
+
+    /**
+     * Send an `inspect_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
+     *
+     * Fulfills with the `inspect_reply` content when the shell reply is
+     * received and validated.
+     */
+    inspect(contents: IInspectRequest): Promise<IInspectReply>;
+
+    /**
+     * Send a `history_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+     *
+     * Fulfills with the `history_reply` content when the shell reply is
+     * received and validated.
+     */
+    history(contents: IHistoryRequest): Promise<IHistoryReply>;
+
+    /**
+     * Send an `execute_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+     *
+     * Future `onReply` is called with the `execute_reply` content when the
+     * shell reply is received and validated.
+     *
+     * **See also:** [[IExecuteReply]]
+     */
+    execute(contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
+
+    /**
+     * Send an `is_complete_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
+     *
+     * Fulfills with the `is_complete_response` content when the shell reply is
+     * received and validated.
+     */
+    isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
+
+    /**
+     * Send a `comm_info_request` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
+     *
+     * Fulfills with the `comm_info_reply` content when the shell reply is
+     * received and validated.
+     */
+    commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
+
+    /**
+     * Send an `input_reply` message.
+     *
+     * #### Notes
+     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+     */
+    sendInputReply(contents: IInputReply): void;
+
+    /**
+     * Connect to a comm, or create a new one.
+     *
+     * #### Notes
+     * If a client-side comm already exists, it is returned.
+     */
+    connectToComm(targetName: string, commId?: string): IComm;
+
+    /**
+     * Register a comm target handler.
+     *
+     * @param targetName - The name of the comm target.
+     *
+     * @param callback - The callback invoked for a comm open message.
+     *
+     * @returns A disposable used to unregister the comm target.
+     *
+     * #### Notes
+     * Only one comm target can be registered at a time, an existing
+     * callback will be overidden.  A registered comm target handler will take
+     * precedence over a comm which specifies a `target_module`.
+     */
+    registerCommTarget(targetName: string, callback: (comm: IComm, msg: IIOPubCommOpenMessage) => void): IDisposable;
+
+    /**
+     * Get the kernel spec associated with the kernel.
+     */
+    getKernelSpec(): Promise<ISpecModel>;
+
+    /**
+     * Optional default settings for ajax requests, if applicable.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
+
+  /**
+   * The options object used to initialize a kernel.
+   */
+  export
+  interface IOptions {
+    /**
+     * The kernel type (e.g. python3).
+     */
+    name?: string;
+
+    /**
+     * The root url of the kernel server.
+     * Default is location.origin in browsers, notebook-server default otherwise.
+     */
+    baseUrl?: string;
+
+    /**
+     * The url to access websockets, if different from baseUrl.
+     */
+    wsUrl?: string;
+
+    /**
+     * The username of the kernel client.
+     */
+    username?: string;
+
+    /**
+     * The unique identifier for the kernel client.
+     */
+    clientId?: string;
+
+    /**
+     * The default ajax settings to use for the kernel.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
+
+  /**
+   * Object which manages kernel instances.
+   */
+  export
+  interface IManager {
+    /**
+     * Get the available kernel specs.
+     */
+    getSpecs(options?: IOptions): Promise<ISpecModels>;
+
+    /**
+     * Get a list of running kernels.
+     */
+    listRunning(options?: IOptions): Promise<IModel[]>;
+
+    /**
+     * Start a new kernel.
+     */
+    startNew(options?: IOptions): Promise<IKernel>;
+
+    /**
+     * Find a kernel by id.
+     */
+    findById(id: string, options?: IOptions): Promise<IModel>;
+
+    /**
+     * Connect to an existing kernel.
+     */
+    connectTo(id: string, options?: IOptions): Promise<IKernel>;
+  }
+
+  /**
+   * Object providing a Future interface for message callbacks.
+   *
+   * The future will self-dispose after `isDone` is
+   * set and the registered `onDone` handler is called.
+   *
+   * If a `reply` is expected, the Future is considered done when
+   * both a `reply` message and an `idle` iopub status message have
+   * been received.  Otherwise, it is considered done when the `idle` status is
+   * received.
+   */
+  export
+  interface IFuture extends IDisposable {
+    /**
+     * The original outgoing message.
+     */
+    msg: IMessage;
+
+    /**
+     * Test whether the future is done.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    isDone: boolean;
+
+    /**
+     * The reply handler for the kernel future.
+     */
+    onReply: (msg: IMessage) => void;
+
+    /**
+     * The stdin handler for the kernel future.
+     */
+    onStdin: (msg: IMessage) => void;
+
+    /**
+     * The iopub handler for the kernel future.
+     */
+    onIOPub: (msg: IMessage) => void;
+
+    /**
+     * The done handler for the kernel future.
+     */
+    onDone: (msg: IMessage) => void;
+  }
+
+  /**
+   * A client side Comm interface.
+   */
+  export
+  interface IComm extends IDisposable {
+    /**
+     * The unique id for the comm channel.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    commId: string;
+
+    /**
+     * The target name for the comm channel.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    targetName: string;
+
+    /**
+     * Callback for a comm close event.
+     *
+     * #### Notes
+     * This is called when the comm is closed from either the server or
+     * client.
+     *
+     * **See also:** [[ICommClose]], [[close]]
+     */
+    onClose: (msg: IMessage) => void;
+
+    /**
+     * Callback for a comm message received event.
+     *
+     * **See also:** [[ICommMsg]]
+     */
+    onMsg: (msg: IMessage) => void;
+
+    /**
+     * Open a comm with optional data and metadata.
+     *
+     * #### Notes
+     * This sends a `comm_open` message to the server.
+     *
+     * **See also:** [[ICommOpen]]
+     */
+    open(data?: JSONObject, metadata?: JSONObject): IFuture;
+
+    /**
+     * Send a `comm_msg` message to the kernel.
+     *
+     * #### Notes
+     * This is a no-op if the comm has been closed.
+     *
+     * **See also:** [[ICommMsg]]
+     */
+    send(data: JSONObject, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
+
+    /**
+     * Close the comm.
+     *
+     * #### Notes
+     * This will send a `comm_close` message to the kernel, and call the
+     * `onClose` callback if set.
+     *
+     * This is a no-op if the comm is already closed.
+     *
+     * **See also:** [[ICommClose]], [[onClose]]
+     */
+    close(data?: JSONObject, metadata?: JSONObject): IFuture;
+  }
+
+  /**
+   * The kernel model provided by the server.
    */
   export
   interface IModel {
@@ -463,7 +910,7 @@ export namespace kernel {
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
    *
-    * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
+   * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
    */
   export
   interface ICommInfoReply {
@@ -532,380 +979,6 @@ export namespace kernel {
   }
 
   /**
-   * The options object used to initialize a kernel.
-   */
-  export
-  interface IOptions {
-    /**
-     * The kernel type (e.g. python3).
-     */
-    name?: string;
-
-    /**
-     * The root url of the kernel server.
-     * Default is location.origin in browsers, notebook-server default otherwise.
-     */
-    baseUrl?: string;
-
-    /**
-     * The url to access websockets, if different from baseUrl.
-     */
-    wsUrl?: string;
-
-    /**
-     * The username of the kernel client.
-     */
-    username?: string;
-
-    /**
-     * The unique identifier for the kernel client.
-     */
-    clientId?: string;
-
-    /**
-     * The default ajax settings to use for the kernel.
-     */
-    ajaxSettings?: IAjaxSettings;
-  }
-
-  /**
-   * Interface of a Kernel object.
-   *
-   * #### Notes
-   * The Kernel object is tied to the lifetime of the Kernel id, which is
-   * a unique id for the Kernel session on the server.  The Kernel object
-   * manages a websocket connection internally, and will auto-restart if the
-   * websocket temporarily loses connection.  Restarting creates a new Kernel
-   * process on the server, but preserves the Kernel id.
-   */
-  export
-  interface IKernel extends IDisposable {
-    /**
-     * A signal emitted when the kernel status changes.
-     */
-    statusChanged: ISignal<IKernel, Status>;
-
-    /**
-     * A signal emitted for iopub kernel messages.
-     */
-    iopubMessage: ISignal<IKernel, IMessage>;
-
-    /**
-     * A signal emitted for unhandled kernel message.
-     */
-    unhandledMessage: ISignal<IKernel, IMessage>;
-
-    /**
-     * The id of the server-side kernel.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    id: string;
-
-    /**
-     * The name of the server-side kernel.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    name: string;
-
-    /**
-     * The client username.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-     username: string;
-
-    /**
-     * The client unique id.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    clientId: string;
-
-    /**
-     * The current status of the kernel.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    status: Status;
-
-    /**
-     * Send a shell message to the kernel.
-     *
-     * #### Notes
-     * Send a message to the kernel's shell channel, yielding a future object
-     * for accepting replies.
-     *
-     * If `expectReply` is given and `true`, the future is disposed when both a
-     * shell reply and an idle status message are received. If `expectReply`
-     * is not given or is `false`, the future is disposed when an idle status
-     * message is received.
-     *
-     * If `disposeOnDone` is given and `false`, the Future will not be disposed
-     * of when the future is done, instead relying on the caller to dispose of it.
-     * This allows for the handling of out-of-order output from ill-behaved kernels.
-     *
-     * All replies are validated as valid kernel messages.
-     *
-     * If the kernel status is `Dead`, this will throw an error.
-     */
-    sendShellMessage(msg: IMessage, expectReply?: boolean, disposeOnDone?: boolean): IFuture;
-
-    /**
-     * Interrupt a kernel.
-     *
-     * #### Notes
-     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     *
-     * It is assumed that the API call does not mutate the kernel id or name.
-     *
-     * The promise will be rejected if the kernel status is `Dead` or if the
-     * request fails or the response is invalid.
-     */
-    interrupt(): Promise<void>;
-
-    /**
-     * Restart a kernel.
-     *
-     * #### Notes
-     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
-     *
-     * Any existing Future or Comm objects are cleared.
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     *
-     * It is assumed that the API call does not mutate the kernel id or name.
-     *
-     * The promise will be rejected if the kernel status is `Dead` or if the
-     * request fails or the response is invalid.
-     */
-    restart(): Promise<void>;
-
-    /**
-     * Shutdown a kernel.
-     *
-     * #### Notes
-     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     *
-     * On a valid response, closes the websocket and disposes of the kernel
-     * object, and fulfills the promise.
-     *
-     * The promise will be rejected if the kernel status is `Dead` or if the
-     * request fails or the response is invalid.
-     */
-    shutdown(): Promise<void>;
-
-    /**
-     * Send a `kernel_info_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
-     *
-     * Fulfills with the `kernel_info_response` content when the shell reply is
-     * received and validated.
-     */
-    kernelInfo(): Promise<IInfo>;
-
-    /**
-     * Send a `complete_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
-     *
-     * Fulfills with the `complete_reply` content when the shell reply is
-     * received and validated.
-     */
-    complete(contents: ICompleteRequest): Promise<ICompleteReply>;
-
-    /**
-     * Send an `inspect_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
-     *
-     * Fulfills with the `inspect_reply` content when the shell reply is
-     * received and validated.
-     */
-    inspect(contents: IInspectRequest): Promise<IInspectReply>;
-
-    /**
-     * Send a `history_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
-     *
-     * Fulfills with the `history_reply` content when the shell reply is
-     * received and validated.
-     */
-    history(contents: IHistoryRequest): Promise<IHistoryReply>;
-
-    /**
-     * Send an `execute_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
-     *
-     * Future `onReply` is called with the `execute_reply` content when the
-     * shell reply is received and validated.
-     *
-     * **See also:** [[IExecuteReply]]
-     */
-    execute(contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
-
-    /**
-     * Send an `is_complete_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
-     *
-     * Fulfills with the `is_complete_response` content when the shell reply is
-     * received and validated.
-     */
-    isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
-
-    /**
-     * Send a `comm_info_request` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm_info).
-     *
-     * Fulfills with the `comm_info_reply` content when the shell reply is
-     * received and validated.
-     */
-    commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
-
-    /**
-     * Send an `input_reply` message.
-     *
-     * #### Notes
-     * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
-     */
-    sendInputReply(contents: IInputReply): void;
-
-    /**
-     * Connect to a comm, or create a new one.
-     *
-     * #### Notes
-     * If a client-side comm already exists, it is returned.
-     */
-    connectToComm(targetName: string, commId?: string): IComm;
-
-    /**
-     * Register a comm target handler.
-     *
-     * @param targetName - The name of the comm target.
-     *
-     * @param callback - The callback invoked for a comm open message.
-     *
-     * @returns A disposable used to unregister the comm target.
-     *
-     * #### Notes
-     * Only one comm target can be registered at a time, an existing
-     * callback will be overidden.  A registered comm target handler will take
-     * precedence over a comm which specifies a `target_module`.
-     */
-    registerCommTarget(targetName: string, callback: (comm: IComm, msg: IIOPubCommOpenMessage) => void): IDisposable;
-
-    /**
-     * Get the kernel spec associated with the kernel.
-     */
-    getKernelSpec(): Promise<ISpecModel>;
-
-    /**
-     * Optional default settings for ajax requests, if applicable.
-     */
-    ajaxSettings?: IAjaxSettings;
-  }
-
-  /**
-   * Object which manages kernel instances.
-   */
-  export
-  interface IManager {
-    /**
-     * Get the available kernel specs.
-     */
-    getSpecs(options?: IOptions): Promise<ISpecModels>;
-
-    /**
-     * Get a list of running kernels.
-     */
-    listRunning(options?: IOptions): Promise<IModel[]>;
-
-    /**
-     * Start a new kernel.
-     */
-    startNew(options?: IOptions): Promise<IKernel>;
-
-    /**
-     * Find a kernel by id.
-     */
-    findById(id: string, options?: IOptions): Promise<IModel>;
-
-    /**
-     * Connect to an existing kernel.
-     */
-    connectTo(id: string, options?: IOptions): Promise<IKernel>;
-  }
-
-  /**
-   * Object providing a Future interface for message callbacks.
-   *
-   * The future will self-dispose after `isDone` is
-   * set and the registered `onDone` handler is called.
-   *
-   * If a `reply` is expected, the Future is considered done when
-   * both a `reply` message and an `idle` iopub status message have
-   * been received.  Otherwise, it is considered done when the `idle` status is
-   * received.
-   */
-  export
-  interface IFuture extends IDisposable {
-    /**
-     * The original outgoing message.
-     */
-    msg: IMessage;
-
-    /**
-     * Test whether the future is done.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    isDone: boolean;
-
-    /**
-     * The reply handler for the kernel future.
-     */
-    onReply: (msg: IMessage) => void;
-
-    /**
-     * The stdin handler for the kernel future.
-     */
-    onStdin: (msg: IMessage) => void;
-
-    /**
-     * The iopub handler for the kernel future.
-     */
-    onIOPub: (msg: IMessage) => void;
-
-    /**
-     * The done handler for the kernel future.
-     */
-    onDone: (msg: IMessage) => void;
-  }
-
-  /**
    * Kernel Spec help link interface.
    */
   export
@@ -931,7 +1004,10 @@ export namespace kernel {
   }
 
   /**
-   * KernelSpec model interface.
+   * KernelSpec model provided by the server for a specific kernel.
+   *
+   * #### Notes
+   * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
    */
   export
   interface ISpecModel {
@@ -941,84 +1017,14 @@ export namespace kernel {
   }
 
   /**
-   * KernelSpecInfo interface
+   * KernelSpec model provided by the server for all kernels.
+   *
+   * #### Notes
+   * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
    */
   export
   interface ISpecModels {
     default: string;
     kernelspecs: { [key: string]: ISpecModel };
-  }
-
-  /**
-   * A client side Comm interface.
-   */
-  export
-  interface IComm extends IDisposable {
-    /**
-     * The unique id for the comm channel.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    commId: string;
-
-    /**
-     * The target name for the comm channel.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    targetName: string;
-
-    /**
-     * Callback for a comm close event.
-     *
-     * #### Notes
-     * This is called when the comm is closed from either the server or
-     * client.
-     *
-     * **See also:** [[ICommClose]], [[close]]
-     */
-    onClose: (msg: IMessage) => void;
-
-    /**
-     * Callback for a comm message received event.
-     *
-     * **See also:** [[ICommMsg]]
-     */
-    onMsg: (msg: IMessage) => void;
-
-    /**
-     * Open a comm with optional data and metadata.
-     *
-     * #### Notes
-     * This sends a `comm_open` message to the server.
-     *
-     * **See also:** [[ICommOpen]]
-     */
-    open(data?: JSONObject, metadata?: JSONObject): IFuture;
-
-    /**
-     * Send a `comm_msg` message to the kernel.
-     *
-     * #### Notes
-     * This is a no-op if the comm has been closed.
-     *
-     * **See also:** [[ICommMsg]]
-     */
-    send(data: JSONObject, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
-
-    /**
-     * Close the comm.
-     *
-     * #### Notes
-     * This will send a `comm_close` message to the kernel, and call the
-     * `onClose` callback if set.
-     *
-     * This is a no-op if the comm is already closed.
-     *
-     * **See also:** [[ICommClose]], [[onClose]]
-     */
-    close(data?: JSONObject, metadata?: JSONObject): IFuture;
   }
 }
