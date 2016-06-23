@@ -22,7 +22,8 @@ import {
 /**
  * A namespace for kernel types, interfaces, and type checker functions.
  */
-export namespace kernel {
+export
+namespace kernel {
   /**
    * Interface of a Kernel object.
    *
