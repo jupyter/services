@@ -194,7 +194,7 @@ function getKernelSpecs(options?: kernel.IOptions): Promise<kernel.ISpecModels> 
     let keys = Object.keys(data.kernelspecs);
     for (let i = 0; i < keys.length; i++) {
       let ks = data.kernelspecs[keys[i]];
-      validate.validateKernelSpec(ks);
+      validate.validateKernelSpecModel(ks);
     }
     return data;
   });
@@ -227,9 +227,9 @@ function listRunningKernels(options?: kernel.IOptions): Promise<kernel.IModel[]>
       throw Error('Invalid kernel list');
     }
     for (let i = 0; i < success.data.length; i++) {
-      validate.validateKernelId(success.data[i]);
+      validate.validateKernelModel(success.data[i]);
     }
-    return <kernel.IModel[]>success.data;
+    return success.data as kernel.IModel[];
   }, Private.onKernelError);
 }
 
@@ -262,7 +262,7 @@ function startNewKernel(options?: kernel.IOptions): Promise<kernel.IKernel> {
     if (success.xhr.status !== 201) {
       throw Error('Invalid Status: ' + success.xhr.status);
     }
-    validate.validateKernelId(success.data);
+    validate.validateKernelModel(success.data);
     return new Kernel(options, success.data.id);
   }, Private.onKernelError);
 }
@@ -1074,7 +1074,7 @@ class Kernel implements kernel.IKernel {
   /**
    * Send a comm message to the kernel.
    */
-  private _sendCommMessage(payload: Private.ICommPayload, disposeOnDone: boolean = true): kernel.IFuture {
+  private _sendCommMessage(payload: kernel.ICommPayload, disposeOnDone: boolean = true): kernel.IFuture {
    let options: kernel.IMessageOptions = {
       msgType: payload.msgType,
       channel: 'shell',
@@ -1166,19 +1166,8 @@ namespace Private {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validate.validateKernelId(success.data);
+      validate.validateKernelModel(success.data);
     }, onKernelError);
-  }
-
-  /**
-   * The contents of a comm payload.
-   */
-  export
-  interface ICommPayload {
-    msgType: string;
-    content: any;
-    metadata: any;
-    buffers?: (ArrayBuffer | ArrayBufferView)[];
   }
 
   /**
@@ -1246,7 +1235,7 @@ namespace Private {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       let data = success.data as kernel.IModel;
-      validate.validateKernelId(data);
+      validate.validateKernelModel(data);
       return data;
     }, Private.onKernelError);
   }

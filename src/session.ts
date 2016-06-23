@@ -142,7 +142,7 @@ function listRunningSessions(options?: session.IOptions): Promise<session.IModel
       throw Error('Invalid Session list');
     }
     for (let i = 0; i < success.data.length; i++) {
-      validate.validateSessionId(success.data[i]);
+      validate.validateSessionModel(success.data[i]);
     }
     return Private.updateRunningSessions(success.data);
   }, Private.onSessionError);
@@ -594,7 +594,7 @@ class Session implements session.ISession {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       let data = success.data as session.IModel;
-      validate.validateSessionId(data);
+      validate.validateSessionModel(data);
       this._updating = false;
       return Private.updateById(data);
     }, error => {
@@ -683,7 +683,7 @@ namespace Private {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
-      validate.validateSessionId(success.data);
+      validate.validateSessionModel(success.data);
       let data = success.data as session.IModel;
       return updateById(data);
     }, onSessionError);
@@ -737,7 +737,7 @@ namespace Private {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       let data = success.data as session.IModel;
-      validate.validateSessionId(data);
+      validate.validateSessionModel(data);
       return updateById(data);
     }, Private.onSessionError);
   }

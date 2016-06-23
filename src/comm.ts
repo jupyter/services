@@ -20,7 +20,7 @@ class Comm extends DisposableDelegate implements kernel.IComm {
   /**
    * Construct a new comm channel.
    */
-  constructor(target: string, id: string, msgFunc: (payload: Private.ICommPayload, disposeOnDone?: boolean) => kernel.IFuture, disposeCb: () => void) {
+  constructor(target: string, id: string, msgFunc: (payload: kernel.ICommPayload, disposeOnDone?: boolean) => kernel.IFuture, disposeCb: () => void) {
     super(disposeCb);
     this._target = target;
     this._id = id;
@@ -110,13 +110,13 @@ class Comm extends DisposableDelegate implements kernel.IComm {
    * **See also:** [[ICommOpen]]
    */
   open(data?: any, metadata?: any): kernel.IFuture {
-    let content = {
+    let content: kernel.ICommOpen = {
       comm_id: this._id,
       target_name: this._target,
       data: data || {}
     };
     let payload = {
-      msgType: 'comm_open', content: content, metadata: metadata
+      msgType: 'comm_open', content, metadata
     };
     if (this._msgFunc === void 0) {
       return;
@@ -136,12 +136,12 @@ class Comm extends DisposableDelegate implements kernel.IComm {
     if (this.isDisposed) {
       throw Error('Comm is closed');
     }
-    let content = { comm_id: this._id, data: data };
+    let content: kernel.ICommMsg = { comm_id: this._id, data: data };
     let payload = {
       msgType: 'comm_msg',
-      content: content,
-      metadata: metadata,
-      buffers: buffers
+      content,
+      metadata,
+      buffers
     };
     if (this._msgFunc === void 0) {
       return;
@@ -164,9 +164,9 @@ class Comm extends DisposableDelegate implements kernel.IComm {
     if (this.isDisposed) {
       return;
     }
-    let content = { comm_id: this._id, data: data || {} };
+    let content: kernel.ICommClose = { comm_id: this._id, data: data || {} };
     let payload = {
-      msgType: 'comm_close', content: content, metadata: metadata
+      msgType: 'comm_close', content, metadata
     };
     let future = this._msgFunc(payload);
     let onClose = this._onClose;
@@ -193,5 +193,5 @@ class Comm extends DisposableDelegate implements kernel.IComm {
   private _id = '';
   private _onClose: (msg: kernel.IMessage) => void = null;
   private _onMsg: (msg: kernel.IMessage) => void = null;
-  private _msgFunc: (payload: Private.ICommPayload, disposeOnDone?: boolean) => kernel.IFuture = null;
+  private _msgFunc: (payload: kernel.ICommPayload, disposeOnDone?: boolean) => kernel.IFuture = null;
 }

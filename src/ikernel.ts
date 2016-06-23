@@ -504,7 +504,8 @@ namespace kernel {
    * **See also:** [[IMessage]]
    */
   export
-  interface IMessageHeader {
+  interface IMessageHeader extends JSONObject {
+    [ key: string ]: JSONValue;
     username: string;
     version: string;
     session: string;
@@ -1046,6 +1047,17 @@ namespace kernel {
     [ key: string ]: JSONValue;
     comm_id: string;
     data: JSONObject;
+  }
+
+  /**
+   * The contents of a comm message payload.
+   */
+  export
+  interface ICommPayload {
+    msgType: string;
+    content: ICommOpen | ICommMsg | ICommClose;
+    metadata: any;
+    buffers?: (ArrayBuffer | ArrayBufferView)[];
   }
 
   /**
