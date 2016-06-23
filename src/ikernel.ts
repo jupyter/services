@@ -181,7 +181,7 @@ namespace kernel {
      * Fulfills with the `complete_reply` content when the shell reply is
      * received and validated.
      */
-    complete(contents: ICompleteRequest): Promise<ICompleteReply>;
+    complete(The contents: ICompleteRequest): Promise<ICompleteReply>;
 
     /**
      * Send an `inspect_request` message.
@@ -192,7 +192,7 @@ namespace kernel {
      * Fulfills with the `inspect_reply` content when the shell reply is
      * received and validated.
      */
-    inspect(contents: IInspectRequest): Promise<IInspectReply>;
+    inspect(The contents: IInspectRequest): Promise<IInspectReply>;
 
     /**
      * Send a `history_request` message.
@@ -203,7 +203,7 @@ namespace kernel {
      * Fulfills with the `history_reply` content when the shell reply is
      * received and validated.
      */
-    history(contents: IHistoryRequest): Promise<IHistoryReply>;
+    history(The contents: IHistoryRequest): Promise<IHistoryReply>;
 
     /**
      * Send an `execute_request` message.
@@ -216,7 +216,7 @@ namespace kernel {
      *
      * **See also:** [[IExecuteReply]]
      */
-    execute(contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
+    execute(The contents: IExecuteRequest, disposeOnDone?: boolean): IFuture;
 
     /**
      * Send an `is_complete_request` message.
@@ -227,7 +227,7 @@ namespace kernel {
      * Fulfills with the `is_complete_response` content when the shell reply is
      * received and validated.
      */
-    isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
+    isComplete(The contents: IIsCompleteRequest): Promise<IIsCompleteReply>;
 
     /**
      * Send a `comm_info_request` message.
@@ -238,7 +238,7 @@ namespace kernel {
      * Fulfills with the `comm_info_reply` content when the shell reply is
      * received and validated.
      */
-    commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply>;
+    commInfo(The contents: ICommInfoRequest): Promise<ICommInfoReply>;
 
     /**
      * Send an `input_reply` message.
@@ -246,7 +246,7 @@ namespace kernel {
      * #### Notes
      * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
      */
-    sendInputReply(contents: IInputReply): void;
+    sendInputReply(The contents: IInputReply): void;
 
     /**
      * Connect to a comm, or create a new one.
@@ -472,7 +472,7 @@ namespace kernel {
   }
 
   /**
-   * The  valid Kernel status states.
+   * The valid Kernel status states.
    */
   export
   type Status = 'unknown' | 'starting' | 'reconnecting' | 'idle' | 'busy' | 'restarting' | 'dead';
@@ -485,7 +485,6 @@ namespace kernel {
    */
   export
   interface IModel {
-
     /**
      * Unique identifier of the kernel server session.
      */
@@ -734,7 +733,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `complete_request` message.
+   * The contents of a `complete_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
@@ -747,7 +746,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `complete_reply` message.
+   * The contents of a `complete_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
@@ -763,7 +762,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `inspect_request` message.
+   * The contents of an `inspect_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
@@ -777,7 +776,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `inspect_reply` message.
+   * The contents of an `inspect_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
@@ -792,7 +791,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `history_request` message.
+   * The contents of an `history_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
    *
@@ -812,7 +811,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `history_reply` message.
+   * The contents of an `history_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
    *
@@ -830,7 +829,7 @@ namespace kernel {
   type HistAccess = 'range' | 'tail' | 'search';
 
   /**
-   * Contents of an `is_complete_request` message.
+   * The contents of an `is_complete_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *
@@ -842,7 +841,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `is_complete_reply` message.
+   * The contents of an `is_complete_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *
@@ -855,7 +854,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `execute_request` message.
+   * The contents of an `execute_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
@@ -872,7 +871,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `execute_reply` message.
+   * The contents of an `execute_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
    *
@@ -886,7 +885,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of an `input_reply` message.
+   * The contents of an `input_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    *
@@ -898,7 +897,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `comm_info_request` message.
+   * The contents of a `comm_info_request` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
    *
@@ -910,7 +909,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of `comm_info_reply` message.
+   * The contents of `comm_info_reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
    *
@@ -925,7 +924,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `comm_open` message.
+   * The contents of a `comm_open` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
    *
@@ -941,7 +940,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `comm_msg` message.
+   * The contents of a `comm_msg` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-messages).
    *
@@ -955,7 +954,7 @@ namespace kernel {
   }
 
   /**
-   * Contents of a `comm_close` message.
+   * The contents of a `comm_close` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#tearing-down-comms).
    *
