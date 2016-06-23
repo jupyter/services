@@ -45,14 +45,14 @@ namespace session {
     statusChanged: ISignal<ISession, kernel.Status>;
 
     /**
-     * A signal emitted when the notebook path changes.
+     * A signal emitted when the session path changes.
      */
-    notebookPathChanged: ISignal<ISession, string>;
+    pathChanged: ISignal<ISession, string>;
 
     /**
      * A signal emitted for iopub kernel messages.
      */
-    iopubMessage: ISignal<ISession, kernel.IMessage>;
+    iopubMessage: ISignal<ISession, kernel.IIOPubMessage>;
 
     /**
      * A signal emitted for unhandled kernel message.
@@ -104,7 +104,7 @@ namespace session {
      * @param path - The new session path.
      *
      * #### Notes
-     * This uses the Notebook REST API, and the response is validated.
+     * This uses the Jupyter REST API, and the response is validated.
      * The promise is fulfilled on a valid response and rejected otherwise.
      */
     rename(path: string): Promise<void>;
@@ -124,7 +124,7 @@ namespace session {
      * Kill the kernel and shutdown the session.
      *
      * #### Notes
-     * This uses the Notebook REST API, and the response is validated.
+     * This uses the Jupyter REST API, and the response is validated.
      * The promise is fulfilled on a valid response and rejected otherwise.
      */
     shutdown(): Promise<void>;
