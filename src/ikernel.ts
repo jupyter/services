@@ -472,6 +472,9 @@ export namespace kernel {
 
   /**
    * The kernel model provided by the server.
+   *
+   * #### Notes
+   * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
    */
   export
   interface IModel {
@@ -533,7 +536,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub stream message.
+   * Test whether a kernel message is an iopub stream message.
    */
   export
   function isStreamMessage(msg: IMessage): msg is IIOPubStreamMessage {
@@ -556,7 +559,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub display_data message.
+   * Test whether a kernel message is an iopub display_data message.
    */
   export
   function isDisplayDataMessage(msg: IMessage): msg is IIOPubDisplayDataMessage {
@@ -578,7 +581,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub execute_input message.
+   * Test whether a kernel message is an iopub execute_input message.
    */
   export
   function isExecuteInputMessage(msg: IMessage): msg is IIOPubExecuteInputMessage {
@@ -601,7 +604,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub execute_result message.
+   * Test whether a kernel message is an iopub execute_result message.
    */
   export
   function isExecuteResultMessage(msg: IMessage): msg is IIOPubExecuteResultMessage {
@@ -625,7 +628,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub error message.
+   * Test whether a kernel message is an iopub error message.
    */
   export
   function isErrorMessage(msg: IMessage): msg is IIOPubErrorMessage {
@@ -646,7 +649,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub status message.
+   * Test whether a kernel message is an iopub status message.
    */
   export
   function isStatusMessage(msg: IMessage): msg is IIOPubStatusMessage {
@@ -667,7 +670,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub clear_output message.
+   * Test whether a kernel message is an iopub clear_output message.
    */
   export
   function isClearOutputMessage(msg: IMessage): msg is IIOPubClearOutputMessage {
@@ -685,7 +688,7 @@ export namespace kernel {
   }
 
   /**
-   * Check if a kernel message is an iopub comm_open message.
+   * Test whether a kernel message is an iopub comm_open message.
    */
   export
   function isCommOpenMessage(msg: IMessage): msg is IIOPubCommOpenMessage {
