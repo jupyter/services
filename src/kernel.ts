@@ -353,7 +353,7 @@ class Kernel implements kernel.IKernel {
   /**
    * A signal emitted for iopub kernel messages.
    */
-  get iopubMessage(): ISignal<kernel.IKernel, kernel.IMessage> {
+  get iopubMessage(): ISignal<kernel.IKernel, kernel.IIOPubMessage> {
     return Private.iopubMessageSignal.bind(this);
   }
 
@@ -879,19 +879,19 @@ class Kernel implements kernel.IKernel {
     if (msg.channel === 'iopub') {
       switch (msg.header.msg_type) {
       case 'status':
-        this._updateStatus(msg.content.execution_state);
+        this._updateStatus((msg as kernel.IStatusMessage).content.execution_state);
         break;
       case 'comm_open':
-        this._handleCommOpen(msg);
+        this._handleCommOpen(msg as kernel.ICommOpenMessage);
         break;
       case 'comm_msg':
-        this._handleCommMsg(msg);
+        this._handleCommMsg(msg as kernel.ICommMsgMessage);
         break;
       case 'comm_close':
-        this._handleCommClose(msg);
+        this._handleCommClose(msg as kernel.ICommCloseMessage);
         break;
       }
-      this.iopubMessage.emit(msg);
+      this.iopubMessage.emit(msg as kernel.IIOPubMessage);
     }
   }
 
@@ -1130,7 +1130,7 @@ namespace Private {
    * A signal emitted for iopub kernel messages.
    */
   export
-  const iopubMessageSignal = new Signal<kernel.IKernel, kernel.IMessage>();
+  const iopubMessageSignal = new Signal<kernel.IKernel, kernel.IIOPubMessage>();
 
   /**
    * A signal emitted for unhandled kernel message.

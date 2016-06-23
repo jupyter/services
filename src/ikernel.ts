@@ -44,7 +44,7 @@ namespace kernel {
     /**
      * A signal emitted for iopub kernel messages.
      */
-    iopubMessage: ISignal<IKernel, IMessage>;
+    iopubMessage: ISignal<IKernel, IIOPubMessage>;
 
     /**
      * A signal emitted for unhandled kernel message.
