@@ -2,7 +2,11 @@
   "private": true,
   "name": "node-example",
   "dependencies": {
-    "jupyter-js-services": "file:../.."
+    "jupyter-js-services": "file:../..",
+    "jupyter-js-utils": "^0.4.0",
+    "requirejs": "^2.2.0",
+    "ws": "^1.1.1",
+    "xmlhttprequest": "^1.8.0"
   },
   "scripts": {
     "clean": "rimraf node_modules",
