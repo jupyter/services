@@ -39,7 +39,7 @@ interface IKernel extends IDisposable {
   /**
    * A signal emitted for iopub kernel messages.
    */
-  iopubMessage: ISignal<IKernel, KernelMessage.IIopub>;
+  iopubMessage: ISignal<IKernel, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for unhandled kernel message.
@@ -106,7 +106,7 @@ interface IKernel extends IDisposable {
    *
    * If the kernel status is `Dead`, this will throw an error.
    */
-  sendShellMessage(msg: KernelMessage.IShell, expectReply?: boolean, disposeOnDone?: boolean): IKernel.IFuture;
+  sendShellMessage(msg: KernelMessage.IShellMessage, expectReply?: boolean, disposeOnDone?: boolean): IKernel.IFuture;
 
   /**
    * Interrupt a kernel.
@@ -165,7 +165,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
-  kernelInfo(): Promise<KernelMessage.IInfoReply>;
+  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
 
   /**
    * Send a `complete_request` message.
@@ -176,7 +176,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
-  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReply>;
+  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
 
   /**
    * Send an `inspect_request` message.
@@ -187,7 +187,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
-  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReply>;
+  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
 
   /**
    * Send a `history_request` message.
@@ -198,7 +198,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
    */
-  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReply>;
+  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
 
   /**
    * Send an `execute_request` message.
@@ -222,7 +222,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
-  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReply>;
+  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
 
   /**
    * Send a `comm_info_request` message.
@@ -233,7 +233,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
-  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReply>;
+  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
 
   /**
    * Send an `input_reply` message.
@@ -265,7 +265,7 @@ interface IKernel extends IDisposable {
    * callback will be overidden.  A registered comm target handler will take
    * precedence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpen) => void): IDisposable;
+  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.
@@ -381,17 +381,17 @@ namespace IKernel {
     /**
      * The reply handler for the kernel future.
      */
-    onReply: (msg: KernelMessage.IShell) => void;
+    onReply: (msg: KernelMessage.IShellMessage) => void;
 
     /**
      * The stdin handler for the kernel future.
      */
-    onStdin: (msg: KernelMessage.IStdin) => void;
+    onStdin: (msg: KernelMessage.IStdinMessage) => void;
 
     /**
      * The iopub handler for the kernel future.
      */
-    onIOPub: (msg: KernelMessage.IIopub) => void;
+    onIOPub: (msg: KernelMessage.IIOPubMessage) => void;
 
     /**
      * The done handler for the kernel future.
@@ -426,25 +426,19 @@ namespace IKernel {
      * #### Notes
      * This is called when the comm is closed from either the server or
      * client.
-     *
-     * **See also:** [[ICommClose]], [[close]]
      */
-    onClose: (msg: KernelMessage.ICommClose) => void;
+    onClose: (msg: KernelMessage.ICommCloseMsg) => void;
 
     /**
      * Callback for a comm message received event.
-     *
-     * **See also:** [[ICommMsg]]
      */
-    onMsg: (msg: KernelMessage.ICommMsg) => void;
+    onMsg: (msg: KernelMessage.ICommMsgMsg) => void;
 
     /**
      * Open a comm with optional data and metadata.
      *
      * #### Notes
      * This sends a `comm_open` message to the server.
-     *
-     * **See also:** [[ICommOpen]]
      */
     open(data?: JSONObject, metadata?: JSONObject): IFuture;
 
@@ -453,8 +447,6 @@ namespace IKernel {
      *
      * #### Notes
      * This is a no-op if the comm has been closed.
-     *
-     * **See also:** [[ICommMsg]]
      */
     send(data: JSONObject, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
 
@@ -466,8 +458,6 @@ namespace IKernel {
      * `onClose` callback if set.
      *
      * This is a no-op if the comm is already closed.
-     *
-     * **See also:** [[ICommClose]], [[onClose]]
      */
     close(data?: JSONObject, metadata?: JSONObject): IFuture;
   }
@@ -598,7 +588,7 @@ namespace KernelMessage {
    * A kernel message on the `'shell'` channel.
    */
   export
-  interface IShell extends IMessage {
+  interface IShellMessage extends IMessage {
     channel: 'shell';
   }
 
@@ -606,7 +596,7 @@ namespace KernelMessage {
    * A kernel message on the `'iopub'` channel.
    */
   export
-  interface IIopub extends IMessage {
+  interface IIOPubMessage extends IMessage {
     channel: 'iopub';
   }
 
@@ -614,7 +604,7 @@ namespace KernelMessage {
    * A kernel message on the `'stdin'` channel.
    */
   export
-  interface IStdin extends IMessage {
+  interface IStdinMessage extends IMessage {
     channel: 'stdin';
   }
 
@@ -624,7 +614,7 @@ namespace KernelMessage {
    * See [Streams](http://jupyter-client.readthedocs.org/en/latest/messaging.html#streams-stdout-stderr-etc).
    */
   export
-  interface IStream extends IIopub {
+  interface IStreamMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       name: string;
@@ -636,7 +626,7 @@ namespace KernelMessage {
    * Test whether a kernel message is a `'stream'` message.
    */
   export
-  function isStream(msg: IMessage): msg is IStream {
+  function isStreamMsg(msg: IMessage): msg is IStreamMsg {
     return msg.header.msg_type === 'stream';
   }
 
@@ -646,7 +636,7 @@ namespace KernelMessage {
    * See [Display data](http://jupyter-client.readthedocs.org/en/latest/messaging.html#display-data).
    */
   export
-  interface IDisplayData extends IIopub {
+  interface IDisplayDataMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       source: string;
@@ -659,7 +649,7 @@ namespace KernelMessage {
    * Test whether a kernel message is an `'display_data'` message.
    */
   export
-  function isDisplayData(msg: IMessage): msg is IDisplayData {
+  function isDisplayDataMsg(msg: IMessage): msg is IDisplayDataMsg {
     return msg.header.msg_type === 'display_data';
   }
 
@@ -669,7 +659,7 @@ namespace KernelMessage {
    * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
    */
   export
-  interface IExecuteInput extends IIopub {
+  interface IExecuteInputMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       code: string;
@@ -681,7 +671,7 @@ namespace KernelMessage {
    * Test whether a kernel message is an `'execute_input'` message.
    */
   export
-  function isExecuteInputMessage(msg: IMessage): msg is IExecuteInput {
+  function isExecuteInputMsg(msg: IMessage): msg is IExecuteInputMsg {
     return msg.header.msg_type === 'execute_input';
   }
 
@@ -691,7 +681,7 @@ namespace KernelMessage {
    * See [Execution results](http://jupyter-client.readthedocs.org/en/latest/messaging.html#id4).
    */
   export
-  interface IExecuteResult extends IIopub {
+  interface IExecuteResultMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       execution_count: number;
@@ -704,7 +694,7 @@ namespace KernelMessage {
    * Test whether a kernel message is an `'execute_result'` message.
    */
   export
-  function isExecuteResult(msg: IMessage): msg is IExecuteResult {
+  function isExecuteResultMsg(msg: IMessage): msg is IExecuteResultMsg {
     return msg.header.msg_type === 'execute_result';
   }
 
@@ -714,7 +704,7 @@ namespace KernelMessage {
    * See [Execution errors](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execution-errors).
    */
   export
-  interface IError extends IIopub {
+  interface IErrorMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       execution_count: number;
@@ -728,7 +718,7 @@ namespace KernelMessage {
    * Test whether a kernel message is an `'error'` message.
    */
   export
-  function isError(msg: IMessage): msg is IError {
+  function isErrorMsg(msg: IMessage): msg is IErrorMsg {
     return msg.header.msg_type === 'error';
   }
 
@@ -738,7 +728,7 @@ namespace KernelMessage {
    * See [Kernel status](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-status).
    */
   export
-  interface IStatus extends IIopub {
+  interface IStatusMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       execution_state: IKernel.Status;
@@ -749,7 +739,7 @@ namespace KernelMessage {
    * Test whether a kernel message is a `'status'` message.
    */
   export
-  function isStatus(msg: IMessage): msg is IStatus {
+  function isStatusMsg(msg: IMessage): msg is IStatusMsg {
     return msg.header.msg_type === 'status';
   }
 
@@ -759,7 +749,7 @@ namespace KernelMessage {
    * See [Clear output](http://jupyter-client.readthedocs.org/en/latest/messaging.html#clear-output).
    */
   export
-  interface IClearOutput extends IIopub {
+  interface IClearOutputMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
       wait: boolean;
@@ -770,75 +760,102 @@ namespace KernelMessage {
    * Test whether a kernel message is a `'clear_output'` message.
    */
   export
-  function isClearOutput(msg: IMessage): msg is IClearOutput {
+  function isClearOutputMsg(msg: IMessage): msg is IClearOutputMsg {
     return msg.header.msg_type === 'clear_output';
   }
 
   /**
-   * A `'comm_open'` message on the `'iopub'` or `'stream'` channels.
+   * A `'comm_open'` message on the `'iopub'` channel.
    *
    * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
    */
   export
-  interface ICommOpen extends IMessage {
-    content: {
-      [ key: string ]: JSONValue;
-      comm_id: string;
-      target_name: string;
-      data: JSONObject;
-      target_module?: string;
-    };
+  interface ICommOpenMsg extends IIOPubMessage {
+    content: ICommOpen;
+  }
+
+  /**
+   * The content of a `'comm_open'` message.  The message can
+   * be received on the `'iopub'` channel or send on the `'shell'` channel.
+   *
+   * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   */
+  export
+  interface ICommOpen extends JSONObject {
+    [ key: string ]: JSONValue;
+    comm_id: string;
+    target_name: string;
+    data: JSONObject;
+    target_module?: string;
   }
 
   /**
    * Test whether a kernel message is a `'comm_open'` message.
    */
   export
-  function isCommOpen(msg: IMessage): msg is ICommOpen {
+  function isCommOpenMsg(msg: IMessage): msg is ICommOpenMsg {
     return msg.header.msg_type === 'comm_open';
   }
 
   /**
-   * A `'comm_close'` message on the `'iopub'` or `'stream'` channels.
+   * A `'comm_close'` message on the `'iopub'` channel.
    *
    * See [Comm close](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
    */
   export
-  interface ICommClose extends IMessage {
-    content: {
+  interface ICommCloseMsg extends IIOPubMessage {
+    content: ICommClose;
+  }
+
+  /**
+   * The content of a `'comm_close'` method.  The message can
+   * be received on the `'iopub'` channel or send on the `'shell'` channel.
+   *
+   * See [Comm close](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   */
+   export
+   interface ICommClose extends JSONObject {
       [ key: string ]: JSONValue;
       comm_id: string;
       data: JSONObject;
-    };
-  }
+   }
 
   /**
    * Test whether a kernel message is a `'comm_close'` message.
    */
   export
-  function isCommClose(msg: IMessage): msg is ICommClose {
+  function isCommCloseMsg(msg: IMessage): msg is ICommCloseMsg {
     return msg.header.msg_type === 'comm_close';
   }
 
   /**
-   * A `'comm_msg'` message on the `'iopub'` or `'stream'` channels.
+   * A `'comm_msg'` message on the `'iopub'` channel.
    *
    * See [Comm msg](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
    */
   export
-  interface ICommMsg extends IMessage {
-    content: {
-      [ key: string ]: JSONValue;
-      comm_id: string;
-      data: JSONObject;
-    };
+  interface ICommMsgMsg extends IIOPubMessage {
+    content: ICommMsg;
+  }
+
+  /**
+   * The content of a `'comm_msg'` message.  The message can
+   * be received on the `'iopub'` channel or send on the `'shell'` channel.
+   *
+   * See [Comm msg](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   */
+  export
+  interface ICommMsg extends JSONObject {
+    [ key: string ]: JSONValue;
+    comm_id: string;
+    data: JSONObject;
   }
 
   /**
    * Test whether a kernel message is a `'comm_msg'` message.
    */
   export
-  function isCommMsg(msg: IMessage): msg is ICommMsg {
+  function isCommMsgMsg(msg: IMessage): msg is ICommMsgMsg {
     return msg.header.msg_type === 'comm_msg';
   }
 
@@ -848,7 +865,7 @@ namespace KernelMessage {
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
    */
   export
-  interface IInfoReply extends IShell {
+  interface IInfoReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       protocol_version: string;
@@ -899,7 +916,7 @@ namespace KernelMessage {
    * **See also:** [[ICompleteRequest]], [[IKernel.complete]]
    */
   export
-  interface ICompleteReply extends IShell {
+  interface ICompleteReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       matches: string[];
@@ -933,7 +950,7 @@ namespace KernelMessage {
    * **See also:** [[IInspectRequest]], [[IKernel.inspect]]
    */
   export
-  interface IInspectReply extends IShell {
+  interface IInspectReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       status: string;
@@ -972,7 +989,7 @@ namespace KernelMessage {
    * **See also:** [[IHistoryRequest]], [[IKernel.history]]
    */
   export
-  interface IHistoryReply extends IShell {
+  interface IHistoryReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       history: JSONValue[];
@@ -1006,7 +1023,7 @@ namespace KernelMessage {
    * **See also:** [[IIsCompleteRequest]], [[IKernel.isComplete]]
    */
   export
-  interface IIsCompleteReply extends IShell {
+  interface IIsCompleteReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       status: string;
@@ -1040,7 +1057,7 @@ namespace KernelMessage {
    * **See also:** [[IExecuteRequest]], [[IKernel.execute]]
    */
   export
-  interface IExecuteReply extends IShell {
+  interface IExecuteReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       execution_count: number;
@@ -1083,7 +1100,7 @@ namespace KernelMessage {
    * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
    */
   export
-  interface ICommInfoReply extends IShell {
+  interface ICommInfoReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
       /**

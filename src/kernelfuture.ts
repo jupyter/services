@@ -45,28 +45,28 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   /**
    * Get the reply handler.
    */
-  get onReply(): (msg: KernelMessage.IShell) => void {
+  get onReply(): (msg: KernelMessage.IShellMessage) => void {
     return this._reply;
   }
 
   /**
    * Set the reply handler.
    */
-  set onReply(cb: (msg: KernelMessage.IShell) => void) {
+  set onReply(cb: (msg: KernelMessage.IShellMessage) => void) {
     this._reply = cb;
   }
 
   /**
    * Get the iopub handler.
    */
-  get onIOPub(): (msg: KernelMessage.IIopub) => void {
+  get onIOPub(): (msg: KernelMessage.IIOPubMessage) => void {
     return this._iopub;
   }
 
   /**
    * Set the iopub handler.
    */
-  set onIOPub(cb: (msg: KernelMessage.IIopub) => void) {
+  set onIOPub(cb: (msg: KernelMessage.IIOPubMessage) => void) {
     this._iopub = cb;
   }
 
@@ -87,14 +87,14 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   /**
    * Get the stdin handler.
    */
-  get onStdin(): (msg: KernelMessage.IStdin) => void {
+  get onStdin(): (msg: KernelMessage.IStdinMessage) => void {
     return this._stdin;
   }
 
   /**
    * Set the stdin handler.
    */
-  set onStdin(cb: (msg: KernelMessage.IStdin) => void) {
+  set onStdin(cb: (msg: KernelMessage.IStdinMessage) => void) {
     this._stdin = cb;
   }
 
@@ -116,18 +116,18 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   handleMsg(msg: KernelMessage.IMessage): void {
     switch (msg.channel) {
     case 'shell':
-      this._handleReply(msg as KernelMessage.IShell);
+      this._handleReply(msg as KernelMessage.IShellMessage);
       break;
     case 'stdin':
-      this._handleStdin(msg as KernelMessage.IStdin);
+      this._handleStdin(msg as KernelMessage.IStdinMessage);
       break;
     case 'iopub':
-      this._handleIOPub(msg as KernelMessage.IIopub);
+      this._handleIOPub(msg as KernelMessage.IIOPubMessage);
       break;
     }
   }
 
-  private _handleReply(msg: KernelMessage.IShell): void {
+  private _handleReply(msg: KernelMessage.IShellMessage): void {
     let reply = this._reply;
     if (reply) reply(msg);
     this._setFlag(KernelFutureFlag.GotReply);
@@ -136,15 +136,15 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     }
   }
 
-  private _handleStdin(msg: KernelMessage.IStdin): void {
+  private _handleStdin(msg: KernelMessage.IStdinMessage): void {
     let stdin = this._stdin;
     if (stdin) stdin(msg);
   }
 
-  private _handleIOPub(msg: KernelMessage.IIopub): void {
+  private _handleIOPub(msg: KernelMessage.IIOPubMessage): void {
     let iopub = this._iopub;
     if (iopub) iopub(msg);
-    if (KernelMessage.isStatus(msg) &&
+    if (KernelMessage.isStatusMsg(msg) &&
         msg.content.execution_state === 'idle') {
       this._setFlag(KernelFutureFlag.GotIdle);
       if (this._testFlag(KernelFutureFlag.GotReply)) {
@@ -182,9 +182,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
 
   private _msg: KernelMessage.IMessage = null;
   private _status = 0;
-  private _stdin: (msg: KernelMessage.IStdin) => void = null;
-  private _iopub: (msg: KernelMessage.IIopub) => void = null;
-  private _reply: (msg: KernelMessage.IShell) => void = null;
+  private _stdin: (msg: KernelMessage.IStdinMessage) => void = null;
+  private _iopub: (msg: KernelMessage.IIOPubMessage) => void = null;
+  private _reply: (msg: KernelMessage.IShellMessage) => void = null;
   private _done: () => void = null;
   private _disposeOnDone = true;
 }

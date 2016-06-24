@@ -554,7 +554,7 @@ class Session implements ISession {
   /**
    * Handle iopub kernel messages.
    */
-  protected onIOPubMessage(sender: IKernel, msg: KernelMessage.IIopub) {
+  protected onIOPubMessage(sender: IKernel, msg: KernelMessage.IIOPubMessage) {
     this.iopubMessage.emit(msg);
   }
 
@@ -640,7 +640,7 @@ namespace Private {
    * A signal emitted for iopub kernel messages.
    */
   export
-  const iopubMessageSignal = new Signal<ISession, KernelMessage.IIopub>();
+  const iopubMessageSignal = new Signal<ISession, KernelMessage.IIOPubMessage>();
 
   /**
    * A signal emitted for an unhandled kernel message.

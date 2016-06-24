@@ -92,7 +92,7 @@ function validateKernelMessage(msg: KernelMessage.IMessage) : void {
     validateKernelHeader(msg.parent_header as KernelMessage.IHeader);
   }
   if (msg.channel === 'iopub') {
-    validateIOPubContent(msg as KernelMessage.IIopub);
+    validateIOPubContent(msg as KernelMessage.IIOPubMessage);
   }
 }
 
@@ -100,7 +100,7 @@ function validateKernelMessage(msg: KernelMessage.IMessage) : void {
 /**
  * Validate content an kernel message on the iopub channel.
  */
-function validateIOPubContent(msg: KernelMessage.IIopub) : void {
+function validateIOPubContent(msg: KernelMessage.IIOPubMessage) : void {
   if (msg.channel === 'iopub') {
     let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
     if (fields === void 0) {

@@ -349,7 +349,7 @@ class Kernel implements IKernel {
   /**
    * A signal emitted for iopub kernel messages.
    */
-  get iopubMessage(): ISignal<IKernel, KernelMessage.IIopub> {
+  get iopubMessage(): ISignal<IKernel, KernelMessage.IIOPubMessage> {
     return Private.iopubMessageSignal.bind(this);
   }
 
@@ -492,7 +492,7 @@ class Kernel implements IKernel {
    *
    * If the kernel status is `Dead`, this will throw an error.
    */
-  sendShellMessage(msg: KernelMessage.IShell, expectReply=false, disposeOnDone=true): IKernel.IFuture {
+  sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): IKernel.IFuture {
     if (this.status === 'dead') {
       throw new Error('Kernel is dead');
     }
@@ -577,7 +577,7 @@ class Kernel implements IKernel {
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
-  kernelInfo(): Promise<KernelMessage.IInfoReply> {
+  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'kernel_info_request',
       channel: 'shell',
@@ -597,7 +597,7 @@ class Kernel implements IKernel {
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
-  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReply> {
+  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'complete_request',
       channel: 'shell',
@@ -617,7 +617,7 @@ class Kernel implements IKernel {
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
-  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReply> {
+  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'inspect_request',
       channel: 'shell',
@@ -637,7 +637,7 @@ class Kernel implements IKernel {
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
    */
-  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReply> {
+  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'history_request',
       channel: 'shell',
@@ -691,7 +691,7 @@ class Kernel implements IKernel {
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
-  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReply> {
+  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'is_complete_request',
       channel: 'shell',
@@ -709,7 +709,7 @@ class Kernel implements IKernel {
    * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
-  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReply> {
+  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'comm_info_request',
       channel: 'shell',
@@ -758,7 +758,7 @@ class Kernel implements IKernel {
    * callback will be overidden.  A registered comm target handler will take
    * precedence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpen) => void): IDisposable {
+  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable {
     this._targetRegistry[targetName] = callback;
     return new DisposableDelegate(() => {
       delete this._targetRegistry[targetName];
@@ -780,9 +780,7 @@ class Kernel implements IKernel {
       comm = new Comm(
         targetName,
         commId,
-        this._username,
-        this._clientId,
-        this.sendShellMessage.bind(this),
+        this,
         () => { this._unregisterComm(commId); }
       );
       this._comms.set(commId, comm);
@@ -880,19 +878,19 @@ class Kernel implements IKernel {
     if (msg.channel === 'iopub') {
       switch (msg.header.msg_type) {
       case 'status':
-        this._updateStatus((msg as KernelMessage.IStatus).content.execution_state);
+        this._updateStatus((msg as KernelMessage.IStatusMsg).content.execution_state);
         break;
       case 'comm_open':
-        this._handleCommOpen(msg as KernelMessage.ICommOpen);
+        this._handleCommOpen(msg as KernelMessage.ICommOpenMsg);
         break;
       case 'comm_msg':
-        this._handleCommMsg(msg as KernelMessage.ICommMsg);
+        this._handleCommMsg(msg as KernelMessage.ICommMsgMsg);
         break;
       case 'comm_close':
-        this._handleCommClose(msg as KernelMessage.ICommClose);
+        this._handleCommClose(msg as KernelMessage.ICommCloseMsg);
         break;
       }
-      this.iopubMessage.emit(msg as KernelMessage.IIopub);
+      this.iopubMessage.emit(msg as KernelMessage.IIOPubMessage);
     }
   }
 
@@ -985,16 +983,14 @@ class Kernel implements IKernel {
   /**
    * Handle a `comm_open` kernel message.
    */
-  private _handleCommOpen(msg: KernelMessage.ICommOpen): void {
+  private _handleCommOpen(msg: KernelMessage.ICommOpenMsg): void {
     let content = msg.content;
     let promise = utils.loadObject(content.target_name, content.target_module,
       this._targetRegistry).then(target => {
         let comm = new Comm(
           content.target_name,
           content.comm_id,
-          this._username,
-          this._clientId,
-          this.sendShellMessage.bind(this),
+          this,
           () => { this._unregisterComm(content.comm_id); }
         );
         let response : any;
@@ -1017,7 +1013,7 @@ class Kernel implements IKernel {
   /**
    * Handle 'comm_close' kernel message.
    */
-  private _handleCommClose(msg: KernelMessage.ICommClose): void {
+  private _handleCommClose(msg: KernelMessage.ICommCloseMsg): void {
     let content = msg.content;
     let promise = this._commPromises.get(content.comm_id);
     if (!promise) {
@@ -1045,7 +1041,7 @@ class Kernel implements IKernel {
   /**
    * Handle a 'comm_msg' kernel message.
    */
-  private _handleCommMsg(msg: KernelMessage.ICommMsg): void {
+  private _handleCommMsg(msg: KernelMessage.ICommMsgMsg): void {
     let content = msg.content;
     let promise = this._commPromises.get(content.comm_id);
     if (!promise) {
@@ -1097,7 +1093,7 @@ class Kernel implements IKernel {
   private _futures: Map<string, KernelFutureHandler> = null;
   private _commPromises: Map<string, Promise<IKernel.IComm>> = null;
   private _comms: Map<string, IKernel.IComm> = null;
-  private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpen) => void; } = Object.create(null);
+  private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _spec: IKernel.ISpec = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
 }
@@ -1110,13 +1106,11 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
   /**
    * Construct a new comm channel.
    */
-  constructor(target: string, id: string, username: string, clientId: string,  sender: (msg: KernelMessage.IMessage, expectReply?: boolean, disposeOnDone?: boolean) => IKernel.IFuture, disposeCb: () => void) {
+  constructor(target: string, id: string, kernel: IKernel, disposeCb: () => void) {
     super(disposeCb);
     this._id = id;
     this._target = target;
-    this._username = username;
-    this._clientId = clientId;
-    this._sender = sender;
+    this._kernel = kernel;
   }
 
   /**
@@ -1148,7 +1142,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    *
    * **See also:** [[ICommClose]], [[close]]
    */
-  get onClose(): (msg: KernelMessage.ICommClose) => void {
+  get onClose(): (msg: KernelMessage.ICommCloseMsg) => void {
     return this._onClose;
   }
 
@@ -1159,27 +1153,23 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    * This is called when the comm is closed from either the server or
    * client.
    *
-   * **See also:** [[ICommClose]], [[close]]
+   * **See also:** [[close]]
    */
-  set onClose(cb: (msg: KernelMessage.ICommClose) => void) {
+  set onClose(cb: (msg: KernelMessage.ICommCloseMsg) => void) {
     this._onClose = cb;
   }
 
   /**
    * Get the callback for a comm message received event.
-   *
-   * **See also:** [[ICommMsg]]
    */
-  get onMsg(): (msg: KernelMessage.ICommMsg) => void {
+  get onMsg(): (msg: KernelMessage.ICommMsgMsg) => void {
     return this._onMsg;
   }
 
   /**
    * Set the callback for a comm message received event.
-   *
-   * **See also:** [[ICommMsg]]
    */
-  set onMsg(cb: (msg: KernelMessage.ICommMsg) => void) {
+  set onMsg(cb: (msg: KernelMessage.ICommMsgMsg) => void) {
     this._onMsg = cb;
   }
 
@@ -1190,7 +1180,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
-    return (this._sender === null);
+    return (this._kernel === null);
   }
 
   /**
@@ -1202,22 +1192,22 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    * **See also:** [[ICommOpen]]
    */
   open(data?: JSONObject, metadata?: JSONObject): IKernel.IFuture {
-    if (this._sender === void 0) {
+    if (this.isDisposed || this._kernel.isDisposed) {
       return;
     }
     let options: KernelMessage.IOptions = {
       msgType: 'comm_open',
       channel: 'shell',
-      username: this._username,
-      session: this._clientId
+      username: this._kernel.username,
+      session: this._kernel.clientId
     };
-    let content: JSONObject = {
+    let content: KernelMessage.ICommOpen = {
       comm_id: this._id,
       target_name: this._target,
       data: data || {}
     };
     let msg = Private.createShellMessage(options, content, metadata);
-    return this._sender(msg, false, true);
+    return this._kernel.sendShellMessage(msg, false, true);
   }
 
   /**
@@ -1229,21 +1219,21 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    * **See also:** [[ICommMsg]]
    */
   send(data: JSONObject, metadata?: JSONObject, buffers: (ArrayBuffer | ArrayBufferView)[] = [], disposeOnDone: boolean = true): IKernel.IFuture {
-    if (this.isDisposed) {
-      throw Error('Comm is closed');
+    if (this.isDisposed || this._kernel.isDisposed) {
+      return;
     }
     let options: KernelMessage.IOptions = {
       msgType: 'comm_msg',
       channel: 'shell',
-      username: this._username,
-      session: this._clientId
+      username: this._kernel.username,
+      session: this._kernel.clientId
     };
-    let content: JSONObject = {
+    let content: KernelMessage.ICommMsg = {
       comm_id: this._id,
       data: data
     };
     let msg = Private.createShellMessage(options, content, metadata);
-    return this._sender(msg, false, true);
+    return this._kernel.sendShellMessage(msg, false, true);
   }
 
   /**
@@ -1258,24 +1248,24 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    * **See also:** [[ICommClose]], [[onClose]]
    */
   close(data?: JSONObject, metadata?: JSONObject): IKernel.IFuture {
-    if (this.isDisposed) {
+    if (this.isDisposed || this._kernel.isDisposed) {
       return;
     }
     let options: KernelMessage.IOptions = {
       msgType: 'comm_msg',
       channel: 'shell',
-      username: this._username,
-      session: this._clientId
+      username: this._kernel.username,
+      session: this._kernel.clientId
     };
-    let content: JSONObject = {
+    let content: KernelMessage.ICommClose = {
       comm_id: this._id,
       data: data || {}
     };
     let msg = Private.createShellMessage(options, content, metadata);
-    let future = this._sender(msg, false, true);
+    let future = this._kernel.sendShellMessage(msg, false, true);
     let onClose = this._onClose;
     if (onClose) {
-      onClose(future.msg as KernelMessage.ICommClose);
+      onClose(future.msg as KernelMessage.ICommCloseMsg);
     }
     this.dispose();
     return future;
@@ -1290,17 +1280,15 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
     }
     this._onClose = null;
     this._onMsg = null;
-    this._sender = null;
+    this._kernel = null;
     super.dispose();
   }
 
   private _target = '';
   private _id = '';
-  private _username = '';
-  private _clientId = '';
-  private _onClose: (msg: KernelMessage.ICommClose) => void = null;
-  private _onMsg: (msg: KernelMessage.ICommMsg) => void = null;
-  private _sender: (msg: KernelMessage.IShell, expectReply?: boolean, disposeOnDone?: boolean) => IKernel.IFuture;
+  private _kernel: IKernel = null;
+  private _onClose: (msg: KernelMessage.ICommCloseMsg) => void = null;
+  private _onMsg: (msg: KernelMessage.ICommMsgMsg) => void = null;
 }
 
 
@@ -1318,7 +1306,7 @@ namespace Private {
    * A signal emitted for iopub kernel messages.
    */
   export
-  const iopubMessageSignal = new Signal<IKernel, KernelMessage.IIopub>();
+  const iopubMessageSignal = new Signal<IKernel, KernelMessage.IIOPubMessage>();
 
   /**
    * A signal emitted for unhandled kernel message.
@@ -1457,16 +1445,16 @@ namespace Private {
    * Create a shell message given options.
    */
   export
-  function createShellMessage(options: KernelMessage.IOptions, content: JSONObject = {}, metadata: JSONObject = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []) : KernelMessage.IShell {
+  function createShellMessage(options: KernelMessage.IOptions, content: JSONObject = {}, metadata: JSONObject = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []) : KernelMessage.IShellMessage {
     let msg = createKernelMessage(options, content, metadata, buffers);
-    return msg as KernelMessage.IShell;
+    return msg as KernelMessage.IShellMessage;
   }
 
   /**
    * Send a kernel message to the kernel and return the content of the response.
    */
   export
-  function sendShellMessage(kernel: IKernel, msg: KernelMessage.IShell): Promise<KernelMessage.IShell> {
+  function sendShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
     let future: IKernel.IFuture;
     try {
       future = kernel.sendShellMessage(msg, true);

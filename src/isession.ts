@@ -47,7 +47,7 @@ interface ISession extends IDisposable {
   /**
    * A signal emitted for iopub kernel messages.
    */
-  iopubMessage: ISignal<ISession, KernelMessage.IIopub>;
+  iopubMessage: ISignal<ISession, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for unhandled kernel message.
