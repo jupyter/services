@@ -1466,7 +1466,7 @@ namespace Private {
    * Send a kernel message to the kernel and return the content of the response.
    */
   export
-  function sendShellMessage(kernel: IKernel, msg: KernelMessage.IShell): Promise<any> {
+  function sendShellMessage(kernel: IKernel, msg: KernelMessage.IShell): Promise<KernelMessage.IShell> {
     let future: IKernel.IFuture;
     try {
       future = kernel.sendShellMessage(msg, true);
@@ -1475,7 +1475,7 @@ namespace Private {
     }
     return new Promise<any>((resolve, reject) => {
       future.onReply = (reply: KernelMessage.IMessage) => {
-        resolve(reply.content);
+        resolve(reply);
       };
     });
   }
