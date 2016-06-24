@@ -170,8 +170,8 @@ function startNewSession(options: ISession.IOptions): Promise<ISession> {
   if (options.path === void 0) {
     return Promise.reject(new Error('Must specify a notebook path'));
   }
-  return Private.startSession(options).then(sessionId => {
-    return Private.createSession(sessionId, options);
+  return Private.startSession(options).then(model => {
+    return Private.createSession(model, options);
   });
 }
 
@@ -194,15 +194,15 @@ function findSessionById(id: string, options?: ISession.IOptions): Promise<ISess
   for (let clientId in sessions) {
     let session = sessions[clientId];
     if (session.id === id) {
-      let sessionId = {
+      let model = {
         id,
         notebook: { path: session.path },
         kernel: { name: session.kernel.name, id: session.kernel.id }
       };
-      return Promise.resolve(sessionId);
+      return Promise.resolve(model);
     }
   }
-  return Private.getSessionId(id, options).catch(() => {
+  return Private.getSessionModel(id, options).catch(() => {
     let msg = `No running session for id: ${id}`;
     return Private.typedThrow<ISession.IModel>(msg);
   });
@@ -230,18 +230,18 @@ function findSessionByPath(path: string, options?: ISession.IOptions): Promise<I
   for (let clientId in sessions) {
     let session = sessions[clientId];
     if (session.path === path) {
-      let sessionId = {
+      let model = {
         id: session.id,
         notebook: { path: session.path },
         kernel: { name: session.kernel.name, id: session.kernel.id }
       };
-      return Promise.resolve(sessionId);
+      return Promise.resolve(model);
     }
   }
-  return listRunningSessions(options).then(sessionIds => {
-    for (let sessionId of sessionIds) {
-      if (sessionId.notebook.path === path) {
-        return sessionId;
+  return listRunningSessions(options).then(models => {
+    for (let model of models) {
+      if (model.notebook.path === path) {
+        return model;
       }
     }
     let msg = `No running session for path: ${path}`;
@@ -273,8 +273,8 @@ function connectToSession(id: string, options?: ISession.IOptions): Promise<ISes
       return session.clone();
     }
   }
-  return Private.getSessionId(id, options).then(sessionId => {
-    return Private.createSession(sessionId, options);
+  return Private.getSessionModel(id, options).then(model => {
+    return Private.createSession(model, options);
   }).catch(() => {
     let msg = `No running session with id: ${id}`;
     return Private.typedThrow<ISession>(msg);
@@ -596,7 +596,7 @@ class Session implements ISession {
       let data = success.data as ISession.IModel;
       validate.validateSessionModel(data);
       this._updating = false;
-      return Private.updateById(data);
+      return Private.updateByModel(data);
     }, error => {
       this._updating = false;
       return Private.onSessionError(error);
@@ -685,24 +685,24 @@ namespace Private {
       }
       validate.validateSessionModel(success.data);
       let data = success.data as ISession.IModel;
-      return updateById(data);
+      return updateByModel(data);
     }, onSessionError);
   }
 
   /**
-   * Create a Promise for a kernel object given a sessionId and options.
+   * Create a Promise for a kernel object given a session model and options.
    */
   export
-  function createKernel(sessionId: ISession.IModel, options: ISession.IOptions): Promise<IKernel> {
+  function createKernel(model: ISession.IModel, options: ISession.IOptions): Promise<IKernel> {
     let kernelOptions = {
-      name: sessionId.kernel.name,
+      name: model.kernel.name,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
       username: options.username,
       clientId: options.clientId,
       ajaxSettings: options.ajaxSettings
     };
-    return connectToKernel(sessionId.kernel.id, kernelOptions);
+    return connectToKernel(model.kernel.id, kernelOptions);
   }
 
   /**
@@ -711,19 +711,19 @@ namespace Private {
    * @returns - A promise that resolves with a started session.
    */
   export
-  function createSession(sessionId: ISession.IModel, options: ISession.IOptions): Promise<Session> {
-    return createKernel(sessionId, options).then(kernel => {
-       return new Session(options, sessionId.id, kernel);
+  function createSession(model: ISession.IModel, options: ISession.IOptions): Promise<Session> {
+    return createKernel(model, options).then(kernel => {
+       return new Session(options, model.id, kernel);
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
     });
   }
 
   /**
-   * Get a full session id model from the server by session id string.
+   * Get a full session model from the server by session id string.
    */
   export
-  function getSessionId(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+  function getSessionModel(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, id);
@@ -738,7 +738,7 @@ namespace Private {
       }
       let data = success.data as ISession.IModel;
       validate.validateSessionModel(data);
-      return updateById(data);
+      return updateByModel(data);
     }, Private.onSessionError);
   }
 
@@ -770,15 +770,15 @@ namespace Private {
    * Update the running sessions given an updated session Id.
    */
   export
-  function updateById(sessionId: ISession.IModel): Promise<ISession.IModel> {
+  function updateByModel(model: ISession.IModel): Promise<ISession.IModel> {
     let promises: Promise<void>[] = [];
     for (let uuid in runningSessions) {
       let session = runningSessions[uuid];
-      if (session.id === sessionId.id) {
-        promises.push(session.update(sessionId));
+      if (session.id === model.id) {
+        promises.push(session.update(model));
       }
     }
-    return Promise.all(promises).then(() => { return sessionId; });
+    return Promise.all(promises).then(() => { return model; });
   }
 
   /**

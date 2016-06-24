@@ -440,7 +440,7 @@ namespace IKernel {
      * #### Notes
      * This sends a `comm_open` message to the server.
      */
-    open(data?: JSONObject, metadata?: JSONObject): IFuture;
+    open(data?: JSONValue, metadata?: JSONObject): IFuture;
 
     /**
      * Send a `comm_msg` message to the kernel.
@@ -448,7 +448,7 @@ namespace IKernel {
      * #### Notes
      * This is a no-op if the comm has been closed.
      */
-    send(data: JSONObject, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
+    send(data: JSONValue, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
 
     /**
      * Close the comm.
@@ -459,7 +459,7 @@ namespace IKernel {
      *
      * This is a no-op if the comm is already closed.
      */
-    close(data?: JSONObject, metadata?: JSONObject): IFuture;
+    close(data?: JSONValue, metadata?: JSONObject): IFuture;
   }
 
   /**
@@ -785,7 +785,7 @@ namespace KernelMessage {
     [ key: string ]: JSONValue;
     comm_id: string;
     target_name: string;
-    data: JSONObject;
+    data: JSONValue;
     target_module?: string;
   }
 
@@ -817,7 +817,7 @@ namespace KernelMessage {
    interface ICommClose extends JSONObject {
       [ key: string ]: JSONValue;
       comm_id: string;
-      data: JSONObject;
+      data: JSONValue;
    }
 
   /**
@@ -848,7 +848,7 @@ namespace KernelMessage {
   interface ICommMsg extends JSONObject {
     [ key: string ]: JSONValue;
     comm_id: string;
-    data: JSONObject;
+    data: JSONValue;
   }
 
   /**

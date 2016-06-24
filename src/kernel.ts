@@ -22,7 +22,7 @@ import {
 } from './ikernel';
 
 import {
-  JSONObject
+  JSONObject, JSONValue
 } from './json';
 
 import {
@@ -150,7 +150,7 @@ function findKernelById(id: string, options?: IKernel.IOptions): Promise<IKernel
       return Promise.resolve(result);
     }
   }
-  return Private.getKernelId(id, options).catch(() => {
+  return Private.getKernelModel(id, options).catch(() => {
     return Private.typedThrow<IKernel.IModel>(`No running kernel with id: ${id}`);
   });
 }
@@ -287,7 +287,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
       return Promise.resolve(kernel.clone());
     }
   }
-  return Private.getKernelId(id, options).then(kernelId => {
+  return Private.getKernelModel(id, options).then(model => {
     return new Kernel(options, id);
   }).catch(() => {
     return Private.typedThrow<IKernel.IModel>(`No running kernel with id: ${id}`);
@@ -296,7 +296,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
 
 
 /**
- * Create a well-formed Kernel Message.
+ * Create a well-formed kernel message.
  */
 export
 function createKernelMessage(options: KernelMessage.IOptions, content: JSONObject = {}, metadata: JSONObject = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []) : KernelMessage.IMessage {
@@ -310,10 +310,20 @@ function createKernelMessage(options: KernelMessage.IOptions, content: JSONObjec
     },
     parent_header: { },
     channel: options.channel,
-    content: content,
-    metadata: metadata,
-    buffers: buffers
+    content,
+    metadata,
+    buffers
   };
+}
+
+
+/**
+ * Create a well-formed kernel shell message.
+ */
+export
+function createShellMessage(options: KernelMessage.IOptions, content: JSONObject = {}, metadata: JSONObject = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []) : KernelMessage.IShellMessage {
+  let msg = createKernelMessage(options, content, metadata, buffers);
+  return msg as KernelMessage.IShellMessage;
 }
 
 
@@ -584,8 +594,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -604,8 +614,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options, content);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options, content);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -624,8 +634,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options, content);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options, content);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -644,8 +654,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options, content);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options, content);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -678,7 +688,7 @@ class Kernel implements IKernel {
       stop_on_error : false
     };
     content = utils.extend(defaults, content);
-    let msg = Private.createShellMessage(options, content);
+    let msg = createShellMessage(options, content);
     return this.sendShellMessage(msg, true, disposeOnDone);
   }
 
@@ -698,8 +708,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options, content);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options, content);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -716,8 +726,8 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let msg = Private.createShellMessage(options, content);
-    return Private.sendShellMessage(this, msg);
+    let msg = createShellMessage(options, content);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -1191,7 +1201,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    *
    * **See also:** [[ICommOpen]]
    */
-  open(data?: JSONObject, metadata?: JSONObject): IKernel.IFuture {
+  open(data?: JSONValue, metadata?: JSONObject): IKernel.IFuture {
     if (this.isDisposed || this._kernel.isDisposed) {
       return;
     }
@@ -1206,7 +1216,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
       target_name: this._target,
       data: data || {}
     };
-    let msg = Private.createShellMessage(options, content, metadata);
+    let msg = createShellMessage(options, content, metadata);
     return this._kernel.sendShellMessage(msg, false, true);
   }
 
@@ -1218,7 +1228,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    *
    * **See also:** [[ICommMsg]]
    */
-  send(data: JSONObject, metadata?: JSONObject, buffers: (ArrayBuffer | ArrayBufferView)[] = [], disposeOnDone: boolean = true): IKernel.IFuture {
+  send(data: JSONValue, metadata?: JSONObject, buffers: (ArrayBuffer | ArrayBufferView)[] = [], disposeOnDone: boolean = true): IKernel.IFuture {
     if (this.isDisposed || this._kernel.isDisposed) {
       return;
     }
@@ -1232,7 +1242,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
       comm_id: this._id,
       data: data
     };
-    let msg = Private.createShellMessage(options, content, metadata);
+    let msg = createShellMessage(options, content, metadata);
     return this._kernel.sendShellMessage(msg, false, true);
   }
 
@@ -1247,7 +1257,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
    *
    * **See also:** [[ICommClose]], [[onClose]]
    */
-  close(data?: JSONObject, metadata?: JSONObject): IKernel.IFuture {
+  close(data?: JSONValue, metadata?: JSONObject): IKernel.IFuture {
     if (this.isDisposed || this._kernel.isDisposed) {
       return;
     }
@@ -1261,7 +1271,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
       comm_id: this._id,
       data: data || {}
     };
-    let msg = Private.createShellMessage(options, content, metadata);
+    let msg = createShellMessage(options, content, metadata);
     let future = this._kernel.sendShellMessage(msg, false, true);
     let onClose = this._onClose;
     if (onClose) {
@@ -1394,10 +1404,10 @@ namespace Private {
   }
 
   /**
-   * Get a full kernel id model from the server by kernel id string.
+   * Get a full kernel model from the server by kernel id string.
    */
   export
-  function getKernelId(id: string, options?: IKernel.IOptions): Promise<IKernel.IOptions> {
+  function getKernelModel(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, id);
@@ -1442,19 +1452,10 @@ namespace Private {
   }
 
   /**
-   * Create a shell message given options.
+   * Send a kernel message to the kernel and resolve the reply message.
    */
   export
-  function createShellMessage(options: KernelMessage.IOptions, content: JSONObject = {}, metadata: JSONObject = {}, buffers: (ArrayBuffer | ArrayBufferView)[] = []) : KernelMessage.IShellMessage {
-    let msg = createKernelMessage(options, content, metadata, buffers);
-    return msg as KernelMessage.IShellMessage;
-  }
-
-  /**
-   * Send a kernel message to the kernel and return the content of the response.
-   */
-  export
-  function sendShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
+  function handleShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
     let future: IKernel.IFuture;
     try {
       future = kernel.sendShellMessage(msg, true);
