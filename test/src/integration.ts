@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 import {
   XMLHttpRequest as NodeXMLHttpRequest
-} from "xmlhttprequest";
+} from 'xmlhttprequest';
 import * as NodeWebSocket
   from 'ws';
 
@@ -18,7 +18,7 @@ global.WebSocket = NodeWebSocket;
 import {
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
   connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults, ContentsManager, IKernel, IHistoryRequest
+  ConfigWithDefaults, ContentsManager, KernelMessage
 } from '../../lib';
 
 
@@ -33,13 +33,13 @@ describe('jupyter.services - Integration', () => {
         console.log('available specs', Object.keys(kernelSpecs.kernelspecs));
         let options = {
           name: kernelSpecs.default
-        }
+        };
         startNewKernel(options).then((kernel) => {
           console.log('Hello Kernel: ', kernel.name, kernel.id);
           kernel.restart().then(() => {
             console.log('Kernel restarted');
             kernel.kernelInfo().then((info) => {
-              console.log('Got info: ', info.language_info);
+              console.log('Got info: ', info.content.language_info);
               kernel.shutdown().then(() => {
                 console.log('Kernel shut down');
                 done();
@@ -79,15 +79,15 @@ describe('jupyter.services - Integration', () => {
       startNewKernel().then(kernel => {
         console.log('Kernel started');
         return kernel.complete({ code: 'impor', cursor_pos: 4 })
-        .then(completions => {
-          console.log('Got completions: ', completions.matches);
-          return kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 })
-        }).then(inspect => {
-          console.log('Got inspect: ', inspect.data);
-          return kernel.isComplete({ code: 'from numpy import (\n' })
-        }).then(isComplete => {
-          console.log('Got isComplete: ', isComplete.status);
-          let options: IHistoryRequest = {
+        .then(msg => {
+          console.log('Got completions: ', msg.content.matches);
+          return kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 });
+        }).then(msg => {
+          console.log('Got inspect: ', msg.content.data);
+          return kernel.isComplete({ code: 'from numpy import (\n' });
+        }).then(msg => {
+          console.log('Got isComplete: ', msg.content.status);
+          let options: KernelMessage.IHistoryRequest = {
             output: true,
             raw: true,
             hist_access_type: 'search',
@@ -98,14 +98,14 @@ describe('jupyter.services - Integration', () => {
             pattern: '*',
             unique: true,
           };
-          return kernel.history(options)
-        }).then(history => {
+          return kernel.history(options);
+        }).then(msg => {
           console.log('Got history');
           let future = kernel.execute({ code: 'a = 1\n' });
           future.onDone = () => {
             console.log('Execute finished');
             return kernel.shutdown();
-          }
+          };
         }).then(() => done()).catch(error => console.log(error));
       });
     });
@@ -114,11 +114,11 @@ describe('jupyter.services - Integration', () => {
   describe('Session', () => {
 
     it('should start, connect to existing session and list running sessions', (done) => {
-      let options = { notebookPath: 'Untitled1.ipynb' };
+      let options = { path: 'Untitled1.ipynb' };
       startNewSession(options).then((session) => {
-        console.log('Hello Session: ', session.id, session.notebookPath);
-        session.renameNotebook('Untitled2.ipynb').then(() => {
-          expect(session.notebookPath).to.be('Untitled2.ipynb');
+        console.log('Hello Session: ', session.id, session.path);
+        session.rename('Untitled2.ipynb').then(() => {
+          expect(session.path).to.be('Untitled2.ipynb');
 
           // should grab the same session object
           connectToSession(session.id, options).then((session2) => {
@@ -151,8 +151,8 @@ describe('jupyter.services - Integration', () => {
       startNewKernel().then(kernel => {
         let sessionOptions = {
           kernelId: kernel.id,
-          notebookPath: 'Untitled1.ipynb'
-        }
+          path: 'Untitled1.ipynb'
+        };
         startNewSession(sessionOptions).then(session => {
           console.log('Hello Session: ', session.id);
           expect(session.kernel.id).to.be(kernel.id);
@@ -163,7 +163,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should be able to switch to an existing kernel by id', (done) => {
       startNewKernel().then(kernel => {
-        let sessionOptions = { notebookPath: 'Untitled1.ipynb' };
+        let sessionOptions = { path: 'Untitled1.ipynb' };
         startNewSession(sessionOptions).then(session => {
           session.changeKernel({ id: kernel.id }).then(newKernel => {
             expect(newKernel.id).to.be(kernel.id);
@@ -175,7 +175,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should be able to switch to a new kernel by name', (done) => {
       // Get info about the available kernels and connect to one.
-      let options = { notebookPath: 'Untitled1.ipynb' };
+      let options = { path: 'Untitled1.ipynb' };
       startNewSession(options).then(session => {
         let id = session.kernel.id;
         session.changeKernel({ name: session.kernel.name }).then(newKernel => {
@@ -199,23 +199,23 @@ describe('jupyter.services - Integration', () => {
             comm.send('0');
             comm.send('1');
             comm.send('2');
-          }
+          };
           comm.onClose = (msg) => {
             expect(msg.content.data).to.eql(['0', '1', '2']);
             done();
-          }
+          };
         });
         let code = [
-          "from ipykernel.comm import Comm",
-          "comm = Comm(target_name='test')",
-          "comm.send(data='hello')",
-          "msgs = []",
-          "def on_msg(msg):",
-          "    msgs.append(msg['content']['data'])",
-          "    if len(msgs) == 3:",
-          "       comm.close(msgs)",
-          "comm.on_msg(on_msg)"
-        ].join('\n')
+          'from ipykernel.comm import Comm',
+          'comm = Comm(target_name="test")',
+          'comm.send(data="hello")',
+          'msgs = []',
+          'def on_msg(msg):',
+          '    msgs.append(msg["content"]["data"])',
+          '    if len(msgs) == 3:',
+          '       comm.close(msgs)',
+          'comm.on_msg(on_msg)'
+        ].join('\n');
         kernel.execute({ code: code });
       });
     });
@@ -247,7 +247,7 @@ describe('jupyter.services - Integration', () => {
         let content = listing.content as any;
         for (let i = 0; i < content.length; i++) {
           if (content[i].type === 'file') {
-            contents.get(content[i].path, { type: "file" }).then(msg => {
+            contents.get(content[i].path, { type: 'file' }).then(msg => {
               expect(msg.path).to.be(content[i].path);
               done();
             });
