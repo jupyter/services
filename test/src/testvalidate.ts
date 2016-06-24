@@ -9,8 +9,8 @@ import {
 } from '../../lib/kernel';
 
 import {
-  validateKernelMessage, validateKernelId, validateSessionId,
-  validateKernelSpec, validateContentsModel, validateCheckpointModel
+  validateKernelMessage, validateKernelModel, validateSessionModel,
+  validateKernelSpecModel, validateContentsModel, validateCheckpointModel
 } from '../../lib/validate';
 
 import {
@@ -24,14 +24,14 @@ describe('jupyter.services', () => {
 
     it('should pass a valid message', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'bar', session: 'baz'
-      });
+        msgType: 'comm_msg', channel: 'iopub', session: 'foo'
+      }, { comm_id: 'foo', data: {} });
       validateKernelMessage(msg);
     });
 
     it('should throw if missing a field', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'bar', session: 'baz'
+        msgType: 'comm_msg', channel: 'iopub', session: 'baz'
       });
       delete msg.channel;
       expect(() => validateKernelMessage(msg)).to.throwError();
@@ -39,7 +39,7 @@ describe('jupyter.services', () => {
 
     it('should throw if a field is invalid', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'bar', session: 'baz'
+        msgType: 'comm_msg', channel: 'iopub', session: 'baz'
       });
       (msg as any).header.username = 1;
       expect(() => validateKernelMessage(msg)).to.throwError();
@@ -47,7 +47,7 @@ describe('jupyter.services', () => {
 
     it('should throw if the parent header is given an invalid', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'bar', session: 'baz'
+        msgType: 'comm_msg', channel: 'iopub', session: 'baz'
       });
       msg.parent_header = msg.header;
       (msg as any).parent_header.username = 1;
@@ -56,7 +56,7 @@ describe('jupyter.services', () => {
 
     it('should throw if the channel is not a string', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'bar', session: 'baz'
+        msgType: 'comm_msg', channel: 'iopub', session: 'baz'
       });
       (msg as any).channel = 1;
       expect(() => validateKernelMessage(msg)).to.throwError();
@@ -92,26 +92,26 @@ describe('jupyter.services', () => {
 
   });
 
-  describe('#validateKernelId()', () => {
+  describe('#validateKernelModel()', () => {
 
     it('should pass a valid id', () => {
       let id = { name: 'foo', id: 'baz' };
-      validateKernelId(id);
+      validateKernelModel(id);
     });
 
     it('should fail on missing data', () => {
-      expect(() => validateKernelId({ name: 'foo' })).to.throwError();
-      expect(() => validateKernelId({ id: 'foo' })).to.throwError();
+      expect(() => validateKernelModel({ name: 'foo' })).to.throwError();
+      expect(() => validateKernelModel({ id: 'foo' })).to.throwError();
     });
 
     it('should fail on incorrect data', () => {
       let id = { name: 'foo', id: 1 };
-      expect(() => validateKernelId(id as any)).to.throwError();
+      expect(() => validateKernelModel(id as any)).to.throwError();
     });
 
   });
 
-  describe('#validateSessionId()', () => {
+  describe('#validateSessionModel()', () => {
 
     it('should pass a valid id', () => {
       let id = {
@@ -119,7 +119,7 @@ describe('jupyter.services', () => {
         kernel: { name: 'foo', id: '123'},
         notebook: { path: 'bar' }
       }
-      validateSessionId(id);
+      validateSessionModel(id);
     });
 
     it('should fail on missing data', () => {
@@ -128,7 +128,7 @@ describe('jupyter.services', () => {
         kernel: { name: 'foo', id: '123'},
         notebook: { }
       }
-      expect(() => validateSessionId(id as any)).to.throwError();
+      expect(() => validateSessionModel(id as any)).to.throwError();
     });
 
     it('should fail on incorrect data', () => {
@@ -137,27 +137,27 @@ describe('jupyter.services', () => {
         kernel: { name: 'foo', id: 123 },
         notebook: { path: 'bar' }
       }
-      expect(() => validateSessionId(id as any)).to.throwError();
+      expect(() => validateSessionModel(id as any)).to.throwError();
     });
 
   });
 
-  describe('#validateKernelSpec', () => {
+  describe('#validateKernelSpecModel', () => {
 
     it('should pass with valid data', () => {
-      validateKernelSpec(PYTHON_SPEC);
+      validateKernelSpecModel(PYTHON_SPEC);
     });
 
     it('should fail on missing data', () => {
       let spec = JSON.parse(JSON.stringify(PYTHON_SPEC));
       delete spec['name'];
-      expect(() => validateKernelSpec(spec)).to.throwError();
+      expect(() => validateKernelSpecModel(spec)).to.throwError();
     });
 
     it('should fail on incorrect data', () => {
       let spec = JSON.parse(JSON.stringify(PYTHON_SPEC));
       spec.spec.language = 1;
-      expect(() => validateKernelSpec(spec)).to.throwError();
+      expect(() => validateKernelSpecModel(spec)).to.throwError();
     });
 
   });

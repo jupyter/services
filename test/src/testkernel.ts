@@ -9,26 +9,17 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  MockSocket, MockSocketServer, overrideWebSocket
-} from 'jupyter-js-utils/lib/mocksocket';
-
-import {
-  KernelManager, connectToKernel, createKernelMessage, getKernelSpecs,
-  listRunningKernels, startNewKernel, findKernelById
+  KernelManager, connectToKernel, createKernelMessage, createShellMessage,
+  getKernelSpecs, listRunningKernels, startNewKernel
 } from '../../lib/kernel';
 
 import {
-  ICompleteRequest, IExecuteRequest, IInspectRequest, IIsCompleteRequest,
-  IKernel, IKernelId, IKernelInfo, IKernelMessage, IKernelMessageOptions,
-  IKernelOptions, IKernelSpecId, KernelStatus, IInspectReply,
-  isExecuteResultMessage, isDisplayDataMessage, isExecuteInputMessage,
-  isClearOutputMessage, isStreamMessage, isStatusMessage, isCommOpenMessage,
-  isErrorMessage, IHistoryRequest
+  IKernel, KernelMessage
 } from '../../lib/ikernel';
 
 import {
-  deserialize, serialize
-} from '../../lib/serialize';
+  JSONObject
+} from '../../lib/json';
 
 import {
   RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
@@ -37,13 +28,10 @@ import {
 } from './utils';
 
 
-// Abnormal websocket close.
-const CLOSE_ABNORMAL = 1006;
-
 
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
-PYTHON3_SPEC.name = "Python3";
-PYTHON3_SPEC.spec.display_name = "python3"
+PYTHON3_SPEC.name = 'Python3';
+PYTHON3_SPEC.spec.display_name = 'python3';
 
 
 describe('jupyter.services - kernel', () => {
@@ -52,15 +40,15 @@ describe('jupyter.services - kernel', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       let data = [
-        { id: uuid(), name: "test" },
-        { id: uuid(), name: "test2" }
+        { id: uuid(), name: 'test' },
+        { id: uuid(), name: 'test2' }
       ];
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
       let options = {
         baseUrl: 'http://localhost:8888',
-      }
+      };
       listRunningKernels(options).then(response => {
         expect(response[0]).to.eql(data[0]);
         expect(response[1]).to.eql(data[1]);
@@ -70,8 +58,8 @@ describe('jupyter.services - kernel', () => {
 
     it('should accept ajax options', (done) => {
       let data = [
-        { id: uuid(), name: "test" },
-        { id: uuid(), name: "test2" }
+        { id: uuid(), name: 'test' },
+        { id: uuid(), name: 'test2' }
       ];
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
@@ -79,8 +67,8 @@ describe('jupyter.services - kernel', () => {
       let options = {
         baseUrl: 'http://localhost:8888',
         ajaxSettings: ajaxSettings
-      }
-      listRunningKernels(options).then((response: IKernelId[]) => {
+      };
+      listRunningKernels(options).then((response: IKernel.IModel[]) => {
         expect(response[0]).to.eql(data[0]);
         expect(response[1]).to.eql(data[1]);
         done();
@@ -89,11 +77,11 @@ describe('jupyter.services - kernel', () => {
 
     it('should throw an error for an invalid model', (done) => {
       let handler = new RequestHandler(() => {
-        let data = { id: uuid(), name: "test" };
+        let data = { id: uuid(), name: 'test' };
         handler.respond(200, data);
       });
       let list = listRunningKernels('http://localhost:8888');
-      expectFailure(list, done, "Invalid kernel list");
+      expectFailure(list, done, 'Invalid kernel list');
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -101,7 +89,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(201, { });
       });
       let list = listRunningKernels('http://localhost:8888');
-      expectFailure(list, done, "Invalid Status: 201");
+      expectFailure(list, done, 'Invalid Status: 201');
     });
 
     it('should throw an error for an error response', (done) => {
@@ -109,7 +97,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(500, { });
       });
       let list = listRunningKernels('http://localhost:8888');
-      expectFailure(list, done, "");
+      expectFailure(list, done, '');
     });
 
   });
@@ -121,7 +109,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       startNewKernel(KERNEL_OPTIONS).then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Unknown);
+        expect(kernel.status).to.be('unknown');
         done();
       });
     });
@@ -132,7 +120,7 @@ describe('jupyter.services - kernel', () => {
       });
       let kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
       kernelPromise.then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Unknown);
+        expect(kernel.status).to.be('unknown');
         done();
       });
     });
@@ -141,10 +129,10 @@ describe('jupyter.services - kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
-      tester.initialStatus ='dead';
+      tester.initialStatus = 'dead';
       startNewKernel(KERNEL_OPTIONS).then(kernel => {
-        kernel.statusChanged.connect((kernel, state) => {
-          if (state == KernelStatus.Dead) {
+        kernel.statusChanged.connect((sender, state) => {
+          if (state === 'dead') {
             done();
           }
         });
@@ -175,7 +163,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(200, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "Invalid Status: 200");
+      expectFailure(kernelPromise, done, 'Invalid Status: 200');
     });
 
     it('should throw an error for an error response', (done) => {
@@ -183,7 +171,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(500, { });
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, "");
+      expectFailure(kernelPromise, done, '');
     });
 
     it('should auto-reconnect on websocket error', (done) => {
@@ -191,14 +179,14 @@ describe('jupyter.services - kernel', () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       startNewKernel(KERNEL_OPTIONS).then(kernel => {
-        expect(kernel.status).to.be(KernelStatus.Unknown);
+        expect(kernel.status).to.be('unknown');
         kernel.statusChanged.connect(() => {
-          if (kernel.status === KernelStatus.Reconnecting) {
+          if (kernel.status === 'reconnecting') {
             done();
             kernel.dispose();
             return;
           }
-          if (kernel.status === KernelStatus.Starting) {
+          if (kernel.status === 'starting') {
             tester.triggerError('Error event');
           }
         });
@@ -238,7 +226,7 @@ describe('jupyter.services - kernel', () => {
           expect(newKernel.id).to.be(kernel.id);
           done();
         });
-      })
+      });
     });
 
     it('should connect to a running kernel if given kernel options', (done) => {
@@ -284,7 +272,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Busy) {
+            if (kernel.status === 'busy') {
               kernel.dispose();
               done();
             }
@@ -308,7 +296,7 @@ describe('jupyter.services - kernel', () => {
             msgType: 'status',
             channel: 'iopub',
             session: kernel.clientId
-          });
+          }) as KernelMessage.IStatusMsg;
           msg.content.execution_state = 'idle';
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -327,7 +315,7 @@ describe('jupyter.services - kernel', () => {
             msgType: 'status',
             channel: 'iopub',
             session: 'baz'
-          });
+          }) as KernelMessage.IStatusMsg;
           msg.content.execution_state = 'idle';
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -345,9 +333,9 @@ describe('jupyter.services - kernel', () => {
             expect(msg.header.msg_type).to.be('foo');
             done();
           });
-          let msg = createKernelMessage({
+          let msg = createShellMessage({
             msgType: 'foo',
-            channel: 'bar',
+            channel: 'shell',
             session: kernel.clientId
           });
           msg.parent_header = msg.header;
@@ -366,7 +354,7 @@ describe('jupyter.services - kernel', () => {
             msgType: 'status',
             channel: 'iopub',
             session: kernel.clientId
-          });
+          }) as KernelMessage.IStatusMsg;
           msg.content.execution_state = 'idle';
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -382,9 +370,9 @@ describe('jupyter.services - kernel', () => {
           kernel.unhandledMessage.connect((k, msg) => {
             called = true;
           });
-          let msg = createKernelMessage({
+          let msg = createShellMessage({
             msgType: 'foo',
-            channel: 'bar',
+            channel: 'shell',
             session: 'baz'
           });
           msg.parent_header = msg.header;
@@ -401,7 +389,7 @@ describe('jupyter.services - kernel', () => {
       it('should be a read only string', (done) => {
         createKernel().then(kernel => {
           expect(typeof kernel.id).to.be('string');
-          expect(() => { kernel.id = "1"; }).to.throwError();
+          expect(() => { kernel.id = '1'; }).to.throwError();
           done();
         });
       });
@@ -413,7 +401,7 @@ describe('jupyter.services - kernel', () => {
       it('should be a read only string', (done) => {
         createKernel().then(kernel => {
           expect(typeof kernel.name).to.be('string');
-          expect(() => { kernel.name = "1"; }).to.throwError();
+          expect(() => { kernel.name = '1'; }).to.throwError();
           done();
         });
       });
@@ -425,7 +413,7 @@ describe('jupyter.services - kernel', () => {
       it('should be a read only string', (done) => {
         createKernel().then(kernel => {
           expect(typeof kernel.username).to.be('string');
-          expect(() => { kernel.username = "1"; }).to.throwError();
+          expect(() => { kernel.username = '1'; }).to.throwError();
           done();
         });
       });
@@ -437,7 +425,7 @@ describe('jupyter.services - kernel', () => {
       it('should be a read only string', (done) => {
         createKernel().then(kernel => {
           expect(typeof kernel.clientId).to.be('string');
-          expect(() => { kernel.clientId = "1"; }).to.throwError();
+          expect(() => { kernel.clientId = '1'; }).to.throwError();
           done();
         });
       });
@@ -449,7 +437,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Idle) {
+            if (kernel.status === 'idle') {
               kernel.dispose();
               done();
             }
@@ -462,7 +450,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Restarting) {
+            if (kernel.status === 'restarting') {
               kernel.dispose();
               done();
             }
@@ -475,7 +463,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Busy) {
+            if (kernel.status === 'busy') {
               kernel.dispose();
               done();
             }
@@ -488,7 +476,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Reconnecting) {
+            if (kernel.status === 'reconnecting') {
               kernel.dispose();
               done();
             }
@@ -501,7 +489,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Dead) {
+            if (kernel.status === 'dead') {
               kernel.dispose();
               done();
             }
@@ -514,7 +502,7 @@ describe('jupyter.services - kernel', () => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Idle) {
+            if (kernel.status === 'idle') {
               kernel.dispose();
               done();
             }
@@ -587,14 +575,14 @@ describe('jupyter.services - kernel', () => {
       it('should send a message to the kernel', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IKernelMessageOptions = {
-            msgType: "custom",
-            channel: "shell",
+          let options: KernelMessage.IOptions = {
+            msgType: 'custom',
+            channel: 'shell',
             username: kernel.username,
             session: kernel.clientId
-          }
-          let msg = createKernelMessage(options);
-          let future = kernel.sendShellMessage(msg, true);
+          };
+          let msg = createShellMessage(options);
+          kernel.sendShellMessage(msg, true);
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('custom');
             done();
@@ -605,20 +593,20 @@ describe('jupyter.services - kernel', () => {
       it('should send a binary message', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IKernelMessageOptions = {
-            msgType: "custom",
-            channel: "shell",
+          let options: KernelMessage.IOptions = {
+            msgType: 'custom',
+            channel: 'shell',
             username: kernel.username,
             session: kernel.clientId
-          }
+          };
           let encoder = new TextEncoder('utf8');
           let data = encoder.encode('hello');
-          let msg = createKernelMessage(options, {}, {}, [data, data.buffer]);
-          let future = kernel.sendShellMessage(msg, true);
+          let msg = createShellMessage(options, {}, {}, [data, data.buffer]);
+          kernel.sendShellMessage(msg, true);
 
           tester.onMessage((msg: any) => {
             let decoder = new TextDecoder('utf8');
-            let item = <DataView>msg.buffers[0];
+            let item = msg.buffers[0] as DataView;
             expect(decoder.decode(item)).to.be('hello');
             done();
           });
@@ -628,18 +616,18 @@ describe('jupyter.services - kernel', () => {
       it('should fail if the kernel is dead', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IKernelMessageOptions = {
-            msgType: "custom",
-            channel: "shell",
+          let options: KernelMessage.IOptions = {
+            msgType: 'custom',
+            channel: 'shell',
             username: kernel.username,
             session: kernel.clientId
-          }
-          let msg = createKernelMessage(options);
+          };
+          let msg = createShellMessage(options);
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
             try {
               kernel.sendShellMessage(msg, true);
-            } catch(err) {
+            } catch (err) {
               expect(err.message).to.be('Kernel is dead');
               done();
             }
@@ -650,30 +638,35 @@ describe('jupyter.services - kernel', () => {
       it('should handle out of order messages', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IKernelMessageOptions = {
-            msgType: "custom",
-            channel: "shell",
+          let options: KernelMessage.IOptions = {
+            msgType: 'custom',
+            channel: 'shell',
             username: kernel.username,
             session: kernel.clientId
-          }
-          let msg = createKernelMessage(options);
+          };
+          let msg = createShellMessage(options);
           let future = kernel.sendShellMessage(msg, true);
+          let newMsg: KernelMessage.IMessage;
+
           tester.onMessage((msg) => {
             // trigger onDone
-            msg.channel = 'iopub';
-            msg.header.msg_type = 'status';
-            msg.content.execution_state = 'idle';
-            msg.parent_header = msg.header
-            tester.send(msg);
+            options.msgType = 'status';
+            options.channel = 'iopub';
+            newMsg = createKernelMessage(options, { execution_state: 'idle' });
+            newMsg.parent_header = msg.header;
+            tester.send(newMsg);
 
             future.onIOPub = () => {
-              msg.channel = 'shell';
-              tester.send(msg);
-            }
+              options.msgType = 'custom';
+              options.channel = 'shell';
+              newMsg = createShellMessage(options);
+              newMsg.parent_header = msg.header;
+              tester.send(newMsg);
+            };
 
             future.onDone = () => {
               done();
-            }
+            };
           });
         });
       });
@@ -711,7 +704,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200,  { id: kernel.id, name: kernel.name });
           };
           let interrupt = kernel.interrupt();
-          expectFailure(interrupt, done, "Invalid Status: 200");
+          expectFailure(interrupt, done, 'Invalid Status: 200');
         });
       });
 
@@ -722,7 +715,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(500, { });
           };
           let interrupt = kernel.interrupt();
-          expectFailure(interrupt, done, "");
+          expectFailure(interrupt, done, '');
         });
       });
 
@@ -731,7 +724,7 @@ describe('jupyter.services - kernel', () => {
         createKernel(tester).then(kernel => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Dead) {
+            if (kernel.status === 'dead') {
               expectFailure(kernel.interrupt(), done, 'Kernel is dead');
             }
           });
@@ -747,7 +740,7 @@ describe('jupyter.services - kernel', () => {
           tester.onRequest = () => {
             tester.respond(200, { id: kernel.id, name: kernel.name });
             tester.sendStatus('starting');
-          }
+          };
           kernel.restart().then(() => { done(); });
         });
       });
@@ -781,7 +774,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(204, { id: kernel.id, name: kernel.name });
           };
           let restart = kernel.restart();
-          expectFailure(restart, done, "Invalid Status: 204");
+          expectFailure(restart, done, 'Invalid Status: 204');
         });
       });
 
@@ -792,7 +785,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(500, { });
           };
           let restart = kernel.restart();
-          expectFailure(restart, done, "");
+          expectFailure(restart, done, '');
         });
       });
 
@@ -857,7 +850,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
           };
           let shutdown = kernel.shutdown();
-          expectFailure(shutdown, done, "Invalid Status: 200");
+          expectFailure(shutdown, done, 'Invalid Status: 200');
         });
       });
 
@@ -868,7 +861,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(500, { });
           };
           let shutdown = kernel.shutdown();
-          expectFailure(shutdown, done, "");
+          expectFailure(shutdown, done, '');
         });
       });
 
@@ -877,7 +870,7 @@ describe('jupyter.services - kernel', () => {
         createKernel(tester).then(kernel => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Dead) {
+            if (kernel.status === 'dead') {
               expectFailure(kernel.shutdown(), done, 'Kernel is dead');
             }
           });
@@ -890,8 +883,8 @@ describe('jupyter.services - kernel', () => {
       it('should resolve the promise', (done) => {
         createKernel().then(kernel => {
           // resolved by KernelTester
-          kernel.kernelInfo().then((info) => {
-            let name = info.language_info.name;
+          kernel.kernelInfo().then((msg) => {
+            let name = msg.content.language_info.name;
             expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
             done();
           });
@@ -904,10 +897,10 @@ describe('jupyter.services - kernel', () => {
       it('should resolve the promise', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: ICompleteRequest = {
+          let options: KernelMessage.ICompleteRequest = {
             code: 'hello',
             cursor_pos: 4
-          }
+          };
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('complete_request');
             msg.parent_header = msg.header;
@@ -920,13 +913,13 @@ describe('jupyter.services - kernel', () => {
       it('should reject the promise if the kernel is dead', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: ICompleteRequest = {
+          let options: KernelMessage.ICompleteRequest = {
             code: 'hello',
             cursor_pos: 4
-          }
+          };
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Dead) {
+            if (kernel.status === 'dead') {
               let promise = kernel.complete(options);
               expectFailure(promise, done, 'Kernel is dead');
             }
@@ -940,11 +933,11 @@ describe('jupyter.services - kernel', () => {
       it('should resolve the promise', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IInspectRequest = {
+          let options: KernelMessage.IInspectRequest = {
             code: 'hello',
             cursor_pos: 4,
             detail_level: 0
-          }
+          };
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('inspect_request');
             msg.parent_header = msg.header;
@@ -957,11 +950,11 @@ describe('jupyter.services - kernel', () => {
       it('should delay the promise if the kernel is reconnecting', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IInspectRequest = {
+          let options: KernelMessage.IInspectRequest = {
             code: 'hello',
             cursor_pos: 4,
             detail_level: 0
-          }
+          };
           tester.triggerError('foo');
           let called = false;
           tester.onMessage((msg) => {
@@ -970,13 +963,13 @@ describe('jupyter.services - kernel', () => {
             msg.parent_header = msg.header;
             tester.send(msg);
           });
-          let promise: Promise<IInspectReply>;
+          let promise: Promise<KernelMessage.IInspectReplyMsg>;
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Reconnecting) {
+            if (kernel.status === 'reconnecting') {
               promise = kernel.inspect(options);
               tester.sendStatus('idle');
             }
-            if (kernel.status === KernelStatus.Idle) {
+            if (kernel.status === 'idle') {
               expect(called).to.be(false);
               promise.then(() => {
                 expect(called).to.be(true);
@@ -993,9 +986,9 @@ describe('jupyter.services - kernel', () => {
       it('should resolve the promise', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IIsCompleteRequest = {
+          let options: KernelMessage.IIsCompleteRequest = {
             code: 'hello'
-          }
+          };
           let promise = kernel.isComplete(options);
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('is_complete_request');
@@ -1012,7 +1005,7 @@ describe('jupyter.services - kernel', () => {
       it('should resolve the promise', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IHistoryRequest = {
+          let options: KernelMessage.IHistoryRequest = {
             output: true,
             raw: true,
             hist_access_type: 'search',
@@ -1047,14 +1040,14 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
-     it('should fail if the kernel is dead', (done) => {
+      it('should fail if the kernel is dead', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
             try {
               kernel.sendInputReply({ value: 'test' });
-            } catch(err) {
+            } catch (err) {
               expect(err.message).to.be('Kernel is dead');
               done();
             }
@@ -1067,59 +1060,72 @@ describe('jupyter.services - kernel', () => {
 
       it('should send and handle incoming messages', (done) => {
         let tester = new KernelTester();
+        let newMsg: KernelMessage.IMessage;
         createKernel(tester).then(kernel => {
-          let options: IExecuteRequest = {
+          let content: KernelMessage.IExecuteRequest = {
             code: 'test',
             silent: false,
             store_history: true,
             user_expressions: {},
             allow_stdin: false,
             stop_on_error: false
-          }
-          let future = kernel.execute(options);
+          };
+          let future = kernel.execute(content);
           expect(future.onDone).to.be(null);
           expect(future.onStdin).to.be(null);
           expect(future.onReply).to.be(null);
           expect(future.onIOPub).to.be(null);
 
+          let options: KernelMessage.IOptions = {
+            msgType: 'custom',
+            channel: 'shell',
+            username: kernel.username,
+            session: kernel.clientId
+          };
+
           tester.onMessage((msg) => {
             expect(msg.channel).to.be('shell');
 
             // send a reply
-            msg.parent_header = msg.header;
-            msg.channel = 'shell';
-            tester.send(msg);
+            options.channel = 'shell';
+            newMsg = createKernelMessage(options);
+            newMsg.parent_header = msg.header;
+            tester.send(newMsg);
 
             future.onReply = () => {
               // trigger onStdin
-              msg.channel = 'stdin';
-              tester.send(msg);
-            }
+              options.channel = 'stdin';
+              newMsg = createKernelMessage(options);
+              newMsg.parent_header = msg.header;
+              tester.send(newMsg);
+            };
 
             future.onStdin = () => {
               // trigger onIOPub with a 'stream' message
-              msg.channel = 'iopub';
-              msg.header.msg_type = 'stream';
-              msg.content = { 'name': 'stdout', 'text': 'foo' };
-              tester.send(msg);
+              options.channel = 'iopub';
+              options.msgType = 'stream';
+              let streamContent: JSONObject = { name: 'stdout', text: '' };
+              newMsg = createKernelMessage(options, streamContent);
+              newMsg.parent_header = msg.header;
+              tester.send(newMsg);
             };
 
-            future.onIOPub = () => {
-              if (msg.header.msg_type === 'stream') {
+            future.onIOPub = (ioMsg) => {
+              if (ioMsg.header.msg_type === 'stream') {
                 // trigger onDone
-                msg.channel = 'iopub';
-                msg.header.msg_type = 'status';
-                msg.content.execution_state = 'idle';
-                tester.send(msg);
+                options.msgType = 'status';
+                newMsg = createKernelMessage(options, { execution_state: 'idle' });
+                newMsg.parent_header = msg.header;
+                tester.send(newMsg);
               }
-            }
+            };
 
             future.onDone = () => {
               doLater(() => {
                 expect(future.isDisposed).to.be(true);
                 done();
               });
-            }
+            };
 
           });
         });
@@ -1137,14 +1143,14 @@ describe('jupyter.services - kernel', () => {
       it('should not dispose of KernelFuture when disposeOnDone=false', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
-          let options: IExecuteRequest = {
+          let options: KernelMessage.IExecuteRequest = {
             code: 'test',
             silent: false,
             store_history: true,
             user_expressions: {},
             allow_stdin: false,
             stop_on_error: false
-          }
+          };
           let future = kernel.execute(options, false);
           expect(future.onDone).to.be(null);
           expect(future.onStdin).to.be(null);
@@ -1165,17 +1171,16 @@ describe('jupyter.services - kernel', () => {
               msg.header.msg_type = 'stream';
               msg.content = { 'name': 'stdout', 'text': 'foo' };
               tester.send(msg);
-            }
+            };
 
             future.onIOPub = () => {
               if (msg.header.msg_type === 'stream') {
                 // trigger onDone
-                msg.channel = 'iopub';
                 msg.header.msg_type = 'status';
-                msg.content.execution_state = 'idle';
+                (msg as KernelMessage.IStatusMsg).content.execution_state = 'idle';
                 tester.send(msg);
               }
-            }
+            };
 
             future.onDone = () => {
               doLater(() => {
@@ -1187,7 +1192,7 @@ describe('jupyter.services - kernel', () => {
                 expect(future.isDisposed).to.be(true);
                 done();
               });
-            }
+            };
 
           });
         });
@@ -1201,7 +1206,7 @@ describe('jupyter.services - kernel', () => {
         let ids = {
           'python': PYTHON_SPEC,
           'python3': PYTHON3_SPEC
-        }
+        };
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           tester.onRequest = () => {
@@ -1237,7 +1242,7 @@ describe('jupyter.services - kernel', () => {
         let ids = {
           'python': PYTHON_SPEC,
           'python3': PYTHON3_SPEC
-        }
+        };
         let handler = new RequestHandler(() => {
           handler.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
@@ -1257,8 +1262,8 @@ describe('jupyter.services - kernel', () => {
       it('should list the running kernels', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         let data = [
-          { id: uuid(), name: "test" },
-          { id: uuid(), name: "test2" }
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
         ];
         let handler = new RequestHandler(() => {
           handler.respond(200, data);
@@ -1280,9 +1285,9 @@ describe('jupyter.services - kernel', () => {
           tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
         });
         manager.startNew().then(kernel => {
-          expect(kernel.status).to.be(KernelStatus.Unknown);
+          expect(kernel.status).to.be('unknown');
           kernel.statusChanged.connect(() => {
-            if (kernel.status === KernelStatus.Starting) {
+            if (kernel.status === 'starting') {
               kernel.dispose();
               done();
             }
@@ -1340,7 +1345,7 @@ describe('jupyter.services - kernel', () => {
       let ids = {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC
-      }
+      };
       let handler = new RequestHandler(() => {
         handler.respond(200, { 'default': 'python',
                              'kernelspecs': ids });
@@ -1357,7 +1362,7 @@ describe('jupyter.services - kernel', () => {
       let ids = {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC
-      }
+      };
       let handler = new RequestHandler(() => {
         handler.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
@@ -1382,7 +1387,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler();
       handler.onRequest = () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
-      }
+      };
       let promise = getKernelSpecs('localhost');
       expectFailure(promise, done);
     });
@@ -1457,127 +1462,127 @@ describe('jupyter.services - kernel', () => {
         handler.respond(201, { });
       });
       let promise = getKernelSpecs('localhost');
-      expectFailure(promise, done, "Invalid Response: 201");
+      expectFailure(promise, done, 'Invalid Response: 201');
     });
 
   });
 
-  describe('#isStreamMessage()', () => {
+  describe('#isStreamMsg()', () => {
 
     it('should check for a stream message type', () => {
       let msg = createKernelMessage({
-        msgType: 'stream', channel: 'bar', session: 'baz'
+        msgType: 'stream', channel: 'iopub', session: 'baz'
       });
-      expect(isStreamMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isStreamMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isStreamMessage(msg)).to.be(false);
+      expect(KernelMessage.isStreamMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isDisplayDataMessage()', () => {
+  describe('#isDisplayDataMsg()', () => {
 
     it('should check for a display data message type', () => {
       let msg = createKernelMessage({
-        msgType: 'display_data', channel: 'bar', session: 'baz'
+        msgType: 'display_data', channel: 'iopub', session: 'baz'
       });
-      expect(isDisplayDataMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isDisplayDataMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isDisplayDataMessage(msg)).to.be(false);
+      expect(KernelMessage.isDisplayDataMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isExecuteInputMessage()', () => {
+  describe('#isExecuteInputMsg()', () => {
 
     it('should check for a execute input message type', () => {
       let msg = createKernelMessage({
-        msgType: 'execute_input', channel: 'bar', session: 'baz'
+        msgType: 'execute_input', channel: 'iopub', session: 'baz'
       });
-      expect(isExecuteInputMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isExecuteInputMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isExecuteInputMessage(msg)).to.be(false);
+      expect(KernelMessage.isExecuteInputMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isExecuteResultMessage()', () => {
+  describe('#isExecuteResultMsg()', () => {
 
     it('should check for an execute result message type', () => {
       let msg = createKernelMessage({
-        msgType: 'execute_result', channel: 'bar', session: 'baz'
+        msgType: 'execute_result', channel: 'iopub', session: 'baz'
       });
-      expect(isExecuteResultMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isExecuteResultMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isExecuteResultMessage(msg)).to.be(false);
+      expect(KernelMessage.isExecuteResultMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isStatusMessage()', () => {
+  describe('#isStatusMsg()', () => {
 
     it('should check for a status message type', () => {
       let msg = createKernelMessage({
-        msgType: 'status', channel: 'bar', session: 'baz'
+        msgType: 'status', channel: 'iopub', session: 'baz'
       });
-      expect(isStatusMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isStatusMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isStatusMessage(msg)).to.be(false);
+      expect(KernelMessage.isStatusMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isClearOutputMessage()', () => {
+  describe('#isClearOutputMsg()', () => {
 
     it('should check for a clear output message type', () => {
       let msg = createKernelMessage({
-        msgType: 'clear_output', channel: 'bar', session: 'baz'
+        msgType: 'clear_output', channel: 'iopub', session: 'baz'
       });
-      expect(isClearOutputMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isClearOutputMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isClearOutputMessage(msg)).to.be(false);
+      expect(KernelMessage.isClearOutputMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isCommOpenMessage()', () => {
+  describe('#isCommOpenMsg()', () => {
 
     it('should check for a comm open message type', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_open', channel: 'bar', session: 'baz'
+        msgType: 'comm_open', channel: 'iopub', session: 'baz'
       });
-      expect(isCommOpenMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isCommOpenMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isCommOpenMessage(msg)).to.be(false);
+      expect(KernelMessage.isCommOpenMsg(msg)).to.be(false);
     });
 
   });
 
-  describe('#isErrorMessage()', () => {
+  describe('#isErrorMsg()', () => {
 
     it('should check for an message type', () => {
       let msg = createKernelMessage({
-        msgType: 'error', channel: 'bar', session: 'baz'
+        msgType: 'error', channel: 'iopub', session: 'baz'
       });
-      expect(isErrorMessage(msg)).to.be(true);
-       msg = createKernelMessage({
-        msgType: 'foo', channel: 'bar', session: 'baz'
+      expect(KernelMessage.isErrorMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'iopub', session: 'baz'
       });
-      expect(isErrorMessage(msg)).to.be(false);
+      expect(KernelMessage.isErrorMsg(msg)).to.be(false);
     });
 
   });

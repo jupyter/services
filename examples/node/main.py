@@ -54,6 +54,8 @@ def main():
 
     # Run the node script with command arguments.
     node_command = ['node', 'index.js', '-baseUrl', base_url]
+    print('*' * 60)
+    print(' '.join(node_command))
     node_proc = subprocess.Popen(node_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 

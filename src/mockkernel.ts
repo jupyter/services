@@ -18,13 +18,12 @@ import {
 } from './kernelfuture';
 
 import {
-  IComm, ICommInfoRequest, ICommInfoReply, ICompleteReply,
-  ICompleteRequest, IExecuteRequest, IInspectReply,
-  IInspectRequest, IIsCompleteReply, IIsCompleteRequest, IInputReply, IKernel,
-  IKernelFuture, IKernelId, IKernelInfo, IKernelMessage,
-  IKernelMessageOptions, KernelStatus, IKernelIOPubCommOpenMessage,
-  IKernelSpec, IHistoryRequest, IHistoryReply
+  IKernel, KernelMessage
 } from './ikernel';
+
+import {
+  JSONObject
+} from './json';
 
 import {
   createKernelMessage
@@ -43,40 +42,40 @@ class MockKernel implements IKernel {
   username = '';
   clientId = '';
 
-  constructor(options?: IKernelId) {
+  constructor(options?: IKernel.IModel) {
     options = options || {};
     this.id = options.id || '';
     this.name = options.name || 'python';
     Promise.resolve().then(() => {
-      this._changeStatus(KernelStatus.Idle);
+      this._changeStatus('idle');
     });
   }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<IKernel, KernelStatus> {
+  get statusChanged(): ISignal<IKernel, IKernel.Status> {
     return Private.statusChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted for iopub kernel messages.
    */
-  get iopubMessage(): ISignal<IKernel, IKernelMessage> {
+  get iopubMessage(): ISignal<IKernel, KernelMessage.IIOPubMessage> {
     return Private.iopubMessageSignal.bind(this);
   }
 
   /**
    * A signal emitted for unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<IKernel, IKernelMessage> {
+  get unhandledMessage(): ISignal<IKernel, KernelMessage.IMessage> {
     return Private.unhandledMessageSignal.bind(this);
   }
 
   /**
    * The current status of the kernel.
    */
-  get status(): KernelStatus {
+  get status(): IKernel.Status {
     return this._status;
   }
 
@@ -100,7 +99,7 @@ class MockKernel implements IKernel {
   /**
    * Send a shell message to the kernel.
    */
-  sendShellMessage(msg: IKernelMessage, expectReply=false, disposeOnDone=true): IKernelFuture {
+  sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): IKernel.IFuture {
     let future = new KernelFutureHandler(() => {}, msg, expectReply, disposeOnDone);
     this._future = future;
     return future;
@@ -109,39 +108,40 @@ class MockKernel implements IKernel {
   /**
    * Send a message to the kernel.
    */
-  sendServerMessage(msgType: string, channel: string, contents: any): void {
+  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): void {
     let future = this._future;
     if (!future) {
       return;
     }
-    let options = {
+    let options: KernelMessage.IOptions = {
       msgType,
       channel,
       username: this.username,
       session: this.clientId
     };
-    let msg = createKernelMessage(options, contents);
+    let msg = createKernelMessage(options, content);
     future.handleMsg(msg);
   }
 
   /**
    * Send a shell reply message to the kernel.
    */
-  sendShellReply(contents: any): void {
+  sendShellReply(content: JSONObject): void {
     let future = this._future;
     if (!future) {
       return;
     }
     let msgType = future.msg.header.msg_type.replace('_request', '_reply');
-    this.sendServerMessage(msgType, 'shell', contents);
+    this.sendServerMessage(msgType, 'shell', content);
   }
 
   /**
    * Interrupt a kernel.
    */
   interrupt(): Promise<void> {
+    this._changeStatus('busy');
     return Promise.resolve().then(() => {
-      this._changeStatus(KernelStatus.Idle);
+      this._changeStatus('idle');
     });
   }
 
@@ -149,9 +149,9 @@ class MockKernel implements IKernel {
    * Restart a kernel.
    */
   restart(): Promise<void> {
-    this._changeStatus(KernelStatus.Restarting);
+    this._changeStatus('restarting');
     return Promise.resolve().then(() => {
-      this._changeStatus(KernelStatus.Idle);
+      this._changeStatus('idle');
     });
   }
 
@@ -159,7 +159,7 @@ class MockKernel implements IKernel {
    * Shutdown a kernel.
    */
   shutdown(): Promise<void> {
-    this._changeStatus(KernelStatus.Dead);
+    this._changeStatus('dead');
     this.dispose();
     return Promise.resolve(void 0);
   }
@@ -167,37 +167,44 @@ class MockKernel implements IKernel {
   /**
    * Send a `kernel_info_request` message.
    */
-  kernelInfo(): Promise<IKernelInfo> {
-    return Promise.resolve(this._kernelInfo);
+  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
+    let options: KernelMessage.IOptions = {
+      msgType: 'kernel_info_reply',
+      channel: 'shell',
+      username: '',
+      session: ''
+    };
+    let msg = createKernelMessage(options, this._kernelInfo);
+    return Promise.resolve(msg);
   }
 
   /**
    * Set the kernel info for the mock kernel.
    */
-  setKernelInfo(value: IKernelInfo): void {
+  setKernelInfo(value: KernelMessage.IInfoReply): void {
     this._kernelInfo = value;
   }
 
   /**
    * Send a `complete_request` message.
    */
-  complete(contents: ICompleteRequest): Promise<ICompleteReply> {
-    return this._sendKernelMessage('complete_request', 'shell', contents);
+  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
+    return this._sendKernelMessage('complete_request', 'shell', content);
   }
 
   /**
    * Send a `history_request` message.
    */
-  history(contents: IHistoryRequest): Promise<IHistoryReply> {
-    return this._sendKernelMessage('history', 'shell', contents);
+  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
+    return this._sendKernelMessage('history', 'shell', content);
   }
 
 
   /**
    * Send an `inspect_request` message.
    */
-  inspect(contents: IInspectRequest): Promise<IInspectReply> {
-    return this._sendKernelMessage('inspect_request', 'shell', contents);
+  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
+    return this._sendKernelMessage('inspect_request', 'shell', content);
   }
 
   /**
@@ -206,8 +213,8 @@ class MockKernel implements IKernel {
    * #### Notes
    * This simulatates an actual exection on the server.
    */
-  execute(contents: IExecuteRequest, disposeOnDone: boolean = true): IKernelFuture {
-    let options: IKernelMessageOptions = {
+  execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): IKernel.IFuture {
+    let options: KernelMessage.IOptions = {
       msgType: 'execute_request',
       channel: 'shell',
       username: '',
@@ -220,8 +227,8 @@ class MockKernel implements IKernel {
       allow_stdin : true,
       stop_on_error : false
     };
-    contents = utils.extend(defaults, contents);
-    let msg = createKernelMessage(options, contents);
+    content = utils.extend(defaults, content);
+    let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
     let future = this.sendShellMessage(msg, true, disposeOnDone);
     Promise.resolve(void 0).then(() => {
       this.sendServerMessage('status', 'iopub', {
@@ -246,72 +253,72 @@ class MockKernel implements IKernel {
   /**
    * Send an `is_complete_request` message.
    */
-  isComplete(contents: IIsCompleteRequest): Promise<IIsCompleteReply> {
-    return this._sendKernelMessage('is_complete_request', 'shell', contents);
+  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
+    return this._sendKernelMessage('is_complete_request', 'shell', content);
   }
 
   /**
    * Send a `comm_info_request` message.
    */
-  commInfo(contents: ICommInfoRequest): Promise<ICommInfoReply> {
-    return this._sendKernelMessage('comm_info_request', 'shell', contents);
+  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
+    return this._sendKernelMessage('comm_info_request', 'shell', content);
   }
 
   /**
    * Send an `input_reply` message.
    */
-  sendInputReply(contents: IInputReply): void { }
+  sendInputReply(content: KernelMessage.IInputReply): void { }
 
   /**
    * Register a comm target handler.
    */
-  registerCommTarget(targetName: string, callback: (comm: IComm, msg: IKernelIOPubCommOpenMessage) => void): IDisposable {
+  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable {
     return void 0;
   }
 
   /**
    * Connect to a comm, or create a new one.
    */
-  connectToComm(targetName: string, commId?: string): IComm {
+  connectToComm(targetName: string, commId?: string): IKernel.IComm {
     return void 0;
   }
 
   /**
    * Get the kernel spec associated with the kernel.
    */
-  getKernelSpec(): Promise<IKernelSpec> {
+  getKernelSpec(): Promise<IKernel.ISpec> {
     return Promise.resolve(this._kernelspec);
   }
 
   /**
    * Set the kernel spec associated with the kernel.
    */
-  setKernelSpec(value: IKernelSpec): void {
+  setKernelSpec(value: IKernel.ISpec): void {
     this._kernelspec = value;
   }
 
-  private _sendKernelMessage(msgType: string, channel: string, contents: any): Promise<any> {
-    let options: IKernelMessageOptions = {
+  private _sendKernelMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): Promise<KernelMessage.IShellMessage> {
+    let options: KernelMessage.IOptions = {
       msgType,
       channel,
       username: this.username,
       session: this.clientId
     };
-    let msg = createKernelMessage(options, contents);
-    let future: IKernelFuture;
+    let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
+    let future: IKernel.IFuture;
     try {
       future = this.sendShellMessage(msg, true);
     } catch (e) {
       return Promise.reject(e);
     }
-    return new Promise<IKernelInfo>((resolve, reject) => {
-      future.onReply = (reply: IKernelMessage) => {
-        resolve(reply.content);
+    return new Promise<KernelMessage.IShellMessage>((resolve, reject) => {
+      future.onReply = (reply: KernelMessage.IShellMessage) => {
+        resolve(reply);
       };
     });
   }
 
-  private _changeStatus(status: KernelStatus): void {
+  private _changeStatus(status: IKernel.Status): void {
     if (this._status === status) {
       return;
     }
@@ -319,11 +326,11 @@ class MockKernel implements IKernel {
     this.statusChanged.emit(status);
   }
 
-  private _status = KernelStatus.Unknown;
+  private _status: IKernel.Status = 'unknown';
   private _isDisposed = false;
   private _future: KernelFutureHandler = null;
-  private _kernelspec: IKernelSpec = null;
-  private _kernelInfo: IKernelInfo = null;
+  private _kernelspec: IKernel.ISpec = null;
+  private _kernelInfo: KernelMessage.IInfoReply = null;
   private _executionCount = 0;
 }
 
@@ -333,17 +340,17 @@ namespace Private {
    * A signal emitted when the kernel status changes.
    */
   export
-  const statusChangedSignal = new Signal<IKernel, KernelStatus>();
+  const statusChangedSignal = new Signal<IKernel, IKernel.Status>();
 
   /**
    * A signal emitted for iopub kernel messages.
    */
   export
-  const iopubMessageSignal = new Signal<IKernel, IKernelMessage>();
+  const iopubMessageSignal = new Signal<IKernel, KernelMessage.IIOPubMessage>();
 
   /**
    * A signal emitted for unhandled kernel message.
    */
   export
-  const unhandledMessageSignal = new Signal<IKernel, IKernelMessage>();
+  const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
 }

@@ -7,11 +7,11 @@ import {
 } from './contents';
 
 import {
-  IKernelId, IKernelMessage, IKernelMessageHeader, IKernelSpecId
+  IKernel, KernelMessage
 } from './ikernel';
 
 import {
-  INotebookId, ISessionId
+  ISession
 } from './isession';
 
 /**
@@ -20,20 +20,20 @@ import {
 const HEADER_FIELDS = ['username', 'version', 'session', 'msg_id', 'msg_type'];
 
 /**
- * Requred fields and types for contents of various types of `IKernelMessage`
+ * Requred fields and types for contents of various types of `kernel.IMessage`
  * messages on the iopub channel.
  */
 const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
   stream: { name: 'string', text: 'string' },
-  display_data: { data: 'any', metadata: 'any' },
+  display_data: { data: 'object', metadata: 'object' },
   execute_input: { code: 'string', execution_count: 'number' },
-  execute_result: { execution_count: 'number', data: 'any',
-                    metadata: 'any' },
-  error: { ename: 'string', evalue: 'string', traceback: 'any' },
+  execute_result: { execution_count: 'number', data: 'object',
+                    metadata: 'object' },
+  error: { ename: 'string', evalue: 'string', traceback: 'object' },
   status: { execution_state: 'string' },
   clear_output: { wait: 'boolean' },
-  comm_open: { comm_id: 'string', target_name: 'string', data: 'any' },
-  comm_msg: { comm_id: 'string', data: 'any' },
+  comm_open: { comm_id: 'string', target_name: 'string', data: 'object' },
+  comm_msg: { comm_id: 'string', data: 'object' },
   comm_close: { comm_id: 'string' },
   shutdown_reply: { restart : 'boolean' }  // Emitted by the IPython kernel.
 };
@@ -51,15 +51,15 @@ function validateProperty(object: any, name: string, typeName?: string): void {
   if (typeName !== void 0) {
     let valid = true;
     let value = object[name];
-    switch(typeName) {
+    switch (typeName) {
     case 'array':
       valid = Array.isArray(value);
       break;
-    case 'any':
+    case 'object':
       valid = typeof value !== 'undefined';
       break;
     default:
-      valid = typeof value == typeName;
+      valid = typeof value === typeName;
     }
     if (!valid) {
       throw new Error(`Property '${name}' is not of type '${typeName}`);
@@ -69,9 +69,9 @@ function validateProperty(object: any, name: string, typeName?: string): void {
 
 
 /**
- * Validate the header of an `IKernelMessage`.
+ * Validate the header of a kernel message.
  */
-function validateKernelHeader(header: any): void {
+function validateKernelHeader(header: KernelMessage.IHeader): void {
   for (let i = 0; i < HEADER_FIELDS.length; i++) {
     validateProperty(header, HEADER_FIELDS[i], 'string');
   }
@@ -79,28 +79,28 @@ function validateKernelHeader(header: any): void {
 
 
 /**
- * Validate an `IKernelMessage` object.
+ * Validate a kernel message object.
  */
 export
-function validateKernelMessage(msg: IKernelMessage) : void {
-  validateProperty(msg, 'metadata', 'any');
-  validateProperty(msg, 'content', 'any');
+function validateKernelMessage(msg: KernelMessage.IMessage) : void {
+  validateProperty(msg, 'metadata', 'object');
+  validateProperty(msg, 'content', 'object');
   validateProperty(msg, 'channel', 'string');
   validateProperty(msg, 'buffers', 'array');
   validateKernelHeader(msg.header);
   if (Object.keys(msg.parent_header).length > 0) {
-    validateKernelHeader(msg.parent_header as IKernelMessageHeader);
+    validateKernelHeader(msg.parent_header as KernelMessage.IHeader);
   }
   if (msg.channel === 'iopub') {
-    validateIOPubContent(msg);
+    validateIOPubContent(msg as KernelMessage.IIOPubMessage);
   }
 }
 
 
 /**
- * Validate content of an IKernelMessage on the iopub channel.
+ * Validate content an kernel message on the iopub channel.
  */
-function validateIOPubContent(msg: IKernelMessage) : void {
+function validateIOPubContent(msg: KernelMessage.IIOPubMessage) : void {
   if (msg.channel === 'iopub') {
     let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
     if (fields === void 0) {
@@ -109,43 +109,43 @@ function validateIOPubContent(msg: IKernelMessage) : void {
     let names = Object.keys(fields);
     let content = msg.content;
     for (let i = 0; i < names.length; i++) {
-      validateProperty(content, names[i], fields[names[i]])
+      validateProperty(content, names[i], fields[names[i]]);
     }
   }
 }
 
 
 /**
- * Validate an `IKernelId` object.
+ * Validate an `IKernel.IModel` object.
  */
 export
-function validateKernelId(info: IKernelId) : void {
-  validateProperty(info, 'name', 'string');
-  validateProperty(info, 'id', 'string');
+function validateKernelModel(model: IKernel.IModel) : void {
+  validateProperty(model, 'name', 'string');
+  validateProperty(model, 'id', 'string');
 }
 
 
 /**
- * Validate an `ISessionId` object.
+ * Validate an `ISession.IModel` object.
  */
 export
-function validateSessionId(info: ISessionId): void {
-  validateProperty(info, 'id', 'string');
-  validateProperty(info, 'notebook', 'any');
-  validateProperty(info, 'kernel', 'any');
-  validateKernelId(info.kernel);
-  validateProperty(info.notebook, 'path', 'string');
+function validateSessionModel(model: ISession.IModel): void {
+  validateProperty(model, 'id', 'string');
+  validateProperty(model, 'notebook', 'object');
+  validateProperty(model, 'kernel', 'object');
+  validateKernelModel(model.kernel);
+  validateProperty(model.notebook, 'path', 'string');
 }
 
 
 /**
- * Validate an `IKernelSpecID` object.
+ * Validate an `IKernel.ISpecModel` object.
  */
  export
-function validateKernelSpec(info: IKernelSpecId): void {
+function validateKernelSpecModel(info: IKernel.ISpecModel): void {
   validateProperty(info, 'name', 'string');
-  validateProperty(info, 'spec', 'any');
-  validateProperty(info, 'resources', 'any');
+  validateProperty(info, 'spec', 'object');
+  validateProperty(info, 'resources', 'object');
   let spec = info.spec;
   validateProperty(spec, 'language', 'string');
   validateProperty(spec, 'display_name', 'string');
@@ -163,9 +163,9 @@ function validateContentsModel(model: IContentsModel): void {
   validateProperty(model, 'type', 'string');
   validateProperty(model, 'created', 'string');
   validateProperty(model, 'last_modified', 'string');
-  validateProperty(model, 'mimetype', 'any');
-  validateProperty(model, 'content', 'any');
-  validateProperty(model, 'format', 'any');
+  validateProperty(model, 'mimetype', 'object');
+  validateProperty(model, 'content', 'object');
+  validateProperty(model, 'format', 'object');
 }
 
 

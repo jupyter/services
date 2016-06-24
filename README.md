@@ -143,7 +143,8 @@ A translator such as Babel can be used to convert from ES6 -> ES5.
 
 ```typescript
 import {
-  listRunningKernels, connectToKernel, startNewKernel, getKernelSpecs
+  KernelMessage, connectToKernel, getKernelSpecs, listRunningKernels,
+  startNewKernel
 } from 'jupyter-js-services';
 
 // The base url of the notebook server.
@@ -155,7 +156,7 @@ listRunningKernels({ baseUrl: BASE_URL }).then(kernelModels => {
   let options = {
     baseUrl: BASE_URL,
     name: kernelModels[0].name
-  }
+  };
   connectToKernel(kernelModels[0].id, options).then((kernel) => {
     console.log(kernel.name);
   });
@@ -170,29 +171,31 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   let options = {
     baseUrl: BASE_URL,
     name: kernelSpecs.default
-  }
+  };
   startNewKernel(options).then(kernel => {
     // Execute and handle replies.
     let future = kernel.execute({ code: 'a = 1' } );
     future.onDone = () => {
       console.log('Future is fulfilled');
-    }
+    };
     future.onIOPub = (msg) => {
       console.log(msg.content);  // Print rich output data.
-    }
+    };
 
     // Restart the kernel and then send an inspect message.
     kernel.restart().then(() => {
-      let request = { code: 'hello', cursor_pos: 4, detail_level: 0};
+      let request: KernelMessage.IInspectRequest = {
+        code: 'hello', cursor_pos: 4, detail_level: 0
+      };
       kernel.inspect(request).then(reply => {
-        console.log(reply.data);
+        console.log(reply.content.data);
       });
     });
 
     // Interrupt the kernel and then send a complete message.
     kernel.interrupt().then(() => {
       kernel.complete({ code: 'impor', cursor_pos: 4 } ).then((reply) => {
-        console.log(reply.matches);
+        console.log(reply.content.matches);
       });
     });
 
@@ -209,15 +212,16 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 });
 ```
 
-**NotebookSession**
+**Session**
 
 ```typescript
 import {
-  listRunningSessions, connectToSession, startNewSession
+  connectToSession, listRunningSessions, startNewSession
 } from 'jupyter-js-services';
 
-// The base url of the notebook server.
+// The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
+
 
 
 // Get a list of available sessions and connect to one.
@@ -225,8 +229,8 @@ listRunningSessions({ baseUrl: BASE_URL }).then(sessionModels => {
   let options = {
     baseUrl: BASE_URL,
     kernelName: sessionModels[0].kernel.name,
-    notebookPath: sessionModels[0].notebook.path
-  }
+    path: sessionModels[0].notebook.path
+  };
   connectToSession(sessionModels[0].id, options).then((session) => {
     console.log(session.kernel.name);
   });
@@ -236,18 +240,19 @@ listRunningSessions({ baseUrl: BASE_URL }).then(sessionModels => {
 let options = {
   baseUrl: BASE_URL,
   kernelName: 'python',
-  notebookPath: '/tmp/foo.ipynb'
-}
+  path: '/tmp/foo.ipynb'
+};
+
 startNewSession(options).then(session => {
   // Execute and handle replies on the kernel.
   let future = session.kernel.execute({ code: 'a = 1' });
   future.onDone = () => {
     console.log('Future is fulfilled');
-  }
+  };
 
-  // Rename the notebook.
-  session.renameNotebook('/local/bar.ipynb').then(() => {
-    console.log('Notebook renamed to', session.notebookPath);
+  // Rename the session.
+  session.rename('/local/bar.ipynb').then(() => {
+    console.log('Session renamed to', session.path);
   });
 
   // Register a callback for when the session dies.
@@ -270,7 +275,7 @@ import {
   getKernelSpecs, startNewKernel
 } from 'jupyter-js-services';
 
-// The base url of the notebook server.
+// The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
 
 
@@ -302,17 +307,18 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
     }
     comm.onMsg = (msg) => {
       console.log(msg);  // 'hello'
-    }
+    };
     comm.onClose = (msg) => {
       console.log(msg);  // 'bye'
-    }
+    };
   });
+
   let code = [
-    "from ipykernel.comm import Comm",
-    "comm = Comm(target_name='test2')",
-    "comm.send(data='hello')",
-    "comm.close(data='bye')"
-  ].join('\n')
+    'from ipykernel.comm import Comm',
+    'comm = Comm(target_name="test2")',
+    'comm.send(data="hello")',
+    'comm.close(data="bye")'
+  ].join('\n');
   kernel.execute({ code: code });
 });
 ```
@@ -324,53 +330,53 @@ import {
   ContentsManager
 } from 'jupyter-js-services';
 
-// The base url of the notebook server.
+// The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
 
 
 let contents = new ContentsManager(BASE_URL);
 
 // Create a new python file.
-contents.newUntitled("/foo", { type: "file", ext: "py" }).then(
+contents.newUntitled('/foo', { type: 'file', ext: 'py' }).then(
   (model) => {
-    console.log(model.path);
+    console.log('new file:', model.path);
   }
 );
 
 // Get the contents of a directory.
-contents.get("/foo", { type: "directory", name: "bar" }).then(
+contents.get('/foo', { type: 'directory', name: 'bar' }).then(
   (model) => {
-    let files = model.content;
+    console.log('files:', model.content);
   }
-)
+);
 
 // Rename a file.
-contents.rename("/foo/bar.txt", "/foo/baz.txt");
+contents.rename('/foo/bar.txt', '/foo/baz.txt');
 
 // Save a file.
-contents.save("/foo", { type: "file", name: "test.py" });
+contents.save('/foo', { type: 'file', name: 'test.py' });
 
 // Delete a file.
-contents.delete("/foo/bar.txt");
+contents.delete('/foo/bar.txt');
 
 // Copy a file.
-contents.copy("/foo/bar.txt", "/baz").then((model) => {
-    let newPath = model.path;
+contents.copy('/foo/bar.txt', '/baz').then((model) => {
+    console.log('new path', model.path);
 });
 
 // Create a checkpoint.
-contents.createCheckpoint("/foo/bar.ipynb").then((model) => {
+contents.createCheckpoint('/foo/bar.ipynb').then((model) => {
   let checkpoint = model;
 
   // Restore a checkpoint.
-  contents.restoreCheckpoint("/foo/bar.ipynb", checkpoint.id);
+  contents.restoreCheckpoint('/foo/bar.ipynb', checkpoint.id);
 
   // Delete a checkpoint.
-  contents.deleteCheckpoint("/foo/bar.ipynb", checkpoint.id);
+  contents.deleteCheckpoint('/foo/bar.ipynb', checkpoint.id);
 });
 
 // List checkpoints for a file.
-contents.listCheckpoints("/foo/bar.txt").then((models) => {
+contents.listCheckpoints('/foo/bar.txt').then((models) => {
     console.log(models[0].id);
 });
 ```
@@ -379,10 +385,10 @@ contents.listCheckpoints("/foo/bar.txt").then((models) => {
 
 ```typescript
 import {
-  startNewKernel, getKernelSpecs, getConfigSection, ConfigWithDefaults
+  ConfigWithDefaults, getConfigSection, getKernelSpecs, startNewKernel
 } from 'jupyter-js-services';
 
-// The base url of the notebook server.
+// The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
 
 

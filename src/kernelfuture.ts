@@ -7,7 +7,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  IKernelMessage, IKernelFuture
+  IKernel, KernelMessage
 } from './ikernel';
 
 
@@ -15,12 +15,11 @@ import {
  * Implementation of a kernel future.
  */
 export
-class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
-
+class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture {
   /**
    * Construct a new KernelFutureHandler.
    */
-  constructor(cb: () => void, msg: IKernelMessage, expectShell: boolean, disposeOnDone: boolean) {
+  constructor(cb: () => void, msg: KernelMessage.IMessage, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
     this._msg = msg;
     if (!expectShell) {
@@ -32,7 +31,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Get the original outgoing message.
    */
-  get msg(): IKernelMessage {
+  get msg(): KernelMessage.IMessage {
     return this._msg;
   }
 
@@ -46,56 +45,56 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Get the reply handler.
    */
-  get onReply(): (msg: IKernelMessage) => void {
+  get onReply(): (msg: KernelMessage.IShellMessage) => void {
     return this._reply;
   }
 
   /**
    * Set the reply handler.
    */
-  set onReply(cb: (msg: IKernelMessage) => void) {
+  set onReply(cb: (msg: KernelMessage.IShellMessage) => void) {
     this._reply = cb;
   }
 
   /**
    * Get the iopub handler.
    */
-  get onIOPub(): (msg: IKernelMessage) => void {
+  get onIOPub(): (msg: KernelMessage.IIOPubMessage) => void {
     return this._iopub;
   }
 
   /**
    * Set the iopub handler.
    */
-  set onIOPub(cb: (msg: IKernelMessage) => void) {
+  set onIOPub(cb: (msg: KernelMessage.IIOPubMessage) => void) {
     this._iopub = cb;
   }
 
   /**
    * Get the done handler.
    */
-  get onDone(): (msg: IKernelMessage) => void  {
+  get onDone(): () => void  {
     return this._done;
   }
 
   /**
    * Set the done handler.
    */
-  set onDone(cb: (msg: IKernelMessage) => void) {
+  set onDone(cb: () => void) {
     this._done = cb;
   }
 
   /**
    * Get the stdin handler.
    */
-  get onStdin(): (msg: IKernelMessage) => void {
+  get onStdin(): (msg: KernelMessage.IStdinMessage) => void {
     return this._stdin;
   }
 
   /**
    * Set the stdin handler.
    */
-  set onStdin(cb: (msg: IKernelMessage) => void) {
+  set onStdin(cb: (msg: KernelMessage.IStdinMessage) => void) {
     this._stdin = cb;
   }
 
@@ -114,53 +113,53 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
   /**
    * Handle an incoming kernel message.
    */
-  handleMsg(msg: IKernelMessage): void {
+  handleMsg(msg: KernelMessage.IMessage): void {
     switch (msg.channel) {
     case 'shell':
-      this._handleReply(msg);
+      this._handleReply(msg as KernelMessage.IShellMessage);
       break;
     case 'stdin':
-      this._handleStdin(msg);
+      this._handleStdin(msg as KernelMessage.IStdinMessage);
       break;
     case 'iopub':
-      this._handleIOPub(msg);
+      this._handleIOPub(msg as KernelMessage.IIOPubMessage);
       break;
     }
   }
 
-  private _handleReply(msg: IKernelMessage): void {
+  private _handleReply(msg: KernelMessage.IShellMessage): void {
     let reply = this._reply;
     if (reply) reply(msg);
     this._setFlag(KernelFutureFlag.GotReply);
     if (this._testFlag(KernelFutureFlag.GotIdle)) {
-      this._handleDone(msg);
+      this._handleDone();
     }
   }
 
-  private _handleStdin(msg: IKernelMessage): void {
+  private _handleStdin(msg: KernelMessage.IStdinMessage): void {
     let stdin = this._stdin;
     if (stdin) stdin(msg);
   }
 
-  private _handleIOPub(msg: IKernelMessage): void {
+  private _handleIOPub(msg: KernelMessage.IIOPubMessage): void {
     let iopub = this._iopub;
     if (iopub) iopub(msg);
-    if (msg.header.msg_type === 'status' &&
+    if (KernelMessage.isStatusMsg(msg) &&
         msg.content.execution_state === 'idle') {
       this._setFlag(KernelFutureFlag.GotIdle);
       if (this._testFlag(KernelFutureFlag.GotReply)) {
-        this._handleDone(msg);
+        this._handleDone();
       }
     }
   }
 
-  private _handleDone(msg: IKernelMessage): void {
+  private _handleDone(): void {
     if (this.isDone) {
       return;
     }
     this._setFlag(KernelFutureFlag.IsDone);
     let done = this._done;
-    if (done) done(msg);
+    if (done) done();
     this._done = null;
     if (this._disposeOnDone) {
       this.dispose();
@@ -181,12 +180,12 @@ class KernelFutureHandler extends DisposableDelegate implements IKernelFuture {
     this._status |= flag;
   }
 
-  private _msg: IKernelMessage = null;
+  private _msg: KernelMessage.IMessage = null;
   private _status = 0;
-  private _stdin: (msg: IKernelMessage) => void = null;
-  private _iopub: (msg: IKernelMessage) => void = null;
-  private _reply: (msg: IKernelMessage) => void = null;
-  private _done: (msg: IKernelMessage) => void = null;
+  private _stdin: (msg: KernelMessage.IStdinMessage) => void = null;
+  private _iopub: (msg: KernelMessage.IIOPubMessage) => void = null;
+  private _reply: (msg: KernelMessage.IShellMessage) => void = null;
+  private _done: () => void = null;
   private _disposeOnDone = true;
 }
 

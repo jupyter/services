@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  IKernelMessage
+  KernelMessage
 } from './ikernel';
 
 
@@ -14,8 +14,8 @@ import {
  * Handles JSON blob strings and binary messages.
  */
 export
-function deserialize(data: ArrayBuffer | string): IKernelMessage {
-  var value: IKernelMessage;
+function deserialize(data: ArrayBuffer | string): KernelMessage.IMessage {
+  let value: KernelMessage.IMessage;
   if (typeof data === 'string') {
     value = JSON.parse(data);
   } else {
@@ -33,8 +33,8 @@ function deserialize(data: ArrayBuffer | string): IKernelMessage {
  * otherwise the message is converted to a JSON string.
  */
 export
-function serialize(msg: IKernelMessage): string | ArrayBuffer {
-  var value: string | ArrayBuffer;
+function serialize(msg: KernelMessage.IMessage): string | ArrayBuffer {
+  let value: string | ArrayBuffer;
   if (msg.buffers && msg.buffers.length) {
     value = serializeBinary(msg);
   } else {
@@ -47,24 +47,24 @@ function serialize(msg: IKernelMessage): string | ArrayBuffer {
 /**
  * Deserialize a binary message to a Kernel Message.
  */
-function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
-  var data = new DataView(buf);
+function deserializeBinary(buf: ArrayBuffer): KernelMessage.IMessage {
+  let data = new DataView(buf);
   // read the header: 1 + nbufs 32b integers
-  var nbufs = data.getUint32(0);
-  var offsets: number[] = [];
+  let nbufs = data.getUint32(0);
+  let offsets: number[] = [];
   if (nbufs < 2) {
     throw new Error('Invalid incoming Kernel Message');
   }
   for (let i = 1; i <= nbufs; i++) {
     offsets.push(data.getUint32(i * 4));
   }
-  var json_bytes = new Uint8Array(buf.slice(offsets[0], offsets[1]));
-  var msg = JSON.parse((new TextDecoder('utf8')).decode(json_bytes));
+  let jsonBytes = new Uint8Array(buf.slice(offsets[0], offsets[1]));
+  let msg = JSON.parse((new TextDecoder('utf8')).decode(jsonBytes));
   // the remaining chunks are stored as DataViews in msg.buffers
   msg.buffers = [];
   for (let i = 1; i < nbufs; i++) {
-    var start = offsets[i];
-    var stop = offsets[i + 1] || buf.byteLength;
+    let start = offsets[i];
+    let stop = offsets[i + 1] || buf.byteLength;
     msg.buffers.push(new DataView(buf.slice(start, stop)));
   }
   return msg;
@@ -76,46 +76,46 @@ function deserializeBinary(buf: ArrayBuffer): IKernelMessage {
  *
  * Serialize Kernel message to ArrayBuffer.
  */
-function serializeBinary(msg: IKernelMessage): ArrayBuffer {
-  var offsets: number[] = [];
-  var buffers: ArrayBuffer[] = [];
-  var encoder = new TextEncoder('utf8');
-  var json_utf8 = encoder.encode(JSON.stringify(msg, replace_buffers));
-  buffers.push(json_utf8.buffer);
-  for (var i = 0; i < msg.buffers.length; i++) {
+function serializeBinary(msg: KernelMessage.IMessage): ArrayBuffer {
+  let offsets: number[] = [];
+  let buffers: ArrayBuffer[] = [];
+  let encoder = new TextEncoder('utf8');
+  let jsonUtf8 = encoder.encode(JSON.stringify(msg, replaceBuffers));
+  buffers.push(jsonUtf8.buffer);
+  for (let i = 0; i < msg.buffers.length; i++) {
     // msg.buffers elements could be either views or ArrayBuffers
     // buffers elements are ArrayBuffers
-    var b: any = msg.buffers[i];
+    let b: any = msg.buffers[i];
     buffers.push(b instanceof ArrayBuffer ? b : b.buffer);
   }
-  var nbufs = buffers.length;
+  let nbufs = buffers.length;
   offsets.push(4 * (nbufs + 1));
-  for (i = 0; i + 1 < buffers.length; i++) {
+  for (let i = 0; i + 1 < buffers.length; i++) {
     offsets.push(offsets[offsets.length - 1] + buffers[i].byteLength);
   }
-  var msg_buf = new Uint8Array(
+  let msgBuf = new Uint8Array(
     offsets[offsets.length - 1] + buffers[buffers.length - 1].byteLength
   );
   // use DataView.setUint32 for network byte-order
-  var view = new DataView(msg_buf.buffer);
+  let view = new DataView(msgBuf.buffer);
   // write nbufs to first 4 bytes
   view.setUint32(0, nbufs);
   // write offsets to next 4 * nbufs bytes
-  for (i = 0; i < offsets.length; i++) {
+  for (let i = 0; i < offsets.length; i++) {
     view.setUint32(4 * (i + 1), offsets[i]);
   }
   // write all the buffers at their respective offsets
-  for (i = 0; i < buffers.length; i++) {
-    msg_buf.set(new Uint8Array(buffers[i]), offsets[i]);
+  for (let i = 0; i < buffers.length; i++) {
+    msgBuf.set(new Uint8Array(buffers[i]), offsets[i]);
   }
-  return msg_buf.buffer;
+  return msgBuf.buffer;
 }
 
 
 /**
  * Filter `"buffers"` key for `JSON.stringify`.
  */
-function replace_buffers(key: string, value: any) {
+function replaceBuffers(key: string, value: any) {
   if (key === 'buffers') {
     return undefined;
   }

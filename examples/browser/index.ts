@@ -24,14 +24,14 @@ function main() {
     baseUrl: BASE_URL,
     wsUrl: WS_URL,
     kernelName: 'python',
-    notebookPath: 'foo.ipynb'
+    path: 'foo.ipynb'
   };
   startNewSession(options).then(session => {
-    // Rename the notebook.
-    session.renameNotebook('bar.ipynb').then(() => {
-      console.log('Notebook renamed to', session.notebookPath);
+    // Rename the session.
+    session.rename('bar.ipynb').then(() => {
+      console.log('Session renamed to', session.path);
       // Execute and handle replies on the kernel.
-      var future = session.kernel.execute({ code: 'a = 1' });
+      let future = session.kernel.execute({ code: 'a = 1' });
       future.onReply = (reply) => {
         console.log('Got execute reply');
       };
@@ -40,6 +40,7 @@ function main() {
         // Shut down the session.
         session.shutdown().then(() => {
           console.log('Session shut down');
+          alert('Test Complete!  See the console output for details');
         });
       };
     });
