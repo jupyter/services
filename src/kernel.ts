@@ -1242,7 +1242,7 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
       comm_id: this._id,
       data: data
     };
-    let msg = createShellMessage(options, content, metadata);
+    let msg = createShellMessage(options, content, metadata, buffers);
     return this._kernel.sendShellMessage(msg, false, true);
   }
 

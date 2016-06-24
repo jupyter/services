@@ -617,7 +617,7 @@ namespace KernelMessage {
   interface IStreamMsg extends IIOPubMessage {
     content: {
       [ key: string ]: JSONValue;
-      name: string;
+      name: 'stdout' | 'stderr';
       text: string;
     };
   }
