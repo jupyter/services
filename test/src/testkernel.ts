@@ -18,6 +18,10 @@ import {
 } from '../../lib/ikernel';
 
 import {
+  JSONObject
+} from '../../lib/json';
+
+import {
   RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
   KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
   PYTHON_SPEC
@@ -332,7 +336,7 @@ describe('jupyter.services - kernel', () => {
           let msg = createShellMessage({
             msgType: 'foo',
             channel: 'shell',
-            session: 'baz'
+            session: kernel.clientId
           });
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -642,19 +646,22 @@ describe('jupyter.services - kernel', () => {
           };
           let msg = createShellMessage(options);
           let future = kernel.sendShellMessage(msg, true);
+          let newMsg: KernelMessage.IMessage;
+
           tester.onMessage((msg) => {
             // trigger onDone
             options.msgType = 'status';
             options.channel = 'iopub';
-            msg = createKernelMessage(options, { execution_state: 'idle' });
-            msg.parent_header = msg.header;
-            tester.send(msg);
+            newMsg = createKernelMessage(options, { execution_state: 'idle' });
+            newMsg.parent_header = msg.header;
+            tester.send(newMsg);
 
             future.onIOPub = () => {
               options.msgType = 'custom';
               options.channel = 'shell';
-              msg = createShellMessage(options);
-              tester.send(msg);
+              newMsg = createShellMessage(options);
+              newMsg.parent_header = msg.header;
+              tester.send(newMsg);
             };
 
             future.onDone = () => {
@@ -1082,28 +1089,33 @@ describe('jupyter.services - kernel', () => {
             // send a reply
             options.channel = 'shell';
             newMsg = createKernelMessage(options);
+            newMsg.parent_header = msg.header;
             tester.send(newMsg);
 
-            future.onReply = (msg) => {
+            future.onReply = () => {
               // trigger onStdin
               options.channel = 'stdin';
               newMsg = createKernelMessage(options);
+              newMsg.parent_header = msg.header;
               tester.send(newMsg);
             };
 
-            future.onStdin = (msg) => {
+            future.onStdin = () => {
               // trigger onIOPub with a 'stream' message
               options.channel = 'iopub';
               options.msgType = 'stream';
-              newMsg = createKernelMessage(options);
+              let streamContent: JSONObject = { name: 'stdout', text: '' };
+              newMsg = createKernelMessage(options, streamContent);
+              newMsg.parent_header = msg.header;
               tester.send(newMsg);
             };
 
-            future.onIOPub = (msg) => {
-              if (msg.header.msg_type === 'stream') {
+            future.onIOPub = (ioMsg) => {
+              if (ioMsg.header.msg_type === 'stream') {
                 // trigger onDone
                 options.msgType = 'status';
                 newMsg = createKernelMessage(options, { execution_state: 'idle' });
+                newMsg.parent_header = msg.header;
                 tester.send(newMsg);
               }
             };

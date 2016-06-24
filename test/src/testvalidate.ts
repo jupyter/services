@@ -24,8 +24,8 @@ describe('jupyter.services', () => {
 
     it('should pass a valid message', () => {
       let msg = createKernelMessage({
-        msgType: 'comm_msg', channel: 'iopub', session: 'baz'
-      });
+        msgType: 'comm_msg', channel: 'iopub', session: 'foo'
+      }, { comm_id: 'foo', data: {} });
       validateKernelMessage(msg);
     });
 

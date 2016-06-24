@@ -378,7 +378,7 @@ describe('jupyter.services - session', () => {
     });
   });
 
-  describe('INotebookSession', () => {
+  describe('ISession', () => {
 
     context('#sessionDied', () => {
 
@@ -460,7 +460,7 @@ describe('jupyter.services - session', () => {
             msgType: 'status',
             channel: 'iopub',
             session: ''
-          }) as KernelMessage.IStatusMsg
+          }) as KernelMessage.IStatusMsg;
           msg.content.execution_state = 'idle';
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -481,8 +481,8 @@ describe('jupyter.services - session', () => {
           });
           let msg = createKernelMessage({
             msgType: 'foo',
-            channel: 'iopub',
-            session: 'bar'
+            channel: 'shell',
+            session: session.kernel.clientId
           });
           msg.parent_header = msg.header;
           tester.send(msg);
@@ -492,7 +492,7 @@ describe('jupyter.services - session', () => {
 
     context('#pathChanged', () => {
 
-      it('should be emitted when the notebook path changes', (done) => {
+      it('should be emitted when the session path changes', (done) => {
         let tester = new KernelTester();
         let model = createSessionModel();
         let newPath = '/foo.ipynb';
@@ -627,7 +627,7 @@ describe('jupyter.services - session', () => {
 
     context('#rename()', () => {
 
-      it('should rename the notebook', (done) => {
+      it('should rename the session', (done) => {
         let tester = new KernelTester();
         let model = createSessionModel();
         let newPath = '/foo.ipynb';
@@ -776,7 +776,7 @@ describe('jupyter.services - session', () => {
         });
       });
 
-      it('should update the notebook path if it has changed', (done) => {
+      it('should update the session path if it has changed', (done) => {
         let tester = new KernelTester();
         let model = createSessionModel();
         let newName = 'foo';

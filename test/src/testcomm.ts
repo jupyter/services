@@ -448,7 +448,7 @@ describe('jupyter.services - Comm', () => {
         createKernel(tester).then((kernel) => {
           let comm = kernel.connectToComm('test');
           comm.close({ foo: 'bar' });
-          expect(() => { comm.send('test'); }).to.throwError();
+          expect(comm.send('test')).to.be(void 0);
           done();
         });
       });
