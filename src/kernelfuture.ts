@@ -7,7 +7,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  kernel
+  IKernel, KernelMessage
 } from './ikernel';
 
 
@@ -15,11 +15,11 @@ import {
  * Implementation of a kernel future.
  */
 export
-class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
+class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture {
   /**
    * Construct a new KernelFutureHandler.
    */
-  constructor(cb: () => void, msg: kernel.IMessage, expectShell: boolean, disposeOnDone: boolean) {
+  constructor(cb: () => void, msg: KernelMessage.IMessage, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
     this._msg = msg;
     if (!expectShell) {
@@ -31,7 +31,7 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
   /**
    * Get the original outgoing message.
    */
-  get msg(): kernel.IMessage {
+  get msg(): KernelMessage.IMessage {
     return this._msg;
   }
 
@@ -45,28 +45,28 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
   /**
    * Get the reply handler.
    */
-  get onReply(): (msg: kernel.IShellMessage) => void {
+  get onReply(): (msg: KernelMessage.IShell) => void {
     return this._reply;
   }
 
   /**
    * Set the reply handler.
    */
-  set onReply(cb: (msg: kernel.IShellMessage) => void) {
+  set onReply(cb: (msg: KernelMessage.IShell) => void) {
     this._reply = cb;
   }
 
   /**
    * Get the iopub handler.
    */
-  get onIOPub(): (msg: kernel.IIOPubMessage) => void {
+  get onIOPub(): (msg: KernelMessage.IIopub) => void {
     return this._iopub;
   }
 
   /**
    * Set the iopub handler.
    */
-  set onIOPub(cb: (msg: kernel.IIOPubMessage) => void) {
+  set onIOPub(cb: (msg: KernelMessage.IIopub) => void) {
     this._iopub = cb;
   }
 
@@ -87,14 +87,14 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
   /**
    * Get the stdin handler.
    */
-  get onStdin(): (msg: kernel.IStdinMessage) => void {
+  get onStdin(): (msg: KernelMessage.IStdin) => void {
     return this._stdin;
   }
 
   /**
    * Set the stdin handler.
    */
-  set onStdin(cb: (msg: kernel.IStdinMessage) => void) {
+  set onStdin(cb: (msg: KernelMessage.IStdin) => void) {
     this._stdin = cb;
   }
 
@@ -113,21 +113,21 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
   /**
    * Handle an incoming kernel message.
    */
-  handleMsg(msg: kernel.IMessage): void {
+  handleMsg(msg: KernelMessage.IMessage): void {
     switch (msg.channel) {
     case 'shell':
-      this._handleReply(msg as kernel.IShellMessage);
+      this._handleReply(msg as KernelMessage.IShell);
       break;
     case 'stdin':
-      this._handleStdin(msg as kernel.IStdinMessage);
+      this._handleStdin(msg as KernelMessage.IStdin);
       break;
     case 'iopub':
-      this._handleIOPub(msg as kernel.IIOPubMessage);
+      this._handleIOPub(msg as KernelMessage.IIopub);
       break;
     }
   }
 
-  private _handleReply(msg: kernel.IShellMessage): void {
+  private _handleReply(msg: KernelMessage.IShell): void {
     let reply = this._reply;
     if (reply) reply(msg);
     this._setFlag(KernelFutureFlag.GotReply);
@@ -136,15 +136,15 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
     }
   }
 
-  private _handleStdin(msg: kernel.IStdinMessage): void {
+  private _handleStdin(msg: KernelMessage.IStdin): void {
     let stdin = this._stdin;
     if (stdin) stdin(msg);
   }
 
-  private _handleIOPub(msg: kernel.IIOPubMessage): void {
+  private _handleIOPub(msg: KernelMessage.IIopub): void {
     let iopub = this._iopub;
     if (iopub) iopub(msg);
-    if (kernel.isStatusMessage(msg) &&
+    if (KernelMessage.isStatus(msg) &&
         msg.content.execution_state === 'idle') {
       this._setFlag(KernelFutureFlag.GotIdle);
       if (this._testFlag(KernelFutureFlag.GotReply)) {
@@ -180,11 +180,11 @@ class KernelFutureHandler extends DisposableDelegate implements kernel.IFuture {
     this._status |= flag;
   }
 
-  private _msg: kernel.IMessage = null;
+  private _msg: KernelMessage.IMessage = null;
   private _status = 0;
-  private _stdin: (msg: kernel.IStdinMessage) => void = null;
-  private _iopub: (msg: kernel.IIOPubMessage) => void = null;
-  private _reply: (msg: kernel.IShellMessage) => void = null;
+  private _stdin: (msg: KernelMessage.IStdin) => void = null;
+  private _iopub: (msg: KernelMessage.IIopub) => void = null;
+  private _reply: (msg: KernelMessage.IShell) => void = null;
   private _done: () => void = null;
   private _disposeOnDone = true;
 }

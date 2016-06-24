@@ -34,7 +34,7 @@ interface IKernel extends IDisposable {
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<IKernel, Kernel.Status>;
+  statusChanged: ISignal<IKernel, IKernel.Status>;
 
   /**
    * A signal emitted for iopub kernel messages.
@@ -84,7 +84,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  status: Kernel.Status;
+  status: IKernel.Status;
 
   /**
    * Send a shell message to the kernel.
@@ -106,7 +106,7 @@ interface IKernel extends IDisposable {
    *
    * If the kernel status is `Dead`, this will throw an error.
    */
-  sendShellMessage(msg: KernelMessage.IMessage, expectReply?: boolean, disposeOnDone?: boolean): Kernel.IFuture;
+  sendShellMessage(msg: KernelMessage.IShell, expectReply?: boolean, disposeOnDone?: boolean): IKernel.IFuture;
 
   /**
    * Interrupt a kernel.
@@ -211,7 +211,7 @@ interface IKernel extends IDisposable {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): Kernel.IFuture;
+  execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): IKernel.IFuture;
 
   /**
    * Send an `is_complete_request` message.
@@ -249,7 +249,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * If a client-side comm already exists, it is returned.
    */
-  connectToComm(targetName: string, commId?: string): Kernel.IComm;
+  connectToComm(targetName: string, commId?: string): IKernel.IComm;
 
   /**
    * Register a comm target handler.
@@ -265,12 +265,12 @@ interface IKernel extends IDisposable {
    * callback will be overidden.  A registered comm target handler will take
    * precedence over a comm which specifies a `target_module`.
    */
-  registerCommTarget(targetName: string, callback: (comm: Kernel.IComm, msg: KernelMessage.ICommOpen) => void): IDisposable;
+  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpen) => void): IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.
    */
-  getKernelSpec(): Promise<Kernel.ISpec>;
+  getKernelSpec(): Promise<IKernel.ISpec>;
 
   /**
    * Optional default settings for ajax requests, if applicable.
@@ -283,7 +283,7 @@ interface IKernel extends IDisposable {
  * A namespace for kernel types, interfaces, and type checker functions.
  */
 export
-namespace Kernel {
+namespace IKernel {
   /**
    * The options object used to initialize a kernel.
    */
@@ -741,7 +741,7 @@ namespace KernelMessage {
   interface IStatus extends IIopub {
     content: {
       [ key: string ]: JSONValue;
-      execution_state: Kernel.Status;
+      execution_state: IKernel.Status;
     };
   }
 

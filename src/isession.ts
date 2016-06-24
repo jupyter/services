@@ -15,121 +15,122 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  IKernel, Kernel, KernelMessage
+  IKernel, KernelMessage
 } from './ikernel';
+
+
+/**
+ * Interface of a session object.
+ */
+export
+interface ISession extends IDisposable {
+  /**
+   * A signal emitted when the session is shut down.
+   */
+  sessionDied: ISignal<ISession, void>;
+
+  /**
+   * A signal emitted when the kernel changes.
+   */
+  kernelChanged: ISignal<ISession, IKernel>;
+
+  /**
+   * A signal emitted when the session status changes.
+   */
+  statusChanged: ISignal<ISession, IKernel.Status>;
+
+  /**
+   * A signal emitted when the session path changes.
+   */
+  pathChanged: ISignal<ISession, string>;
+
+  /**
+   * A signal emitted for iopub kernel messages.
+   */
+  iopubMessage: ISignal<ISession, KernelMessage.IIopub>;
+
+  /**
+   * A signal emitted for unhandled kernel message.
+   */
+  unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
+
+  /**
+   * Unique id of the session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  id: string;
+
+  /**
+   * The path associated with the session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  path: string;
+
+  /**
+   * The kernel.
+   *
+   * #### Notes
+   * This is a read-only property, and can be altered by [changeKernel].
+   * Use the [statusChanged] and [unhandledMessage] signals on the session
+   * instead of the ones on the kernel.
+   */
+  kernel: IKernel;
+
+  /**
+   * The current status of the session.
+   *
+   * #### Notes
+   * This is a read-only property, and is a delegate to the kernel status.
+   */
+  status: IKernel.Status;
+
+  /**
+   * Optional default settings for ajax requests, if applicable.
+   */
+  ajaxSettings?: IAjaxSettings;
+
+  /**
+   * Change the session path.
+   *
+   * @param path - The new session path.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  rename(path: string): Promise<void>;
+
+  /**
+   * Change the kernel.
+   *
+   * @params options - The name or id of the new kernel.
+   *
+   * #### Notes
+   * This shuts down the existing kernel and creates a new kernel,
+   * keeping the existing session ID and path.
+   */
+  changeKernel(options: IKernel.IModel): Promise<IKernel>;
+
+  /**
+   * Kill the kernel and shutdown the session.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  shutdown(): Promise<void>;
+}
 
 
 /**
  * A namespace for session interfaces.
  */
 export
-namespace session {
-  /**
-   * Interface of a session object.
-   */
-  export
-  interface ISession extends IDisposable {
-    /**
-     * A signal emitted when the session is shut down.
-     */
-    sessionDied: ISignal<ISession, void>;
-
-    /**
-     * A signal emitted when the kernel changes.
-     */
-    kernelChanged: ISignal<ISession, IKernel>;
-
-    /**
-     * A signal emitted when the session status changes.
-     */
-    statusChanged: ISignal<ISession, Kernel.Status>;
-
-    /**
-     * A signal emitted when the session path changes.
-     */
-    pathChanged: ISignal<ISession, string>;
-
-    /**
-     * A signal emitted for iopub kernel messages.
-     */
-    iopubMessage: ISignal<ISession, KernelMessage.IIopub>;
-
-    /**
-     * A signal emitted for unhandled kernel message.
-     */
-    unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
-
-    /**
-     * Unique id of the session.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    id: string;
-
-    /**
-     * The path associated with the session.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    path: string;
-
-    /**
-     * The kernel.
-     *
-     * #### Notes
-     * This is a read-only property, and can be altered by [changeKernel].
-     * Use the [statusChanged] and [unhandledMessage] signals on the session
-     * instead of the ones on the kernel.
-     */
-    kernel: IKernel;
-
-    /**
-     * The current status of the session.
-     *
-     * #### Notes
-     * This is a read-only property, and is a delegate to the kernel status.
-     */
-    status: Kernel.Status;
-
-    /**
-     * Optional default settings for ajax requests, if applicable.
-     */
-    ajaxSettings?: IAjaxSettings;
-
-    /**
-     * Change the session path.
-     *
-     * @param path - The new session path.
-     *
-     * #### Notes
-     * This uses the Jupyter REST API, and the response is validated.
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     */
-    rename(path: string): Promise<void>;
-
-    /**
-     * Change the kernel.
-     *
-     * @params options - The name or id of the new kernel.
-     *
-     * #### Notes
-     * This shuts down the existing kernel and creates a new kernel,
-     * keeping the existing session ID and path.
-     */
-    changeKernel(options: Kernel.IModel): Promise<IKernel>;
-
-    /**
-     * Kill the kernel and shutdown the session.
-     *
-     * #### Notes
-     * This uses the Jupyter REST API, and the response is validated.
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     */
-    shutdown(): Promise<void>;
-  }
-
+namespace ISession {
   /**
    * The session initialization options.
    */
@@ -184,12 +185,12 @@ namespace session {
     /**
      * Get the available kernel specs.
      */
-    getSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
+    getSpecs(options?: IOptions): Promise<IKernel.ISpecModels>;
 
     /*
      * Get the running sessions.
      */
-    listRunning(options?: IOptions): Promise<Kernel.IModel[]>;
+    listRunning(options?: IOptions): Promise<IKernel.IModel[]>;
 
     /**
      * Start a new session.
@@ -228,6 +229,6 @@ namespace session {
     notebook: {
       path: string;
     };
-    kernel: Kernel.IModel;
+    kernel: IKernel.IModel;
   }
 }

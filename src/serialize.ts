@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  kernel
+  KernelMessage
 } from './ikernel';
 
 
@@ -14,8 +14,8 @@ import {
  * Handles JSON blob strings and binary messages.
  */
 export
-function deserialize(data: ArrayBuffer | string): kernel.IMessage {
-  let value: kernel.IMessage;
+function deserialize(data: ArrayBuffer | string): KernelMessage.IMessage {
+  let value: KernelMessage.IMessage;
   if (typeof data === 'string') {
     value = JSON.parse(data);
   } else {
@@ -33,7 +33,7 @@ function deserialize(data: ArrayBuffer | string): kernel.IMessage {
  * otherwise the message is converted to a JSON string.
  */
 export
-function serialize(msg: kernel.IMessage): string | ArrayBuffer {
+function serialize(msg: KernelMessage.IMessage): string | ArrayBuffer {
   let value: string | ArrayBuffer;
   if (msg.buffers && msg.buffers.length) {
     value = serializeBinary(msg);
@@ -47,7 +47,7 @@ function serialize(msg: kernel.IMessage): string | ArrayBuffer {
 /**
  * Deserialize a binary message to a Kernel Message.
  */
-function deserializeBinary(buf: ArrayBuffer): kernel.IMessage {
+function deserializeBinary(buf: ArrayBuffer): KernelMessage.IMessage {
   let data = new DataView(buf);
   // read the header: 1 + nbufs 32b integers
   let nbufs = data.getUint32(0);
@@ -76,7 +76,7 @@ function deserializeBinary(buf: ArrayBuffer): kernel.IMessage {
  *
  * Serialize Kernel message to ArrayBuffer.
  */
-function serializeBinary(msg: kernel.IMessage): ArrayBuffer {
+function serializeBinary(msg: KernelMessage.IMessage): ArrayBuffer {
   let offsets: number[] = [];
   let buffers: ArrayBuffer[] = [];
   let encoder = new TextEncoder('utf8');

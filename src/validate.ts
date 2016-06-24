@@ -7,15 +7,11 @@ import {
 } from './contents';
 
 import {
-  kernel
+  IKernel, KernelMessage
 } from './ikernel';
 
 import {
-  JSONObject
-} from './json';
-
-import {
-  session
+  ISession
 } from './isession';
 
 /**
@@ -75,7 +71,7 @@ function validateProperty(object: any, name: string, typeName?: string): void {
 /**
  * Validate the header of a kernel message.
  */
-function validateKernelHeader(header: kernel.IMessageHeader): void {
+function validateKernelHeader(header: KernelMessage.IHeader): void {
   for (let i = 0; i < HEADER_FIELDS.length; i++) {
     validateProperty(header, HEADER_FIELDS[i], 'string');
   }
@@ -86,25 +82,25 @@ function validateKernelHeader(header: kernel.IMessageHeader): void {
  * Validate a kernel message object.
  */
 export
-function validateKernelMessage(msg: kernel.IMessage) : void {
+function validateKernelMessage(msg: KernelMessage.IMessage) : void {
   validateProperty(msg, 'metadata', 'object');
   validateProperty(msg, 'content', 'object');
   validateProperty(msg, 'channel', 'string');
   validateProperty(msg, 'buffers', 'array');
   validateKernelHeader(msg.header);
   if (Object.keys(msg.parent_header).length > 0) {
-    validateKernelHeader(msg.parent_header as kernel.IMessageHeader);
+    validateKernelHeader(msg.parent_header as KernelMessage.IHeader);
   }
   if (msg.channel === 'iopub') {
-    validateIOPubContent(msg as kernel.IIOPubMessage);
+    validateIOPubContent(msg as KernelMessage.IIopub);
   }
 }
 
 
 /**
- * Validate content of an kernel.IMessage on the iopub channel.
+ * Validate content an kernel message on the iopub channel.
  */
-function validateIOPubContent(msg: kernel.IIOPubMessage) : void {
+function validateIOPubContent(msg: KernelMessage.IIopub) : void {
   if (msg.channel === 'iopub') {
     let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
     if (fields === void 0) {
@@ -120,20 +116,20 @@ function validateIOPubContent(msg: kernel.IIOPubMessage) : void {
 
 
 /**
- * Validate an `kernel.IModel` object.
+ * Validate an `IKernel.IModel` object.
  */
 export
-function validateKernelModel(model: kernel.IModel) : void {
+function validateKernelModel(model: IKernel.IModel) : void {
   validateProperty(model, 'name', 'string');
   validateProperty(model, 'id', 'string');
 }
 
 
 /**
- * Validate an `session.IModel` object.
+ * Validate an `ISession.IModel` object.
  */
 export
-function validateSessionModel(model: session.IModel): void {
+function validateSessionModel(model: ISession.IModel): void {
   validateProperty(model, 'id', 'string');
   validateProperty(model, 'notebook', 'object');
   validateProperty(model, 'kernel', 'object');
@@ -143,10 +139,10 @@ function validateSessionModel(model: session.IModel): void {
 
 
 /**
- * Validate an `kernel.ISpecModel` object.
+ * Validate an `IKernel.ISpecModel` object.
  */
  export
-function validateKernelSpecModel(info: kernel.ISpecModel): void {
+function validateKernelSpecModel(info: IKernel.ISpecModel): void {
   validateProperty(info, 'name', 'string');
   validateProperty(info, 'spec', 'object');
   validateProperty(info, 'resources', 'object');
