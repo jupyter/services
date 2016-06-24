@@ -866,15 +866,23 @@ namespace KernelMessage {
    */
   export
   interface IInfoReplyMsg extends IShellMessage {
-    content: {
-      [ key: string ]: JSONValue;
-      protocol_version: string;
-      implementation: string;
-      implementation_version: string;
-      language_info: ILanguageInfo;
-      banner: string;
-      help_links: { [key: string]: string; };
-    };
+    content: IInfoReply;
+  }
+
+  /**
+   * The kernel info content.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+   */
+  export
+  interface IInfoReply extends JSONObject {
+    [ key: string ]: JSONValue;
+    protocol_version: string;
+    implementation: string;
+    implementation_version: string;
+    language_info: ILanguageInfo;
+    banner: string;
+    help_links: { [key: string]: string; };
   }
 
   /**
@@ -895,7 +903,7 @@ namespace KernelMessage {
   }
 
   /**
-   * The contents of a  `'complete_request'` message.
+   * The content of a  `'complete_request'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
    *
@@ -928,7 +936,7 @@ namespace KernelMessage {
   }
 
   /**
-   * The contents of an `'inspect_request'` message.
+   * The content of an `'inspect_request'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
    *
@@ -961,7 +969,7 @@ namespace KernelMessage {
   }
 
   /**
-   * The contents of a `'history_request'` message.
+   * The content of a `'history_request'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
    *
@@ -1003,7 +1011,7 @@ namespace KernelMessage {
   type HistAccess = 'range' | 'tail' | 'search';
 
   /**
-   * The contents of an `'is_complete_request'` message.
+   * The content of an `'is_complete_request'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
    *

@@ -7,11 +7,11 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  INotebookSession
+  ISession
 } from './isession';
 
 import {
-  KernelStatus, IKernel, IKernelId, IKernelMessage
+  IKernel, KernelMessage
 } from './ikernel';
 
 import {
@@ -20,17 +20,17 @@ import {
 
 
 /**
- * A mock notebook session object that uses a mock kernel by default.
+ * A mock session object that uses a mock kernel by default.
  */
 export
-class MockSession implements INotebookSession {
+class MockSession implements ISession {
 
   id: string;
-  notebookPath: string;
+  path: string;
   ajaxSettings: IAjaxSettings = {};
 
   constructor(path: string, kernel?: IKernel) {
-    this.notebookPath = path;
+    this.path = path;
     this._kernel = kernel || new MockKernel();
     this._kernel.statusChanged.connect(this.onKernelStatus, this);
     this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
@@ -39,43 +39,43 @@ class MockSession implements INotebookSession {
   /**
    * A signal emitted when the session dies.
    */
-  get sessionDied(): ISignal<INotebookSession, void> {
+  get sessionDied(): ISignal<ISession, void> {
     return Private.sessionDiedSignal.bind(this);
   }
 
   /**
    * A signal emitted when the kernel changes.
    */
-  get kernelChanged(): ISignal<INotebookSession, IKernel> {
+  get kernelChanged(): ISignal<ISession, IKernel> {
     return Private.kernelChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<INotebookSession, KernelStatus> {
+  get statusChanged(): ISignal<ISession, IKernel.Status> {
     return Private.statusChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted for a kernel messages.
    */
-  get iopubMessage(): ISignal<INotebookSession, IKernelMessage> {
+  get iopubMessage(): ISignal<ISession, KernelMessage.IIOPubMessage> {
     return Private.iopubMessageSignal.bind(this);
   }
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<INotebookSession, IKernelMessage> {
+  get unhandledMessage(): ISignal<ISession, KernelMessage.IMessage> {
     return Private.unhandledMessageSignal.bind(this);
   }
 
   /**
-   * A signal emitted when the notebook path changes.
+   * A signal emitted when the session path changes.
    */
-  get notebookPathChanged(): ISignal<INotebookSession, string> {
-    return Private.notebookPathChangedSignal.bind(this);
+  get pathChanged(): ISignal<ISession, string> {
+    return Private.pathChangedSignal.bind(this);
   }
 
   /**
@@ -88,7 +88,7 @@ class MockSession implements INotebookSession {
   /**
    * The current status of the session.
    */
-  get status(): KernelStatus {
+  get status(): IKernel.Status {
     return this._kernel.status;
   }
 
@@ -110,17 +110,17 @@ class MockSession implements INotebookSession {
   }
 
   /**
-   * Rename or move a notebook.
+   * Rename or move the session.
    */
-  renameNotebook(path: string): Promise<void> {
-    this.notebookPath = path;
+  rename(path: string): Promise<void> {
+    this.path = path;
     return Promise.resolve(void 0);
   }
 
   /**
    * Change the kernel.
    */
-  changeKernel(options: IKernelId): Promise<IKernel> {
+  changeKernel(options: IKernel.IModel): Promise<IKernel> {
     this._kernel.dispose();
     this._kernel = new MockKernel(options);
     this.kernelChanged.emit(this._kernel);
@@ -140,14 +140,14 @@ class MockSession implements INotebookSession {
   /**
    * Handle to changes in the Kernel status.
    */
-  protected onKernelStatus(sender: IKernel, state: KernelStatus) {
+  protected onKernelStatus(sender: IKernel, state: IKernel.Status) {
     this.statusChanged.emit(state);
   }
 
   /**
    * Handle unhandled kernel messages.
    */
-  protected onUnhandledMessage(sender: IKernel, msg: IKernelMessage) {
+  protected onUnhandledMessage(sender: IKernel, msg: KernelMessage.IMessage) {
     this.unhandledMessage.emit(msg);
   }
 
@@ -164,36 +164,35 @@ namespace Private {
    * A signal emitted when the session is shut down.
    */
   export
-  const sessionDiedSignal = new Signal<INotebookSession, void>();
+  const sessionDiedSignal = new Signal<ISession, void>();
 
   /**
    * A signal emitted when the kernel changes.
    */
   export
-  const kernelChangedSignal = new Signal<INotebookSession, IKernel>();
+  const kernelChangedSignal = new Signal<ISession, IKernel>();
 
   /**
    * A signal emitted when the session kernel status changes.
    */
   export
-  const statusChangedSignal = new Signal<INotebookSession, KernelStatus>();
+  const statusChangedSignal = new Signal<ISession, IKernel.Status>();
 
   /**
    * A signal emitted for iopub kernel messages.
    */
   export
-  const iopubMessageSignal = new Signal<INotebookSession, IKernelMessage>();
+  const iopubMessageSignal = new Signal<ISession, KernelMessage.IIOPubMessage>();
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
   export
-  const unhandledMessageSignal = new Signal<INotebookSession, IKernelMessage>();
+  const unhandledMessageSignal = new Signal<ISession, KernelMessage.IMessage>();
 
   /**
-   * A signal emitted when the notebook path changes.
+   * A signal emitted when the session path changes.
    */
   export
-  const notebookPathChangedSignal = new Signal<INotebookSession, string>();
-
+  const pathChangedSignal = new Signal<ISession, string>();
 }
