@@ -15,7 +15,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  kernel
+  IKernel, Kernel, KernelMessage
 } from './ikernel';
 
 
@@ -37,12 +37,12 @@ namespace session {
     /**
      * A signal emitted when the kernel changes.
      */
-    kernelChanged: ISignal<ISession, kernel.IKernel>;
+    kernelChanged: ISignal<ISession, IKernel>;
 
     /**
      * A signal emitted when the session status changes.
      */
-    statusChanged: ISignal<ISession, kernel.Status>;
+    statusChanged: ISignal<ISession, Kernel.Status>;
 
     /**
      * A signal emitted when the session path changes.
@@ -52,12 +52,12 @@ namespace session {
     /**
      * A signal emitted for iopub kernel messages.
      */
-    iopubMessage: ISignal<ISession, kernel.IIOPubMessage>;
+    iopubMessage: ISignal<ISession, KernelMessage.IIopub>;
 
     /**
      * A signal emitted for unhandled kernel message.
      */
-    unhandledMessage: ISignal<ISession, kernel.IMessage>;
+    unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
 
     /**
      * Unique id of the session.
@@ -83,7 +83,7 @@ namespace session {
      * Use the [statusChanged] and [unhandledMessage] signals on the session
      * instead of the ones on the kernel.
      */
-    kernel: kernel.IKernel;
+    kernel: IKernel;
 
     /**
      * The current status of the session.
@@ -91,7 +91,7 @@ namespace session {
      * #### Notes
      * This is a read-only property, and is a delegate to the kernel status.
      */
-    status: kernel.Status;
+    status: Kernel.Status;
 
     /**
      * Optional default settings for ajax requests, if applicable.
@@ -118,7 +118,7 @@ namespace session {
      * This shuts down the existing kernel and creates a new kernel,
      * keeping the existing session ID and path.
      */
-    changeKernel(options: kernel.IModel): Promise<kernel.IKernel>;
+    changeKernel(options: Kernel.IModel): Promise<IKernel>;
 
     /**
      * Kill the kernel and shutdown the session.
@@ -184,12 +184,12 @@ namespace session {
     /**
      * Get the available kernel specs.
      */
-    getSpecs(options?: IOptions): Promise<kernel.ISpecModels>;
+    getSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
 
     /*
      * Get the running sessions.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    listRunning(options?: IOptions): Promise<Kernel.IModel[]>;
 
     /**
      * Start a new session.
@@ -228,6 +228,6 @@ namespace session {
     notebook: {
       path: string;
     };
-    kernel: kernel.IModel;
+    kernel: Kernel.IModel;
   }
 }
