@@ -1074,8 +1074,8 @@ namespace KernelMessage {
     store_history?: boolean;
 
     /**
-     * A  mapping of names to expressions to be evaluated in the
-     *  user's dict.
+     * A mapping of names to expressions to be evaluated in the
+     * user's dict.
      */
     user_expressions?: JSONObject;
 
@@ -1086,7 +1086,7 @@ namespace KernelMessage {
     allow_stdin?: boolean;
 
     /**
-     * Whether to the execution queue abort on an error
+     * Whether to the abort execution queue on an error.
      * The default is `false`.
      */
     stop_on_error?: boolean;
