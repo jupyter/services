@@ -31,6 +31,62 @@ import {
 
 
 /**
+ * The default kernel spec models.
+ */
+export
+const KERNELSPECS: IKernel.ISpecModels = {
+  default: 'python',
+  kernelspecs: {
+    python: {
+      name: 'python',
+      spec: {
+        language: 'python',
+        argv: [],
+        display_name: 'Python',
+        env: {}
+      },
+      resources: {}
+    },
+    shell: {
+      name: 'shell',
+      spec: {
+        language: 'shell',
+        argv: [],
+        display_name: 'Shell',
+        env: {}
+      },
+      resources: {}
+    }
+  }
+};
+
+
+/**
+ * The default language infos.
+ */
+const LANGUAGE_INFOS: { [key: string]: KernelMessage.ILanguageInfo } = {
+  python: {
+    name: 'python',
+    version: '1',
+    mimetype: 'text/x-python',
+    file_extension: '.py',
+    pygments_lexer: 'python',
+    codemirror_mode: 'python',
+    nbconverter_exporter: ''
+  },
+  shell: {
+    name: 'shell',
+    version: '1',
+    mimetype: 'text/x-sh',
+    file_extension: '.sh',
+    pygments_lexer: 'shell',
+    codemirror_mode: 'shell',
+    nbconverter_exporter: ''
+  }
+};
+
+
+/**
  * A mock kernel object.
  * It only keeps one kernel future at a time.
  */
@@ -46,6 +102,19 @@ class MockKernel implements IKernel {
     options = options || {};
     this.id = options.id || '';
     this.name = options.name || 'python';
+    let name = this.name;
+    if (!(name in KERNELSPECS.kernelspecs)) {
+      name = 'python';
+    }
+    this._kernelspec = KERNELSPECS.kernelspecs[name].spec;
+    this._kernelInfo = {
+      protocol_version: '1',
+      implementation: 'foo',
+      implementation_version: '1',
+      language_info: LANGUAGE_INFOS[name],
+      banner: 'Hello',
+      help_links: {}
+    };
     Promise.resolve().then(() => {
       this._changeStatus('idle');
     });
@@ -179,13 +248,6 @@ class MockKernel implements IKernel {
   }
 
   /**
-   * Set the kernel info for the mock kernel.
-   */
-  setKernelInfo(value: KernelMessage.IInfoReply): void {
-    this._kernelInfo = value;
-  }
-
-  /**
    * Send a `complete_request` message.
    */
   complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
@@ -288,13 +350,6 @@ class MockKernel implements IKernel {
    */
   getKernelSpec(): Promise<IKernel.ISpec> {
     return Promise.resolve(this._kernelspec);
-  }
-
-  /**
-   * Set the kernel spec associated with the kernel.
-   */
-  setKernelSpec(value: IKernel.ISpec): void {
-    this._kernelspec = value;
   }
 
   private _sendKernelMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): Promise<KernelMessage.IShellMessage> {
