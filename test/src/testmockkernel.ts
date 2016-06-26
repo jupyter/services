@@ -75,7 +75,10 @@ describe('mockkernel', () => {
       it('should execute the code on the mock kernel', (done) => {
         let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1'});
-        future.onDone = () => { done(); };
+        future.onReply = (reply: KernelMessage.IExecuteOkReplyMsg) => {
+          expect(reply.content.status).to.be('ok');
+          done();
+        };
       });
 
       it('should emit one iopub stream message', (done) => {

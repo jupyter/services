@@ -307,8 +307,9 @@ class MockKernel implements IKernel {
       });
       this.sendServerMessage('execute_reply', 'shell', {
         execution_count: ++this._executionCount,
-        data: {},
-        metadata: {}
+        status: 'ok',
+        user_expressions: {},
+        payload: {}
       });
     });
     return future;
