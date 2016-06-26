@@ -98,8 +98,10 @@ class MockKernel implements IKernel {
   username = '';
   clientId = '';
 
-  constructor(options?: IKernel.IModel) {
-    options = options || {};
+  /**
+   * Construct a new mock kernel.
+   */
+  constructor(options: IKernel.IModel = {}) {
     this.id = options.id || '';
     this.name = options.name || 'python';
     let name = this.name;
@@ -234,7 +236,7 @@ class MockKernel implements IKernel {
   }
 
   /**
-   * Send a `kernel_info_request` message.
+   * Get the kernel info.
    */
   kernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
