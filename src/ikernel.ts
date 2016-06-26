@@ -211,7 +211,7 @@ interface IKernel extends IDisposable {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(options: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): IKernel.IFuture;
+  execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): IKernel.IFuture;
 
   /**
    * Send an `is_complete_request` message.
