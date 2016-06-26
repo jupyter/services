@@ -1116,9 +1116,9 @@ namespace KernelMessage {
   export
   interface IExecuteOkReplyMsg extends IExecuteReplyMsg {
     /**
-     * A list of payload objects, and is optional.
+     * A list of payload objects.
      * Payloads are considered deprecated.
-     * The only requirement of each payload dict is that it have a 'source'
+     * The only requirement of each payload object is that it have a 'source'
      * key, which is a string classifying the payload (e.g. 'page').
      */
     payload?: JSONObject[];
