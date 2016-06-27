@@ -287,7 +287,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
       return Promise.resolve(kernel.clone());
     }
   }
-  return Private.getKernelModel(id, options).then(model => {
+  return Private.getKernelModel(utils.urlJoinEncode(id), options).then(model => {
     return new Kernel(options, id);
   }).catch(() => {
     return Private.typedThrow<IKernel.IModel>(`No running kernel with id: ${id}`);
