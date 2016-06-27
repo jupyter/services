@@ -41,7 +41,7 @@ const SESSION_SERVICE_URL = 'api/sessions';
 export
 class SessionManager implements ISession.IManager {
   /**
-   * Construct a new notebook session manager.
+   * Construct a new session manager.
    *
    * @param options - The default options for each session.
    */
@@ -85,7 +85,7 @@ class SessionManager implements ISession.IManager {
   }
 
   /**
-   * Find a session by notebook path.
+   * Find a session by path.
    */
   findByPath(path: string, options?: ISession.IOptions): Promise<ISession.IModel> {
     return findSessionByPath(path, this._getOptions(options));
@@ -155,7 +155,7 @@ function listRunningSessions(options?: ISession.IOptions): Promise<ISession.IMod
  * #### Notes
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
  *
- * A notebook path must be provided.  If a kernel id is given, it will
+ * A path must be provided.  If a kernel id is given, it will
  * connect to an existing kernel.  If no kernel id or name is given,
  * the server will start the default kernel type.
  *
@@ -168,7 +168,7 @@ function listRunningSessions(options?: ISession.IOptions): Promise<ISession.IMod
 export
 function startNewSession(options: ISession.IOptions): Promise<ISession> {
   if (options.path === void 0) {
-    return Promise.reject(new Error('Must specify a notebook path'));
+    return Promise.reject(new Error('Must specify a path'));
   }
   return Private.startSession(options).then(model => {
     return Private.createSession(model, options);
@@ -368,7 +368,7 @@ class Session implements ISession {
   }
 
   /**
-   * Get the notebook path.
+   * Get the session path.
    *
    * #### Notes
    * This is a read-only property.
@@ -488,7 +488,7 @@ class Session implements ISession {
    *
    * #### Notes
    * This shuts down the existing kernel and creates a new kernel,
-   * keeping the existing session ID and notebook path.
+   * keeping the existing session ID and session path.
    */
   changeKernel(options: IKernel.IModel): Promise<IKernel> {
     if (this.isDisposed) {
@@ -578,7 +578,7 @@ class Session implements ISession {
   }
 
   /**
-   * Send a PATCH to the server, updating the notebook path or the kernel.
+   * Send a PATCH to the server, updating the session path or the kernel.
    */
   private _patch(data: string): Promise<ISession.IModel> {
     let ajaxSettings = this.ajaxSettings;
@@ -615,7 +615,7 @@ class Session implements ISession {
 
 
 /**
- * A namespace for notebook session private data.
+ * A namespace for session private data.
  */
 namespace Private {
   /**
@@ -662,7 +662,7 @@ namespace Private {
 
   /**
    * Create a new session, or return an existing session if a session if
-   * the notebook path already exists
+   * the session path already exists
    */
   export
   function startSession(options: ISession.IOptions): Promise<ISession.IModel> {
