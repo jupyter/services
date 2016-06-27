@@ -234,6 +234,19 @@ class MockKernel implements IKernel {
     });
   }
 
+
+  /**
+   * Reconnect to a disconnected kernel. This is not actually a
+   * standard HTTP request, but useful function nonetheless for
+   * reconnecting to the kernel if the connection is somehow lost.
+   */
+  reconnect(): Promise<void> {
+    this._changeStatus('reconnecting');
+    return Promise.resolve().then(() => {
+      this._changeStatus('idle');
+    });
+  }
+
   /**
    * Shutdown a kernel.
    */
