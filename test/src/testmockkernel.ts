@@ -9,7 +9,7 @@ import {
 } from '../../lib/ikernel';
 
 import {
-  MockKernel
+  MockKernel, ERROR_INPUT
 } from '../../lib/mockkernel';
 
 
@@ -75,7 +75,7 @@ describe('mockkernel', () => {
       it('should execute the code on the mock kernel', (done) => {
         let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1'});
-        future.onReply = (reply: KernelMessage.IExecuteOkReplyMsg) => {
+        future.onReply = (reply: any) => {
           expect(reply.content.status).to.be('ok');
           done();
         };
@@ -121,6 +121,22 @@ describe('mockkernel', () => {
         };
         future1.onDone = () => {
           expect(called).to.be(true);
+          done();
+        };
+      });
+
+      it('should error remaining executes if `stop_on_error` and an error occurs', (done) => {
+        let kernel = new MockKernel();
+        let future0 = kernel.execute({ code: ERROR_INPUT, stop_on_error: true });
+        let future1 = kernel.execute({ code: 'b = 2' });
+        let called = false;
+        future0.onReply = (reply: any) => {
+          expect(reply.content.status).to.be('error');
+          called = true;
+        };
+        future1.onReply = (reply: any) => {
+          expect(called).to.be(true);
+          expect(reply.content.status).to.be('error');
           done();
         };
       });
