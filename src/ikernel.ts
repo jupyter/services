@@ -1068,14 +1068,14 @@ namespace KernelMessage {
 
     /**
      * Whether to store history of the execution.
-     * The default `true` is silent is False.
-     * It is forced to  `false `if silent is `true`.
+     * The default `true` if silent is False.
+     * It is forced to  `false ` if silent is `true`.
      */
     store_history?: boolean;
 
     /**
      * A mapping of names to expressions to be evaluated in the
-     * user's dict.
+     * kernel's interactive namespace.
      */
     user_expressions?: JSONObject;
 
