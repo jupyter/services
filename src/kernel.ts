@@ -1273,9 +1273,11 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
     };
     let msg = createShellMessage(options, content, metadata);
     let future = this._kernel.sendShellMessage(msg, false, true);
+    options.channel = 'iopub';
+    let ioMsg = createKernelMessage(options, content, metadata);
     let onClose = this._onClose;
     if (onClose) {
-      onClose(future.msg as KernelMessage.ICommCloseMsg);
+      onClose(ioMsg as KernelMessage.ICommCloseMsg);
     }
     this.dispose();
     return future;

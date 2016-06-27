@@ -62,6 +62,13 @@ const KERNELSPECS: IKernel.ISpecModels = {
 
 
 /**
+ * The code input to trigger an error.
+ */
+export
+const ERROR_INPUT = 'trigger execute error';
+
+
+/**
  * The default language infos.
  */
 const LANGUAGE_INFOS: { [key: string]: KernelMessage.ILanguageInfo } = {
@@ -88,7 +95,6 @@ const LANGUAGE_INFOS: { [key: string]: KernelMessage.ILanguageInfo } = {
 
 /**
  * A mock kernel object.
- * It only keeps one kernel future at a time.
  */
 export
 class MockKernel implements IKernel {
@@ -171,32 +177,41 @@ class MockKernel implements IKernel {
    * Send a shell message to the kernel.
    */
   sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): IKernel.IFuture {
-    let future = new KernelFutureHandler(() => {}, msg, expectReply, disposeOnDone);
-    this._future = future;
+    let future = new KernelFutureHandler(() => {
+      delete this._futures[msg.header.msg_id];
+    }, msg, expectReply, disposeOnDone);
+    this._futures[msg.header.msg_id] = future;
     return future;
   }
 
   /**
    * Send a message to the kernel.
    */
-  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): void {
-    let future = this._future;
+  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, parentMsg: KernelMessage.IMessage): void {
+    let future = this._futures[parentMsg.header.msg_id];
     if (!future) {
       return;
     }
-    this._sendServerMessage(msgType, channel, content, future);
+    let options: KernelMessage.IOptions = {
+      msgType,
+      channel,
+      username: this.username,
+      session: this.clientId
+    };
+    let msg = createKernelMessage(options, content);
+    future.handleMsg(msg);
   }
 
   /**
    * Send a shell reply message to the kernel.
    */
-  sendShellReply(content: JSONObject): void {
-    let future = this._future;
+  sendShellReply(content: JSONObject, parentMsg: KernelMessage.IShellMessage): void {
+    let future = this._futures[parentMsg.header.msg_id];
     if (!future) {
       return;
     }
     let msgType = future.msg.header.msg_type.replace('_request', '_reply');
-    this.sendServerMessage(msgType, 'shell', content);
+    this.sendServerMessage(msgType, 'shell', content, future.msg);
   }
 
   /**
@@ -268,7 +283,8 @@ class MockKernel implements IKernel {
    * Send an `execute_request` message.
    *
    * #### Notes
-   * This simulatates an actual exection on the server.
+   * This simulates an actual exection on the server.
+   * Use `ERROR_INPUT` to simulate an input error.
    */
   execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): IKernel.IFuture {
     let options: KernelMessage.IOptions = {
@@ -286,26 +302,44 @@ class MockKernel implements IKernel {
     };
     content = utils.extend(defaults, content);
     let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
-    this.sendShellMessage(msg, true, disposeOnDone);
-    let future = this._future;
+    let future = this.sendShellMessage(msg, true, disposeOnDone);
+    let parentMsg = future.msg;
     let count = ++this._executionCount;
+
+    // Delay sending the message so the handlers can be set up.
     Promise.resolve(void 0).then(() => {
-      this._sendServerMessage('status', 'iopub', {
+      // Send a typical stream of messages.
+      this.sendServerMessage('status', 'iopub', {
         execution_state: 'busy'
-      }, future);
-      this._sendServerMessage('stream', 'iopub', {
+      }, parentMsg);
+      this.sendServerMessage('stream', 'iopub', {
         name: 'stdout',
         text: 'foo'
-      }, future);
-      this._sendServerMessage('status', 'iopub', {
+      }, parentMsg);
+      this.sendServerMessage('status', 'iopub', {
         execution_state: 'idle'
-      }, future);
-      this._sendServerMessage('execute_reply', 'shell', {
-        execution_count: count,
-        status: 'ok',
-        user_expressions: {},
-        payload: {}
-      }, future);
+      }, parentMsg);
+      // Handle an explicit error.
+      if (content.code === ERROR_INPUT) {
+        this.sendShellReply({
+          execution_count: count,
+          status: 'error',
+          ename: 'mock',
+          evalue: ERROR_INPUT,
+          traceback: []
+        }, parentMsg);
+        // Cancel remaining executes if necessary.
+        if (content.stop_on_error) {
+          this._handleStop();
+        }
+      } else {
+        this.sendShellReply({
+          execution_count: count,
+          status: 'ok',
+          user_expressions: {},
+          payload: {}
+        }, parentMsg);
+      }
     });
     return future;
   }
@@ -350,6 +384,9 @@ class MockKernel implements IKernel {
     return Promise.resolve(this._kernelspec);
   }
 
+  /**
+   * Send a messaage to the mock kernel.
+   */
   private _sendKernelMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): Promise<KernelMessage.IShellMessage> {
     let options: KernelMessage.IOptions = {
       msgType,
@@ -371,6 +408,31 @@ class MockKernel implements IKernel {
     });
   }
 
+  /**
+   * Handle a `stop_on_error` error event.
+   */
+  private _handleStop(): void {
+    // Trigger immediate errors on remaining execute messages.
+    for (let id in this._futures) {
+      let future = this._futures[id];
+      if (future.msg.header.msg_type === 'execute_request') {
+        this.sendServerMessage('status', 'iopub', {
+          execution_state: 'idle'
+        }, future.msg);
+        this.sendShellReply({
+          execution_count: null,
+          status: 'error',
+          ename: 'mock',
+          evalue: ERROR_INPUT,
+          traceback: []
+        }, future.msg as KernelMessage.IShellMessage);
+      }
+    }
+  }
+
+  /**
+   * Change the status of the mock kernel.
+   */
   private _changeStatus(status: IKernel.Status): void {
     if (this._status === status) {
       return;
@@ -379,23 +441,9 @@ class MockKernel implements IKernel {
     this.statusChanged.emit(status);
   }
 
-  /**
-   * Send a message to the kernel.
-   */
-  private _sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, handler: KernelFutureHandler): void {
-    let options: KernelMessage.IOptions = {
-      msgType,
-      channel,
-      username: this.username,
-      session: this.clientId
-    };
-    let msg = createKernelMessage(options, content);
-    handler.handleMsg(msg);
-  }
-
   private _status: IKernel.Status = 'unknown';
   private _isDisposed = false;
-  private _future: KernelFutureHandler = null;
+  private _futures: { [key: string]: KernelFutureHandler } = Object.create(null);
   private _kernelspec: IKernel.ISpec = null;
   private _kernelInfo: KernelMessage.IInfoReply = null;
   private _executionCount = 0;

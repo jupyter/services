@@ -368,7 +368,7 @@ namespace IKernel {
     /**
      * The original outgoing message.
      */
-    msg: KernelMessage.IMessage;
+    msg: KernelMessage.IShellMessage;
 
     /**
      * Test whether the future is done.
