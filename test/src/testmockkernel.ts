@@ -111,6 +111,21 @@ describe('mockkernel', () => {
         };
       });
 
+      it('should allow two executions in a row', (done) => {
+        let kernel = new MockKernel();
+        let future0 = kernel.execute({ code: 'a = 1' });
+        let future1 = kernel.execute({ code: 'b = 2' });
+        let called = false;
+        future0.onDone = () => {
+          called = true;
+        };
+        future1.onDone = () => {
+          expect(called).to.be(true);
+          done();
+        };
+      });
+
+
     });
 
     describe('#getKernelSpec()', () => {

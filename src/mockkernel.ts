@@ -184,14 +184,7 @@ class MockKernel implements IKernel {
     if (!future) {
       return;
     }
-    let options: KernelMessage.IOptions = {
-      msgType,
-      channel,
-      username: this.username,
-      session: this.clientId
-    };
-    let msg = createKernelMessage(options, content);
-    future.handleMsg(msg);
+    this._sendServerMessage(msgType, channel, content, future);
   }
 
   /**
@@ -293,24 +286,26 @@ class MockKernel implements IKernel {
     };
     content = utils.extend(defaults, content);
     let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
-    let future = this.sendShellMessage(msg, true, disposeOnDone);
+    this.sendShellMessage(msg, true, disposeOnDone);
+    let future = this._future;
+    let count = ++this._executionCount;
     Promise.resolve(void 0).then(() => {
-      this.sendServerMessage('status', 'iopub', {
+      this._sendServerMessage('status', 'iopub', {
         execution_state: 'busy'
-      });
-      this.sendServerMessage('stream', 'iopub', {
+      }, future);
+      this._sendServerMessage('stream', 'iopub', {
         name: 'stdout',
         text: 'foo'
-      });
-      this.sendServerMessage('status', 'iopub', {
+      }, future);
+      this._sendServerMessage('status', 'iopub', {
         execution_state: 'idle'
-      });
-      this.sendServerMessage('execute_reply', 'shell', {
-        execution_count: ++this._executionCount,
+      }, future);
+      this._sendServerMessage('execute_reply', 'shell', {
+        execution_count: count,
         status: 'ok',
         user_expressions: {},
         payload: {}
-      });
+      }, future);
     });
     return future;
   }
@@ -382,6 +377,20 @@ class MockKernel implements IKernel {
     }
     this._status = status;
     this.statusChanged.emit(status);
+  }
+
+  /**
+   * Send a message to the kernel.
+   */
+  private _sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, handler: KernelFutureHandler): void {
+    let options: KernelMessage.IOptions = {
+      msgType,
+      channel,
+      username: this.username,
+      session: this.clientId
+    };
+    let msg = createKernelMessage(options, content);
+    handler.handleMsg(msg);
   }
 
   private _status: IKernel.Status = 'unknown';
