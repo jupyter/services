@@ -1047,20 +1047,55 @@ namespace KernelMessage {
    * **See also:** [[IExecuteReply]], [[IKernel.execute]]
    */
   export
-  interface IExecuteRequest extends JSONObject {
-    [ key: string ]: JSONValue;
+  interface IExecuteRequest extends IExecuteOptions {
     code: string;
+  }
+
+  /**
+   * The options used to configure an execute request.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+   */
+  export
+  interface IExecuteOptions extends JSONObject {
+    [ key: string ]: JSONValue;
+
+    /**
+     * Whether to execute the code as quietly as possible.
+     * The default is `false`.
+     */
     silent?: boolean;
+
+    /**
+     * Whether to store history of the execution.
+     * The default `true` if silent is False.
+     * It is forced to  `false ` if silent is `true`.
+     */
     store_history?: boolean;
+
+    /**
+     * A mapping of names to expressions to be evaluated in the
+     * kernel's interactive namespace.
+     */
     user_expressions?: JSONObject;
+
+    /**
+     * Whether to allow stdin requests.
+     * The default is `true`.
+     */
     allow_stdin?: boolean;
+
+    /**
+     * Whether to the abort execution queue on an error.
+     * The default is `false`.
+     */
     stop_on_error?: boolean;
   }
 
   /**
    * An `'execute_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    *
    * **See also:** [[IExecuteRequest]], [[IKernel.execute]]
    */
@@ -1068,10 +1103,53 @@ namespace KernelMessage {
   interface IExecuteReplyMsg extends IShellMessage {
     content: {
       [ key: string ]: JSONValue;
+      status: 'ok' | 'error' | 'abort';
       execution_count: number;
-      data: JSONObject;
-      metadata: JSONObject;
     };
+  }
+
+  /**
+   * An `'execute_reply'` for an `'ok'` status.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   */
+  export
+  interface IExecuteOkReplyMsg extends IExecuteReplyMsg {
+    /**
+     * A list of payload objects.
+     * Payloads are considered deprecated.
+     * The only requirement of each payload object is that it have a 'source'
+     * key, which is a string classifying the payload (e.g. 'page').
+     */
+    payload?: JSONObject[];
+
+    /**
+     * Results for the user_expressions.
+     */
+    user_expressions: JSONObject;
+  }
+
+  /**
+   * An `'execute_reply'` for an `'error'` status.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   */
+  export
+  interface IExecuteErrorReplyMsg extends IExecuteReplyMsg {
+    /**
+     * The exception name.
+     */
+    ename: string;
+
+    /**
+     * The Exception value.
+     */
+    evalue: string;
+
+    /**
+     * A list of traceback frames.
+     */
+    traceback: string[];
   }
 
   /**

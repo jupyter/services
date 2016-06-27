@@ -102,6 +102,9 @@ describe('jupyter.services - Integration', () => {
         }).then(msg => {
           console.log('Got history');
           let future = kernel.execute({ code: 'a = 1\n' });
+          future.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
+            expect(reply.content.status).to.be('ok');
+          };
           future.onDone = () => {
             console.log('Execute finished');
             return kernel.shutdown();
