@@ -557,6 +557,25 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Reconnect to a disconnected kernel.
+   *
+   * #### Notes
+   * Used when the websocket connection to the kernel is lost.
+   */
+  reconnect(): Promise<void> {
+    if (this._ws !== null) {
+      // Clear the websocket event handlers and the socket itself.
+      this._ws.onclose = null;
+      this._ws.onerror = null;
+      this._ws.close();
+      this._ws = null;
+    }
+    this._updateStatus('reconnecting');
+    this._createSocket();
+    return this.kernelInfo().then(() => { return void 0; });
+  }
+
+  /**
    * Shutdown a kernel.
    *
    * #### Notes

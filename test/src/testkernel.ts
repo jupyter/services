@@ -818,6 +818,29 @@ describe('jupyter.services - kernel', () => {
 
     });
 
+    describe('#reconnect()', () => {
+
+      it('should reconnect the websocket', (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          kernel.reconnect().then(() => {
+            done();
+          });
+        });
+      });
+
+      it("should emit a `'reconnecting'` status", (done) => {
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          kernel.reconnect().then(() => {
+            done();
+          });
+          expect(kernel.status).to.be('reconnecting');
+        });
+      });
+
+    });
+
     context('#shutdown()', () => {
 
       it('should shut down and resolve with a valid server response', (done) => {
