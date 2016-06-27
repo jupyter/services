@@ -19,7 +19,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   /**
    * Construct a new KernelFutureHandler.
    */
-  constructor(cb: () => void, msg: KernelMessage.IMessage, expectShell: boolean, disposeOnDone: boolean) {
+  constructor(cb: () => void, msg: KernelMessage.IShellMessage, expectShell: boolean, disposeOnDone: boolean) {
     super(cb);
     this._msg = msg;
     if (!expectShell) {
@@ -31,7 +31,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   /**
    * Get the original outgoing message.
    */
-  get msg(): KernelMessage.IMessage {
+  get msg(): KernelMessage.IShellMessage {
     return this._msg;
   }
 
@@ -180,7 +180,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     this._status |= flag;
   }
 
-  private _msg: KernelMessage.IMessage = null;
+  private _msg: KernelMessage.IShellMessage = null;
   private _status = 0;
   private _stdin: (msg: KernelMessage.IStdinMessage) => void = null;
   private _iopub: (msg: KernelMessage.IIOPubMessage) => void = null;
