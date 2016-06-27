@@ -178,7 +178,7 @@ namespace ISession {
   }
 
   /**
-   * Object which manages notebook session instances.
+   * Object which manages session instances.
    */
   export
   interface IManager {
@@ -190,7 +190,7 @@ namespace ISession {
     /*
      * Get the running sessions.
      */
-    listRunning(options?: IOptions): Promise<IKernel.IModel[]>;
+    listRunning(options?: IOptions): Promise<ISession.IModel[]>;
 
     /**
      * Start a new session.
@@ -203,12 +203,12 @@ namespace ISession {
     findById(id: string, options?: IOptions): Promise<IModel>;
 
     /**
-     * Find a session by notebook path.
+     * Find a session by path.
      */
     findByPath(id: string, options?: IOptions): Promise<IModel>;
 
     /**
-     * Connect to a running notebook session.
+     * Connect to a running session.
      */
     connectTo(id: string, options?: IOptions): Promise<ISession>;
   }
