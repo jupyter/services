@@ -75,6 +75,14 @@ describe('jupyter.services - Integration', () => {
       });
     });
 
+    it('should trigger a reconnect', (done) => {
+      startNewKernel().then(kernel => {
+        kernel.reconnect().then(() => {
+          done();
+        });
+      });
+    });
+
     it('should handle other kernel messages', (done) => {
       startNewKernel().then(kernel => {
         console.log('Kernel started');
