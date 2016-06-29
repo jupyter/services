@@ -199,6 +199,10 @@ class MockKernel implements IKernel {
       session: this.clientId
     };
     let msg = createKernelMessage(options, content);
+    if (msgType === 'status') {
+      let statusMsg = msg as KernelMessage.IStatusMsg;
+      this._changeStatus(statusMsg.content.execution_state);
+    }
     future.handleMsg(msg);
   }
 

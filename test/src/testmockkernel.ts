@@ -85,13 +85,19 @@ describe('mockkernel', () => {
         let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1'});
         let called = 0;
+        let states: string[] = [];
         future.onIOPub = (msg) => {
           if (msg.header.msg_type !== 'status') {
             called++;
+          } else {
+            let statusMsg = msg as KernelMessage.IStatusMsg;
+            expect(kernel.status).to.be(statusMsg.content.execution_state);
+            states.push(kernel.status);
           }
         };
         future.onDone = () => {
           expect(called).to.be(1);
+          expect(states).to.eql(['busy', 'idle']);
           done();
         };
       });
