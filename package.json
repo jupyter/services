@@ -16,8 +16,9 @@
     "requirejs": "^2.2.0",
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
-    "typedoc": "https://github.com/SierraSoftworks/typedoc.git#cb5aea2b218b4f773451e2818a48629ee9c5066e",
+    "typedoc": "^0.4.4",
     "typescript": "^1.8.0",
+    "webpack": "^1.13.1",
     "ws": "^1.0.1",
     "xmlhttprequest": "^1.8.0"
   },
