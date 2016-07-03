@@ -6,7 +6,7 @@
     "jupyter-js-utils": "^0.4.0"
   },
   "scripts": {
-    "build": "tsc && webpack --config webpack.conf.js",
+    "build": "tsc && webpack",
     "clean": "rimraf build && rimraf node_modules",
     "update": "rimraf node_modules/jupyter-js-services && npm install"
   },
