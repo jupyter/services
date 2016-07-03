@@ -5,7 +5,7 @@ module.exports = {
     output: {
         filename: 'index.js',
         path: './dist',
-        library: 'jupyter-js-services',
+        library: ['jupyter', 'services'],
         libraryTarget: 'umd',
         publicPath: 'https://npmcdn.com/jupyter-js-services@' + version + '/dist/'
     },
