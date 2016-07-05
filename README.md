@@ -108,6 +108,8 @@ Follow the package install instructions first.
 
 See `examples/browser` for an example of using Webpack to bundle the library.
 
+Note: Some browsers (such as IE11), require a polyfill for Promises.
+The example demonstrates the use of the polyfill.
 
 Usage from Node.js
 ------------------
