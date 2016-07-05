@@ -171,6 +171,7 @@ class MockKernel implements IKernel {
       return;
     }
     this._isDisposed = true;
+    this._futures = null;
   }
 
   /**
@@ -178,20 +179,19 @@ class MockKernel implements IKernel {
    */
   sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): IKernel.IFuture {
     let future = new KernelFutureHandler(() => {
-      delete this._futures[msg.header.msg_id];
+      let index = this._futures.indexOf(future);
+      if (index !== -1) {
+        this._futures.splice(index, 1);
+      }
     }, msg, expectReply, disposeOnDone);
-    this._futures[msg.header.msg_id] = future;
+    this._futures.push(future);
     return future;
   }
 
   /**
    * Send a message to the kernel.
    */
-  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, parentMsg: KernelMessage.IMessage): void {
-    let future = this._futures[parentMsg.header.msg_id];
-    if (!future) {
-      return;
-    }
+  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, future: IKernel.IFuture): void {
     let options: KernelMessage.IOptions = {
       msgType,
       channel,
@@ -203,19 +203,19 @@ class MockKernel implements IKernel {
       let statusMsg = msg as KernelMessage.IStatusMsg;
       this._changeStatus(statusMsg.content.execution_state);
     }
-    future.handleMsg(msg);
+    (future as KernelFutureHandler).handleMsg(msg);
   }
 
   /**
    * Send a shell reply message to the kernel.
    */
-  sendShellReply(content: JSONObject, parentMsg: KernelMessage.IShellMessage): void {
-    let future = this._futures[parentMsg.header.msg_id];
+  sendShellReply(content: JSONObject): void {
+    let future = this._futures.shift();
     if (!future) {
       return;
     }
     let msgType = future.msg.header.msg_type.replace('_request', '_reply');
-    this.sendServerMessage(msgType, 'shell', content, future.msg);
+    this.sendServerMessage(msgType, 'shell', content, future);
   }
 
   /**
@@ -285,7 +285,7 @@ class MockKernel implements IKernel {
    * Send a `history_request` message.
    */
   history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
-    return this._sendKernelMessage('history', 'shell', content);
+    return this._sendKernelMessage('history_request', 'shell', content);
   }
 
 
@@ -320,22 +320,21 @@ class MockKernel implements IKernel {
     content = utils.extend(defaults, content);
     let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
     let future = this.sendShellMessage(msg, true, disposeOnDone);
-    let parentMsg = future.msg;
     let count = ++this._executionCount;
 
     // Delay sending the message so the handlers can be set up.
-    Promise.resolve(void 0).then(() => {
+    setTimeout(() => {
       // Send a typical stream of messages.
       this.sendServerMessage('status', 'iopub', {
         execution_state: 'busy'
-      }, parentMsg);
+      }, future);
       this.sendServerMessage('stream', 'iopub', {
         name: 'stdout',
         text: 'foo'
-      }, parentMsg);
+      }, future);
       this.sendServerMessage('status', 'iopub', {
         execution_state: 'idle'
-      }, parentMsg);
+      }, future);
       // Handle an explicit error.
       if (content.code === ERROR_INPUT) {
         this.sendShellReply({
@@ -344,7 +343,7 @@ class MockKernel implements IKernel {
           ename: 'mock',
           evalue: ERROR_INPUT,
           traceback: []
-        }, parentMsg);
+        });
         // Cancel remaining executes if necessary.
         if (content.stop_on_error) {
           this._handleStop();
@@ -355,9 +354,9 @@ class MockKernel implements IKernel {
           status: 'ok',
           user_expressions: {},
           payload: {}
-        }, parentMsg);
+        });
       }
-    });
+    }, 0);
     return future;
   }
 
@@ -430,19 +429,19 @@ class MockKernel implements IKernel {
    */
   private _handleStop(): void {
     // Trigger immediate errors on remaining execute messages.
-    for (let id in this._futures) {
-      let future = this._futures[id];
+    let futures = this._futures.slice();
+    for (let future of futures) {
       if (future.msg.header.msg_type === 'execute_request') {
         this.sendServerMessage('status', 'iopub', {
           execution_state: 'idle'
-        }, future.msg);
+        }, future);
         this.sendShellReply({
           execution_count: null,
           status: 'error',
           ename: 'mock',
           evalue: ERROR_INPUT,
           traceback: []
-        }, future.msg as KernelMessage.IShellMessage);
+        });
       }
     }
   }
@@ -460,7 +459,7 @@ class MockKernel implements IKernel {
 
   private _status: IKernel.Status = 'unknown';
   private _isDisposed = false;
-  private _futures: { [key: string]: KernelFutureHandler } = Object.create(null);
+  private _futures: KernelFutureHandler[] = [];
   private _kernelspec: IKernel.ISpec = null;
   private _kernelInfo: KernelMessage.IInfoReply = null;
   private _executionCount = 0;
