@@ -9,7 +9,7 @@ import {
 } from '../../lib/ikernel';
 
 import {
-  MockKernel, ERROR_INPUT
+  MockKernel, MockKernelManager, ERROR_INPUT, KERNELSPECS
 } from '../../lib/mockkernel';
 
 
@@ -159,6 +159,85 @@ describe('mockkernel', () => {
           expect(spec.display_name).to.be('Shell');
           done();
         });
+      });
+
+    });
+
+  });
+
+  describe('MockKernelManager', () => {
+
+    describe('#getSpecs()', () => {
+
+      it('should get the list of kernel specs', (done) => {
+        let manager = new MockKernelManager();
+        manager.getSpecs().then(specs => {
+          expect(specs).to.be(KERNELSPECS);
+          done();
+        });
+      });
+
+    });
+
+    describe('#listRunning()', () => {
+
+      it('should list the running kernels', (done) => {
+        let manager = new MockKernelManager();
+        let id0: string;
+        let id1: string;
+        manager.startNew().then(kernel => {
+          id0 = kernel.id;
+          return manager.startNew();
+        }).then(kernel => {
+          id1 = kernel.id;
+          return manager.listRunning();
+        }).then(response => {
+          expect(response.filter(value => value.id === id0).length).to.be(1);
+          expect(response.filter(value => value.id === id1).length).to.be(1);
+          done();
+        }).catch(done);
+      });
+
+    });
+
+    describe('#startNew()', () => {
+
+      it('should start a new kernel', (done) => {
+        let manager = new MockKernelManager();
+        manager.startNew().then(kernel => {
+          expect(kernel.name).to.be(KERNELSPECS.default);
+          done();
+        }).catch(done);
+      });
+
+    });
+
+    describe('#findById()', () => {
+
+      it('should find an existing kernel by id', (done) => {
+        let manager = new MockKernelManager();
+        manager.startNew().then(kernel => {
+          return manager.findById(kernel.id);
+        }).then(model => {
+          expect(model.name).to.be(KERNELSPECS.default);
+          return manager.findById('');
+        }).then(model => {
+          expect(model).to.be(void 0);
+          done();
+        }).catch(done);
+      });
+
+    });
+
+    describe('#connectTo()', () => {
+
+      it('should connect to an existing kernel', (done) => {
+        let kernel = new MockKernel();
+        let manager = new MockKernelManager();
+        manager.connectTo(kernel.id).then(newKernel => {
+          expect(newKernel.id).to.be(kernel.id);
+          done();
+        }).catch(done);
       });
 
     });

@@ -391,6 +391,16 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Get the model associated with the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): IKernel.IModel {
+    return { name: this.name, id: this.id };
+  }
+
+  /**
    * The client username.
    *
    * #### Notes

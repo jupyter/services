@@ -71,6 +71,14 @@ interface ISession extends IDisposable {
   path: string;
 
   /**
+   * The model associated with the session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  model: ISession.IModel;
+
+  /**
    * The kernel.
    *
    * #### Notes
@@ -190,7 +198,7 @@ namespace ISession {
     /*
      * Get the running sessions.
      */
-    listRunning(options?: IOptions): Promise<ISession.IModel[]>;
+    listRunning(options?: IOptions): Promise<IModel[]>;
 
     /**
      * Start a new session.
@@ -205,7 +213,7 @@ namespace ISession {
     /**
      * Find a session by path.
      */
-    findByPath(id: string, options?: IOptions): Promise<IModel>;
+    findByPath(path: string, options?: IOptions): Promise<IModel>;
 
     /**
      * Connect to a running session.

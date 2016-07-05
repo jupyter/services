@@ -538,6 +538,22 @@ describe('jupyter.services - session', () => {
       });
     });
 
+    context('#path', () => {
+
+      it('should be a read only IModel', (done) => {
+        startSession(createSessionModel()).then(session => {
+          let model = session.model;
+          expect(typeof model.id).to.be('string');
+          expect(typeof model.notebook.path).to.be('string');
+          expect(typeof model.kernel.name).to.be('string');
+          expect(typeof model.kernel.id).to.be('string');
+          expect(() => { session.model = null; }).to.throwError();
+          done();
+        }).catch(done);
+      });
+
+    });
+
     context('#kernel', () => {
 
       it('should be a read only IKernel object', (done) => {

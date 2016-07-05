@@ -1,5 +1,5 @@
 import {
-  IAjaxSettings
+  IAjaxSettings, uuid
 } from 'jupyter-js-utils';
 
 import {
@@ -15,7 +15,7 @@ import {
 } from './ikernel';
 
 import {
-  MockKernel
+  KERNELSPECS, MockKernel
 } from './mockkernel';
 
 
@@ -29,60 +29,84 @@ class MockSession implements ISession {
   path: string;
   ajaxSettings: IAjaxSettings = {};
 
-  constructor(path: string, kernel?: IKernel) {
-    this.path = path;
-    this._kernel = kernel || new MockKernel();
+  constructor(model?: ISession.IModel) {
+    if (!model) {
+      model = {
+        id: uuid(),
+        notebook: {
+          path: ''
+        },
+        kernel: {}
+      };
+    }
+    this.id = model.id;
+    this.path = model.notebook.path;
+    this._kernel = new MockKernel(model.kernel);
     this._kernel.statusChanged.connect(this.onKernelStatus, this);
     this._kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
+    Private.runningSessions[this.id] = this;
   }
 
   /**
    * A signal emitted when the session dies.
    */
-  get sessionDied(): ISignal<ISession, void> {
+  get sessionDied(): ISignal<MockSession, void> {
     return Private.sessionDiedSignal.bind(this);
   }
 
   /**
    * A signal emitted when the kernel changes.
    */
-  get kernelChanged(): ISignal<ISession, IKernel> {
+  get kernelChanged(): ISignal<MockSession, MockKernel> {
     return Private.kernelChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<ISession, IKernel.Status> {
+  get statusChanged(): ISignal<MockSession, IKernel.Status> {
     return Private.statusChangedSignal.bind(this);
   }
 
   /**
    * A signal emitted for a kernel messages.
    */
-  get iopubMessage(): ISignal<ISession, KernelMessage.IIOPubMessage> {
+  get iopubMessage(): ISignal<MockSession, KernelMessage.IIOPubMessage> {
     return Private.iopubMessageSignal.bind(this);
   }
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<ISession, KernelMessage.IMessage> {
+  get unhandledMessage(): ISignal<MockSession, KernelMessage.IMessage> {
     return Private.unhandledMessageSignal.bind(this);
   }
 
   /**
    * A signal emitted when the session path changes.
    */
-  get pathChanged(): ISignal<ISession, string> {
+  get pathChanged(): ISignal<MockSession, string> {
     return Private.pathChangedSignal.bind(this);
   }
 
   /**
    * Get the session kernel object.
    */
-  get kernel(): IKernel {
+  get kernel(): MockKernel {
     return this._kernel;
+  }
+
+  /**
+   * Get the session model.
+   */
+  get model(): ISession.IModel {
+    return {
+      id: this.id,
+      kernel: this.kernel.model,
+      notebook: {
+        path: this.path
+      }
+    };
   }
 
   /**
@@ -106,7 +130,11 @@ class MockSession implements ISession {
    * Dispose of the resources held by the session.
    */
   dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
     this._isDisposed = true;
+    delete Private.runningSessions[this.id];
   }
 
   /**
@@ -120,7 +148,7 @@ class MockSession implements ISession {
   /**
    * Change the kernel.
    */
-  changeKernel(options: IKernel.IModel): Promise<IKernel> {
+  changeKernel(options: IKernel.IModel): Promise<MockKernel> {
     this._kernel.dispose();
     this._kernel = new MockKernel(options);
     this.kernelChanged.emit(this._kernel);
@@ -152,7 +180,83 @@ class MockSession implements ISession {
   }
 
   private _isDisposed = false;
-  private _kernel: IKernel = null;
+  private _kernel: MockKernel = null;
+}
+
+
+/**
+ *  A mock session manager object.
+ */
+export
+class MockSessionManager implements ISession.IManager {
+  /**
+   * Get the available kernel specs.
+   */
+  getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
+    return Promise.resolve(KERNELSPECS);
+  }
+
+  /*
+   * Get the running sessions.
+   */
+  listRunning(options?: ISession.IOptions): Promise<ISession.IModel[]> {
+    let models: ISession.IModel[] = [];
+    for (let id in Private.runningSessions) {
+      let session = Private.runningSessions[id];
+      models.push(session.model);
+    }
+    return Promise.resolve(models);
+  }
+
+  /**
+   * Start a new session.
+   */
+  startNew(options: ISession.IOptions, id?: string): Promise<MockSession> {
+    let session = new MockSession({
+      id,
+      notebook: {
+        path: options.path || ''
+      },
+      kernel: {
+        id: options.kernelId,
+        name: options.kernelName
+      }
+    });
+    return Promise.resolve(session);
+  }
+
+  /**
+   * Find a session by id.
+   */
+  findById(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+    if (id in Private.runningSessions) {
+      return Promise.resolve(Private.runningSessions[id].model);
+    }
+    return Promise.resolve(void 0);
+  }
+
+  /**
+   * Find a session by path.
+   */
+  findByPath(path: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+    for (let id in Private.runningSessions) {
+      let session = Private.runningSessions[id];
+      if (session.path === path) {
+        return Promise.resolve(session.model);
+      }
+    }
+    return Promise.resolve(void 0);
+  }
+
+  /**
+   * Connect to a running session.
+   */
+  connectTo(id: string, options?: ISession.IOptions): Promise<MockSession> {
+    if (id in Private.runningSessions) {
+      return Promise.resolve(Private.runningSessions[id]);
+    }
+    return this.startNew(options, id);
+  }
 }
 
 
@@ -195,4 +299,10 @@ namespace Private {
    */
   export
   const pathChangedSignal = new Signal<ISession, string>();
+
+  /**
+   * A module private store for running mock sessions.
+   */
+  export
+  const runningSessions: { [key: string]: MockSession; } = Object.create(null);
 }

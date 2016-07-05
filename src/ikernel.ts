@@ -63,6 +63,14 @@ interface IKernel extends IDisposable {
   name: string;
 
   /**
+   * The model associated with the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  model: IKernel.IModel;
+
+  /**
    * The client username.
    *
    * #### Notes
