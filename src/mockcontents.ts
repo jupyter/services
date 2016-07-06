@@ -7,13 +7,12 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  IContentsModel, IContentsManager, IContentsOpts, ICheckpointModel,
-  ContentsManager
+  IContents
 } from './contents';
 
 
 export
-class MockContentsManager implements IContentsManager {
+class MockContentsManager implements IContents.IManager {
 
   methods: string[] = [];
 
@@ -23,19 +22,19 @@ class MockContentsManager implements IContentsManager {
    * Create a file with default content.
    */
   createFile(path: string): void {
-    let model = {
+    let model: IContents.IModel = {
       name: path.split('/').pop(),
       path: path,
       type: 'file',
       content: this.DEFAULT_TEXT
-    }
+    };
     this._files[path] = model;
   }
 
   /**
    * Get a path in the format it was saved or created in.
    */
-  get(path: string, options?: IContentsOpts): Promise<IContentsModel> {
+  get(path: string, options: IContents.IFetchOptions = {}): Promise<IContents.IModel> {
     this.methods.push('get');
     let model = this._files[path];
     if (!model) {
@@ -44,18 +43,21 @@ class MockContentsManager implements IContentsManager {
     return Promise.resolve(this._copyModel(model));
   }
 
-  newUntitled(path: string, options?: IContentsOpts): Promise<IContentsModel> {
+  newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
     this.methods.push('newUntitled');
-    options = options || {};
     let ext = options.ext || '';
-    let name = options.name || `untitled${ext}`;
-    path = `${path}/${name}`;
+    let name = `untitled${ext}`;
+    let path = `${options.path}/${name}`;
+    let format: IContents.FileFormat = 'text';
+    if (options.type === 'notebook') {
+      format = 'json';
+    }
     let model = {
       name,
       path,
-      format: options.format || 'text',
+      format,
       type: options.type || 'file',
-      content: options.content || this.DEFAULT_TEXT
+      content: this.DEFAULT_TEXT
     };
     this._files[path] = model;
     return Promise.resolve(this._copyModel(model));
@@ -67,7 +69,7 @@ class MockContentsManager implements IContentsManager {
     return Promise.resolve(void 0);
   }
 
-  rename(path: string, newPath: string): Promise<IContentsModel> {
+  rename(path: string, newPath: string): Promise<IContents.IModel> {
     this.methods.push('rename');
     let model = this._files[path];
     if (!model) {
@@ -80,62 +82,46 @@ class MockContentsManager implements IContentsManager {
     return Promise.resolve(model);
   }
 
-  save(path: string, model: IContentsModel): Promise<IContentsModel> {
+  save(path: string, options: IContents.IModel = {}): Promise<IContents.IModel> {
     this.methods.push('save');
-    this._files[path] = this._copyModel(model);
-    return Promise.resolve(model);
+    if (options) {
+      this._files[path] = this._copyModel(options);
+    }
+    return Promise.resolve(options);
   }
 
-  copy(path: string, toDir: string): Promise<IContentsModel> {
+  copy(path: string, toDir: string): Promise<IContents.IModel> {
     this.methods.push('copy');
     let model = this._files[path];
     if (!model) {
       return Promise.reject(new Error('Path not found'));
     }
-    let newModel = JSON.parse(JSON.stringify(model)) as IContentsModel;
+    let newModel = JSON.parse(JSON.stringify(model)) as IContents.IModel;
     newModel.path = `${toDir}/${model.name}`;
     this._files[newModel.path] = newModel;
     return Promise.resolve(newModel);
   }
 
-  listContents(path: string): Promise<IContentsModel> {
-    this.methods.push('listContents');
-    let files: IContentsModel[] = [];
-    for (let key of Object.keys(this._files)) {
-      let model = this._files[key];
-      let dname = model.path.slice(0, model.name.length);
-      if (dname === path) {
-        files.push(model);
-      }
-    }
-    return Promise.resolve({
-      name: path.split('/').pop(),
-      path,
-      type: 'directory',
-      content: files
-    });
-  }
-
-  createCheckpoint(path: string): Promise<ICheckpointModel> {
+  createCheckpoint(path: string): Promise<IContents.ICheckpointModel> {
     this.methods.push('createCheckpoint');
     let fileModel = this._files[path];
     if (!fileModel) {
       return Promise.reject(new Error('Path not found'));
     }
-    let checkpoints: ICheckpointModel[] = this._checkpoints[path] || [];
+    let checkpoints: IContents.ICheckpointModel[] = this._checkpoints[path] || [];
     let id = String(this._id++);
     let date = new Date(Date.now());
     let last_modified = date.toISOString();
-    let model: ICheckpointModel = { id, last_modified };
+    let model: IContents.ICheckpointModel = { id, last_modified };
     checkpoints.push(model);
     this._checkpoints[path] = checkpoints;
     this._fileSnaps[id] = this._copyModel(fileModel);
     return Promise.resolve(model);
   }
 
-  listCheckpoints(path: string): Promise<ICheckpointModel[]> {
+  listCheckpoints(path: string): Promise<IContents.ICheckpointModel[]> {
     this.methods.push('listCheckpoints');
-    let checkpoints: ICheckpointModel[] = this._checkpoints[path] || [];
+    let checkpoints: IContents.ICheckpointModel[] = this._checkpoints[path] || [];
     return Promise.resolve(checkpoints);
   }
 
@@ -151,14 +137,14 @@ class MockContentsManager implements IContentsManager {
     return Promise.resolve(void 0);
   }
 
-  private _copyModel(model: IContentsModel): IContentsModel {
-    return JSON.parse(JSON.stringify(model)) as IContentsModel;
+  private _copyModel(model: IContents.IModel): IContents.IModel {
+    return JSON.parse(JSON.stringify(model)) as IContents.IModel;
   }
 
   ajaxSettings: IAjaxSettings = {};
 
-  private _files: { [key: string]: IContentsModel } = Object.create(null);
-  private _checkpoints: { [key: string]: ICheckpointModel[] } = Object.create(null);
-  private _fileSnaps: { [key: string]: IContentsModel } = Object.create(null);
+  private _files: { [key: string]: IContents.IModel } = Object.create(null);
+  private _checkpoints: { [key: string]: IContents.ICheckpointModel[] } = Object.create(null);
+  private _fileSnaps: { [key: string]: IContents.IModel } = Object.create(null);
   private _id = 0;
 }

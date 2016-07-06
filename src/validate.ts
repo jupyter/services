@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  ICheckpointModel, IContentsModel
+  IContents
 } from './contents';
 
 import {
@@ -154,10 +154,10 @@ function validateKernelSpecModel(info: IKernel.ISpecModel): void {
 
 
 /**
- * Validate an `IContentsModel` object.
+ * Validate an `IContents.IModel` object.
  */
 export
-function validateContentsModel(model: IContentsModel): void {
+function validateContentsModel(model: IContents.IModel): void {
   validateProperty(model, 'name', 'string');
   validateProperty(model, 'path', 'string');
   validateProperty(model, 'type', 'string');
@@ -170,10 +170,10 @@ function validateContentsModel(model: IContentsModel): void {
 
 
 /**
- * Validate an `ICheckpointModel` object.
+ * Validate an `IContents.ICheckpointModel` object.
  */
 export
-function validateCheckpointModel(model: ICheckpointModel): void  {
+function validateCheckpointModel(model: IContents.ICheckpointModel): void  {
   validateProperty(model, 'id', 'string');
   validateProperty(model, 'last_modified', 'string');
 }

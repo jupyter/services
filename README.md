@@ -331,20 +331,20 @@ import {
 } from 'jupyter-js-services';
 
 // The base url of the Jupyter server.
-const BASE_URL = 'http://localhost:8000';
+let baseUrl = 'http://localhost:8000';
 
 
-let contents = new ContentsManager(BASE_URL);
+let contents = new ContentsManager({ baseUrl });
 
 // Create a new python file.
-contents.newUntitled('/foo', { type: 'file', ext: 'py' }).then(
+contents.newUntitled({ path: '/foo', type: 'file', ext: 'py' }).then(
   (model) => {
     console.log('new file:', model.path);
   }
 );
 
 // Get the contents of a directory.
-contents.get('/foo', { type: 'directory', name: 'bar' }).then(
+contents.get('/foo/bar').then(
   (model) => {
     console.log('files:', model.content);
   }
@@ -354,7 +354,7 @@ contents.get('/foo', { type: 'directory', name: 'bar' }).then(
 contents.rename('/foo/bar.txt', '/foo/baz.txt');
 
 // Save a file.
-contents.save('/foo', { type: 'file', name: 'test.py' });
+contents.save('/foo/test.ipynb');
 
 // Delete a file.
 contents.delete('/foo/bar.txt');
