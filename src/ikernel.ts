@@ -938,7 +938,7 @@ namespace KernelMessage {
       cursor_start: number;
       cursor_end: number;
       metadata: JSONObject;
-      status: string;
+      status: 'ok' | 'error';
     };
   }
 
