@@ -401,6 +401,16 @@ class MockKernel implements IKernel {
   }
 
   /**
+   * Register message hook
+   */
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void { }
+
+  /**
+   * Remove message hook
+   */
+  removeMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void { }
+
+  /**
    * Send a messaage to the mock kernel.
    */
   private _sendKernelMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject): Promise<KernelMessage.IShellMessage> {

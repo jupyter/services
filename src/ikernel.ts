@@ -275,6 +275,15 @@ interface IKernel extends IDisposable {
   registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable;
 
   /**
+   * Register an iopub message hook.
+   *
+   * TODO: we could also return a disposable to remove the message hook, but that would mean that you have to store it to be able to delete it. For some reason, I thought it would be better to have an explicit way to deregister a hook.
+   */
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
+  removeMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
+
+
+  /**
    * Get the kernel spec associated with the kernel.
    */
   getKernelSpec(): Promise<IKernel.ISpec>;
@@ -285,6 +294,14 @@ interface IKernel extends IDisposable {
   ajaxSettings?: IAjaxSettings;
 }
 
+export
+interface IHookList<T> extends IDisposable {
+  add(hook: (msg: T) => boolean): void;
+
+  remove(hook: (msg: T) => boolean): void;
+
+  process(msg: T): boolean;
+}
 
 /**
  * A namespace for kernel types, interfaces, and type checker functions.
@@ -404,6 +421,11 @@ namespace IKernel {
      * The done handler for the kernel future.
      */
     onDone: () => void;
+
+    /**
+     * The message hooks
+     */
+    hooks: IHookList<KernelMessage.IIOPubMessage>;
   }
 
   /**

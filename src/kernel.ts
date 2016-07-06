@@ -774,6 +774,26 @@ class Kernel implements IKernel {
   }
 
   /**
+   * Register message hook
+   */
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+    let future = this._futures && this._futures.get(msg_id);
+    if (future) {
+      future.hooks.add(hook)
+    }
+  }
+
+  /**
+   * Remove message hook
+   */
+  removeMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+    let future = this._futures && this._futures.get(msg_id);
+    if (future) {
+      future.hooks.remove(hook)
+    }
+  }
+
+  /**
    * Register a comm target handler.
    *
    * @param targetName - The name of the comm target.

@@ -3,11 +3,11 @@
 'use strict';
 
 import {
-  DisposableDelegate
+  DisposableDelegate, IDisposable
 } from 'phosphor-disposable';
 
 import {
-  IKernel, KernelMessage
+  IKernel, KernelMessage, IHookList
 } from './ikernel';
 
 
@@ -107,6 +107,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     this._reply = null;
     this._done = null;
     this._msg = null;
+    this._hooks = null;
     super.dispose();
   }
 
@@ -129,7 +130,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
 
   private _handleReply(msg: KernelMessage.IShellMessage): void {
     let reply = this._reply;
-    if (reply) reply(msg);
+    if (reply) { reply(msg); }
     this._setFlag(KernelFutureFlag.GotReply);
     if (this._testFlag(KernelFutureFlag.GotIdle)) {
       this._handleDone();
@@ -137,13 +138,15 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   }
 
   private _handleStdin(msg: KernelMessage.IStdinMessage): void {
+    let process = this._hooks.process(msg);
     let stdin = this._stdin;
-    if (stdin) stdin(msg);
+    if (process && stdin) { stdin(msg); }
   }
 
   private _handleIOPub(msg: KernelMessage.IIOPubMessage): void {
+    let process = this._hooks.process(msg);
     let iopub = this._iopub;
-    if (iopub) iopub(msg);
+    if (process && iopub) { iopub(msg); }
     if (KernelMessage.isStatusMsg(msg) &&
         msg.content.execution_state === 'idle') {
       this._setFlag(KernelFutureFlag.GotIdle);
@@ -164,6 +167,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     if (this._disposeOnDone) {
       this.dispose();
     }
+  }
+  get hooks(): HookList<KernelMessage.IIOPubMessage> {
+    return this._hooks;
   }
 
   /**
@@ -186,9 +192,94 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   private _iopub: (msg: KernelMessage.IIOPubMessage) => void = null;
   private _reply: (msg: KernelMessage.IShellMessage) => void = null;
   private _done: () => void = null;
+  private _hooks: HookList<KernelMessage.IIOPubMessage> = null;
   private _disposeOnDone = true;
 }
 
+export
+class HookList<T> implements IHookList<T> {
+  /**
+   * Register a hook
+   */
+  add(hook: (msg: T) => boolean): void {
+    this.remove(hook);
+    this._hooks.push(hook);
+  }
+
+  remove(hook: (msg: T) => boolean): void {
+    let index = this._hooks.indexOf(hook);
+    if (index >= 0) {
+      this._hooks[index] = null;
+      this._scheduleCompact();
+    }
+  }
+
+  /**
+   * process hooks. Returns true if the processing should continue, false if the processing should stop.
+   */
+  process(msg: T): boolean {
+    let continueHandling: boolean;
+    // most recently-added hook is called first
+    for (let i = this._hooks.length-1; i>=0; i--) {
+      let hook = this._hooks[i];
+      if (hook === null) { continue; }
+      try {
+        continueHandling = hook(msg);
+      } catch(err) {
+        // Should we stop processing when there is an error?
+        continueHandling = true;
+        console.error(err);
+      }
+      if (!continueHandling) {
+        return continueHandling;
+      }
+    }
+    return continueHandling;
+  }
+
+  /**
+   * Test whether the HookList has been disposed.
+   *
+   * #### Notes
+   * This is a read-only property which is always safe to access.
+   */
+  get isDisposed(): boolean {
+    return (this._hooks === null);
+  }
+
+  /**
+   * Dispose and unregister the future.
+   */
+  dispose(): void {
+    this._hooks = null;
+  }
+
+  private _scheduleCompact(): void {
+    if (!this._cleanupScheduled) {
+      this._cleanupScheduled = true;
+      requestAnimationFrame(() => {
+        this._cleanupScheduled = false;
+        this._compact();
+      })
+    }
+  }
+
+  private _compact(): void {
+    let numNulls = 0;
+    for (let i = 0, len = this._hooks.length; i < len; i++) {
+      let hook = this._hooks[i];
+      if (this._hooks[i] === null) {
+        numNulls++;
+      } else {
+        this._hooks[i-numNulls] = hook;
+      }
+    }
+    this._hooks.length -= numNulls;
+  }
+
+  private _hooks: ((msg: T) => boolean)[];
+  private _cleanupScheduled: boolean;
+}
 
 /**
  * Bit flags for the kernel future state.
