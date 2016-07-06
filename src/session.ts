@@ -378,6 +378,22 @@ class Session implements ISession {
   }
 
   /**
+   * Get the model associated with the session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): ISession.IModel {
+    return {
+      id: this.id,
+      kernel: this.kernel.model,
+      notebook: {
+        path: this.path
+      }
+    };
+  }
+
+  /**
    * The current status of the session.
    *
    * #### Notes

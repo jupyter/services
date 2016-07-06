@@ -108,7 +108,7 @@ class MockKernel implements IKernel {
    * Construct a new mock kernel.
    */
   constructor(options: IKernel.IModel = {}) {
-    this.id = options.id || '';
+    this.id = options.id || utils.uuid();
     this.name = options.name || 'python';
     let name = this.name;
     if (!(name in KERNELSPECS.kernelspecs)) {
@@ -126,6 +126,7 @@ class MockKernel implements IKernel {
     Promise.resolve().then(() => {
       this._changeStatus('idle');
     });
+    Private.runningKernels[this.id] = this;
   }
 
   /**
@@ -157,6 +158,16 @@ class MockKernel implements IKernel {
   }
 
   /**
+   * The model associated with the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): IKernel.IModel {
+    return { name: this.name, id: this.id };
+  }
+
+  /**
    * Test whether the kernel has been disposed.
    */
   get isDisposed(): boolean {
@@ -172,6 +183,7 @@ class MockKernel implements IKernel {
     }
     this._isDisposed = true;
     this._futures = null;
+    delete Private.runningKernels[this.id];
   }
 
   /**
@@ -466,6 +478,47 @@ class MockKernel implements IKernel {
 }
 
 
+/**
+ * A mock kernel manager object.
+ */
+export
+class MockKernelManager implements IKernel.IManager {
+
+  getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
+    return Promise.resolve(KERNELSPECS);
+  }
+
+  listRunning(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
+    let models: IKernel.IModel[] = [];
+    for (let id in Private.runningKernels) {
+      let kernel = Private.runningKernels[id];
+      models.push({ name: kernel.name, id });
+    }
+    return Promise.resolve(models);
+  }
+
+  startNew(options?: IKernel.IOptions, id?: string): Promise<MockKernel> {
+    let name = options ? options.name : void 0;
+    let kernel = new MockKernel({ name, id });
+    return Promise.resolve(kernel);
+  }
+
+  findById(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
+    if (id in Private.runningKernels) {
+      return Promise.resolve(Private.runningKernels[id].model);
+    }
+    return Promise.resolve(void 0);
+  }
+
+  connectTo(id: string, options?: IKernel.IOptions): Promise<MockKernel> {
+    if (id in Private.runningKernels) {
+      return Promise.resolve(Private.runningKernels[id]);
+    }
+    return this.startNew(options, id);
+  }
+}
+
+
 namespace Private {
   /**
    * A signal emitted when the kernel status changes.
@@ -484,4 +537,10 @@ namespace Private {
    */
   export
   const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
+
+  /**
+   * A module private store for running mock kernels.
+   */
+  export
+  const runningKernels: { [key: string]: MockKernel; } = Object.create(null);
 }

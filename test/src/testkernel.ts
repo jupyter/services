@@ -408,6 +408,20 @@ describe('jupyter.services - kernel', () => {
 
     });
 
+    context('#model', () => {
+
+      it('should be a read only IModel', (done) => {
+        createKernel().then(kernel => {
+          let model = kernel.model;
+          expect(typeof model.name).to.be('string');
+          expect(typeof model.id).to.be('string');
+          expect(() => { kernel.model = null; }).to.throwError();
+          done();
+        }).catch(done);
+      });
+
+    });
+
     context('#username', () => {
 
       it('should be a read only string', (done) => {
