@@ -5,13 +5,18 @@ import {
   IAjaxSettings
 } from 'jupyter-js-utils';
 
-import * as utils from 'jupyter-js-utils';
+import * as utils
+   from 'jupyter-js-utils';
+
+import {
+  JSONObject, JSONValue
+} from './json';
 
 
 /**
  * The url for the config service.
  */
-var SERVICE_CONFIG_URL = 'api/config';
+let SERVICE_CONFIG_URL = 'api/config';
 
 
 /**
@@ -25,7 +30,7 @@ interface IConfigSection {
    * #### Notes
    * This is a read-only property.
    */
-  data: any;
+  data: JSONObject;
 
   /**
    * Modify the stored config values.
@@ -35,7 +40,7 @@ interface IConfigSection {
    * and updates the local data with the response, and fullfils the promise
    * with that data.
    */
-  update(newdata: any): Promise<any>;
+  update(newdata: JSONObject): Promise<JSONObject>;
 
   /**
    * Optional default settings for ajax requests, if applicable.
@@ -45,14 +50,44 @@ interface IConfigSection {
 
 
 /**
+ * The namespace for ConfigSection statics.
+ */
+export
+namespace IConfigSection {
+  /**
+   * The options used to create a config section.
+   */
+  export
+  interface IOptions {
+    /**
+     * The section name.
+     */
+    name: string;
+
+    /**
+     * The server base url.
+     */
+    baseUrl?: string;
+
+    /**
+     * The default ajax settings.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
+}
+
+
+/**
  * Create a config section.
  *
  * @returns A Promise that is fulfilled with the config section is loaded.
  */
 export
-function getConfigSection(sectionName: string, baseUrl?: string, ajaxSettings?: IAjaxSettings): Promise<IConfigSection> {
-  var section = new ConfigSection(sectionName, baseUrl, ajaxSettings);
-  return section.load();
+function getConfigSection(options: IConfigSection.IOptions): Promise<IConfigSection> {
+  let section = new ConfigSection(options);
+  return section.load().then(() => {
+    return section;
+  });
 }
 
 
@@ -60,28 +95,27 @@ function getConfigSection(sectionName: string, baseUrl?: string, ajaxSettings?: 
  * Implementation of the Configurable data section.
  */
 class ConfigSection implements IConfigSection {
-
   /**
-   * Create a config section.
+   * Construct a new config section.
    */
-  constructor(sectionName: string, baseUrl?: string, ajaxSettings?: IAjaxSettings) {
-    baseUrl = baseUrl || utils.getBaseUrl();
-    if (ajaxSettings) this.ajaxSettings = ajaxSettings;
+  constructor(options: IConfigSection.IOptions) {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    this.ajaxSettings = options.ajaxSettings || {};
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
-                                  utils.urlJoinEncode(sectionName));
+                                  utils.urlJoinEncode(options.name));
   }
 
   /**
    * Get a copy of the default ajax settings for the section.
    */
   get ajaxSettings(): IAjaxSettings {
-    return JSON.parse(this._ajaxSettings);
+    return utils.copy(this._ajaxSettings);
   }
   /**
    * Set the default ajax settings for the section.
    */
   set ajaxSettings(value: IAjaxSettings) {
-    this._ajaxSettings = JSON.stringify(value);
+    this._ajaxSettings = utils.copy(value);
   }
 
   /**
@@ -90,7 +124,7 @@ class ConfigSection implements IConfigSection {
    * #### Notes
    * This is a read-only property.
    */
-  get data(): any {
+  get data(): JSONObject {
     return this._data;
   }
 
@@ -102,7 +136,7 @@ class ConfigSection implements IConfigSection {
    *
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  load(): Promise<IConfigSection> {
+  load(): Promise<void> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -112,7 +146,6 @@ class ConfigSection implements IConfigSection {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
       this._data = success.data;
-      return this;
     });
   }
 
@@ -128,7 +161,7 @@ class ConfigSection implements IConfigSection {
    * and updates the local data with the response, and fulfils the promise
    * with that data.
    */
-  update(newdata: any): Promise<any> {
+  update(newdata: JSONObject): Promise<JSONObject> {
     this._data = utils.extend(this._data, newdata);
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
@@ -147,8 +180,8 @@ class ConfigSection implements IConfigSection {
   }
 
   private _url = 'unknown';
-  private _data: any = { };
-  private _ajaxSettings = '{}';
+  private _data: JSONObject = null;
+  private _ajaxSettings: IAjaxSettings = null;
 }
 
 
@@ -157,20 +190,19 @@ class ConfigSection implements IConfigSection {
  */
 export
 class ConfigWithDefaults {
-
   /**
    * Create a new config with defaults.
    */
-  constructor(section: IConfigSection, defaults: any, classname?: string) {
-    this._section = section;
-    this._defaults = defaults;
-    this._className = classname;
+  constructor(options: ConfigWithDefaults.IOptions) {
+    this._section = options.section;
+    this._defaults = options.defaults || {};
+    this._className = options.className || '';
   }
 
   /**
    * Get data from the config section or fall back to defaults.
    */
-  get(key: string): any {
+  get(key: string): JSONValue {
     return this._classData()[key] || this._defaults[key];
   }
 
@@ -185,11 +217,11 @@ class ConfigWithDefaults {
    * Sends the update to the server, and changes our local copy of the data
    * immediately.
    */
-  set(key: string, value: any): Promise<any> {
-     var d: any = {};
+  set(key: string, value: JSONValue): Promise<JSONValue> {
+     let d: JSONObject = {};
      d[key] = value;
      if (this._className) {
-      var d2: any = {};
+      let d2: JSONObject = {};
       d2[this._className] = d;
       return this._section.update(d2);
     } else {
@@ -203,15 +235,43 @@ class ConfigWithDefaults {
    * #### Notes
    * If we have no classname, get all of the data in the Section
    */
-  private _classData(): any {
+  private _classData(): JSONObject {
     if (this._className) {
-      return this._section.data[this._className] || {};
+      return this._section.data[this._className] as JSONObject || {};
     } else {
       return this._section.data;
     }
   }
 
   private _section: IConfigSection = null;
-  private _defaults: any = null;
-  private _className = 'unknown';
+  private _defaults: JSONObject = null;
+  private _className = '';
+}
+
+
+/**
+ * A namespace for ConfigWithDefaults statics.
+ */
+export
+namespace ConfigWithDefaults {
+  /**
+   * The options used to initialize a ConfigWithDefaults object.
+   */
+  export
+  interface IOptions {
+    /**
+     * The configuration section.
+     */
+    section: IConfigSection;
+
+    /**
+     * The default values.
+     */
+    defaults?: JSONObject;
+
+    /**
+     * The optional classname namespace.
+     */
+    className?: string;
+  }
 }
