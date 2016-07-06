@@ -389,22 +389,17 @@ import {
 } from 'jupyter-js-services';
 
 // The base url of the Jupyter server.
-const BASE_URL = 'http://localhost:8000';
+let baseUrl = 'http://localhost:8000';
 
-
-getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
-  return startNewKernel({
-    baseUrl: BASE_URL,
-    name: kernelSpecs.default,
+getConfigSection({ name: 'notebook', baseUrl }).then(section => {
+  let config = new ConfigWithDefaults({
+    section,
+    defaults: { default_cell_type: 'code' },
+    className: 'Notebook'
   });
-}).then(kernel => {
-  getConfigSection('notebook', BASE_URL).then(section => {
-    let defaults = { default_cell_type: 'code' };
-    let config = new ConfigWithDefaults(section, defaults, 'Notebook');
-    console.log(config.get('default_cell_type'));   // 'code'
-    config.set('foo', 'bar').then(data => {
-       console.log(data.foo); // 'bar'
-    });
+  console.log(config.get('default_cell_type'));   // 'code'
+  config.set('foo', 'bar').then(data => {
+     console.log(data); // "{ 'foo': 'bar' }"
   });
 });
 ```

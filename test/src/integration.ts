@@ -17,6 +17,11 @@ import {
   ConfigWithDefaults, ContentsManager, KernelMessage, IContents
 } from '../../lib';
 
+import {
+  JSONObject
+} from '../../lib/json';
+
+
 // Stub for node global.
 declare var global: any;
 global.XMLHttpRequest = NodeXMLHttpRequest;
@@ -239,9 +244,9 @@ describe('jupyter.services - Integration', () => {
 
     it('should get a config section on the server and update it', (done) => {
       startNewKernel().then((kernel) => {
-        getConfigSection('notebook').then(section => {
-          let defaults = { default_cell_type: 'code' };
-          let config = new ConfigWithDefaults(section, defaults, 'Notebook');
+        getConfigSection({ name: 'notebook' }).then(section => {
+          let defaults: JSONObject = { default_cell_type: 'code' };
+          let config = new ConfigWithDefaults({ section, defaults, className: 'Notebook' });
           expect(config.get('default_cell_type')).to.be('code');
           config.set('foo', 'bar').then(() => {
             expect(config.get('foo')).to.be('bar');
