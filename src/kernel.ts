@@ -775,22 +775,27 @@ class Kernel implements IKernel {
 
   /**
    * Register message hook
+   *
+   * @param msg_id - The message id the hook will intercept.
+   *
+   * @param hook - The callback invoked for the message.
+   *
+   * @returns A disposable used to unregister the message hook
+   *
+   * #### Notes
+   * If the callback returns false, the message processing will stop.
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
     let future = this._futures && this._futures.get(msg_id);
     if (future) {
-      future.hooks.add(hook)
+      Private.hooksProperty.get(future).add(hook);
     }
-  }
-
-  /**
-   * Remove message hook
-   */
-  removeMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
-    let future = this._futures && this._futures.get(msg_id);
-    if (future) {
-      future.hooks.remove(hook)
-    }
+    return new DisposableDelegate(() => {
+      let future = this._futures && this._futures.get(msg_id);
+      if (future) {
+        Private.hooksProperty.get(future).remove(hook);
+      }
+    })
   }
 
   /**

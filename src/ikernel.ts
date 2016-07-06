@@ -275,13 +275,18 @@ interface IKernel extends IDisposable {
   registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable;
 
   /**
-   * Register an iopub message hook.
+   * Register an IOPub message hook.
    *
-   * TODO: we could also return a disposable to remove the message hook, but that would mean that you have to store it to be able to delete it. For some reason, I thought it would be better to have an explicit way to deregister a hook.
+   * @param msg_id - The message id the hook will intercept.
+   *
+   * @param hook - The callback invoked for the message.
+   *
+   * @returns A disposable used to unregister the message hook
+   *
+   * #### Notes
+   * If the callback returns false, the message processing will stop.
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
-  removeMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
-
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean):  IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.
