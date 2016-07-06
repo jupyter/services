@@ -3,23 +3,24 @@
 'use strict';
 
 import expect = require('expect.js');
+
 import {
   XMLHttpRequest as NodeXMLHttpRequest
 } from 'xmlhttprequest';
+
 import * as NodeWebSocket
   from 'ws';
 
+import {
+  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
+  connectToSession, startNewSession, getKernelSpecs, getConfigSection,
+  ConfigWithDefaults, ContentsManager, KernelMessage, IContents
+} from '../../lib';
 
 // Stub for node global.
 declare var global: any;
 global.XMLHttpRequest = NodeXMLHttpRequest;
 global.WebSocket = NodeWebSocket;
-
-import {
-  listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
-  connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults, ContentsManager, KernelMessage
-} from '../../lib';
 
 
 describe('jupyter.services - Integration', () => {
@@ -47,7 +48,7 @@ describe('jupyter.services - Integration', () => {
             });
          });
         });
-      });
+      }).catch(done);
     });
 
     it('should connect to existing kernel and list running kernels', (done) => {
@@ -72,7 +73,7 @@ describe('jupyter.services - Integration', () => {
             });
           });
         });
-      });
+      }).catch(done);
     });
 
     it('should trigger a reconnect', (done) => {
@@ -80,7 +81,7 @@ describe('jupyter.services - Integration', () => {
         kernel.reconnect().then(() => {
           done();
         });
-      });
+      }).catch(done);
     });
 
     it('should handle other kernel messages', (done) => {
@@ -118,8 +119,9 @@ describe('jupyter.services - Integration', () => {
             return kernel.shutdown();
           };
         }).then(() => done()).catch(error => console.log(error));
-      });
+      }).catch(done);
     });
+
   });
 
   describe('Session', () => {
@@ -155,7 +157,7 @@ describe('jupyter.services - Integration', () => {
             });
           });
         });
-      });
+      }).catch(done);
     });
 
     it('should connect to an existing kernel', (done) => {
@@ -169,7 +171,7 @@ describe('jupyter.services - Integration', () => {
           expect(session.kernel.id).to.be(kernel.id);
           session.shutdown().then(() => { done(); });
         });
-      });
+      }).catch(done);
     });
 
     it('should be able to switch to an existing kernel by id', (done) => {
@@ -181,7 +183,7 @@ describe('jupyter.services - Integration', () => {
             session.shutdown().then(() => { done(); });
           });
         });
-      });
+      }).catch(done);
     });
 
     it('should be able to switch to a new kernel by name', (done) => {
@@ -193,7 +195,7 @@ describe('jupyter.services - Integration', () => {
           expect(newKernel.id).to.not.be(id);
           session.shutdown().then(() => { done(); });
         });
-      });
+      }).catch(done);
     });
 
   });
@@ -228,8 +230,9 @@ describe('jupyter.services - Integration', () => {
           'comm.on_msg(on_msg)'
         ].join('\n');
         kernel.execute({ code: code });
-      });
+      }).catch(done);
     });
+
   });
 
   describe('Config', () => {
@@ -245,7 +248,7 @@ describe('jupyter.services - Integration', () => {
             done();
           });
         });
-      });
+      }).catch(done);
     });
 
   });
@@ -254,8 +257,8 @@ describe('jupyter.services - Integration', () => {
 
     it('should list a directory and get the file contents', (done) => {
       let contents = new ContentsManager();
-      contents.listContents('src').then(listing => {
-        let content = listing.content as any;
+      contents.get('src').then(listing => {
+        let content = listing.content as IContents.IModel[];
         for (let i = 0; i < content.length; i++) {
           if (content[i].type === 'file') {
             contents.get(content[i].path, { type: 'file' }).then(msg => {
@@ -265,32 +268,37 @@ describe('jupyter.services - Integration', () => {
             break;
           }
         }
-      });
+      }).catch(done);
     });
 
     it('should create a new file, rename it, and delete it', (done) => {
       let contents = new ContentsManager();
-      let options = { type: 'file', ext: '.ipynb' };
-      contents.newUntitled('.', options).then(model0 => {
+      let options: IContents.ICreateOptions = { type: 'file', ext: '.ipynb' };
+      contents.newUntitled(options).then(model0 => {
         contents.rename(model0.path, 'foo.ipynb').then(model1 => {
           expect(model1.path).to.be('foo.ipynb');
           contents.delete('foo.ipynb').then(done);
         });
-      });
+      }).catch(done);
     });
 
     it('should create a file by name and delete it', (done) => {
       let contents = new ContentsManager();
-      let options = { type: 'file', content: '', format: 'text' };
+      let options: IContents.IModel = {
+        type: 'file', content: '', format: 'text'
+      };
       contents.save('baz.txt', options).then(model0 => {
         contents.delete('baz.txt').then(done);
-      });
+      }).catch(done);
     });
 
     it('should exercise the checkpoint API', (done) => {
       let contents = new ContentsManager();
-      let options = { type: 'file', contents: '' };
+      let options: IContents.IModel = {
+        type: 'file', format: 'text', content: 'foo'
+      };
       contents.save('baz.txt', options).then(model0 => {
+        expect(model0.name).to.be('baz.txt');
         contents.createCheckpoint('baz.txt').then(checkpoint => {
           contents.listCheckpoints('baz.txt').then(checkpoints => {
             expect(checkpoints[0]).to.eql(checkpoint);
@@ -301,7 +309,7 @@ describe('jupyter.services - Integration', () => {
             });
           });
         });
-      });
+      }).catch(done);
     });
 
   });

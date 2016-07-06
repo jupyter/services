@@ -17,7 +17,7 @@ import {
 } from 'jupyter-js-utils/lib/mockxhr';
 
 import {
-  IContentsModel, IKernel, KernelMessage, createKernelMessage, startNewKernel
+  IContents, IKernel, KernelMessage, createKernelMessage, startNewKernel
 } from '../../lib';
 
 import {
@@ -98,7 +98,7 @@ const PYTHON_SPEC: IKernel.ISpecModel = {
 
 
 export
-const DEFAULT_FILE: IContentsModel = {
+const DEFAULT_FILE: IContents.IModel = {
   name: 'test',
   path: '',
   type: 'file',

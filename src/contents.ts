@@ -4,281 +4,281 @@ import {
   IAjaxSettings
 } from 'jupyter-js-utils';
 
-import * as utils from 'jupyter-js-utils';
+import * as utils
+  from 'jupyter-js-utils';
 
-import * as validate from './validate';
+import * as validate
+  from './validate';
 
 
 /**
  * The url for the contents service.
  */
-var SERVICE_CONTENTS_URL = 'api/contents';
+let SERVICE_CONTENTS_URL = 'api/contents';
 
 
 /**
- * Options for a contents object.
+ * A namespace for contents interfaces.
  */
 export
-interface IContentsOpts {
+namespace IContents {
   /**
-   * The type of file.
-   *
-   * #### Notes
-   * One of `["directory", "file", "notebook"]`.
+   * A contents model.
    */
-  type?: string;
+  export
+  interface IModel {
+    /**
+     * Name of the contents file.
+     *
+     * #### Notes
+     *  Equivalent to the last part of the `path` field.
+     */
+    name?: string;
 
-  /**
-   * The format of the file `content`.
-   *
-   * #### Notes
-   * One of `['json', text', 'base64']`.
-   *
-   * Only relevant for type: `'file'`.
-   */
-  format?: string;
+    /**
+     * The full file path.
+     *
+     * #### Notes
+     * It will *not* start with `/`, and it will be `/`-delimited.
+     */
+    path?: string;
 
-  /**
-   * The file content, or whether to include the file contents.
-   *
-   * #### Notes
-   * Can either contain the content of a file for upload, or a boolean
-   * indicating whether to include contents in the response.
-   */
-  content?: any;
+    /**
+     * The type of file.
+     */
+    type?: FileType;
 
-  /**
-   * The file extension, including a leading `.`.
-   */
-  ext?: string;
+    /**
+     * Whether the requester has permission to edit the file.
+     */
+    writable?: boolean;
 
-  /**
-   * The name of the file.
-   */
-  name?: string;
-}
+    /**
+     * File creation timestamp.
+     */
+    created?: string;
 
+    /**
+     * Last modified timestamp.
+     */
+    last_modified?: string;
 
-/**
- * Contents model.
- *
- * #### Notes
- * If the model does not contain content, the `content`, `format`, and
- * `mimetype` keys will be `null`.
- */
-export
-interface IContentsModel {
+    /**
+     * Specify the mime-type of file contents.
+     *
+     * #### Notes
+     * Only non-`null` when `content` is present and `type` is `"file"`.
+     */
+    mimetype?: string;
 
-  /**
-   * Name of the contents file.
-   *
-   * #### Notes
-   *  Equivalent to the last part of the `path` field.
-   */
-  name: string;
+    /**
+     * The optional file content.
+     */
+    content?: any;
 
-  /**
-   * The full file path.
-   *
-   * #### Notes
-   * It will *not* start with `/`, and it will be `/`-delimited.
-   */
-  path: string;
+    /**
+     * The format of the file `content`.
+     *
+     * #### Notes
+     * Only relevant for type: 'file'
+     */
+    format?: FileFormat;
+  }
 
   /**
-   * The type of file.
-   *
-   * #### Notes
-   * One of `["directory", "file", "notebook"]`
+   * A contents file type.
    */
-  type: string;
+  export
+  type FileType = 'notebook' | 'file' | 'directory';
+
 
   /**
-   * Whether the requester has permission to edit the file they have requested.
+   * A contents file format.
    */
-  writable?: boolean;
+  export
+  type FileFormat = 'json' | 'text' | 'base64';
 
   /**
-   * File creation timestamp.
+   * The options used to fetch a file.
    */
-  created?: string;
+  export
+  interface IFetchOptions {
+    /**
+     * The override file type for the request.
+     */
+    type?: FileType;
+
+    /**
+     * The override file format for the request.
+     */
+    format?: FileFormat;
+
+    /**
+     * Whether to include the file content.
+     *
+     * The default is `true`.
+     */
+    content?: boolean;
+  }
 
   /**
-   * Last modified timestamp.
+   * The options used to create a file.
    */
-  last_modified?: string;
+  export
+  interface ICreateOptions {
+    /**
+     * The directory in which to create the file.
+     */
+     path?: string;
+
+     /**
+      * The optional file extension for the new file.
+      *
+      * #### Notes
+      * This ignored if `type` is `'notebook'`.
+      */
+    ext?: string;
+
+    /**
+     * The file type.
+     */
+    type?: FileType;
+  }
 
   /**
-   * Specify the mime-type of file contents.
-   *
-   * #### Notes
-   * Only non-`null` when `content` is present and `type` is `"file"`.
+   * Checkpoint model.
    */
-  mimetype?: string;
+  export
+  interface ICheckpointModel {
+    /**
+     * The unique identifier for the checkpoint.
+     */
+    id: string;
+
+    /**
+     * Last modified timestamp.
+     */
+    last_modified: string;
+  }
 
   /**
-   * The file content.
+   * The interface for a contents manager.
    */
-  content?: any;
+  export
+  interface IManager {
+    /**
+     * Get a file or directory.
+     *
+     * @param path: The path to the file.
+     *
+     * @param options: The options used to fetch the file.
+     *
+     * @returns A promise which resolves with the file content.
+     */
+    get(path: string, options?: IFetchOptions): Promise<IModel>;
 
-  /**
-   * The format of the file `content`.
-   *
-   * #### Notes
-   * One of `{ 'json', text', 'base64' }`
-   *
-   * Only relevant for type: 'file'
-   */
-  format?: string;
-}
+    /**
+     * Create a new untitled file or directory in the specified directory path.
+     *
+     * @param options: The options used to create the file.
+     *
+     * @returns A promise which resolves with the created file content when the
+     *    file is created.
+     */
+    newUntitled(options?: ICreateOptions): Promise<IModel>;
 
+    /**
+     * Delete a file.
+     *
+     * @param path - The path to the file.
+     *
+     * @returns A promise which resolves when the file is deleted.
+     */
+    delete(path: string): Promise<void>;
 
-/**
- * Checkpoint model.
- */
-export
-interface ICheckpointModel {
-  /**
-   * The unique identifier for the checkpoint.
-   */
-  id: string;
+    /**
+     * Rename a file or directory.
+     *
+     * @param path - The original file path.
+     *
+     * @param newPath - The new file path.
+     *
+     * @returns A promise which resolves with the new file content model when the
+     *   file is renamed.
+     */
+    rename(path: string, newPath: string): Promise<IModel>;
 
-  /**
-   * Last modified timestamp.
-   */
-  last_modified: string;
-}
+    /**
+     * Save a file.
+     *
+     * @param path - The desired file path.
+     *
+     * @param options - Optional overrrides to the model.
+     *
+     * @returns A promise which resolves with the file content model when the
+     *   file is saved.
+     */
+    save(path: string, options?: IModel): Promise<IModel>;
 
+    /**
+     * Copy a file into a given directory.
+     *
+     * @param path - The original file path.
+     *
+     * @param toDir - The destination directory path.
+     *
+     * @returns A promise which resolves with the new content model when the
+     *  file is copied.
+     */
+    copy(path: string, toDir: string): Promise<IModel>;
 
-/**
- * Interface that a contents manager should implement.
- **/
-export
-interface IContentsManager {
-  /**
-   * Get a file or directory.
-   *
-   * @param path: Path to the file or directory.
-   *
-   * @param options: The options describing the file.
-   *   Use `options.content = true` to return file contents.
-   *
-   * @returns A promise which resolves with the file content.
-   */
-  get(path: string, options?: IContentsOpts): Promise<IContentsModel>;
+    /**
+     * Create a checkpoint for a file.
+     *
+     * @param path - The path of the file.
+     *
+     * @returns A promise which resolves with the new checkpoint model when the
+     *   checkpoint is created.
+     */
+    createCheckpoint(path: string): Promise<IModel>;
 
-  /**
-   * Create a new untitled file or directory in the specified directory path.
-   *
-   * @param path: The directory in which to create the new file/directory.
-   *
-   * @param options: The options describing the new item.
-   *
-   * @returns A promise which resolves with the created file content when the
-   *    file is created.
-   */
-  newUntitled(path: string, options: IContentsOpts): Promise<IContentsModel>;
+    /**
+     * List available checkpoints for a file.
+     *
+     * @param path - The path of the file.
+     *
+     * @returns A promise which resolves with a list of checkpoint models for
+     *    the file.
+     */
+    listCheckpoints(path: string): Promise<ICheckpointModel[]>;
 
-  /**
-   * Delete a file.
-   *
-   * @param path - The path to the file.
-   *
-   * @returns A promise which resolves when the file is deleted.
-   */
-  delete(path: string): Promise<void>;
+    /**
+     * Restore a file to a known checkpoint state.
+     *
+     * @param path - The path of the file.
+     *
+     * @param checkpointID - The id of the checkpoint to restore.
+     *
+     * @returns A promise which resolves when the checkpoint is restored.
+     */
+    restoreCheckpoint(path: string, checkpointID: string): Promise<void>;
 
-  /**
-   * Rename a file or directory.
-   *
-   * @param path - The original file path.
-   *
-   * @param newPath - The new file path.
-   *
-   * @returns A promise which resolves with the new file content model when the
-   *   file is renamed.
-   */
-  rename(path: string, newPath: string): Promise<IContentsModel>;
+    /**
+     * Delete a checkpoint for a file.
+     *
+     * @param path - The path of the file.
+     *
+     * @param checkpointID - The id of the checkpoint to delete.
+     *
+     * @returns A promise which resolves when the checkpoint is deleted.
+     */
+    deleteCheckpoint(path: string, checkpointID: string): Promise<void>;
 
-  /**
-   * Save a file.
-   *
-   * @param path - The desired file path.
-   *
-   * @param model - The file model to save.
-   *
-   * @returns A promise which resolves with the file content model when the
-   *   file is saved.
-   */
-  save(path: string, model: any): Promise<IContentsModel>;
-
-  /**
-   * Copy a file into a given directory.
-   *
-   * @param path - The original file path.
-   *
-   * @param toDir - The destination directory path.
-   *
-   * @returns A promise which resolves with the new content model when the
-   *  file is copied.
-   */
-  copy(path: string, toDir: string): Promise<IContentsModel>;
-
-  /**
-   * List notebooks and directories at a given path.
-   *
-   * @param: path - The path in which to list the contents.
-   *
-   * @returns A promise which resolves with a model with the directory content.
-   */
-  listContents(path: string): Promise<IContentsModel>;
-
-  /**
-   * Create a checkpoint for a file.
-   *
-   * @param path - The path of the file.
-   *
-   * @returns A promise which resolves with the new checkpoint model when the
-   *   checkpoint is created.
-   */
-  createCheckpoint(path: string): Promise<ICheckpointModel>;
-
-  /**
-   * List available checkpoints for a file.
-   *
-   * @param path - The path of the file.
-   *
-   * @returns A promise which resolves with a list of checkpoint models for
-   *    the file.
-   */
-  listCheckpoints(path: string): Promise<ICheckpointModel[]>;
-
-  /**
-   * Restore a file to a known checkpoint state.
-   *
-   * @param path - The path of the file.
-   *
-   * @param checkpointID - The id of the checkpoint to restore.
-   *
-   * @returns A promise which resolves when the checkpoint is restored.
-   */
-  restoreCheckpoint(path: string, checkpointID: string): Promise<void>;
-
-  /**
-   * Delete a checkpoint for a file.
-   *
-   * @param path - The path of the file.
-   *
-   * @param checkpointID - The id of the checkpoint to delete.
-   *
-   * @returns A promise which resolves when the checkpoint is deleted.
-   */
-  deleteCheckpoint(path: string, checkpointID: string): Promise<void>;
-
-  /**
-   * Optional default settings for ajax requests, if applicable.
-   */
-  ajaxSettings?: IAjaxSettings;
+    /**
+     * Optional default settings for ajax requests, if applicable.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
 }
 
 
@@ -288,17 +288,16 @@ interface IContentsManager {
  * This includes checkpointing with the normal file operations.
  */
 export
-class ContentsManager implements IContentsManager {
+class ContentsManager implements IContents.IManager {
   /**
    * Construct a new contents manager object.
    *
-   * @param baseUrl - The base URL for the server.
-   *
-   * @param ajaxSettings - Optional initial ajax settings.
+   * @param options - The options used to initialize the object.
    */
-  constructor(baseUrl?: string, ajaxSettings?: IAjaxSettings) {
-    baseUrl = baseUrl || utils.getBaseUrl();
-    if (ajaxSettings) this.ajaxSettings = ajaxSettings;
+  constructor(options: ContentsManager.IOptions = {}) {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = utils.copy(options.ajaxSettings);
     this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }
 
@@ -306,29 +305,27 @@ class ContentsManager implements IContentsManager {
    * Get a copy of the default ajax settings for the contents manager.
    */
   get ajaxSettings(): IAjaxSettings {
-    return JSON.parse(this._ajaxSettings);
+    return utils.copy(this._ajaxSettings);
   }
   /**
    * Set the default ajax settings for the contents manager.
    */
   set ajaxSettings(value: IAjaxSettings) {
-    this._ajaxSettings = JSON.stringify(value);
+    this._ajaxSettings = utils.copy(value);
   }
 
   /**
    * Get a file or directory.
    *
-   * @param path: Path to the file or directory.
+   * @param path: The path to the file.
    *
-   * @param options: The options describing the file.
-   *   Use `options.content = true` to return file contents.
+   * @param options: The options used to fetch the file.
    *
    * @returns A promise which resolves with the file content.
    *
-   * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  get(path: string, options?: IContentsOpts): Promise<IContentsModel> {
+  get(path: string, options?: IContents.IFetchOptions): Promise<IContents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -337,14 +334,12 @@ class ContentsManager implements IContentsManager {
     let url = this._getUrl(path);
 
     if (options) {
-      let params: IContentsOpts = {};
-      if (options.type) { params.type = options.type; }
-      if (options.format) { params.format = options.format; }
-      if (options.content === false) { params.content = '0'; }
+      let params = utils.copy(options);
+      params.content = options.content ? '1' : '0';
       url += utils.jsonToQueryString(params);
     }
 
-    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContentsModel => {
+    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContents.IModel => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -356,9 +351,7 @@ class ContentsManager implements IContentsManager {
   /**
    * Create a new untitled file or directory in the specified directory path.
    *
-   * @param path: The directory in which to create the new file/directory.
-   *
-   * @param options: The options describing the new item.
+   * @param options: The options used to create the file.
    *
    * @returns A promise which resolves with the created file content when the
    *    file is created.
@@ -366,19 +359,15 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  newUntitled(path: string, options?: IContentsOpts): Promise<IContentsModel> {
+  newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
     if (options) {
-      let data = JSON.stringify({
-        ext: options.ext,
-        type: options.type
-      });
-      ajaxSettings.data = data;
+      ajaxSettings.data = JSON.stringify(options);
       ajaxSettings.contentType = 'application/json';
     }
-    let url = this._getUrl(path);
+    let url = this._getUrl(options.path || '');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
@@ -436,7 +425,7 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  rename(path: string, newPath: string): Promise<IContentsModel> {
+  rename(path: string, newPath: string): Promise<IContents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
@@ -458,9 +447,9 @@ class ContentsManager implements IContentsManager {
    *
    * @param path - The desired file path.
    *
-   * @param model - The file model to save.
+   * @param options - Optional overrrides to the model.
    *
-   * @returns A promise which resolves with the file contents model when the
+   * @returns A promise which resolves with the file content model when the
    *   file is saved.
    *
    * #### Notes
@@ -468,11 +457,11 @@ class ContentsManager implements IContentsManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  save(path: string, model: IContentsOpts): Promise<IContentsModel> {
+  save(path: string, options: IContents.IModel = {}): Promise<IContents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PUT';
     ajaxSettings.dataType = 'json';
-    ajaxSettings.data = JSON.stringify(model);
+    ajaxSettings.data = JSON.stringify(options);
     ajaxSettings.contentType = 'application/json';
     ajaxSettings.cache = false;
 
@@ -502,7 +491,7 @@ class ContentsManager implements IContentsManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  copy(fromFile: string, toDir: string): Promise<IContentsModel> {
+  copy(fromFile: string, toDir: string): Promise<IContents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.data = JSON.stringify({ copy_from: fromFile });
@@ -520,21 +509,6 @@ class ContentsManager implements IContentsManager {
   }
 
   /**
-   * List notebooks and directories at a given path.
-   *
-   * @param: path - The path in which to list the contents.
-   *
-   * @returns A promise which resolves with a model with the directory
-   *    contents.
-   *
-   * #### Notes
-   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
-   */
-  listContents(path: string): Promise<IContentsModel> {
-    return this.get(path, {type: 'directory'});
-  }
-
-  /**
    * Create a checkpoint for a file.
    *
    * @param path - The path of the file.
@@ -545,7 +519,7 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  createCheckpoint(path: string): Promise<ICheckpointModel> {
+  createCheckpoint(path: string): Promise<IContents.ICheckpointModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -571,7 +545,7 @@ class ContentsManager implements IContentsManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  listCheckpoints(path: string): Promise<ICheckpointModel[]> {
+  listCheckpoints(path: string): Promise<IContents.ICheckpointModel[]> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -644,15 +618,38 @@ class ContentsManager implements IContentsManager {
   }
 
   /**
-   * Get a REST url for this file given a path.
+   * Get a REST url for a file given a path.
    */
   private _getUrl(...args: string[]): string {
-    var url_parts = [].concat(
+    let urlParts = [].concat(
                 Array.prototype.slice.apply(args));
     return utils.urlPathJoin(this._apiUrl,
-                             utils.urlJoinEncode.apply(null, url_parts));
+                             utils.urlJoinEncode.apply(null, urlParts));
   }
 
   private _apiUrl = 'unknown';
-  private _ajaxSettings = '{}';
+  private _ajaxSettings: IAjaxSettings = null;
+}
+
+
+/**
+ * A namespace for ContentsManager statics.
+ */
+export
+namespace ContentsManager {
+  /**
+   * The options used to intialize a contents manager.
+   */
+  export
+  interface IOptions {
+    /**
+     * The root url of the server.
+     */
+    baseUrl?: string;
+
+    /**
+     * The default ajax settings to use for the kernel.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
 }
