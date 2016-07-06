@@ -14,7 +14,8 @@ import * as NodeWebSocket
 import {
   listRunningKernels, connectToKernel, startNewKernel, listRunningSessions,
   connectToSession, startNewSession, getKernelSpecs, getConfigSection,
-  ConfigWithDefaults, ContentsManager, KernelMessage, IContents
+  ConfigWithDefaults, ContentsManager, KernelMessage, IContents,
+  TerminalManager, createTerminalSession
 } from '../../lib';
 
 import {
@@ -314,6 +315,35 @@ describe('jupyter.services - Integration', () => {
             });
           });
         });
+      }).catch(done);
+    });
+
+  });
+
+  describe('createTerminalSession', () => {
+
+    it('should create and shut down a terminal session', (done) => {
+      createTerminalSession().then(session => {
+        return session.shutdown();
+      }).then(done, done);
+    });
+
+  });
+
+  describe('TerminalManager', () => {
+
+    it('should create, list, and shutdown by name', (done) => {
+      let manager = new TerminalManager();
+      manager.createNew().then(session => {
+        return manager.listRunning();
+      }).then(running => {
+        expect(running.length).to.be(1);
+        return manager.shutdown(running[0].name);
+      }).then(() => {
+        return manager.listRunning();
+      }).then(running => {
+        expect(running.length).to.be(0);
+        done();
       }).catch(done);
     });
 

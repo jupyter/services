@@ -403,3 +403,17 @@ getConfigSection({ name: 'notebook', baseUrl }).then(section => {
   });
 });
 ```
+
+**Terminals**
+
+```typescript
+import {
+  createTerminalSession
+} from 'jupyter-js-services';
+
+
+// Create a named terminal session and send some data.
+createTerminalSession({ name: 'foo' }).then(session => {
+  session.send({ type: 'stdin', content: ['foo'] });
+});
+```
