@@ -788,14 +788,14 @@ class Kernel implements IKernel {
   registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
     let future = this._futures && this._futures.get(msg_id);
     if (future) {
-      Private.hooksProperty.get(future).add(hook);
+      future.registerMessageHook(hook);
     }
     return new DisposableDelegate(() => {
       let future = this._futures && this._futures.get(msg_id);
       if (future) {
-        Private.hooksProperty.get(future).remove(hook);
+        future.removeMessageHook(hook);
       }
-    })
+    });
   }
 
   /**

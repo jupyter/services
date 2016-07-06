@@ -286,7 +286,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * If the callback returns false, the message processing will stop.
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean):  IDisposable;
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.
@@ -297,15 +297,6 @@ interface IKernel extends IDisposable {
    * Optional default settings for ajax requests, if applicable.
    */
   ajaxSettings?: IAjaxSettings;
-}
-
-export
-interface IHookList<T> extends IDisposable {
-  add(hook: (msg: T) => boolean): void;
-
-  remove(hook: (msg: T) => boolean): void;
-
-  process(msg: T): boolean;
 }
 
 /**
@@ -428,9 +419,15 @@ namespace IKernel {
     onDone: () => void;
 
     /**
-     * The message hooks
+     * Register hook for IOPub messages.
+     * 
+     * @returns a disposable to unregister the hook.
+     * 
+     * #### Notes
+     * The most recently-registered hook is run first.
      */
-    hooks: IHookList<KernelMessage.IIOPubMessage>;
+    registerMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
+    removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
   }
 
   /**
