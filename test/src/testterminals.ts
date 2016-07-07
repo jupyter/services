@@ -117,15 +117,16 @@ describe('terminals', () => {
 
   describe('ITerminalSession', () => {
 
-    describe('#onMessage', () => {
+    describe('#messageReceived', () => {
 
-      it('should be called when a message is received', (done) => {
+      it('should be emitted when a message is received', (done) => {
         createTerminalSession({ name: 'foo' }).then(session => {
-          session.onMessage = msg => {
+          session.messageReceived.connect((sender, msg) => {
+            expect(sender).to.be(session);
             expect(msg.type).to.be('stdout');
             expect(msg.content).to.eql(['foo bar']);
             done();
-          };
+          });
           let server = MockSocketServer.servers[session.url];
           server.send(JSON.stringify(['stdout', 'foo bar']));
         }).catch(done);
