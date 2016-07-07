@@ -9,5 +9,6 @@ module.exports = {
         umdNamedDefine: true,
         publicPath: 'https://npmcdn.com/jupyter-js-services@' + version + '/dist/'
     },
+    bail: true,
     devtool: 'source-map'
 };
