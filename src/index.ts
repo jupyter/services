@@ -8,6 +8,7 @@ export * from './ikernel';
 export * from './isession';
 export * from './kernel';
 export * from './session';
+export * from './terminals';
 
 export {
   IAjaxSettings
