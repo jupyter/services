@@ -789,6 +789,8 @@ class Kernel implements IKernel {
    * If a hook throws an error, the error is logged to the console and the next hook is run.
    * If a hook is registered during the hook processing, it won't run until the next message.
    * If a hook is disposed during the hook processing, it will be deactivated immediately.
+   *
+   * See also [[IFuture.registerMessageHook]].
    */
   registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
     let future = this._futures && this._futures.get(msg_id);
