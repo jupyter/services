@@ -3,7 +3,6 @@
   <head>
     <title>Jupyter Services Demo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.js"></script>
-    <script   src="https://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
     <style type="text/css">
     #cell {
       font-family: monospace;
@@ -19,7 +18,7 @@
     </p>
     <div>
       Kernel:
-      <pre id="kernel-info"></pre>
+      <pre id="kernel-info">Starting...</pre>
     </div>
     <textarea id="cell" cols="100" rows="24"></textarea>
     <div>
@@ -29,8 +28,8 @@
     <script type="text/javascript">
     require.config({
         paths: {
-          'jupyter-js-services': '/static/node_modules/jupyter-js-services/dist/index',
-          'jupyter-js-utils': '/static/node_modules/jupyter-js-utils/dist/index',
+          'jquery': 'https://code.jquery.com/jquery-2.2.4.min',
+          'jupyter-js-services': 'https://npmcdn.com/jupyter-js-services@0.12.0/dist/index',
         }
     });
     </script>

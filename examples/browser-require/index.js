@@ -1,11 +1,9 @@
 
-require(['jupyter-js-services', 'jupyter-js-utils'], function (services, utils) {
+require(['jquery', 'jupyter-js-services'], function ($, services) {
   "uses strict";
   var startNewKernel = services.startNewKernel;
-  var BASE_URL = utils.getBaseUrl();
-  
+
   var kernelOptions = {
-    baseUrl: BASE_URL,
     name: 'python',
   };
 

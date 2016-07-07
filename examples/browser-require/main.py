@@ -27,6 +27,7 @@ def main():
     url = "http://localhost:%s" % PORT
 
     nb_command = [sys.executable, '-m', 'notebook','--no-browser', '--debug',
+                  '--NotebookApp.password=""',
                   '--notebook-dir=.',
                   '--NotebookApp.allow_origin="%s"' % url]
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,

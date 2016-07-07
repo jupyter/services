@@ -9,11 +9,10 @@ The base url of the notebook server is to the HTML template as part of a JSON
 script tag.  The script starts a python notebook session and interacts
 with it, printing messages to the browser console.
 
-The example can be installed as `npm install` and run as `python main.py`.
+The example can be run with `python main.py`.
 
 Notes: 
 
 - The example is written in *JavaScript* using *ES5* syntax.
 - The example requires version 4.1+ of the Jupyter Notebook.
-- The example expresses a dependency on the local repo,
-  but typically the requirements would be from public releases of packages.
+- javascript libraries, such as requirejs, jquery, and jupyter-js-services are loaded from CDNs.
