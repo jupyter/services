@@ -334,6 +334,10 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path);
 
     if (options) {
+      // The notebook type cannot take an format option.
+      if (options.type === 'notebook') {
+        delete options['format'];
+      }
       let params = utils.copy(options);
       params.content = options.content ? '1' : '0';
       url += utils.jsonToQueryString(params);
