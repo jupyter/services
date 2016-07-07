@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jupyter Services Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.js"></script>
+    <script   src="https://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
+    <style type="text/css">
+    #cell {
+      font-family: monospace;
+    }
+    </style>
+  </head>
+  <body>
+    <script id='jupyter-config-data' type="application/json">{ "baseUrl": "{{base_url}}" }</script>
+    <h1>Run code!</h1>
+    <p>
+      Type code in the text area and click run to execute it.
+      You will see a log of the messages produced by the kernel below.
+    </p>
+    <div>
+      Kernel:
+      <pre id="kernel-info"></pre>
+    </div>
+    <textarea id="cell" cols="100" rows="24"></textarea>
+    <div>
+      <button id="run">run</button>
+    </div>
+    <div id="output"></div>
+    <script type="text/javascript">
+    require.config({
+        paths: {
+          'jupyter-js-services': '/static/node_modules/jupyter-js-services/dist/index',
+          'jupyter-js-utils': '/static/node_modules/jupyter-js-utils/dist/index',
+        }
+    });
+    </script>
+    <script src="/static/index.js"></script>
+  </body>
+</html>

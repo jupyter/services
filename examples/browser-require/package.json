@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "browser-example",
+  "dependencies": {
+    "jupyter-js-services": "file:../..",
+    "jupyter-js-utils": "file:../../../jupyter-js-utils"
+  },
+  "scripts": {
+    "clean": "rimraf build && rimraf node_modules",
+    "update": "rimraf node_modules/jupyter-js-services && npm install"
+  },
+  "devDependencies": {
+    "rimraf": "^2.5.2"
+  }
+}
