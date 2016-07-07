@@ -358,6 +358,9 @@ class TerminalSession implements ITerminalSession {
     });
   }
 
+  /**
+   * Connect to the terminal session.
+   */
   connect(): Promise<ITerminalSession> {
     if (this._name) {
       return this._initializeSocket();
