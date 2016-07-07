@@ -222,6 +222,9 @@ class MockKernel implements IKernel {
    * Send a shell reply message to the kernel.
    */
   sendShellReply(content: JSONObject): void {
+    if (this.isDisposed) {
+      return;
+    }
     let future = this._futures.shift();
     if (!future) {
       return;
@@ -336,6 +339,9 @@ class MockKernel implements IKernel {
 
     // Delay sending the message so the handlers can be set up.
     setTimeout(() => {
+      if (this.isDisposed) {
+        return;
+      }
       // Send a typical stream of messages.
       this.sendServerMessage('status', 'iopub', {
         execution_state: 'busy'
