@@ -16,7 +16,7 @@ else
     # Install the development version of the notebook
     git clone https://github.com/jupyter/notebook
     cd notebook
-    pip install --pre -e .
+    pip install --pre -v -e .
 fi
 
 # Create jupyter base dir (needed for config retrieval).
