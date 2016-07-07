@@ -1247,7 +1247,8 @@ describe('jupyter.services - kernel', () => {
     });
 
     context('#registerMessageHook()', () => {
-            it('should have the most recently registered hook run first', (done) => {
+
+      it('should have the most recently registered hook run first', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           let options: KernelMessage.IExecuteRequest = {
@@ -1301,11 +1302,9 @@ describe('jupyter.services - kernel', () => {
                 done();
               });
             };
-
           });
         });
       });
-
 
       it('should abort processing if a hook returns false, but the done logic should still work', (done) => {
         let tester = new KernelTester();
@@ -1360,7 +1359,6 @@ describe('jupyter.services - kernel', () => {
                 done();
               });
             };
-
           });
         });
       });
@@ -1411,17 +1409,16 @@ describe('jupyter.services - kernel', () => {
             };
 
             future.onDone = () => {
-              expect(calls).to.eql([ 'last', 'iopub', 'first', 'last', 'iopub' ]);
+              expect(calls).to.eql(['last', 'iopub', 'first', 'last', 'iopub']);
               doLater(() => {
                 done();
               });
             };
-
           });
         });
       });
 
-      it('removing a message hook in another message hook deactivates it immediately', (done) => {
+      it('should deactivate a hook immediately on removal', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           let options: KernelMessage.IExecuteRequest = {
@@ -1473,7 +1470,7 @@ describe('jupyter.services - kernel', () => {
             };
 
             future.onDone = () => {
-              expect(calls).to.eql([ 'first', 'delete', 'iopub', 'first', 'iopub' ]);
+              expect(calls).to.eql(['first', 'delete', 'iopub', 'first', 'iopub']);
               doLater(() => {
                 done();
               });
@@ -1481,21 +1478,22 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
-    })
-
+    });
   });
 
   describe('IFuture', () => {
+
     it('should have a read-only msg attribute', (done) => {
-        createKernel().then(kernel => {
-          let future = kernel.execute({ code: 'hello' });
-          expect(typeof future.msg.header.msg_id).to.be('string');
-          expect(() => { future.msg = null; }).to.throwError();
-          done();
-        });
+      createKernel().then(kernel => {
+        let future = kernel.execute({ code: 'hello' });
+        expect(typeof future.msg.header.msg_id).to.be('string');
+        expect(() => { future.msg = null; }).to.throwError();
+        done();
+      });
     });
 
     describe('Message hooks', () => {
+
       it('should have the most recently registered hook run first', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
@@ -1556,11 +1554,9 @@ describe('jupyter.services - kernel', () => {
                 done();
               });
             };
-
           });
         });
       });
-
 
       it('should abort processing if a hook returns false, but the done logic should still work', (done) => {
         let tester = new KernelTester();
@@ -1615,7 +1611,6 @@ describe('jupyter.services - kernel', () => {
                 done();
               });
             };
-
           });
         });
       });
@@ -1666,17 +1661,16 @@ describe('jupyter.services - kernel', () => {
             };
 
             future.onDone = () => {
-              expect(calls).to.eql([ 'last', 'iopub', 'first', 'last', 'iopub' ]);
+              expect(calls).to.eql(['last', 'iopub', 'first', 'last', 'iopub']);
               doLater(() => {
                 done();
               });
             };
-
           });
         });
       });
 
-      it('removing a message hook in another message hook deactivates it immediately', (done) => {
+      it('should deactivate message hooks immediately on removal', (done) => {
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           let options: KernelMessage.IExecuteRequest = {
@@ -1728,7 +1722,7 @@ describe('jupyter.services - kernel', () => {
             };
 
             future.onDone = () => {
-              expect(calls).to.eql([ 'first', 'delete', 'iopub', 'first', 'iopub' ]);
+              expect(calls).to.eql(['first', 'delete', 'iopub', 'first', 'iopub']);
               doLater(() => {
                 done();
               });
