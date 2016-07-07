@@ -800,7 +800,9 @@ class Kernel implements IKernel {
   registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable {
     this._targetRegistry[targetName] = callback;
     return new DisposableDelegate(() => {
-      delete this._targetRegistry[targetName];
+      if (!this.isDisposed) {
+        delete this._targetRegistry[targetName];
+      }
     });
   }
 
