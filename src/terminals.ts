@@ -9,7 +9,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -29,6 +29,11 @@ const TERMINAL_SERVICE_URL = 'api/terminals';
 export
 interface ITerminalSession extends IDisposable {
   /**
+   * A signal emitted when a message is received from the server.
+   */
+  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
+
+  /**
    * Get the name of the terminal session.
    *
    * #### Notes
@@ -43,11 +48,6 @@ interface ITerminalSession extends IDisposable {
    * This is a read-only property.
    */
   url: string;
-
-  /**
-   * Callback for a message received event.
-   */
-  onMessage: (msg: ITerminalSession.IMessage) => void;
 
   /**
    * Send a message to the terminal session.
@@ -278,13 +278,10 @@ class TerminalSession implements ITerminalSession {
   }
 
   /**
-   * The callback for a message received event.
+   * A signal emitted when a message is received from the server.
    */
-  get onMessage(): (msg: ITerminalSession.IMessage) => void {
-    return this._onMsg;
-  }
-  set onMessage(cb: (msg: ITerminalSession.IMessage) => void) {
-    this._onMsg = cb;
+  get messageReceived(): ISignal<ITerminalSession, ITerminalSession.IMessage> {
+    return Private.messageReceivedSignal.bind(this);
   }
 
   /**
@@ -331,7 +328,7 @@ class TerminalSession implements ITerminalSession {
     }
     delete Private.running[this._name];
     this._promise = null;
-    this._onMsg = null;
+    clearSignalData(this);
   }
 
   /**
@@ -399,13 +396,10 @@ class TerminalSession implements ITerminalSession {
 
     this._ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data);
-      let onMsg = this._onMsg;
-      if (onMsg) {
-        onMsg({
-          type: data[0] as ITerminalSession.MessageType,
-          content: data.slice(1)
-        });
-      }
+      this.messageReceived.emit({
+        type: data[0] as ITerminalSession.MessageType,
+        content: data.slice(1)
+      });
     };
 
     this._ws.onopen = (event: MessageEvent) => {
@@ -423,7 +417,6 @@ class TerminalSession implements ITerminalSession {
   private _ws: WebSocket = null;
   private _isDisposed = false;
   private _promise: utils.PromiseDelegate<ITerminalSession> = null;
-  private _onMsg: (msg: ITerminalSession.IMessage) => void = null;
 }
 
 
