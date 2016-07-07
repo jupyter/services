@@ -168,9 +168,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   }
 
   private _handleStdin(msg: KernelMessage.IStdinMessage): void {
-    //let process = this._hooks.process(msg);
     let stdin = this._stdin;
-    if (/*process && */stdin) { stdin(msg); }
+    if (stdin) { stdin(msg); }
   }
 
   private _handleIOPub(msg: KernelMessage.IIOPubMessage): void {
