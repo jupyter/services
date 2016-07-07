@@ -420,13 +420,27 @@ namespace IKernel {
 
     /**
      * Register hook for IOPub messages.
-     * 
-     * @returns a disposable to unregister the hook.
-     * 
+     *
+     * @param hook - The callback invoked for an IOPub message.
+     *
      * #### Notes
-     * The most recently-registered hook is run first.
+     * The IOPub hook system allows you to preempt the handlers for IOPub messages handled
+     * by the future. The most recently registered hook is run first.
+     * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+     * If a hook throws an error, the error is logged to the console and the next hook is run.
+     * If a hook is registered during the hook processing, it won't run until the next message.
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
      */
     registerMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
+
+    /**
+     * Remove a hook for IOPub messages.
+     *
+     * @param hook - The hook to remove.
+     *
+     * #### Notes
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
+     */
     removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
   }
 

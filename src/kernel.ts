@@ -774,16 +774,21 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Register message hook
+   * Register an IOPub message hook.
    *
-   * @param msg_id - The message id the hook will intercept.
+   * @param msg_id - The parent_header message id the hook will intercept.
    *
    * @param hook - The callback invoked for the message.
    *
-   * @returns A disposable used to unregister the message hook
+   * @returns A disposable used to unregister the message hook.
    *
    * #### Notes
-   * If the callback returns false, the message processing will stop.
+   * The IOPub hook system allows you to preempt the handlers for IOPub messages with a
+   * given parent_header message id. The most recently registered hook is run first.
+   * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+   * If a hook throws an error, the error is logged to the console and the next hook is run.
+   * If a hook is registered during the hook processing, it won't run until the next message.
+   * If a hook is disposed during the hook processing, it will be deactivated immediately.
    */
   registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
     let future = this._futures && this._futures.get(msg_id);

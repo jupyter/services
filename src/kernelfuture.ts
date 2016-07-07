@@ -100,16 +100,28 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
 
   /**
    * Register hook for IOPub messages.
-   * 
+   *
+   * @param hook - The callback invoked for an IOPub message.
+   *
    * #### Notes
-   * The most recently registered hook is run first.
+   * The IOPub hook system allows you to preempt the handlers for IOPub messages handled
+   * by the future. The most recently registered hook is run first.
+   * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+   * If a hook throws an error, the error is logged to the console and the next hook is run.
+   * If a hook is registered during the hook processing, it won't run until the next message.
+   * If a hook is removed during the hook processing, it will be deactivated immediately.
    */
   registerMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
     this._hooks.add(hook);
   }
 
   /**
-   * Remove hook for IOPub messages.
+   * Remove a hook for IOPub messages.
+   *
+   * @param hook - The hook to remove.
+   *
+   * #### Notes
+   * If a hook is removed during the hook processing, it will be deactivated immediately.
    */
   removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
     this._hooks.remove(hook);
@@ -212,18 +224,28 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
 }
 
 namespace Private {
+  /**
+   * A polyfill for a function to run code outside of the current execution context.
+   */
   let defer = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setImmediate;
 
   export
   class HookList<T> {
     /**
-     * Register a hook
+     * Register a hook.
+     *
+     * @param hook - The callback to register.
      */
     add(hook: (msg: T) => boolean): void {
       this.remove(hook);
       this._hooks.push(hook);
     }
 
+    /**
+     * Remove a hook.
+     *
+     * @param hook - The callback to remove.
+     */
     remove(hook: (msg: T) => boolean): void {
       let index = this._hooks.indexOf(hook);
       if (index >= 0) {
@@ -233,7 +255,14 @@ namespace Private {
     }
 
     /**
-     * process hooks. Returns true if the processing should continue, false if the processing should stop.
+     * Process a message through the hooks.
+     *
+     * #### Notes
+     * The most recently registered hook is run first.
+     * If the hook returns false, any later hooks will not run.
+     * If a hook throws an error, the error is logged to the console and the next hook is run.
+     * If a hook is registered during the hook processing, it won't run until the next message.
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
      */
     process(msg: T): boolean {
       let continueHandling: boolean;
@@ -243,12 +272,7 @@ namespace Private {
         if (hook === null) { continue; }
         try {
           continueHandling = hook(msg);
-          // if the hook doesn't return anything, go ahead and continue
-          if (continueHandling === void 0) {
-            continueHandling = true;
-          }
         } catch(err) {
-          // Should we stop processing when there is an error?
           continueHandling = true;
           console.error(err);
         }
@@ -270,12 +294,15 @@ namespace Private {
     }
 
     /**
-     * Dispose and unregister the future.
+     * Dispose the hook list.
      */
     dispose(): void {
       this._hooks = null;
     }
 
+    /**
+     * Schedule a cleanup of the list, removing any hooks that have been nulled out.
+     */
     private _scheduleCompact(): void {
       if (!this._cleanupScheduled) {
         this._cleanupScheduled = true;
@@ -286,6 +313,9 @@ namespace Private {
       }
     }
 
+    /**
+     * Compact the list, removing any nulls.
+     */
     private _compact(): void {
       let numNulls = 0;
       for (let i = 0, len = this._hooks.length; i < len; i++) {
