@@ -9,6 +9,14 @@ import {
 } from '../../lib/kernel';
 
 import {
+  IKernel
+} from '../../lib/ikernel';
+
+import {
+  ISession
+} from '../../lib/isession';
+
+import {
   validateKernelMessage, validateKernelModel, validateSessionModel,
   validateKernelSpecModel, validateContentsModel, validateCheckpointModel
 } from '../../lib/validate';
@@ -95,7 +103,7 @@ describe('jupyter.services', () => {
   describe('#validateKernelModel()', () => {
 
     it('should pass a valid id', () => {
-      let id = { name: 'foo', id: 'baz' };
+      let id: IKernel.IModel = { name: 'foo', id: 'baz' };
       validateKernelModel(id);
     });
 
@@ -104,40 +112,25 @@ describe('jupyter.services', () => {
       expect(() => validateKernelModel({ id: 'foo' })).to.throwError();
     });
 
-    it('should fail on incorrect data', () => {
-      let id = { name: 'foo', id: 1 };
-      expect(() => validateKernelModel(id as any)).to.throwError();
-    });
-
   });
 
   describe('#validateSessionModel()', () => {
 
     it('should pass a valid id', () => {
-      let id = {
+      let id: ISession.IModel = {
         id: 'foo',
         kernel: { name: 'foo', id: '123'},
         notebook: { path: 'bar' }
-      }
+      };
       validateSessionModel(id);
     });
 
     it('should fail on missing data', () => {
-      let id = {
+      let id: ISession.IModel = {
         id: 'foo',
         kernel: { name: 'foo', id: '123'},
-        notebook: { }
-      }
-      expect(() => validateSessionModel(id as any)).to.throwError();
-    });
-
-    it('should fail on incorrect data', () => {
-      let id = {
-        id: 'foo',
-        kernel: { name: 'foo', id: 123 },
-        notebook: { path: 'bar' }
-      }
-      expect(() => validateSessionModel(id as any)).to.throwError();
+      };
+      expect(() => validateSessionModel(id)).to.throwError();
     });
 
   });
@@ -194,7 +187,7 @@ describe('jupyter.services', () => {
     });
 
     it('should fail on incorrect data', () => {
-      let model = { id: 1, last_modified: '1'}
+      let model = { id: 1, last_modified: '1'};
       expect(() => validateCheckpointModel(model as any)).to.throwError();
     });
 

@@ -194,7 +194,7 @@ function findSessionById(id: string, options?: ISession.IOptions): Promise<ISess
   for (let clientId in sessions) {
     let session = sessions[clientId];
     if (session.id === id) {
-      let model = {
+      let model: ISession.IModel = {
         id,
         notebook: { path: session.path },
         kernel: { name: session.kernel.name, id: session.kernel.id }
@@ -230,7 +230,7 @@ function findSessionByPath(path: string, options?: ISession.IOptions): Promise<I
   for (let clientId in sessions) {
     let session = sessions[clientId];
     if (session.path === path) {
-      let model = {
+      let model: ISession.IModel = {
         id: session.id,
         notebook: { path: session.path },
         kernel: { name: session.kernel.name, id: session.kernel.id }

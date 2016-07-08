@@ -146,7 +146,7 @@ function findKernelById(id: string, options?: IKernel.IOptions): Promise<IKernel
   for (let clientId in kernels) {
     let kernel = kernels[clientId];
     if (kernel.id === id) {
-      let result = { id: kernel.id, name: kernel.name };
+      let result: IKernel.IModel = { id: kernel.id, name: kernel.name };
       return Promise.resolve(result);
     }
   }
@@ -290,7 +290,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
   return Private.getKernelModel(utils.urlJoinEncode(id), options).then(model => {
     return new Kernel(options, id);
   }).catch(() => {
-    return Private.typedThrow<IKernel.IModel>(`No running kernel with id: ${id}`);
+    return Private.typedThrow<IKernel>(`No running kernel with id: ${id}`);
   });
 }
 

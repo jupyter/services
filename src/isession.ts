@@ -18,6 +18,10 @@ import {
   IKernel, KernelMessage
 } from './ikernel';
 
+import {
+  JSONObject
+} from './json';
+
 
 /**
  * Interface of a session object.
@@ -228,15 +232,15 @@ namespace ISession {
    * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions).
    */
   export
-  interface IModel {
-
+  interface IModel extends JSONObject {
     /**
      * The unique identifier for the session client.
      */
     id: string;
-    notebook: {
+    notebook?: {
+      [ key: string ]: string;
       path: string;
     };
-    kernel: IKernel.IModel;
+    kernel?: IKernel.IModel;
   }
 }
