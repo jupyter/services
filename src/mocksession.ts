@@ -257,6 +257,14 @@ class MockSessionManager implements ISession.IManager {
     }
     return this.startNew(options, id);
   }
+
+  shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
+    let session = Private.runningSessions[id];
+    if (!session) {
+      return Promise.reject(`No running sessions with id: ${id}`);
+    }
+    return session.shutdown();
+  }
 }
 
 
