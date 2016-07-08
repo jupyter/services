@@ -1478,6 +1478,7 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
+
     });
   });
 
@@ -1730,6 +1731,7 @@ describe('jupyter.services - kernel', () => {
           });
         });
       });
+
     });
   });
 
