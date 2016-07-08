@@ -7,6 +7,7 @@ export * from './contents';
 export * from './ikernel';
 export * from './isession';
 export * from './kernel';
+export * from './manager';
 export * from './session';
 export * from './terminals';
 

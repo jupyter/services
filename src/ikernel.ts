@@ -540,7 +540,7 @@ namespace IKernel {
    * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
    */
   export
-  interface IModel {
+  interface IModel extends JSONObject {
     /**
      * Unique identifier of the kernel server session.
      */
@@ -556,8 +556,7 @@ namespace IKernel {
    * Kernel Spec help link interface.
    */
   export
-  interface ISpecHelpLink {
-    [ key: string ]: JSONValue;
+  interface ISpecHelpLink extends JSONObject {
     text: string;
     url: string;
   }
@@ -569,8 +568,7 @@ namespace IKernel {
    * See [Kernel specs](http://jupyter-client.readthedocs.io/en/latest/kernels.html#kernelspecs).
    */
   export
-  interface ISpec {
-    [ key: string ]: JSONValue;
+  interface ISpec extends JSONObject {
     language: string;
     argv: string[];
     display_name: string;
@@ -586,7 +584,7 @@ namespace IKernel {
    * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
    */
   export
-  interface ISpecModel {
+  interface ISpecModel extends JSONObject {
     name: string;
     spec: ISpec;
     resources: { [key: string]: string; };
@@ -599,7 +597,7 @@ namespace IKernel {
    * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
    */
   export
-  interface ISpecModels {
+  interface ISpecModels extends JSONObject {
     default: string;
     kernelspecs: { [key: string]: ISpecModel };
   }
@@ -620,7 +618,6 @@ namespace KernelMessage {
    */
   export
   interface IHeader extends JSONObject {
-    [ key: string ]: JSONValue;
     username: string;
     version: string;
     session: string;

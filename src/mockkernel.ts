@@ -421,7 +421,7 @@ class MockKernel implements IKernel {
   /**
    * Register a message hook
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable { 
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
     return new DisposableDelegate(() => {});
   }
 
