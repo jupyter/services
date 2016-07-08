@@ -283,6 +283,27 @@ interface IKernel extends IDisposable {
   registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable;
 
   /**
+   * Register an IOPub message hook.
+   *
+   * @param msg_id - The parent_header message id in messages the hook should intercept.
+   *
+   * @param hook - The callback invoked for the message.
+   *
+   * @returns A disposable used to unregister the message hook.
+   *
+   * #### Notes
+   * The IOPub hook system allows you to preempt the handlers for IOPub messages with a
+   * given parent_header message id. The most recently registered hook is run first.
+   * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+   * If a hook throws an error, the error is logged to the console and the next hook is run.
+   * If a hook is registered during the hook processing, it won't run until the next message.
+   * If a hook is disposed during the hook processing, it will be deactivated immediately.
+   *
+   * See also [[IFuture.registerMessageHook]].
+   */
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
+
+  /**
    * Get the kernel spec associated with the kernel.
    */
   getKernelSpec(): Promise<IKernel.ISpec>;
@@ -292,7 +313,6 @@ interface IKernel extends IDisposable {
    */
   ajaxSettings?: IAjaxSettings;
 }
-
 
 /**
  * A namespace for kernel types, interfaces, and type checker functions.
@@ -412,6 +432,31 @@ namespace IKernel {
      * The done handler for the kernel future.
      */
     onDone: () => void;
+
+    /**
+     * Register hook for IOPub messages.
+     *
+     * @param hook - The callback invoked for an IOPub message.
+     *
+     * #### Notes
+     * The IOPub hook system allows you to preempt the handlers for IOPub messages handled
+     * by the future. The most recently registered hook is run first.
+     * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+     * If a hook throws an error, the error is logged to the console and the next hook is run.
+     * If a hook is registered during the hook processing, it won't run until the next message.
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
+     */
+    registerMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
+
+    /**
+     * Remove a hook for IOPub messages.
+     *
+     * @param hook - The hook to remove.
+     *
+     * #### Notes
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
+     */
+    removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void;
   }
 
   /**

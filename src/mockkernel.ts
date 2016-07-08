@@ -6,7 +6,7 @@ import * as utils
   from 'jupyter-js-utils';
 
 import {
-  IDisposable
+  IDisposable, DisposableDelegate
 } from 'phosphor-disposable';
 
 import {
@@ -416,6 +416,13 @@ class MockKernel implements IKernel {
    */
   getKernelSpec(): Promise<IKernel.ISpec> {
     return Promise.resolve(this._kernelspec);
+  }
+
+  /**
+   * Register a message hook
+   */
+  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable { 
+    return new DisposableDelegate(() => {});
   }
 
   /**

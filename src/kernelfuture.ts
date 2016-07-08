@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  DisposableDelegate
+  DisposableDelegate, IDisposable
 } from 'phosphor-disposable';
 
 import {
@@ -23,7 +23,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     super(cb);
     this._msg = msg;
     if (!expectShell) {
-      this._setFlag(KernelFutureFlag.GotReply);
+      this._setFlag(Private.KernelFutureFlag.GotReply);
     }
     this._disposeOnDone = disposeOnDone;
   }
@@ -39,7 +39,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
    * Check for message done state.
    */
   get isDone(): boolean {
-    return this._testFlag(KernelFutureFlag.IsDone);
+    return this._testFlag(Private.KernelFutureFlag.IsDone);
   }
 
   /**
@@ -99,6 +99,35 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   }
 
   /**
+   * Register hook for IOPub messages.
+   *
+   * @param hook - The callback invoked for an IOPub message.
+   *
+   * #### Notes
+   * The IOPub hook system allows you to preempt the handlers for IOPub messages handled
+   * by the future. The most recently registered hook is run first.
+   * If the hook returns false, any later hooks and the future's onIOPub handler will not run.
+   * If a hook throws an error, the error is logged to the console and the next hook is run.
+   * If a hook is registered during the hook processing, it won't run until the next message.
+   * If a hook is removed during the hook processing, it will be deactivated immediately.
+   */
+  registerMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+    this._hooks.add(hook);
+  }
+
+  /**
+   * Remove a hook for IOPub messages.
+   *
+   * @param hook - The hook to remove.
+   *
+   * #### Notes
+   * If a hook is removed during the hook processing, it will be deactivated immediately.
+   */
+  removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+    this._hooks.remove(hook);
+  }
+
+  /**
    * Dispose and unregister the future.
    */
   dispose(): void {
@@ -107,6 +136,8 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     this._reply = null;
     this._done = null;
     this._msg = null;
+    if (this._hooks) { this._hooks.dispose(); }
+    this._hooks = null;
     super.dispose();
   }
 
@@ -129,25 +160,26 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
 
   private _handleReply(msg: KernelMessage.IShellMessage): void {
     let reply = this._reply;
-    if (reply) reply(msg);
-    this._setFlag(KernelFutureFlag.GotReply);
-    if (this._testFlag(KernelFutureFlag.GotIdle)) {
+    if (reply) { reply(msg); }
+    this._setFlag(Private.KernelFutureFlag.GotReply);
+    if (this._testFlag(Private.KernelFutureFlag.GotIdle)) {
       this._handleDone();
     }
   }
 
   private _handleStdin(msg: KernelMessage.IStdinMessage): void {
     let stdin = this._stdin;
-    if (stdin) stdin(msg);
+    if (stdin) { stdin(msg); }
   }
 
   private _handleIOPub(msg: KernelMessage.IIOPubMessage): void {
+    let process = this._hooks.process(msg);
     let iopub = this._iopub;
-    if (iopub) iopub(msg);
+    if (process && iopub) { iopub(msg); }
     if (KernelMessage.isStatusMsg(msg) &&
         msg.content.execution_state === 'idle') {
-      this._setFlag(KernelFutureFlag.GotIdle);
-      if (this._testFlag(KernelFutureFlag.GotReply)) {
+      this._setFlag(Private.KernelFutureFlag.GotIdle);
+      if (this._testFlag(Private.KernelFutureFlag.GotReply)) {
         this._handleDone();
       }
     }
@@ -157,7 +189,7 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
     if (this.isDone) {
       return;
     }
-    this._setFlag(KernelFutureFlag.IsDone);
+    this._setFlag(Private.KernelFutureFlag.IsDone);
     let done = this._done;
     if (done) done();
     this._done = null;
@@ -169,14 +201,14 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   /**
    * Test whether the given future flag is set.
    */
-  private _testFlag(flag: KernelFutureFlag): boolean {
+  private _testFlag(flag: Private.KernelFutureFlag): boolean {
     return (this._status & flag) !== 0;
   }
 
   /**
    * Set the given future flag.
    */
-  private _setFlag(flag: KernelFutureFlag): void {
+  private _setFlag(flag: Private.KernelFutureFlag): void {
     this._status |= flag;
   }
 
@@ -186,16 +218,128 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
   private _iopub: (msg: KernelMessage.IIOPubMessage) => void = null;
   private _reply: (msg: KernelMessage.IShellMessage) => void = null;
   private _done: () => void = null;
+  private _hooks = new Private.HookList<KernelMessage.IIOPubMessage>();
   private _disposeOnDone = true;
 }
 
+namespace Private {
+  /**
+   * A polyfill for a function to run code outside of the current execution context.
+   */
+  let defer = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setImmediate;
 
-/**
- * Bit flags for the kernel future state.
- */
-enum KernelFutureFlag {
-  GotReply = 0x1,
-  GotIdle = 0x2,
-  IsDone = 0x4,
-  DisposeOnDone = 0x8,
+  export
+  class HookList<T> {
+    /**
+     * Register a hook.
+     *
+     * @param hook - The callback to register.
+     */
+    add(hook: (msg: T) => boolean): void {
+      this.remove(hook);
+      this._hooks.push(hook);
+    }
+
+    /**
+     * Remove a hook.
+     *
+     * @param hook - The callback to remove.
+     */
+    remove(hook: (msg: T) => boolean): void {
+      let index = this._hooks.indexOf(hook);
+      if (index >= 0) {
+        this._hooks[index] = null;
+        this._scheduleCompact();
+      }
+    }
+
+    /**
+     * Process a message through the hooks.
+     *
+     * #### Notes
+     * The most recently registered hook is run first.
+     * If the hook returns false, any later hooks will not run.
+     * If a hook throws an error, the error is logged to the console and the next hook is run.
+     * If a hook is registered during the hook processing, it won't run until the next message.
+     * If a hook is removed during the hook processing, it will be deactivated immediately.
+     */
+    process(msg: T): boolean {
+      let continueHandling: boolean;
+      // most recently-added hook is called first
+      for (let i = this._hooks.length-1; i>=0; i--) {
+        let hook = this._hooks[i];
+        if (hook === null) { continue; }
+        try {
+          continueHandling = hook(msg);
+        } catch(err) {
+          continueHandling = true;
+          console.error(err);
+        }
+        if (continueHandling === false) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /**
+     * Test whether the HookList has been disposed.
+     *
+     * #### Notes
+     * This is a read-only property which is always safe to access.
+     */
+    get isDisposed(): boolean {
+      return (this._hooks === null);
+    }
+
+    /**
+     * Dispose the hook list.
+     */
+    dispose(): void {
+      this._hooks = null;
+    }
+
+    /**
+     * Schedule a cleanup of the list, removing any hooks that have been nulled out.
+     */
+    private _scheduleCompact(): void {
+      if (!this._cleanupScheduled) {
+        this._cleanupScheduled = true;
+        defer(() => {
+          this._cleanupScheduled = false;
+          this._compact();
+        })
+      }
+    }
+
+    /**
+     * Compact the list, removing any nulls.
+     */
+    private _compact(): void {
+      let numNulls = 0;
+      for (let i = 0, len = this._hooks.length; i < len; i++) {
+        let hook = this._hooks[i];
+        if (this._hooks[i] === null) {
+          numNulls++;
+        } else {
+          this._hooks[i-numNulls] = hook;
+        }
+      }
+      this._hooks.length -= numNulls;
+    }
+
+    private _hooks: ((msg: T) => boolean)[] = [];
+    private _cleanupScheduled: boolean;
+  }
+
+  /**
+   * Bit flags for the kernel future state.
+   */
+  export
+  enum KernelFutureFlag {
+    GotReply = 0x1,
+    GotIdle = 0x2,
+    IsDone = 0x4,
+    DisposeOnDone = 0x8,
+  }
 }
