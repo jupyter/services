@@ -385,6 +385,11 @@ namespace IKernel {
      * Connect to an existing kernel.
      */
     connectTo(id: string, options?: IOptions): Promise<IKernel>;
+
+    /**
+     * Shut down a kernel by id.
+     */
+    shutdown(id: string, options?: IOptions): Promise<void>;
   }
 
   /**

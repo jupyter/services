@@ -10,7 +10,7 @@ import {
 
 import {
   KernelManager, connectToKernel, createKernelMessage, createShellMessage,
-  getKernelSpecs, listRunningKernels, startNewKernel
+  getKernelSpecs, listRunningKernels, startNewKernel, shutdownKernel
 } from '../../lib/kernel';
 
 import {
@@ -270,6 +270,17 @@ describe('jupyter.services - kernel', () => {
       });
       let kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
+    });
+
+  });
+
+  describe('shutdownKernel()', () => {
+
+    it('should shut down a kernel by id', (done) => {
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      shutdownKernel('foo').then(done, done);
     });
 
   });
@@ -1858,6 +1869,18 @@ describe('jupyter.services - kernel', () => {
             done();
           });
         });
+      });
+
+    });
+
+    describe('shutdown()', () => {
+
+      it('should shut down a kernel by id', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let handler = new RequestHandler(() => {
+          handler.respond(204, { });
+        });
+        manager.shutdown('foo').then(done, done);
       });
 
     });

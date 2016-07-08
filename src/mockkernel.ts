@@ -529,6 +529,14 @@ class MockKernelManager implements IKernel.IManager {
     }
     return this.startNew(options, id);
   }
+
+  shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
+    let kernel = Private.runningKernels[id];
+    if (!kernel) {
+      return Promise.reject(`No running kernel with id: ${id}`);
+    }
+    return kernel.shutdown();
+  }
 }
 
 

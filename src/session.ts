@@ -99,6 +99,13 @@ class SessionManager implements ISession.IManager {
   }
 
   /**
+   * Shut down a session by id.
+   */
+  shutdown(id: string, options?: ISession.IOptions): Promise<void> {
+    return shutdownSession(id, this._getOptions(options));
+  }
+
+  /**
    * Get optionally overidden options.
    */
   private _getOptions(options: ISession.IOptions): ISession.IOptions {
@@ -283,6 +290,18 @@ function connectToSession(id: string, options?: ISession.IOptions): Promise<ISes
 
 
 /**
+ * Shut down a session by id.
+ */
+export
+function shutdownSession(id: string, options: ISession.IOptions = {}): Promise<void> {
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
+  let ajaxSettings = options.ajaxSettings || {};
+  return Private.shutdownSession(id, baseUrl, ajaxSettings);
+}
+
+
+
+/**
  * Session object for accessing the session REST api. The session
  * should be used to start kernels and then shut them down -- for
  * all other operations, the kernel object should be used.
@@ -295,8 +314,7 @@ class Session implements ISession {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
-    options.baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._url = utils.urlPathJoin(options.baseUrl, SESSION_SERVICE_URL, this._id);
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
     Private.runningSessions[this._uuid] = this;
     this.setupKernel(kernel);
@@ -530,23 +548,11 @@ class Session implements ISession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'DELETE';
-    ajaxSettings.dataType = 'json';
-    ajaxSettings.cache = false;
-
-    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
-      }
+    return Private.shutdownSession(this.id, this._baseUrl, this.ajaxSettings)
+    .then(() => {
       this._kernel.dispose();
       this._kernel = null;
       this.sessionDied.emit(void 0);
-    }, (rejected: utils.IAjaxError) => {
-      if (rejected.xhr.status === 410) {
-        throw Error('The kernel was deleted but the session was not');
-      }
-      Private.onSessionError(rejected);
     });
   }
 
@@ -597,6 +603,7 @@ class Session implements ISession {
    * Send a PATCH to the server, updating the session path or the kernel.
    */
   private _patch(data: string): Promise<ISession.IModel> {
+    let url = Private.getSessionUrl(this._baseUrl, this._id);
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
@@ -605,7 +612,7 @@ class Session implements ISession {
     ajaxSettings.cache = false;
     this._updating = true;
 
-    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         throw Error('Invalid Status: ' + success.xhr.status);
       }
@@ -624,7 +631,7 @@ class Session implements ISession {
   private _ajaxSettings = '';
   private _kernel: IKernel = null;
   private _uuid = '';
-  private _url = '';
+  private _baseUrl = '';
   private _options: ISession.IOptions = null;
   private _updating = false;
 }
@@ -742,7 +749,7 @@ namespace Private {
   function getSessionModel(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, id);
+    let url = getSessionUrl(baseUrl, id);
     let ajaxSettings = options.ajaxSettings || {};
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -795,6 +802,36 @@ namespace Private {
       }
     }
     return Promise.all(promises).then(() => { return model; });
+  }
+
+  /**
+   * Shut down a session by id.
+   */
+  export
+  function shutdownSession(id: string, baseUrl: string, ajaxSettings: IAjaxSettings = {}): Promise<void> {
+    let url = getSessionUrl(baseUrl, id);
+    ajaxSettings.method = 'DELETE';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 204) {
+        throw Error('Invalid Status: ' + success.xhr.status);
+      }
+    }, rejected => {
+      if (rejected.xhr.status === 410) {
+        throw Error('The kernel was deleted but the session was not');
+      }
+      onSessionError(rejected);
+    });
+  }
+
+  /**
+   * Get a session url.
+   */
+  export
+  function getSessionUrl(baseUrl: string, id: string): string {
+    return utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL, id);
   }
 
   /**

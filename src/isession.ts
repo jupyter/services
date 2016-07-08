@@ -219,6 +219,11 @@ namespace ISession {
      * Connect to a running session.
      */
     connectTo(id: string, options?: IOptions): Promise<ISession>;
+
+    /**
+     * Shut down a session by id.
+     */
+    shutdown(id: string, options?: IOptions): Promise<void>;
   }
 
   /**

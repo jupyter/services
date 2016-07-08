@@ -18,7 +18,7 @@ import {
 
 import {
   SessionManager, connectToSession, listRunningSessions,
-  startNewSession, findSessionById, findSessionByPath
+  startNewSession, findSessionById, findSessionByPath, shutdownSession
 } from '../../lib/session';
 
 import {
@@ -377,6 +377,18 @@ describe('jupyter.services - session', () => {
       );
     });
   });
+
+  describe('shutdownSession()', () => {
+
+    it('should shut down a kernel by id', (done) => {
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { });
+      });
+      shutdownSession('foo').then(done, done);
+    });
+
+  });
+
 
   describe('ISession', () => {
 
@@ -1046,6 +1058,18 @@ describe('jupyter.services - session', () => {
             done();
           });
         });
+      });
+
+    });
+
+    describe('shutdown()', () => {
+
+      it('should shut down a session by id', (done) => {
+        let manager = new SessionManager();
+        let handler = new RequestHandler(() => {
+          handler.respond(204, { });
+        });
+        manager.shutdown('foo').then(done, done);
       });
 
     });

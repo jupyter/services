@@ -103,12 +103,16 @@ class KernelManager implements IKernel.IManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: IKernel.IOptions): Promise<IKernel> {
-    if (options) {
-      options = this._getOptions(options);
-    } else {
-      options = utils.copy(this._options);
-    }
-    return connectToKernel(id, options);
+    return connectToKernel(id, this._getOptions(options));
+  }
+
+  /**
+   * Shut down a kernel by id.
+   *
+   * @param options - Overrides for the default options.
+   */
+  shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
+    return shutdownKernel(id, this._getOptions(options));
   }
 
   /**
@@ -292,6 +296,17 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
   }).catch(() => {
     return Private.typedThrow<IKernel.IModel>(`No running kernel with id: ${id}`);
   });
+}
+
+
+/**
+ * Shut down a kernel by id.
+ */
+export
+function shutdownKernel(id: string, options: IKernel.IOptions = {}): Promise<void> {
+  let baseUrl = options.baseUrl || utils.getBaseUrl();
+  let ajaxSettings = options.ajaxSettings || {};
+  return Private.shutdownKernel(id, baseUrl, ajaxSettings);
 }
 
 
@@ -600,8 +615,11 @@ class Kernel implements IKernel {
    * request fails or the response is invalid.
    */
   shutdown(): Promise<void> {
+    if (this.status === 'dead') {
+      return Promise.reject(new Error('Kernel is dead'));
+    }
     this._clearState();
-    return Private.shutdownKernel(this, this._baseUrl, this.ajaxSettings)
+    return Private.shutdownKernel(this.id, this._baseUrl, this.ajaxSettings)
     .then(() => {
       this.dispose();
     });
@@ -1450,12 +1468,9 @@ namespace Private {
    * Delete a kernel.
    */
   export
-  function shutdownKernel(kernel: Kernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
-    if (kernel.status === 'dead') {
-      return Promise.reject(new Error('Kernel is dead'));
-    }
+  function shutdownKernel(id: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
-                                utils.urlJoinEncode(kernel.id));
+                                utils.urlJoinEncode(id));
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
