@@ -78,7 +78,7 @@ interface IServiceManager {
 
 
 /**
- * The namespace for `IServiceManager` statcis.
+ * The namespace for `IServiceManager` statics.
  */
 export
 namespace IServiceManager {
@@ -128,6 +128,7 @@ function createServiceManager(options: IServiceManager.IOptions = {}): Promise<I
 /**
  * An implementation of a services manager.
  */
+export
 class ServiceManager implements IServiceManager {
   /**
    * Construct a new services provider.
