@@ -72,8 +72,13 @@ describe('mockkernel', () => {
 
     describe('#execute()', () => {
 
+      let kernel: MockKernel;
+
+      beforeEach(() => {
+        kernel = new MockKernel();
+      });
+
       it('should execute the code on the mock kernel', (done) => {
-        let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1'});
         future.onReply = (reply: KernelMessage.IExecuteOkReplyMsg) => {
           expect(reply.content.status).to.be('ok');
@@ -82,7 +87,6 @@ describe('mockkernel', () => {
       });
 
       it('should emit one iopub stream message', (done) => {
-        let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1'});
         let called = 0;
         let states: string[] = [];
@@ -103,7 +107,6 @@ describe('mockkernel', () => {
       });
 
       it('should increment the execution count', (done) => {
-        let kernel = new MockKernel();
         let future = kernel.execute({ code: 'a = 1' });
         future.onReply = (reply: KernelMessage.IExecuteReplyMsg)  => {
           expect(reply.content.execution_count).to.be(1);
@@ -118,7 +121,6 @@ describe('mockkernel', () => {
       });
 
       it('should allow two executions in a row', (done) => {
-        let kernel = new MockKernel();
         let future0 = kernel.execute({ code: 'a = 1' });
         let future1 = kernel.execute({ code: 'b = 2' });
         let called = false;
@@ -132,7 +134,6 @@ describe('mockkernel', () => {
       });
 
       it('should error remaining executes if `stop_on_error` and an error occurs', (done) => {
-        let kernel = new MockKernel();
         let future0 = kernel.execute({ code: ERROR_INPUT, stop_on_error: true });
         let future1 = kernel.execute({ code: 'b = 2' });
         let called = false;
@@ -147,6 +148,18 @@ describe('mockkernel', () => {
         };
       });
 
+      it('should finish both futures on an input error', (done) => {
+        let future0 = kernel.execute({ code: ERROR_INPUT, stop_on_error: true });
+        let future1 = kernel.execute({ code: 'b = 2' });
+        let called = false;
+        future0.onDone = () => {
+          called = true;
+        };
+        future1.onDone = () => {
+          expect(called).to.be(true);
+          done();
+        };
+      });
 
     });
 
