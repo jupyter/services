@@ -204,6 +204,9 @@ class MockKernel implements IKernel {
    * Send a message to the kernel.
    */
   sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, future: IKernel.IFuture): void {
+    if (future.isDisposed) {
+      return;
+    }
     let options: KernelMessage.IOptions = {
       msgType,
       channel,
@@ -339,7 +342,7 @@ class MockKernel implements IKernel {
 
     // Delay sending the message so the handlers can be set up.
     setTimeout(() => {
-      if (this.isDisposed) {
+      if (this.isDisposed || future.isDisposed) {
         return;
       }
       // Send a typical stream of messages.
