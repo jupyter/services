@@ -11,7 +11,7 @@ import {
 
 
 /**
- * A terminal session manager.
+ * A mock terminal session manager.
  */
 export
 class MockTerminalManager implements ITerminalSession.IManager {
