@@ -29,7 +29,7 @@ class MockTerminalManager implements ITerminalSession.IManager {
       return Promise.resolve(Private.running[name]);
     }
     if (!name) {
-      let i = 0;
+      let i = 1;
       while (String(i) in Private.running) {
         i++;
       }
