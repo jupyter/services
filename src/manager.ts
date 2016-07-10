@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IAjaxSettings, copy, getBaseUrl
+  IAjaxSettings, getBaseUrl
 } from 'jupyter-js-utils';
 
 import {
