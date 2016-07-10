@@ -907,7 +907,9 @@ class Kernel implements IKernel {
   private _createSocket(): void {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        utils.urlJoinEncode(this._id));
-    console.log('Starting WebSocket:', partialUrl);
+    // Strip any authentication from the display string.
+    let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
+    console.log('Starting WebSocket:', display);
 
     let url = (
       utils.urlPathJoin(partialUrl, 'channels') +
