@@ -343,7 +343,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
-      manager.createNew().then(session => {
+      manager.create().then(session => {
         return manager.listRunning();
       }).then(running => {
         expect(running.length).to.be(1);
