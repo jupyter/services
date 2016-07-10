@@ -842,8 +842,8 @@ namespace Private {
     let text = (error.statusText ||
                 error.error.message ||
                 error.xhr.responseText);
-    console.error(`API request failed (${error.xhr.status}):  ${text}`);
-    throw Error(text);
+    let msg = `API request failed (${error.xhr.status}):  ${text}`;
+    throw Error(msg);
   }
 
   /**

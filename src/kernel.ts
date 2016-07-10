@@ -1527,8 +1527,11 @@ namespace Private {
    */
   export
   function onKernelError(error: utils.IAjaxError): any {
-    console.error('API request failed (' + error.statusText + '): ');
-    throw Error(error.statusText);
+    let text = (error.statusText ||
+                error.error.message ||
+                error.xhr.responseText);
+    let msg = `API request failed (${error.xhr.status}): ${text}`;
+    throw Error(msg);
   }
 
   /**
