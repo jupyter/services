@@ -188,9 +188,6 @@ function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels
     if (!data.hasOwnProperty('kernelspecs')) {
       throw err;
     }
-    if (!data.kernelspecs.hasOwnProperty(data.default)) {
-      throw err;
-    }
     let keys = Object.keys(data.kernelspecs);
     for (let i = 0; i < keys.length; i++) {
       let ks = data.kernelspecs[keys[i]];
