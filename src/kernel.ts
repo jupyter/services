@@ -937,7 +937,7 @@ class Kernel implements IKernel {
     this._reconnectAttempt = 0;
     // Allow the message to get through.
     this._isReady = true;
-    // Get the kernel
+    // Get the kernel info, signaling that the kernel is ready.
     this.kernelInfo().then(() => {
       this._connectionPromise.resolve(void 0);
     });
