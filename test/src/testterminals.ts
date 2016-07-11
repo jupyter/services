@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import {
-  MockSocket, MockSocketServer
+  MockSocketServer
 } from 'jupyter-js-utils/lib/mocksocket';
 
 import {
@@ -13,7 +13,7 @@ import {
 } from '../../lib/terminals';
 
 import {
-  JSONValue, deepEqual
+  deepEqual
 } from '../../lib/json';
 
 import {
@@ -66,14 +66,14 @@ describe('terminals', () => {
 
     });
 
-    describe('#createNew()', () => {
+    describe('#create()', () => {
 
       it('should create a new terminal session', (done) => {
         let manager = new TerminalManager();
         let handler = new RequestHandler(() => {
           handler.respond(200, { name: '1' });
         });
-        manager.createNew().then(session => {
+        manager.create().then(session => {
           expect(session.name).to.be('1');
           done();
         }).catch(done);
@@ -88,7 +88,7 @@ describe('terminals', () => {
         let handler = new RequestHandler(() => {
           handler.respond(204, {});
         });
-        manager.createNew({ name: 'foo' }).then(session => {
+        manager.create({ name: 'foo' }).then(session => {
           return manager.shutdown('foo');
         }).then(() => {
           done();

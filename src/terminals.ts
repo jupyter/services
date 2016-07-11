@@ -131,9 +131,9 @@ namespace ITerminalSession {
   export
   interface IManager {
     /**
-     * Create a new terminal.
+     * Create a new terminal session or connect to an existing session.
      */
-    createNew(options?: ITerminalSession.IOptions): Promise<ITerminalSession>;
+    create(options?: ITerminalSession.IOptions): Promise<ITerminalSession>;
 
     /**
      * Shut down a terminal session by name.
@@ -149,7 +149,7 @@ namespace ITerminalSession {
 
 
 /**
- * Create a terminal session or connect to an existing connection.
+ * Create a terminal session or connect to an existing session.
  *
  * #### Notes
  * If the session is already running on the client, the existing
@@ -179,10 +179,9 @@ class TerminalManager implements ITerminalSession.IManager {
   }
 
   /**
-   * Create a new terminal.
+   * Create a new terminal session or connect to an existing session.
    */
-  createNew(options?: ITerminalSession.IOptions): Promise<ITerminalSession> {
-    options = options || {};
+  create(options: ITerminalSession.IOptions = {}): Promise<ITerminalSession> {
     options.baseUrl = options.baseUrl || this._baseUrl;
     options.wsUrl = options.wsUrl || this._wsUrl;
     options.ajaxSettings = (
