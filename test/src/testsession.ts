@@ -13,8 +13,16 @@ import {
 } from '../../lib/ikernel';
 
 import {
+  deepEqual
+} from '../../lib/json';
+
+import {
   createKernelMessage
 } from '../../lib/kernel';
+
+import {
+  KERNELSPECS
+} from '../../lib/mockkernel';
 
 import {
   SessionManager, connectToSession, listRunningSessions,
@@ -934,6 +942,41 @@ describe('jupyter.services - session', () => {
       it('should take the options as an argument', () => {
         let manager = new SessionManager(createSessionOptions());
         expect(manager instanceof SessionManager).to.be(true);
+      });
+
+    });
+
+    describe('#specsChanged', () => {
+
+      it('should be emitted when the specs change', (done) => {
+        let manager = new SessionManager();
+        manager.specsChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, KERNELSPECS)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.getSpecs();
+      });
+
+    });
+
+    describe('#runningChanged', () => {
+
+      it('should be emitted in listRunning when the running sessions changed', (done) => {
+        let manager = new SessionManager();
+        let sessionModels = [createSessionModel(), createSessionModel()];
+        manager.runningChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, sessionModels)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, sessionModels);
+        });
+        manager.listRunning();
       });
 
     });

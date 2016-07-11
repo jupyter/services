@@ -97,6 +97,24 @@ describe('terminals', () => {
 
     });
 
+    describe('#runningChanged', () => {
+
+      it('should be emitted in listRunning when the running terminals changed', (done) => {
+        let data: ITerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        let manager = new TerminalManager();
+        manager.runningChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, data)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, data);
+        });
+        manager.listRunning();
+      });
+
+    });
+
     describe('#listRunning()', () => {
 
       it('should list the running session models', (done) => {

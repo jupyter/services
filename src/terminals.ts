@@ -13,7 +13,7 @@ import {
 } from 'phosphor-signaling';
 
 import {
-  JSONPrimitive, JSONObject
+  JSONPrimitive, JSONObject, deepEqual
 } from './json';
 
 
@@ -129,14 +129,27 @@ namespace ITerminalSession {
    * The interface for a terminal manager.
    */
   export
-  interface IManager {
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the running terminals change.
+     */
+    runningChanged: ISignal<IManager, IModel[]>;
+
     /**
      * Create a new terminal session or connect to an existing session.
+     *
+     * #### Notes
+     * This will emit [[runningChanged]] if the running terminals list
+     * changes.
      */
     create(options?: ITerminalSession.IOptions): Promise<ITerminalSession>;
 
     /**
      * Shut down a terminal session by name.
+     *
+     * #### Notes
+     * This will emit [[runningChanged]] if the running terminals list
+     * changes.
      */
     shutdown(name: string): Promise<void>;
 
@@ -176,6 +189,35 @@ class TerminalManager implements ITerminalSession.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  }
+
+  /**
+   * A signal emitted when the running terminals change.
+   */
+  get runningChanged(): ISignal<TerminalManager, ITerminalSession.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._running = [];
   }
 
   /**
@@ -222,6 +264,10 @@ class TerminalManager implements ITerminalSession.IManager {
       if (!Array.isArray(data)) {
         throw new Error('Invalid terminal data');
       }
+      if (!deepEqual(data, this._running)) {
+        this._running = data.slice();
+        this.runningChanged.emit(data);
+      }
       return data;
     });
   }
@@ -229,6 +275,8 @@ class TerminalManager implements ITerminalSession.IManager {
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings: utils.IAjaxSettings = null;
+  private _running: ITerminalSession.IModel[] = [];
+  private _isDisposed = false;
 }
 
 
@@ -351,6 +399,7 @@ class TerminalSession implements ITerminalSession {
       if (success.xhr.status !== 204) {
         throw new Error('Invalid Response: ' + success.xhr.status);
       }
+      this.dispose();
     });
   }
 
@@ -434,6 +483,12 @@ namespace Private {
    */
   export
   const connectedSignal = new Signal<ITerminalSession, void>();
+
+  /**
+   * A signal emitted when the running terminals change.
+   */
+  export
+  const runningChangedSignal = new Signal<TerminalManager, ITerminalSession.IModel[]>();
 
   /**
    * A signal emitted when a message is received.

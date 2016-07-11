@@ -360,14 +360,32 @@ namespace IKernel {
    * Object which manages kernel instances.
    */
   export
-  interface IManager {
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the specs change.
+     */
+    specsChanged: ISignal<IManager, ISpecModels>;
+
+    /**
+     * A signal emitted when the running kernels change.
+     */
+    runningChanged: ISignal<IManager, IModel[]>;
+
     /**
      * Get the available kernel specs.
+     *
+     * #### Notes
+     * This will emit a [[specsChanged]] signal if the value
+     * has changed since the last fetch.
      */
     getSpecs(options?: IOptions): Promise<ISpecModels>;
 
     /**
      * Get a list of running kernels.
+     *
+     * #### Notes
+     * This will emit a [[runningChanged]] signal if the value
+     * has changed since the last fetch.
      */
     listRunning(options?: IOptions): Promise<IModel[]>;
 

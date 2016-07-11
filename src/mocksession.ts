@@ -3,7 +3,7 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -13,6 +13,10 @@ import {
 import {
   IKernel, KernelMessage
 } from './ikernel';
+
+import {
+  deepEqual
+} from './json';
 
 import {
   KERNELSPECS, MockKernel
@@ -190,6 +194,42 @@ class MockSession implements ISession {
 export
 class MockSessionManager implements ISession.IManager {
   /**
+   * A signal emitted when the kernel specs change.
+   */
+  get specsChanged(): ISignal<MockSessionManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the running sessions change.
+   */
+  get runningChanged(): ISignal<MockSessionManager, ISession.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._running = [];
+  }
+
+  /**
    * Get the available kernel specs.
    */
   getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
@@ -204,6 +244,10 @@ class MockSessionManager implements ISession.IManager {
     for (let id in Private.runningSessions) {
       let session = Private.runningSessions[id];
       models.push(session.model);
+    }
+    if (!deepEqual(models, this._running)) {
+      this._running = models.slice();
+      this.runningChanged.emit(models);
     }
     return Promise.resolve(models);
   }
@@ -265,6 +309,9 @@ class MockSessionManager implements ISession.IManager {
     }
     return session.shutdown();
   }
+
+  private _isDisposed = false;
+  private _running: ISession.IModel[] = [];
 }
 
 
@@ -307,6 +354,18 @@ namespace Private {
    */
   export
   const pathChangedSignal = new Signal<ISession, string>();
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<MockSessionManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  export
+  const runningChangedSignal = new Signal<MockSessionManager, ISession.IModel[]>();
 
   /**
    * A module private store for running mock sessions.

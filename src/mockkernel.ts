@@ -10,7 +10,7 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -22,7 +22,7 @@ import {
 } from './ikernel';
 
 import {
-  JSONObject
+  JSONObject, deepEqual
 } from './json';
 
 import {
@@ -500,6 +500,43 @@ class MockKernel implements IKernel {
 export
 class MockKernelManager implements IKernel.IManager {
 
+  /**
+   * A signal emitted when the specs change.
+   */
+  get specsChanged(): ISignal<IKernel.IManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  get runningChanged(): ISignal<IKernel.IManager, IKernel.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._specs = null;
+    this._running = [];
+  }
+
   getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
     return Promise.resolve(KERNELSPECS);
   }
@@ -510,13 +547,16 @@ class MockKernelManager implements IKernel.IManager {
       let kernel = Private.runningKernels[id];
       models.push({ name: kernel.name, id });
     }
+    if (!deepEqual(models, this._running)) {
+      this._running = models.slice();
+      this.runningChanged.emit(models);
+    }
     return Promise.resolve(models);
   }
 
   startNew(options?: IKernel.IOptions, id?: string): Promise<MockKernel> {
     let name = options ? options.name : void 0;
-    let kernel = new MockKernel({ name, id });
-    return Promise.resolve(kernel);
+    return Promise.resolve(new MockKernel({ name, id }));
   }
 
   findById(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
@@ -540,6 +580,10 @@ class MockKernelManager implements IKernel.IManager {
     }
     return kernel.shutdown();
   }
+
+  private _running: IKernel.IModel[] = [];
+  private _specs: IKernel.ISpecModels = null;
+  private _isDisposed = false;
 }
 
 
@@ -561,6 +605,18 @@ namespace Private {
    */
   export
   const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<IKernel.IManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  export
+  const runningChangedSignal = new Signal<IKernel.IManager, IKernel.IModel[]>();
 
   /**
    * A module private store for running mock kernels.

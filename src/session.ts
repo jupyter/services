@@ -22,6 +22,10 @@ import {
 } from './isession';
 
 import {
+  deepEqual
+} from './json';
+
+import {
   connectToKernel, getKernelSpecs
 } from './kernel';
 
@@ -50,12 +54,53 @@ class SessionManager implements ISession.IManager {
   }
 
   /**
+   * A signal emitted when the kernel specs change.
+   */
+  get specsChanged(): ISignal<SessionManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the running sessions change.
+   */
+  get runningChanged(): ISignal<SessionManager, ISession.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._running = [];
+  }
+
+  /**
    * Get the available kernel specs. See also [[getKernelSpecs]].
    *
    * @param options - Overrides for the default options.
    */
   getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
-    return getKernelSpecs(this._getOptions(options));
+    return getKernelSpecs(this._getOptions(options)).then(specs => {
+      if (!deepEqual(specs, this._specs)) {
+        this.specsChanged.emit(specs);
+      }
+      return specs;
+    });
   }
 
   /**
@@ -64,7 +109,13 @@ class SessionManager implements ISession.IManager {
    * @param options - Overrides for the default options.
    */
   listRunning(options?: ISession.IOptions): Promise<ISession.IModel[]> {
-    return listRunningSessions(this._getOptions(options));
+    return listRunningSessions(this._getOptions(options)).then(running => {
+      if (!deepEqual(running, this._running)) {
+        this.runningChanged.emit(running);
+        this._running = running.slice();
+      }
+      return running;
+    });
   }
 
   /**
@@ -72,6 +123,10 @@ class SessionManager implements ISession.IManager {
    *
    * @param options - Overrides for the default options, must include a
    *   `'path'`.
+   *
+   * #### Notes
+   * This will emit [[runningChanged]] if the running kernels list
+   * changes.
    */
   startNew(options: ISession.IOptions): Promise<ISession> {
     return startNewSession(this._getOptions(options));
@@ -100,6 +155,10 @@ class SessionManager implements ISession.IManager {
 
   /**
    * Shut down a session by id.
+   *
+   * #### Notes
+   * This will emit [[runningChanged]] if the running kernels list
+   * changes.
    */
   shutdown(id: string, options?: ISession.IOptions): Promise<void> {
     return shutdownSession(id, this._getOptions(options));
@@ -118,6 +177,9 @@ class SessionManager implements ISession.IManager {
   }
 
   private _options: ISession.IOptions = null;
+  private _isDisposed = false;
+  private _running: ISession.IModel[] = [];
+  private _specs: IKernel.ISpecModels = null;
 }
 
 
@@ -676,6 +738,18 @@ namespace Private {
    */
   export
   const pathChangedSignal = new Signal<ISession, string>();
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<ISession.IManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  export
+  const runningChangedSignal = new Signal<ISession.IManager, ISession.IModel[]>();
 
   /**
    * The running sessions.

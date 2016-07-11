@@ -6,6 +6,14 @@ import {
 } from 'jupyter-js-utils';
 
 import {
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
+  ISignal, Signal, clearSignalData
+} from 'phosphor-signaling';
+
+import {
   IContents, ContentsManager
 } from './contents';
 
@@ -34,7 +42,12 @@ import {
  * A service manager interface.
  */
 export
-interface IServiceManager {
+interface IServiceManager extends IDisposable {
+  /**
+   * A signal emitted when the specs change on the service manager.
+   */
+  specsChanged: ISignal<IServiceManager, IKernel.ISpecModels>;
+
   /**
    * The kernel specs for the manager.
    *
@@ -143,6 +156,36 @@ class ServiceManager implements IServiceManager {
     this._sessionManager = new SessionManager(subOptions);
     this._contentsManager = new ContentsManager(subOptions);
     this._terminalManager = new TerminalManager(subOptions);
+    this._kernelManager.specsChanged.connect(this._onSpecsChanged, this);
+    this._sessionManager.specsChanged.connect(this._onSpecsChanged, this);
+  }
+
+  /**
+   * A signal emitted when the specs change on the service manager.
+   */
+  get specsChanged(): ISignal<ServiceManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
   }
 
   /**
@@ -192,9 +235,31 @@ class ServiceManager implements IServiceManager {
     return this._terminalManager;
   }
 
+  /**
+   * Handle a change in kernel specs.
+   */
+  private _onSpecsChanged(sender: any, args: IKernel.ISpecModels): void {
+    this._kernelspecs = args;
+    this.specsChanged.emit(args);
+  }
+
   private _kernelManager: KernelManager = null;
   private _sessionManager: SessionManager = null;
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _isDisposed = false;
+}
+
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<IServiceManager, IKernel.ISpecModels>();
 }

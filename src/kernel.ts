@@ -22,7 +22,7 @@ import {
 } from './ikernel';
 
 import {
-  JSONObject, JSONValue
+  JSONObject, JSONValue, deepEqual
 } from './json';
 
 import {
@@ -57,9 +57,46 @@ class KernelManager implements IKernel.IManager {
    *
    * @param options - The default options for kernel.
    */
-   constructor(options?: IKernel.IOptions) {
-     this._options = utils.copy(options || {});
-   }
+  constructor(options?: IKernel.IOptions) {
+    this._options = utils.copy(options || {});
+  }
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  get specsChanged(): ISignal<IKernel.IManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  get runningChanged(): ISignal<IKernel.IManager, IKernel.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._specs = null;
+    this._running = [];
+  }
 
   /**
    * Get the kernel specs.  See also [[getKernelSpecs]].
@@ -67,7 +104,12 @@ class KernelManager implements IKernel.IManager {
    * @param options - Overrides for the default options.
    */
   getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
-    return getKernelSpecs(this._getOptions(options));
+    return getKernelSpecs(this._getOptions(options)).then(specs => {
+      if (!deepEqual(specs, this._specs)) {
+        this.specsChanged.emit(specs);
+      }
+      return specs;
+    });
   }
 
   /**
@@ -76,13 +118,23 @@ class KernelManager implements IKernel.IManager {
    * @param options - Overrides for the default options.
    */
   listRunning(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
-    return listRunningKernels(this._getOptions(options));
+    return listRunningKernels(this._getOptions(options)).then(running => {
+      if (!deepEqual(running, this._running)) {
+        this.runningChanged.emit(running);
+        this._running = running.slice();
+      }
+      return running;
+    });
   }
 
   /**
    * Start a new kernel.  See also [[startNewKernel]].
    *
    * @param options - Overrides for the default options.
+   *
+   * #### Notes
+   * This will emit [[runningChanged]] if the running kernels list
+   * changes.
    */
   startNew(options?: IKernel.IOptions): Promise<IKernel> {
     return startNewKernel(this._getOptions(options));
@@ -110,6 +162,10 @@ class KernelManager implements IKernel.IManager {
    * Shut down a kernel by id.
    *
    * @param options - Overrides for the default options.
+   *
+   * #### Notes
+   * This will emit [[runningChanged]] if the running kernels list
+   * changes.
    */
   shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
     return shutdownKernel(id, this._getOptions(options));
@@ -128,7 +184,9 @@ class KernelManager implements IKernel.IManager {
   }
 
   private _options: IKernel.IOptions = null;
-
+  private _running: IKernel.IModel[] = [];
+  private _specs: IKernel.ISpecModels = null;
+  private _isDisposed = false;
 }
 
 
@@ -1413,6 +1471,18 @@ namespace Private {
    */
   export
   const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<IKernel.IManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the running kernels change.
+   */
+  export
+  const runningChangedSignal = new Signal<IKernel.IManager, IKernel.IModel[]>();
 
   /**
    * A module private store for running kernels.
