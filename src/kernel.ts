@@ -595,9 +595,10 @@ class Kernel implements IKernel {
       this._ws.close();
       this._ws = null;
     }
+    this._isReady = false;
     this._updateStatus('reconnecting');
     this._createSocket();
-    return this.kernelInfo().then(() => { return void 0; });
+    return this._connectionPromise.promise;
   }
 
   /**
@@ -916,6 +917,8 @@ class Kernel implements IKernel {
       '?session_id=' + this._clientId
     );
 
+    this._connectionPromise = new utils.PromiseDelegate<void>();
+
     this._ws = new WebSocket(url);
 
     // Ensure incoming binary messages are not Blobs
@@ -923,7 +926,6 @@ class Kernel implements IKernel {
 
     this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
     this._ws.onopen = (evt: Event) => { this._onWSOpen(evt); };
-
     this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
     this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
   }
@@ -931,12 +933,14 @@ class Kernel implements IKernel {
   /**
    * Handle a websocket open event.
    */
-  private _onWSOpen(evt: Event) {
+  private _onWSOpen(evt: Event): void {
     this._reconnectAttempt = 0;
     // Allow the message to get through.
     this._isReady = true;
-    // Trigger a status response.
-    this.kernelInfo();
+    // Get the kernel info, signaling that the kernel is ready.
+    this.kernelInfo().then(() => {
+      this._connectionPromise.resolve(void 0);
+    });
     this._isReady = false;
   }
 
@@ -1014,7 +1018,6 @@ class Kernel implements IKernel {
    * Handle status iopub messages from the kernel.
    */
   private _updateStatus(status: IKernel.Status): void {
-    this._isReady = false;
     switch (status) {
     case 'starting':
     case 'idle':
@@ -1024,6 +1027,7 @@ class Kernel implements IKernel {
     case 'restarting':
     case 'reconnecting':
     case 'dead':
+      this._isReady = false;
       break;
     default:
       console.error('invalid kernel status:', status);
@@ -1189,6 +1193,7 @@ class Kernel implements IKernel {
   private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _spec: IKernel.ISpec = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
+  private _connectionPromise: utils.PromiseDelegate<void> = null;
 }
 
 
