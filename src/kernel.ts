@@ -1552,7 +1552,6 @@ namespace Private {
     } catch (e) {
       return Promise.reject(e);
     }
-    console.log('***sending shell message');
     return new Promise<any>((resolve, reject) => {
       future.onReply = (reply: KernelMessage.IMessage) => {
         resolve(reply);
