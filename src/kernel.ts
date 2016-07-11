@@ -595,15 +595,9 @@ class Kernel implements IKernel {
       this._ws.close();
       this._ws = null;
     }
-    console.log("*****Reconnecting1");
+    this._isReady = false;
     this._updateStatus('reconnecting');
-    console.log("*****Reconnecting2");
-    this._createSocket();
-    console.log("*****Reconnecting3");
-    return this.kernelInfo().then(() => {
-      console.log("*****Reconnecting done");
-      return void 0;
-    });
+    return this._createSocket();
   }
 
   /**
@@ -910,7 +904,7 @@ class Kernel implements IKernel {
   /**
    * Create the kernel websocket connection and add socket status handlers.
    */
-  private _createSocket(): void {
+  private _createSocket(): Promise<void> {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        utils.urlJoinEncode(this._id));
     // Strip any authentication from the display string.
@@ -922,16 +916,20 @@ class Kernel implements IKernel {
       '?session_id=' + this._clientId
     );
 
-    this._ws = new WebSocket(url);
+    return new Promise<void>((resolve, reject) => {
+      this._ws = new WebSocket(url);
 
-    // Ensure incoming binary messages are not Blobs
-    this._ws.binaryType = 'arraybuffer';
+      // Ensure incoming binary messages are not Blobs
+      this._ws.binaryType = 'arraybuffer';
 
-    this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
-    this._ws.onopen = (evt: Event) => { this._onWSOpen(evt); };
-
-    this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
-    this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
+      this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
+      this._ws.onopen = (evt: Event) => {
+        this._onWSOpen(evt);
+        resolve(void 0);
+      };
+      this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
+      this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
+    });
   }
 
   /**
@@ -1553,6 +1551,7 @@ namespace Private {
     } catch (e) {
       return Promise.reject(e);
     }
+    console.log('***sending shell message');
     return new Promise<any>((resolve, reject) => {
       future.onReply = (reply: KernelMessage.IMessage) => {
         resolve(reply);
