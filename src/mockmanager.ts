@@ -22,8 +22,8 @@ import {
 } from './mocksession';
 
 import {
-  TerminalManager
-} from './terminals';
+  MockTerminalManager
+} from './mockterminals';
 
 
 /**
@@ -39,7 +39,7 @@ class MockServiceManager implements IServiceManager {
     this._kernelManager = new MockKernelManager();
     this._sessionManager = new MockSessionManager();
     this._contentsManager = new MockContentsManager();
-    this._terminalManager = new TerminalManager();
+    this._terminalManager = new MockTerminalManager();
   }
 
   /**
@@ -85,13 +85,13 @@ class MockServiceManager implements IServiceManager {
    * #### Notes
    * This is a read-only property.
    */
-  get terminals(): TerminalManager {
+  get terminals(): MockTerminalManager {
     return this._terminalManager;
   }
 
   private _kernelManager: MockKernelManager = null;
   private _sessionManager: MockSessionManager = null;
   private _contentsManager: MockContentsManager = null;
-  private _terminalManager: TerminalManager = null;
+  private _terminalManager: MockTerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
 }
