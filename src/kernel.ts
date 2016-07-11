@@ -595,9 +595,15 @@ class Kernel implements IKernel {
       this._ws.close();
       this._ws = null;
     }
+    console.log("*****Reconnecting1");
     this._updateStatus('reconnecting');
+    console.log("*****Reconnecting2");
     this._createSocket();
-    return this.kernelInfo().then(() => { return void 0; });
+    console.log("*****Reconnecting3");
+    return this.kernelInfo().then(() => {
+      console.log("*****Reconnecting done");
+      return void 0;
+    });
   }
 
   /**
