@@ -597,7 +597,8 @@ class Kernel implements IKernel {
     }
     this._isReady = false;
     this._updateStatus('reconnecting');
-    return this._createSocket();
+    this._createSocket();
+    return this._connectionPromise.promise;
   }
 
   /**
@@ -904,7 +905,7 @@ class Kernel implements IKernel {
   /**
    * Create the kernel websocket connection and add socket status handlers.
    */
-  private _createSocket(): Promise<void> {
+  private _createSocket(): void {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        utils.urlJoinEncode(this._id));
     // Strip any authentication from the display string.
@@ -916,31 +917,30 @@ class Kernel implements IKernel {
       '?session_id=' + this._clientId
     );
 
-    return new Promise<void>((resolve, reject) => {
-      this._ws = new WebSocket(url);
+    this._connectionPromise = new utils.PromiseDelegate<void>();
 
-      // Ensure incoming binary messages are not Blobs
-      this._ws.binaryType = 'arraybuffer';
+    this._ws = new WebSocket(url);
 
-      this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
-      this._ws.onopen = (evt: Event) => {
-        this._onWSOpen(evt);
-        resolve(void 0);
-      };
-      this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
-      this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
-    });
+    // Ensure incoming binary messages are not Blobs
+    this._ws.binaryType = 'arraybuffer';
+
+    this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
+    this._ws.onopen = (evt: Event) => { this._onWSOpen(evt); };
+    this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
+    this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
   }
 
   /**
    * Handle a websocket open event.
    */
-  private _onWSOpen(evt: Event) {
+  private _onWSOpen(evt: Event): void {
     this._reconnectAttempt = 0;
     // Allow the message to get through.
     this._isReady = true;
-    // Trigger a status response.
-    this.kernelInfo();
+    // Get the kernel
+    this.kernelInfo().then(() => {
+      this._connectionPromise.resolve(void 0);
+    });
     this._isReady = false;
   }
 
@@ -1018,7 +1018,6 @@ class Kernel implements IKernel {
    * Handle status iopub messages from the kernel.
    */
   private _updateStatus(status: IKernel.Status): void {
-    this._isReady = false;
     switch (status) {
     case 'starting':
     case 'idle':
@@ -1028,6 +1027,7 @@ class Kernel implements IKernel {
     case 'restarting':
     case 'reconnecting':
     case 'dead':
+      this._isReady = false;
       break;
     default:
       console.error('invalid kernel status:', status);
@@ -1193,6 +1193,7 @@ class Kernel implements IKernel {
   private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _spec: IKernel.ISpec = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
+  private _connectionPromise: utils.PromiseDelegate<void> = null;
 }
 
 
