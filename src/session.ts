@@ -97,6 +97,7 @@ class SessionManager implements ISession.IManager {
   getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
     return getKernelSpecs(this._getOptions(options)).then(specs => {
       if (!deepEqual(specs, this._specs)) {
+        this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -111,8 +112,8 @@ class SessionManager implements ISession.IManager {
   listRunning(options?: ISession.IOptions): Promise<ISession.IModel[]> {
     return listRunningSessions(this._getOptions(options)).then(running => {
       if (!deepEqual(running, this._running)) {
-        this.runningChanged.emit(running);
         this._running = running.slice();
+        this.runningChanged.emit(running);
       }
       return running;
     });

@@ -106,6 +106,7 @@ class KernelManager implements IKernel.IManager {
   getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
     return getKernelSpecs(this._getOptions(options)).then(specs => {
       if (!deepEqual(specs, this._specs)) {
+        this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -120,8 +121,8 @@ class KernelManager implements IKernel.IManager {
   listRunning(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
     return listRunningKernels(this._getOptions(options)).then(running => {
       if (!deepEqual(running, this._running)) {
-        this.runningChanged.emit(running);
         this._running = running.slice();
+        this.runningChanged.emit(running);
       }
       return running;
     });
