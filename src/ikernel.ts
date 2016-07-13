@@ -47,6 +47,11 @@ interface IKernel extends IDisposable {
   unhandledMessage: ISignal<IKernel, KernelMessage.IMessage>;
 
   /**
+   * A signal emitted when the connection state changes.
+   */
+  connectionChanged: ISignal<IKernel, boolean>;
+
+  /**
    * The id of the server-side kernel.
    *
    * #### Notes
@@ -63,6 +68,30 @@ interface IKernel extends IDisposable {
   name: string;
 
   /**
+   * The http url used by the kernel session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  httpUrl: string;
+
+  /**
+   * The url of the kernel websocket.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  wsUrl: string;
+
+  /**
+   * Whether the kernel is connected to a web socket.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  isConnected: boolean;
+
+  /**
    * The model associated with the kernel.
    *
    * #### Notes
@@ -76,7 +105,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-   username: string;
+  username: string;
 
   /**
    * The client unique id.
@@ -149,11 +178,9 @@ interface IKernel extends IDisposable {
   restart(): Promise<void>;
 
   /**
-   * Reconnect to a disconnected kernel. This is not actually a
-   * standard HTTP request, but useful function nonetheless for
-   * reconnecting to the kernel if the connection is somehow lost.
+   * Connect or reconnect to the kernel websocket.
    */
-  reconnect(): Promise<void>;
+  connect(): Promise<void>;
 
   /**
    * Shutdown a kernel.
@@ -336,7 +363,7 @@ namespace IKernel {
     baseUrl?: string;
 
     /**
-     * The url to access websockets, if different from baseUrl.
+     * The base url to access websockets, if different from baseUrl.
      */
     wsUrl?: string;
 

@@ -425,13 +425,20 @@ class Kernel implements IKernel {
     this._name = options.name;
     this._id = id;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    this._wsBaseUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
     this._commPromises = new Map<string, Promise<IKernel.IComm>>();
     this._comms = new Map<string, IKernel.IComm>();
-    this._createSocket();
+    let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
+                                       utils.urlJoinEncode(this._id));
+    this._wsUrl = (
+      utils.urlPathJoin(partialUrl, 'channels') +
+      '?session_id=' + this._clientId
+    );
+    this._httpUrl = utils.urlPathJoin(this._baseUrl, KERNEL_SERVICE_URL,
+                                      utils.urlJoinEncode(id));
     Private.runningKernels[this._clientId] = this;
   }
 
@@ -454,6 +461,13 @@ class Kernel implements IKernel {
    */
   get unhandledMessage(): ISignal<IKernel, KernelMessage.IMessage> {
     return Private.unhandledMessageSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the connection state changes.
+   */
+  get connectionChanged(): ISignal<IKernel, boolean> {
+    return Private.connectionChangedSignal.bind(this);
   }
 
   /**
@@ -517,6 +531,36 @@ class Kernel implements IKernel {
   }
 
   /**
+   * The http url used by the kernel session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get httpUrl(): string {
+    return this._httpUrl;
+  }
+
+  /**
+   * The url of the kernel websocket.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get wsUrl(): string {
+    return this._wsUrl;
+  }
+
+  /**
+   * Whether the kernel is connected to a web socket.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isConnected(): boolean {
+    return this._isConnected;
+  }
+
+  /**
    * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -545,7 +589,7 @@ class Kernel implements IKernel {
   clone(): IKernel {
     let options = {
       baseUrl: this._baseUrl,
-      wsUrl: this._wsUrl,
+      wsUrl: this._wsBaseUrl,
       name: this._name,
       username: this._username,
       ajaxSettings: this.ajaxSettings
@@ -602,7 +646,7 @@ class Kernel implements IKernel {
     if (this.status === 'dead') {
       throw new Error('Kernel is dead');
     }
-    if (!this._isReady) {
+    if (!this._isConnected) {
       this._pendingMessages.push(msg);
     } else {
       this._ws.send(serialize.serialize(msg));
@@ -628,7 +672,7 @@ class Kernel implements IKernel {
    * request fails or the response is invalid.
    */
   interrupt(): Promise<void> {
-    return Private.interruptKernel(this, this._baseUrl, this.ajaxSettings);
+    return Private.interruptKernel(this, this._httpUrl, this.ajaxSettings);
   }
 
   /**
@@ -649,27 +693,23 @@ class Kernel implements IKernel {
   restart(): Promise<void> {
     this._clearState();
     this._updateStatus('restarting');
-    return Private.restartKernel(this, this._baseUrl, this.ajaxSettings);
+    return Private.restartKernel(this, this._httpUrl, this.ajaxSettings);
   }
 
   /**
-   * Reconnect to a disconnected kernel.
-   *
-   * #### Notes
-   * Used when the websocket connection to the kernel is lost.
+   * Connect or reconnect to the kernel websocket.
    */
-  reconnect(): Promise<void> {
+  connect(): Promise<void> {
     if (this._ws !== null) {
       // Clear the websocket event handlers and the socket itself.
       this._ws.onclose = null;
       this._ws.onerror = null;
       this._ws.close();
       this._ws = null;
+      this._updateStatus('reconnecting');
     }
-    this._isReady = false;
-    this._updateStatus('reconnecting');
-    this._createSocket();
-    return this._connectionPromise.promise;
+    this._isConnected = false;
+    return this._connect();
   }
 
   /**
@@ -691,7 +731,7 @@ class Kernel implements IKernel {
       return Promise.reject(new Error('Kernel is dead'));
     }
     this._clearState();
-    return Private.shutdownKernel(this.id, this._baseUrl, this.ajaxSettings)
+    return Private.shutdownKernel(this.id, this._httpUrl, this.ajaxSettings)
     .then(() => {
       this.dispose();
     });
@@ -866,7 +906,7 @@ class Kernel implements IKernel {
       session: this._clientId
     };
     let msg = createKernelMessage(options, content);
-    if (!this._isReady) {
+    if (!this._isConnected) {
       this._pendingMessages.push(msg);
     } else {
       this._ws.send(serialize.serialize(msg));
@@ -974,45 +1014,38 @@ class Kernel implements IKernel {
   }
 
   /**
-   * Create the kernel websocket connection and add socket status handlers.
+   * Connect to the websocket.
    */
-  private _createSocket(): void {
-    let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
-                                       utils.urlJoinEncode(this._id));
+  private _connect(): Promise<void> {
     // Strip any authentication from the display string.
-    let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
+    let display = this._wsUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
     console.log('Starting WebSocket:', display);
 
-    let url = (
-      utils.urlPathJoin(partialUrl, 'channels') +
-      '?session_id=' + this._clientId
-    );
-
-    this._connectionPromise = new utils.PromiseDelegate<void>();
-
-    this._ws = new WebSocket(url);
+    let ws = this._ws = new WebSocket(this._wsUrl);
 
     // Ensure incoming binary messages are not Blobs
-    this._ws.binaryType = 'arraybuffer';
+    ws.binaryType = 'arraybuffer';
 
-    this._ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
-    this._ws.onopen = (evt: Event) => { this._onWSOpen(evt); };
-    this._ws.onclose = (evt: Event) => { this._onWSClose(evt); };
-    this._ws.onerror = (evt: Event) => { this._onWSClose(evt); };
-  }
+    ws.onmessage = (evt: MessageEvent) => { this._onWSMessage(evt); };
+    ws.onclose = (evt: Event) => { this._onWSClose(evt); };
+    ws.onerror = (evt: Event) => { this._onWSClose(evt); };
 
-  /**
-   * Handle a websocket open event.
-   */
-  private _onWSOpen(evt: Event): void {
     this._reconnectAttempt = 0;
-    // Allow the message to get through.
-    this._isReady = true;
-    // Get the kernel info, signaling that the kernel is ready.
-    this.kernelInfo().then(() => {
-      this._connectionPromise.resolve(void 0);
+    this._isConnected = false;
+
+    return new Promise<void>(resolve => {
+      ws.onopen = () => {
+        // Allow the message to get through.
+        this._isConnected = true;
+        // Get the kernel info, signaling that the kernel is ready.
+        this.kernelInfo().then(() => {
+          this._isConnected = true;
+          this._sendPending();
+          resolve(void 0);
+        });
+        this._isConnected = false;
+      };
     });
-    this._isReady = false;
   }
 
   /**
@@ -1078,7 +1111,7 @@ class Kernel implements IKernel {
       this._updateStatus('reconnecting');
       let timeout = Math.pow(2, this._reconnectAttempt);
       console.error('Connection lost, reconnecting in ' + timeout + ' seconds.');
-      setTimeout(this._createSocket.bind(this), 1e3 * timeout);
+      setTimeout(this._connect.bind(this), 1e3 * timeout);
       this._reconnectAttempt += 1;
     } else {
       this._updateStatus('dead');
@@ -1089,21 +1122,6 @@ class Kernel implements IKernel {
    * Handle status iopub messages from the kernel.
    */
   private _updateStatus(status: IKernel.Status): void {
-    switch (status) {
-    case 'starting':
-    case 'idle':
-    case 'busy':
-      this._isReady = true;
-      break;
-    case 'restarting':
-    case 'reconnecting':
-    case 'dead':
-      this._isReady = false;
-      break;
-    default:
-      console.error('invalid kernel status:', status);
-      return;
-    }
     if (status !== this._status) {
       this._status = status;
       Private.logKernelStatus(this);
@@ -1111,9 +1129,6 @@ class Kernel implements IKernel {
       if (status === 'dead') {
         this.dispose();
       }
-    }
-    if (this._isReady) {
-      this._sendPending();
     }
   }
 
@@ -1135,7 +1150,7 @@ class Kernel implements IKernel {
    * Clear the internal state.
    */
   private _clearState(): void {
-    this._isReady = false;
+    this._isConnected = false;
     this._pendingMessages = [];
     this._futures.forEach((future, key) => {
       future.dispose();
@@ -1257,14 +1272,15 @@ class Kernel implements IKernel {
   private _ajaxSettings = '{}';
   private _reconnectLimit = 7;
   private _reconnectAttempt = 0;
-  private _isReady = false;
+  private _isConnected = false;
   private _futures: Map<string, KernelFutureHandler> = null;
   private _commPromises: Map<string, Promise<IKernel.IComm>> = null;
   private _comms: Map<string, IKernel.IComm> = null;
   private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _spec: IKernel.ISpec = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
-  private _connectionPromise: utils.PromiseDelegate<void> = null;
+  private _wsBaseUrl = '';
+  private _httpUrl = '';
 }
 
 
@@ -1498,6 +1514,12 @@ namespace Private {
   const runningChangedSignal = new Signal<IKernel.IManager, IKernel.IModel[]>();
 
   /**
+   * A signal emitted when the connection state changes.
+   */
+  export
+  const connectionChangedSignal = new Signal<IKernel, boolean>();
+
+  /**
    * A module private store for running kernels.
    */
   export
@@ -1511,10 +1533,7 @@ namespace Private {
     if (kernel.status === 'dead') {
       return Promise.reject(new Error('Kernel is dead'));
     }
-    let url = utils.urlPathJoin(
-      baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'restart')
-    );
+    let url = utils.urlPathJoin(baseUrl, 'restart');
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -1537,10 +1556,7 @@ namespace Private {
     if (kernel.status === 'dead') {
       return Promise.reject(new Error('Kernel is dead'));
     }
-    let url = utils.urlPathJoin(
-      baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'interrupt')
-    );
+    let url = utils.urlPathJoin(baseUrl, 'interrupt');
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -1558,9 +1574,7 @@ namespace Private {
    * Delete a kernel.
    */
   export
-  function shutdownKernel(id: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
-    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
-                                utils.urlJoinEncode(id));
+  function shutdownKernel(id: string, url: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
