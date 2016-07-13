@@ -124,6 +124,9 @@ class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture 
    * If a hook is removed during the hook processing, it will be deactivated immediately.
    */
   removeMessageHook(hook: (msg: KernelMessage.IIOPubMessage) => boolean): void {
+    if (this.isDisposed) {
+      return;
+    }
     this._hooks.remove(hook);
   }
 
@@ -246,6 +249,9 @@ namespace Private {
      * @param hook - The callback to remove.
      */
     remove(hook: (msg: T) => boolean): void {
+      if (this.isDisposed) {
+        return;
+      }
       let index = this._hooks.indexOf(hook);
       if (index >= 0) {
         this._hooks[index] = null;
@@ -316,6 +322,9 @@ namespace Private {
      * Compact the list, removing any nulls.
      */
     private _compact(): void {
+      if (this.isDisposed) {
+        return;
+      }
       let numNulls = 0;
       for (let i = 0, len = this._hooks.length; i < len; i++) {
         let hook = this._hooks[i];
