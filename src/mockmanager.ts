@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  ISignal, Signal, clearSignalData
+} from 'phosphor-signaling';
+
+import {
   IKernel
 } from './ikernel';
 
@@ -40,6 +44,34 @@ class MockServiceManager implements IServiceManager {
     this._sessionManager = new MockSessionManager();
     this._contentsManager = new MockContentsManager();
     this._terminalManager = new MockTerminalManager();
+  }
+
+  /**
+   * A signal emitted when the specs change on the service manager.
+   */
+  get specsChanged(): ISignal<MockServiceManager, IKernel.ISpecModels> {
+    return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
   }
 
   /**
@@ -94,4 +126,18 @@ class MockServiceManager implements IServiceManager {
   private _contentsManager: MockContentsManager = null;
   private _terminalManager: MockTerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _isDisposed = false;
+}
+
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+
+  /**
+   * A signal emitted when the specs change.
+   */
+  export
+  const specsChangedSignal = new Signal<MockServiceManager, IKernel.ISpecModels>();
 }

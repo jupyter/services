@@ -79,6 +79,22 @@ describe('manager', () => {
       });
     });
 
+    describe('#specsChanged', () => {
+
+      it('should be emitted when the specs change', (done) => {
+        manager.specsChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, KERNELSPECS)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.kernels.getSpecs();
+      });
+
+    });
+
     describe('#kernelspecs', () => {
 
       it('should be the kernel specs used by the manager', () => {

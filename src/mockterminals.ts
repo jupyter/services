@@ -6,6 +6,10 @@ import {
 } from 'phosphor-signaling';
 
 import {
+  deepEqual
+} from './json';
+
+import {
   ITerminalSession
 } from './terminals';
 
@@ -19,6 +23,35 @@ class MockTerminalManager implements ITerminalSession.IManager {
    * Construct a new mock terminal manager.
    */
   constructor() { }
+
+  /**
+   * A signal emitted when the running terminals change.
+   */
+  get runningChanged(): ISignal<MockTerminalManager, ITerminalSession.IModel[]> {
+    return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+    this._running = [];
+  }
 
   /**
    * Create a new terminal session or connect to an existing session.
@@ -59,8 +92,15 @@ class MockTerminalManager implements ITerminalSession.IManager {
     for (let name in Private.running) {
       models.push({ name });
     }
+    if (!deepEqual(models, this._running)) {
+      this._running = models.slice();
+      this.runningChanged.emit(models);
+    }
     return Promise.resolve(models);
   }
+
+  private _running: ITerminalSession.IModel[] = [];
+  private _isDisposed = false;
 }
 
 
@@ -171,4 +211,10 @@ namespace Private {
    */
   export
   const messageReceivedSignal = new Signal<MockTerminalSession, ITerminalSession.IMessage>();
+
+  /**
+   * A signal emitted when the running terminals change.
+   */
+  export
+  const runningChangedSignal = new Signal<MockTerminalManager, ITerminalSession.IModel[]>();
 }

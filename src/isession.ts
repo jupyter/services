@@ -193,14 +193,32 @@ namespace ISession {
    * Object which manages session instances.
    */
   export
-  interface IManager {
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the kernel specs change.
+     */
+    specsChanged: ISignal<IManager, IKernel.ISpecModels>;
+
+    /**
+     * A signal emitted when the running sessions change.
+     */
+    runningChanged: ISignal<IManager, IModel[]>;
+
     /**
      * Get the available kernel specs.
+     *
+     * #### Notes
+     * This will emit a [[specsChange]] signal if the value
+     * has changed since the last fetch.
      */
     getSpecs(options?: IOptions): Promise<IKernel.ISpecModels>;
 
     /*
      * Get the running sessions.
+     *
+     * #### Notes
+     * This will emit a [[runningChanged]] signal if the value
+     * has changed since the last fetch.
      */
     listRunning(options?: IOptions): Promise<IModel[]>;
 

@@ -18,7 +18,11 @@ import {
 } from '../../lib/ikernel';
 
 import {
-  JSONObject
+  KERNELSPECS
+} from '../../lib/mockkernel';
+
+import {
+  JSONObject, deepEqual
 } from '../../lib/json';
 
 import {
@@ -1770,6 +1774,44 @@ describe('jupyter.services - kernel', () => {
       it('should take the options as an argument', () => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         expect(manager instanceof KernelManager).to.be(true);
+      });
+
+    });
+
+    describe('#specsChanged', () => {
+
+      it('should be emitted when the specs change', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        manager.specsChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, KERNELSPECS)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.getSpecs();
+      });
+
+    });
+
+    describe('#runningChanged', () => {
+
+      it('should be emitted in listRunning when the running kernels changed', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let data: IKernel.IModel[] = [
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
+        ];
+        manager.runningChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, data)).to.be(true);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, data);
+        });
+        manager.listRunning();
       });
 
     });
