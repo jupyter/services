@@ -1734,14 +1734,15 @@ describe('jupyter.services - kernel', () => {
             }
             future.registerMessageHook(toDelete);
 
-            future.registerMessageHook((msg) => {
+            let first = (msg: KernelMessage.IIOPubMessage) => {
               if (calls.length > 0) {
                 // delete the hook the second time around
                 future.removeMessageHook(toDelete);
               }
               calls.push('first');
               return true;
-            });
+            }
+            future.registerMessageHook(first);
 
             future.onIOPub = () => {
               calls.push('iopub')
@@ -1750,6 +1751,8 @@ describe('jupyter.services - kernel', () => {
             future.onDone = () => {
               expect(calls).to.eql(['first', 'delete', 'iopub', 'first', 'iopub']);
               doLater(() => {
+                future.dispose();
+                future.removeMessageHook(first);
                 done();
               });
             };
