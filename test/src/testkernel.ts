@@ -1273,6 +1273,23 @@ describe('jupyter.services - kernel', () => {
         });
       });
 
+      it('should still load if the default is incorrect', (done) => {
+        let ids = {
+          'python': PYTHON_SPEC
+        };
+        let tester = new KernelTester();
+        createKernel(tester).then(kernel => {
+          tester.onRequest = () => {
+            tester.respond(200, { 'default': 'r',
+                                 'kernelspecs': ids });
+          };
+          kernel.getKernelSpec().then(spec => {
+            expect(spec.language).to.be('python');
+            done();
+          });
+        });
+      });
+
     });
 
     context('#registerMessageHook()', () => {
