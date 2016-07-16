@@ -242,18 +242,30 @@ function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels
     let data = success.data;
     if (!data.hasOwnProperty('default') ||
         typeof data.default !== 'string') {
-      throw err;
+      console.error(err);
+      return data;
     }
     if (!data.hasOwnProperty('kernelspecs')) {
-      throw err;
-    }
-    if (!data.kernelspecs.hasOwnProperty(data.default)) {
-      throw err;
+      console.error(err);
+      return data;
     }
     let keys = Object.keys(data.kernelspecs);
     for (let i = 0; i < keys.length; i++) {
       let ks = data.kernelspecs[keys[i]];
-      validate.validateKernelSpecModel(ks);
+      try {
+        validate.validateKernelSpecModel(ks);
+      } catch (err) {
+        console.error(err);
+        return data;
+      }
+    }
+    if (!data.kernelspecs.hasOwnProperty(data.default)) {
+      if (keys.length) {
+        data.default = keys[0];
+        console.error(`Default kernel name '${data.default}' not found, using '${keys[0]}'`);
+      } else {
+        console.error('No kernelspecs found');
+      }
     }
     return data;
   });
