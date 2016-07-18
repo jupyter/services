@@ -105,7 +105,7 @@ describe('jupyter.services - Contents', () => {
 
   describe('#getUrl()', () => {
 
-    it('should get file in the base directory', () => {
+    it('should get a file in the base directory', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo' });
       let url = contents.getUrl('bar.txt');
       expect(url).to.be('http://foo/files/bar.txt');
