@@ -14,7 +14,12 @@ import * as validate
 /**
  * The url for the contents service.
  */
-let SERVICE_CONTENTS_URL = 'api/contents';
+const SERVICE_CONTENTS_URL = 'api/contents';
+
+/**
+ * The url for the file access.
+ */
+const FILES_URL = 'files';
 
 
 /**
@@ -178,6 +183,16 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
+     * Get a fully qualified url for a file based a relative path.
+     *
+     * @param relativeUrl - The relative url of the file.
+     *
+     * @param baseDir - The optional base directory of the file.  The
+     *  default is the root directory of the server.
+     */
+    getUrl(relativeUrl: string, baseUrl?: string): string;
+
+    /**
      * Create a new untitled file or directory in the specified directory path.
      *
      * @param options: The options used to create the file.
@@ -295,10 +310,9 @@ class ContentsManager implements IContents.IManager {
    * @param options - The options used to initialize the object.
    */
   constructor(options: ContentsManager.IOptions = {}) {
-    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._ajaxSettings = utils.copy(options.ajaxSettings);
-    this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }
 
   /**
@@ -350,6 +364,34 @@ class ContentsManager implements IContents.IManager {
       validate.validateContentsModel(success.data);
       return success.data;
     });
+  }
+
+  /**
+   * Get a fully qualified url for a file based a relative path.
+   *
+   * @param relativeUrl - The relative url of the file.
+   *
+   * @param baseDir - The optional base directory of the file.  The
+   *  default is the root directory of the server.
+   */
+  getUrl(relativeUrl: string, baseUrl = ''): string {
+    let parts = baseUrl.split('/');
+    // Check for a file that is not contained in the base url.
+    if (relativeUrl.split('../').length > parts.length + 1) {
+      return relativeUrl;
+    }
+    // Traverse up as needed.
+    while (relativeUrl.indexOf('../') !== -1) {
+      parts.shift();
+      relativeUrl = relativeUrl.slice(3);
+    }
+    // Remove "current directory".
+    if (relativeUrl.indexOf('./') === 0) {
+      relativeUrl = relativeUrl.slice(2);
+    }
+    baseUrl = parts.join('/');
+    // Return the full url.
+    return utils.urlPathJoin(this._baseUrl, FILES_URL, baseUrl, relativeUrl);
   }
 
   /**
@@ -627,11 +669,11 @@ class ContentsManager implements IContents.IManager {
   private _getUrl(...args: string[]): string {
     let urlParts = [].concat(
                 Array.prototype.slice.apply(args));
-    return utils.urlPathJoin(this._apiUrl,
+    return utils.urlPathJoin(this._baseUrl, SERVICE_CONTENTS_URL,
                              utils.urlJoinEncode.apply(null, urlParts));
   }
 
-  private _apiUrl = 'unknown';
+  private _baseUrl = '';
   private _ajaxSettings: IAjaxSettings = null;
 }
 

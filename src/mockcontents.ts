@@ -43,6 +43,19 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(this._copyModel(model));
   }
 
+  /**
+   * Get a fully qualified url for a file based a relative path.
+   *
+   * @param relativeUrl - The relative url of the file.
+   *
+   * @param baseDir - The optional base directory of the file.  The
+   *  default is the root directory of the server.
+   */
+  getUrl(relativeUrl: string, baseUrl = ''): string {
+    // Not implemented.
+    return relativeUrl;
+  }
+
   newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
     this.methods.push('newUntitled');
     let ext = options.ext || '';

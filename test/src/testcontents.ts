@@ -103,6 +103,40 @@ describe('jupyter.services - Contents', () => {
 
   });
 
+  describe('#getUrl()', () => {
+
+    it('should get file in the base directory', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo' });
+      let url = contents.getUrl('bar.txt');
+      expect(url).to.be('http://foo/files/bar.txt');
+    });
+
+    it('should get a file in the current directory', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo' });
+      let url = contents.getUrl('./bar.txt', 'baz');
+      expect(url).to.be('http://foo/files/baz/bar.txt');
+    });
+
+    it('should get a file in the parent directory', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo' });
+      let url = contents.getUrl('../bar.txt', 'baz');
+      expect(url).to.be('http://foo/files/bar.txt');
+    });
+
+    it('should get a file in the grandparent directory', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo' });
+      let url = contents.getUrl('../../bar.txt', 'fizz/buzz');
+      expect(url).to.be('http://foo/files/bar.txt');
+    });
+
+    it('should bail if not contained in the base url', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo' });
+      let url = contents.getUrl('../../bar.txt', 'fizz');
+      expect(url).to.be('../../bar.txt');
+    });
+
+  });
+
   describe('#newUntitled()', () => {
 
     it('should create a file', (done) => {
