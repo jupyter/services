@@ -183,14 +183,19 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
-     * Get a fully qualified url for a file based a relative path.
+     * Get an absolute path to a file given a relative path.
      *
-     * @param relativeUrl - The relative url of the file.
+     * @param relativePath - The relative path to the file.
      *
-     * @param baseDir - The optional base directory of the file.  The
-     *  default is the root directory of the server.
+     * @param basePath - The optional base path of the file.  The
+     *   default is the server root path.
      */
-    getUrl(relativeUrl: string, baseUrl?: string): string;
+    getAbsolutePath(relativePath: string, basePath?: string): string;
+
+    /**
+     * Get a download url given an absolute file path.
+     */
+    getDownloadUrl(path: string): string;
 
     /**
      * Create a new untitled file or directory in the specified directory path.
@@ -367,47 +372,53 @@ class ContentsManager implements IContents.IManager {
   }
 
   /**
-   * Get a fully qualified url for a file based a relative path.
+   * Get a path to a file given a relative path.
    *
-   * @param relativeUrl - The relative url of the file.
+   * @param relativePath - The relative path to the file.
    *
-   * @param baseDir - The optional base directory of the file.  The
-   *  default is the root directory of the server.
+   * @param basePath - The optional base path of the file.  The
+   *   default is the server root path.
    *
    * #### Notes
-   * If the url is not contained within the server url, it will be
+   * If the path is not contained within the server path, it will be
    * returned unmodified.
-   * If the relativeUrl starts with a forward slash, the baseUrl will
+   * If the relativePath starts with a forward slash, the basePath will
    * be ignored and a path relative to the server root will be returned.
    */
-  getUrl(relativeUrl: string, baseUrl = ''): string {
+  getAbsolutePath(relativePath: string, basePath = ''): string {
     // Remove trailing forward slashes.
-    while (baseUrl[baseUrl.length - 1] === '/') {
-      baseUrl = baseUrl.slice(0, baseUrl.length - 1);
+    while (basePath[basePath.length - 1] === '/') {
+      basePath = basePath.slice(0, basePath.length - 1);
     }
     // Short-circuit to the server root if the relative url starts
     // with a slash.
-    while (relativeUrl[0] === '/') {
-      baseUrl = '';
-      relativeUrl = relativeUrl.slice(1);
+    while (relativePath[0] === '/') {
+      basePath = '';
+      relativePath = relativePath.slice(1);
     }
-    let parts = baseUrl.split('/');
+    let parts = basePath.split('/');
     // Check for a file that is not contained in the base url.
-    if (relativeUrl.split('../').length > parts.length + 1) {
-      return relativeUrl;
+    if (relativePath.split('../').length > parts.length + 1) {
+      return relativePath;
     }
     // Traverse up as needed.
-    while (relativeUrl.indexOf('../') !== -1) {
+    while (relativePath.indexOf('../') !== -1) {
       parts.pop();
-      relativeUrl = relativeUrl.slice(3);
+      relativePath = relativePath.slice(3);
     }
     // Remove "current directory".
-    if (relativeUrl.indexOf('./') === 0) {
-      relativeUrl = relativeUrl.slice(2);
+    if (relativePath.indexOf('./') === 0) {
+      relativePath = relativePath.slice(2);
     }
-    // Return the full url.
-    baseUrl = parts.join('/');
-    return utils.urlPathJoin(this._baseUrl, FILES_URL, baseUrl, relativeUrl);
+    // Return the path.
+    return utils.urlPathJoin(...parts, relativePath);
+  }
+
+  /**
+   * Get a download url given a file path.
+   */
+  getDownloadUrl(path: string): string {
+    return utils.urlPathJoin(this._baseUrl, FILES_URL, path);
   }
 
   /**

@@ -43,17 +43,17 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(this._copyModel(model));
   }
 
+  getAbsolutePath(relativePath: string, basePath?: string): string {
+    // no-op
+    return relativePath;
+  }
+
   /**
-   * Get a fully qualified url for a file based a relative path.
-   *
-   * @param relativeUrl - The relative url of the file.
-   *
-   * @param baseDir - The optional base directory of the file.  The
-   *  default is the root directory of the server.
+   * Get a download url given an absolute file path.
    */
-  getUrl(relativeUrl: string, baseUrl = ''): string {
-    // Not implemented.
-    return relativeUrl;
+  getDownloadUrl(path: string): string {
+    // no-op
+    return path;
   }
 
   newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
