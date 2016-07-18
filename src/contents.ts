@@ -375,6 +375,13 @@ class ContentsManager implements IContents.IManager {
    *  default is the root directory of the server.
    */
   getUrl(relativeUrl: string, baseUrl = ''): string {
+    while (baseUrl[baseUrl.length - 1] === '/') {
+      baseUrl = baseUrl.slice(0, baseUrl.length - 1);
+    }
+    while (relativeUrl[0] === '/') {
+      baseUrl = '';
+      relativeUrl = relativeUrl.slice(1);
+    }
     let parts = baseUrl.split('/');
     // Check for a file that is not contained in the base url.
     if (relativeUrl.split('../').length > parts.length + 1) {
@@ -382,7 +389,7 @@ class ContentsManager implements IContents.IManager {
     }
     // Traverse up as needed.
     while (relativeUrl.indexOf('../') !== -1) {
-      parts.shift();
+      parts.pop();
       relativeUrl = relativeUrl.slice(3);
     }
     // Remove "current directory".
