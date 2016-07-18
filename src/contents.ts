@@ -373,11 +373,20 @@ class ContentsManager implements IContents.IManager {
    *
    * @param baseDir - The optional base directory of the file.  The
    *  default is the root directory of the server.
+   *
+   * #### Notes
+   * If the url is not contained within the server url, it will be
+   * returned unmodified.
+   * If the relativeUrl starts with a forward slash, the baseUrl will
+   * be ignored and a path relative to the server root will be returned.
    */
   getUrl(relativeUrl: string, baseUrl = ''): string {
+    // Remove trailing forward slashes.
     while (baseUrl[baseUrl.length - 1] === '/') {
       baseUrl = baseUrl.slice(0, baseUrl.length - 1);
     }
+    // Short-circuit to the server root if the relative url starts
+    // with a slash.
     while (relativeUrl[0] === '/') {
       baseUrl = '';
       relativeUrl = relativeUrl.slice(1);
