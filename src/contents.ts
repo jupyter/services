@@ -405,8 +405,8 @@ class ContentsManager implements IContents.IManager {
     if (relativeUrl.indexOf('./') === 0) {
       relativeUrl = relativeUrl.slice(2);
     }
-    baseUrl = parts.join('/');
     // Return the full url.
+    baseUrl = parts.join('/');
     return utils.urlPathJoin(this._baseUrl, FILES_URL, baseUrl, relativeUrl);
   }
 
