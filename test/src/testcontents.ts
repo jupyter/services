@@ -107,38 +107,50 @@ describe('jupyter.services - Contents', () => {
 
     it('should get a file in the base directory', () => {
       let contents = new ContentsManager();
-      let url = contents.getAbsolutePath('bar.txt');
-      expect(url).to.be('bar.txt');
+      let path = contents.getAbsolutePath('bar.txt');
+      expect(path).to.be('bar.txt');
     });
 
     it('should get a file in the current directory', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo' });
-      let url = contents.getAbsolutePath('./bar.txt', 'baz');
-      expect(url).to.be('baz/bar.txt');
+      let path = contents.getAbsolutePath('./bar.txt', 'baz');
+      expect(path).to.be('baz/bar.txt');
     });
 
     it('should get a file in the parent directory', () => {
       let contents = new ContentsManager();
-      let url = contents.getAbsolutePath('../bar.txt', 'fizz/buzz');
-      expect(url).to.be('fizz/bar.txt');
+      let path = contents.getAbsolutePath('../bar.txt', 'fizz/buzz');
+      expect(path).to.be('fizz/bar.txt');
     });
 
     it('should get a file in the grandparent directory', () => {
       let contents = new ContentsManager();
-      let url = contents.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
-      expect(url).to.be('fizz/bar.txt');
+      let path = contents.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
+      expect(path).to.be('fizz/bar.txt');
     });
 
     it('should bail if not contained in the base url', () => {
       let contents = new ContentsManager();
-      let url = contents.getAbsolutePath('../../bar.txt', 'fizz');
-      expect(url).to.be('../../bar.txt');
+      let path = contents.getAbsolutePath('../../bar.txt', 'fizz');
+      expect(path).to.be('../../bar.txt');
     });
 
     it('should short-circuit to the root directory of the server', () => {
       let contents = new ContentsManager();
-      let url = contents.getAbsolutePath('/bar.txt', 'fizz/buzz');
-      expect(url).to.be('bar.txt');
+      let path = contents.getAbsolutePath('/bar.txt', 'fizz/buzz');
+      expect(path).to.be('bar.txt');
+    });
+
+    it('should yield the current directory', () => {
+      let contents = new ContentsManager();
+      let path = contents.getAbsolutePath('.', 'fizz/buzz');
+      expect(path).to.be('fizz/buzz');
+    });
+
+    it('should yield the parent directory', () => {
+      let contents = new ContentsManager();
+      let path = contents.getAbsolutePath('..', 'fizz/buzz');
+      expect(path).to.be('fizz');
     });
 
   });

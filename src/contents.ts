@@ -406,6 +406,15 @@ class ContentsManager implements IContents.IManager {
       parts.pop();
       relativePath = relativePath.slice(3);
     }
+    // Check for remaining current directory.
+    if (relativePath === '.') {
+      relativePath = '';
+    }
+    // Check for remaining parent directory.
+    if (relativePath === '..') {
+      parts.pop();
+      relativePath = '';
+    }
     // Remove "current directory".
     if (relativePath.indexOf('./') === 0) {
       relativePath = relativePath.slice(2);
