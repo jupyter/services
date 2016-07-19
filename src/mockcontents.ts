@@ -43,11 +43,6 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(this._copyModel(model));
   }
 
-  getPath(relativePath: string, basePath?: string): string {
-    // no-op
-    return relativePath;
-  }
-
   /**
    * Get a download url given an absolute file path.
    */

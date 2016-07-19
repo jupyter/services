@@ -186,16 +186,6 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
-     * Get an absolute path to a file given a relative path.
-     *
-     * @param relativePath - The relative path to the file.
-     *
-     * @param basePath - The optional base path of the file.  The
-     *   default is the server root path.
-     */
-    getPath(relativePath: string, basePath?: string): string;
-
-    /**
      * Get a download url given an absolute file path.
      */
     getDownloadUrl(path: string): string;
@@ -372,29 +362,6 @@ class ContentsManager implements IContents.IManager {
       validate.validateContentsModel(success.data);
       return success.data;
     });
-  }
-
-  /**
-   * Get a path to a file given a relative path.
-   *
-   * @param relativePath - The relative path to the file.
-   *
-   * @param basePath - The optional base path of the file.  The
-   *   default is the server root path.
-   *
-   * #### Notes
-   * If the path is not contained within the server path, it will be
-   * returned unmodified.
-   * If the relativePath starts with a forward slash, the basePath will
-   * be ignored and a path relative to the server root will be returned.
-   * The returned path will not start with a forward slash.
-   */
-  getPath(relativePath: string, basePath = ''): string {
-    let norm = posix.normalize(posix.join(basePath, relativePath));
-    if (norm.indexOf('../') === 0) {
-      return relativePath;
-    }
-    return posix.resolve('/', basePath, relativePath).slice(1);
   }
 
   /**
@@ -707,5 +674,60 @@ namespace ContentsManager {
      * The default ajax settings to use for the kernel.
      */
     ajaxSettings?: IAjaxSettings;
+  }
+
+  /**
+   * Get a path to a file given a relative path.
+   *
+   * @param relativePath - The relative path to the file.
+   *
+   * @param basePath - The optional base path of the file.  The
+   *   default is the server root path.
+   *
+   * #### Notes
+   * If the path is not contained within the server path, it will be
+   * returned unmodified.
+   * If the relativePath starts with a forward slash, the basePath will
+   * be ignored and a path relative to the server root will be returned.
+   * The returned path will not start with a forward slash.
+   */
+  export
+  function getPath(relativePath: string, basePath = ''): string {
+    let norm = posix.normalize(posix.join(basePath, relativePath));
+    if (norm.indexOf('../') === 0) {
+      return relativePath;
+    }
+    return posix.resolve('/', basePath, relativePath).slice(1);
+  }
+
+  /**
+   * Get the last portion of a path, similar to the Unix basename command.
+   */
+  export
+  function basename(path: string, ext?: string): string {
+    return posix.basename(path, ext);
+  }
+
+  /**
+   * Get the directory name of a path, similar to the Unix dirname command.
+   */
+  export
+  function dirname(path: string): string {
+    return posix.dirname(path);
+  }
+
+  /**
+   * Get the extension of the path.
+   *
+   * #### Notes
+   * The extension is the string from the last occurance of the `.`
+   * character to end of string in the last portion of the path.
+   * If there is no `.` in the last portion of the path, or if the first
+   * character of the basename of path [[basename]] is `.`, then an
+   * empty string is returned.
+   */
+  export
+  function extname(path: string): string {
+    return posix.extname(path);
   }
 }
