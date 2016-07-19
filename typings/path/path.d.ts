@@ -4,57 +4,53 @@
 
 
 declare module 'path' {
-  /**
-   * Force the use of a posix path.
-   */
-  export namespace posix {
-    export
-    function cwd(): string;
 
-    export
-    function basename(path: string, ext?: string): string;
+  export
+  function cwd(): string;
 
-    export
-    function dirname(path: string): string;
+  export
+  function basename(path: string, ext?: string): string;
 
-    export
-    function extname(path: string): string;
+  export
+  function dirname(path: string): string;
 
-    export
-    function format(obj: IPathObject): string;
+  export
+  function extname(path: string): string;
 
-    export
-    function isAbsolute(path: string): boolean;
+  export
+  function format(obj: IPathObject): string;
 
-    export
-    function join(path: string, ...others: string[]): string;
+  export
+  function isAbsolute(path: string): boolean;
 
-    export
-    function normalize(path: string): string;
+  export
+  function join(path: string, ...others: string[]): string;
 
-    export
-    function parse(path: string): IPathObject;
+  export
+  function normalize(path: string): string;
 
-    export
-    function relative(from: string, to: string): string;
+  export
+  function parse(path: string): IPathObject;
 
-    export
-    function resolve(path: string, ...others: string[]): string;
+  export
+  function relative(from: string, to: string): string;
 
-    export
-    var sep: string;
+  export
+  function resolve(path: string, ...others: string[]): string;
 
-    export
-    var delimiter: string;
+  export
+  var sep: string;
 
-    export
-    interface IPathObject {
-      dir?: string;
-      root?: string;
-      base?: string;
-      name?: string;
-      ext?: string;
-    }
+  export
+  var delimiter: string;
+
+  export
+  interface IPathObject {
+    dir?: string;
+    root?: string;
+    base?: string;
+    name?: string;
+    ext?: string;
   }
 }
 

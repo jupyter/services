@@ -4,9 +4,8 @@ import {
   IAjaxSettings
 } from './utils';
 
-import {
-  posix as pathutil
-} from 'path';
+import * as pathutil
+ from 'path';
 
 import {
   cwd
@@ -395,14 +394,14 @@ class ContentsManager implements IContents.IManager {
    */
   getPath(relativePath: string, basePath = ''): string {
     let norm = pathutil.normalize(pathutil.join(basePath, relativePath));
-    if (norm.indexOf('../') === 0) {
+    if (norm.indexOf('..' + pathutil.sep) === 0) {
       return relativePath;
     }
     let path = pathutil.resolve(basePath, relativePath);
     if (path.indexOf(cwd()) === 0) {
       path = path.slice(cwd().length);
     }
-    if (path[0] === '/') {
+    if (path[0] === pathutil.sep) {
       path = path.slice(1);
     }
     return path;
