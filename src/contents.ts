@@ -4,6 +4,14 @@ import {
   IAjaxSettings
 } from './utils';
 
+import {
+  posix as pathutil
+} from 'path';
+
+import {
+  cwd
+} from 'process';
+
 import * as utils
   from './utils';
 
@@ -190,7 +198,7 @@ namespace IContents {
      * @param basePath - The optional base path of the file.  The
      *   default is the server root path.
      */
-    getAbsolutePath(relativePath: string, basePath?: string): string;
+    getPath(relativePath: string, basePath?: string): string;
 
     /**
      * Get a download url given an absolute file path.
@@ -385,42 +393,19 @@ class ContentsManager implements IContents.IManager {
    * If the relativePath starts with a forward slash, the basePath will
    * be ignored and a path relative to the server root will be returned.
    */
-  getAbsolutePath(relativePath: string, basePath = ''): string {
-    // Remove trailing forward slashes.
-    while (basePath[basePath.length - 1] === '/') {
-      basePath = basePath.slice(0, basePath.length - 1);
-    }
-    // Short-circuit to the server root if the relative url starts
-    // with a slash.
-    while (relativePath[0] === '/') {
-      basePath = '';
-      relativePath = relativePath.slice(1);
-    }
-    let parts = basePath.split('/');
-    // Check for a file that is not contained in the base url.
-    if (relativePath.split('../').length > parts.length + 1) {
+  getPath(relativePath: string, basePath = ''): string {
+    let norm = pathutil.normalize(pathutil.join(basePath, relativePath));
+    if (norm.indexOf('../') === 0) {
       return relativePath;
     }
-    // Traverse up as needed.
-    while (relativePath.indexOf('../') !== -1) {
-      parts.pop();
-      relativePath = relativePath.slice(3);
+    let path = pathutil.resolve(basePath, relativePath);
+    if (path.indexOf(cwd()) === 0) {
+      path = path.slice(cwd().length);
     }
-    // Check for remaining current directory.
-    if (relativePath === '.') {
-      relativePath = '';
+    if (path[0] === '/') {
+      path = path.slice(1);
     }
-    // Check for remaining parent directory.
-    if (relativePath === '..') {
-      parts.pop();
-      relativePath = '';
-    }
-    // Remove "current directory".
-    if (relativePath.indexOf('./') === 0) {
-      relativePath = relativePath.slice(2);
-    }
-    // Return the path.
-    return utils.urlPathJoin(...parts, relativePath);
+    return path;
   }
 
   /**

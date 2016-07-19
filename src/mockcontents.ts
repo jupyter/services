@@ -43,7 +43,7 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(this._copyModel(model));
   }
 
-  getAbsolutePath(relativePath: string, basePath?: string): string {
+  getPath(relativePath: string, basePath?: string): string {
     // no-op
     return relativePath;
   }
