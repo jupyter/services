@@ -682,13 +682,11 @@ namespace ContentsManager {
    * @param relativePath - The relative path to the file.
    *
    * @param basePath - The optional base path of the file.  The
-   *   default is the server root path.
+   *   default is an empty string.
    *
    * #### Notes
-   * If the path is not contained within the server path, it will be
+   * If the path is not contained within the base path, it will be
    * returned unmodified.
-   * If the relativePath starts with a forward slash, the basePath will
-   * be ignored and a path relative to the server root will be returned.
    * The returned path will not start with a forward slash.
    */
   export
