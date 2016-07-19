@@ -4,12 +4,8 @@ import {
   IAjaxSettings
 } from './utils';
 
-import * as pathutil
- from 'path';
-
-import {
-  cwd
-} from 'process';
+import * as posix
+ from 'path-posix';
 
 import * as utils
   from './utils';
@@ -391,20 +387,14 @@ class ContentsManager implements IContents.IManager {
    * returned unmodified.
    * If the relativePath starts with a forward slash, the basePath will
    * be ignored and a path relative to the server root will be returned.
+   * The returned path will not start with a forward slash.
    */
   getPath(relativePath: string, basePath = ''): string {
-    let norm = pathutil.normalize(pathutil.join(basePath, relativePath));
-    if (norm.indexOf('..' + pathutil.sep) === 0) {
+    let norm = posix.normalize(posix.join(basePath, relativePath));
+    if (norm.indexOf('../') === 0) {
       return relativePath;
     }
-    let path = pathutil.resolve(basePath, relativePath);
-    if (path.indexOf(cwd()) === 0) {
-      path = path.slice(cwd().length);
-    }
-    if (path[0] === pathutil.sep) {
-      path = path.slice(1);
-    }
-    return path;
+    return posix.resolve('/', basePath, relativePath).slice(1);
   }
 
   /**

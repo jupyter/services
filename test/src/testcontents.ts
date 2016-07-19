@@ -162,6 +162,8 @@ describe('jupyter.services - Contents', () => {
       expect(url).to.be('http://foo/files/bar.txt');
       url = contents.getDownloadUrl('fizz/buzz/bar.txt');
       expect(url).to.be('http://foo/files/fizz/buzz/bar.txt');
+      url = contents.getDownloadUrl('/bar.txt');
+      expect(url).to.be('http://foo/files/bar.txt');
     });
 
   });

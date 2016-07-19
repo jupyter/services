@@ -1,10 +1,9 @@
-// Type definitions for path v.0.12.7
-// Project: https://github.com/jinder/path
+// Type definitions for path-posix v1.0.0
+// Project: https://github.com/jden/node-path-posix
 // Definitions by: Steven Silvester <https://github.com/blink1073>
 
 
-declare module 'path' {
-
+declare module 'path-posix' {
   export
   function cwd(): string;
 
