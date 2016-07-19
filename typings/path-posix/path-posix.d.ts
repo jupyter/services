@@ -5,9 +5,6 @@
 
 declare module 'path-posix' {
   export
-  function cwd(): string;
-
-  export
   function basename(path: string, ext?: string): string;
 
   export
