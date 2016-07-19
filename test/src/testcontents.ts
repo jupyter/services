@@ -118,7 +118,7 @@ describe('jupyter.services - Contents', () => {
 
     it('should get a file in the parent directory', () => {
       let contents = new ContentsManager();
-      let path = contents.getPath('../bar.txt', 'fizz/buzz');
+      let path = contents.getPath('../bar.txt', '/fizz/buzz');
       expect(path).to.be('fizz/bar.txt');
     });
 
