@@ -3,10 +3,6 @@
 'use strict';
 
 import {
-  IAjaxSettings
-} from 'jupyter-js-utils';
-
-import {
   IDisposable
 } from 'phosphor-disposable';
 
@@ -21,6 +17,10 @@ import {
 import {
   JSONObject
 } from './json';
+
+import {
+  IAjaxSettings
+} from './utils';
 
 
 /**

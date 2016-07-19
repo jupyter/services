@@ -3,7 +3,7 @@
 'use strict';
 
 import * as utils
-  from 'jupyter-js-utils';
+  from './utils';
 
 import {
   IDisposable, DisposableDelegate

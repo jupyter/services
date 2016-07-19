@@ -2,10 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 import {
   IAjaxSettings
-} from 'jupyter-js-utils';
+} from './utils';
 
 import * as utils
-  from 'jupyter-js-utils';
+  from './utils';
 
 import * as validate
   from './validate';

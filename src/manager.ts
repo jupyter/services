@@ -3,7 +3,7 @@
 
 import {
   IAjaxSettings, getBaseUrl
-} from 'jupyter-js-utils';
+} from './utils';
 
 import {
   IDisposable

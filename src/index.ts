@@ -13,4 +13,9 @@ export * from './terminals';
 
 export {
   IAjaxSettings
-} from 'jupyter-js-utils';
+} from './utils';
+
+import * as utils
+  from './utils';
+
+export { utils };
