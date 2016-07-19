@@ -4,5 +4,4 @@
 /// <reference path="../typings/requirejs/r.d.ts"/>
 /// <reference path="../typings/path/path.d.ts"/>
 /// <reference path="../typings/path-posix/path-posix.d.ts"/>
-/// <reference path="../typings/process/process.d.ts"/>
 /// <reference path="../typings/text-encoding/text-encoding.d.ts"/>
