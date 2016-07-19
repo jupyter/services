@@ -677,7 +677,7 @@ namespace ContentsManager {
   }
 
   /**
-   * Get a path to a file given a relative path.
+   * Get a path to a file given a relative path using server path logic.
    *
    * @param relativePath - The relative path to the file.
    *
@@ -685,9 +685,10 @@ namespace ContentsManager {
    *   default is an empty string.
    *
    * #### Notes
-   * If the path is not contained within the base path, it will be
-   * returned unmodified.
-   * The returned path will not start with a forward slash.
+   * If the relative path is not contained within the base path,
+   * return the relative path unchanged, since it cannot be served.
+   * The returned path will not start with a forward slash, since
+   * server paths have `''` as the root path.
    */
   export
   function getPath(relativePath: string, basePath = ''): string {
