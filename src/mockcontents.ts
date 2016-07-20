@@ -4,7 +4,7 @@
 
 import {
   IAjaxSettings
-} from 'jupyter-js-utils';
+} from './utils';
 
 import {
   IContents

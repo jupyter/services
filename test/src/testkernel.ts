@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   uuid
-} from 'jupyter-js-utils';
+} from '../../lib/utils';
 
 import {
   KernelManager, connectToKernel, createKernelMessage, createShellMessage,

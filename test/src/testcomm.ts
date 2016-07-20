@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import * as utils
-  from 'jupyter-js-utils';
+  from '../../lib/utils';
 
 import {
   IKernel, KernelMessage

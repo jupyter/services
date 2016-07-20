@@ -1,6 +1,6 @@
 import {
   IAjaxSettings, uuid
-} from 'jupyter-js-utils';
+} from './utils';
 
 import {
   ISignal, Signal, clearSignalData

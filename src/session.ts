@@ -3,13 +3,6 @@
 'use strict';
 
 import {
-  IAjaxSettings
-} from 'jupyter-js-utils';
-
-import * as utils
-  from 'jupyter-js-utils';
-
-import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
@@ -28,6 +21,13 @@ import {
 import {
   connectToKernel, getKernelSpecs
 } from './kernel';
+
+import {
+  IAjaxSettings
+} from './utils';
+
+import * as utils
+  from './utils';
 
 import * as validate
   from './validate';

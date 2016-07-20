@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   MockSocketServer
-} from 'jupyter-js-utils/lib/mocksocket';
+} from '../../lib/mocksocket';
 
 import {
   ITerminalSession, TerminalManager, createTerminalSession

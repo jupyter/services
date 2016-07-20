@@ -6,15 +6,15 @@ import encoding = require('text-encoding');
 
 import {
   IAjaxSettings, PromiseDelegate, uuid
-} from 'jupyter-js-utils';
+} from '../../lib/utils';
 
 import {
   MockSocket, MockSocketServer, overrideWebSocket
-} from 'jupyter-js-utils/lib/mocksocket';
+} from '../../lib/mocksocket';
 
 import {
   MockXMLHttpRequest
-} from 'jupyter-js-utils/lib/mockxhr';
+} from '../../lib/mockxhr';
 
 import {
   IContents, IKernel, KernelMessage, createKernelMessage, startNewKernel

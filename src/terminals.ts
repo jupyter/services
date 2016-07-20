@@ -1,9 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import * as utils
-  from 'jupyter-js-utils';
-
 import {
   IDisposable
 } from 'phosphor-disposable';
@@ -15,6 +12,9 @@ import {
 import {
   JSONPrimitive, JSONObject, deepEqual
 } from './json';
+
+import * as utils
+  from './utils';
 
 
 /**

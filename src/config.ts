@@ -3,10 +3,10 @@
 
 import {
   IAjaxSettings
-} from 'jupyter-js-utils';
+} from './utils';
 
 import * as utils
-   from 'jupyter-js-utils';
+   from './utils';
 
 import {
   JSONObject, JSONValue

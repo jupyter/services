@@ -5,9 +5,10 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-utils": "^0.4.0",
+    "minimist": "^1.2.0",
     "phosphor-disposable": "^1.0.5",
-    "phosphor-signaling": "^1.2.0"
+    "phosphor-signaling": "^1.2.0",
+    "requirejs": "^2.2.0"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
@@ -32,10 +33,10 @@
     "build:examples": "npm run example:browser && npm run example:node",
     "docs": "typedoc --mode file --module commonjs --excludeNotExported --target es5 --moduleResolution node --out docs/ src",
     "prepublish": "npm run build && webpack",
-    "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js",
+    "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js --foo bar",
     "test:integration": "cd test && python integration_test.py",
-    "test:debug": "mocha test/build/test*.js --debug-brk",
-    "test": "mocha test/build/test*.js"
+    "test:debug": "mocha test/build/test*.js --foo bar --debug-brk",
+    "test": "mocha test/build/test*.js --foo bar"
   },
   "repository": {
     "type": "git",
