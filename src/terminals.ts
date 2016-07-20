@@ -159,6 +159,14 @@ namespace ITerminalSession {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
+     * The http url used by the terminal manager.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    httpUrl: string;
+
+    /**
      * Create a new terminal session or connect to an existing session.
      *
      * #### Notes
@@ -216,6 +224,25 @@ function createTerminalSession(options: ITerminalSession.IOptions = {}): Promise
 
 
 /**
+ * Get the kernel service url based on a base url.
+ */
+export
+function getTerminalServiceUrl(baseUrl: string): string {
+  return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL);
+}
+
+
+/**
+ * Get a kernel sepcific url base on a base url and a name.
+ */
+export
+function getTerminalUrl(baseUrl: string, name: string): string {
+  let url = getTerminalServiceUrl(baseUrl);
+  return utils.urlPathJoin(url, utils.urlJoinEncode(name));
+}
+
+
+/**
  * A terminal session manager.
  */
 export
@@ -227,6 +254,7 @@ class TerminalManager implements ITerminalSession.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = utils.copy(options.ajaxSettings) || {};
+    this._httpUrl = getTerminalServiceUrl(this._baseUrl);
   }
 
   /**
@@ -234,6 +262,16 @@ class TerminalManager implements ITerminalSession.IManager {
    */
   get runningChanged(): ISignal<TerminalManager, ITerminalSession.IModel[]> {
     return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Get the http url used by the terminal session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get httpUrl(): string {
+    return this._httpUrl;
   }
 
   /**
@@ -310,6 +348,7 @@ class TerminalManager implements ITerminalSession.IManager {
     });
   }
 
+  private _httpUrl = '';
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings: utils.IAjaxSettings = null;
@@ -362,8 +401,7 @@ class TerminalSession implements ITerminalSession {
     this._wsBaseUrl = options.wsUrl;
     Private.running[name] = this;
     this._wsUrl = `${this._wsBaseUrl}terminals/websocket/${name}`;
-    this._httpUrl = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL,
-                                      name);
+    this._httpUrl = getTerminalUrl(this._baseUrl, name);
   }
 
   /**

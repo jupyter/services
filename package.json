@@ -29,16 +29,16 @@
     "clean": "rimraf docs && rimraf lib && rimraf test/build && rimraf test/coverage",
     "build:src": "tsc --project src",
     "build:test": "tsc --project test/src",
-    "build": "npm run build:src && npm run build:test",
+    "build": "npm run build:src",
     "example:browser": "cd examples/browser && npm run update && npm run build",
     "example:node": "cd examples/node && npm install",
     "build:examples": "npm run example:browser && npm run example:node",
     "docs": "typedoc --mode file --module commonjs --excludeNotExported --target es5 --moduleResolution node --out docs/ src",
     "prepublish": "npm run build && webpack",
-    "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js --foo bar",
-    "test:integration": "cd test && python integration_test.py",
-    "test:debug": "mocha test/build/test*.js --foo bar --debug-brk",
-    "test": "mocha test/build/test*.js --foo bar"
+    "test:coverage": "npm run build:test && istanbul cover --dir test/coverage _mocha -- test/build/test*.js --foo bar",
+    "test:integration": "npm run build:test && cd test && python integration_test.py",
+    "test:debug": "npm run build:test && mocha test/build/test*.js --foo bar --debug-brk",
+    "test": "npm run build:test && mocha test/build/test*.js --foo bar"
   },
   "repository": {
     "type": "git",

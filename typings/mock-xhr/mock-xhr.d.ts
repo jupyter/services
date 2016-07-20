@@ -7,6 +7,7 @@ declare module MockXHR {
 
   class request extends XMLHttpRequest {
     constructor();
+    data: string;
     getRequestHeader(value: string): string;
     setResponseHeader(header: string, value: string): void;
     receive(status: number, data: string): void;

@@ -207,7 +207,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
-  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
+  kernelInfo(options?: KernelMessage.IOptions): Promise<KernelMessage.IInfoReplyMsg>;
 
   /**
    * Send a `complete_request` message.
@@ -218,7 +218,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
-  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
+  complete(content: KernelMessage.ICompleteRequest, options?: KernelMessage.IOptions): Promise<KernelMessage.ICompleteReplyMsg>;
 
   /**
    * Send an `inspect_request` message.
@@ -229,7 +229,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
-  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
+  inspect(content: KernelMessage.IInspectRequest, options?: KernelMessage.IOptions): Promise<KernelMessage.IInspectReplyMsg>;
 
   /**
    * Send a `history_request` message.
@@ -240,7 +240,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
    */
-  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
+  history(content: KernelMessage.IHistoryRequest, options?: KernelMessage.IOptions): Promise<KernelMessage.IHistoryReplyMsg>;
 
   /**
    * Send an `execute_request` message.
@@ -253,7 +253,7 @@ interface IKernel extends IDisposable {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): IKernel.IFuture;
+  execute(content: KernelMessage.IExecuteRequest, options?: KernelMessage.IOptions, disposeOnDone?: boolean): IKernel.IFuture;
 
   /**
    * Send an `is_complete_request` message.
@@ -264,7 +264,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
-  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
+  isComplete(content: KernelMessage.IIsCompleteRequest, options?: KernelMessage.IOptions): Promise<KernelMessage.IIsCompleteReplyMsg>;
 
   /**
    * Send a `comm_info_request` message.
@@ -275,7 +275,7 @@ interface IKernel extends IDisposable {
    * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
-  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
+  commInfo(content: KernelMessage.ICommInfoRequest, options?: KernelMessage.IOptions): Promise<KernelMessage.ICommInfoReplyMsg>;
 
   /**
    * Send an `input_reply` message.
@@ -283,7 +283,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
-  sendInputReply(content: KernelMessage.IInputReply): void;
+  sendInputReply(content: KernelMessage.IInputReply, options?: KernelMessage.IOptions): void;
 
   /**
    * Connect to a comm, or create a new one.
@@ -328,7 +328,7 @@ interface IKernel extends IDisposable {
    *
    * See also [[IFuture.registerMessageHook]].
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
+  registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.
@@ -397,6 +397,14 @@ namespace IKernel {
      * A signal emitted when the running kernels change.
      */
     runningChanged: ISignal<IManager, IModel[]>;
+
+    /**
+     * The http url used by the kernel manager.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    httpUrl: string;
 
     /**
      * Get the available kernel specs.
@@ -550,7 +558,7 @@ namespace IKernel {
      * #### Notes
      * This sends a `comm_open` message to the server.
      */
-    open(data?: JSONValue, metadata?: JSONObject): IFuture;
+    open(data?: JSONValue, options?: KernelMessage.IOptions): IFuture;
 
     /**
      * Send a `comm_msg` message to the kernel.
@@ -558,7 +566,7 @@ namespace IKernel {
      * #### Notes
      * This is a no-op if the comm has been closed.
      */
-    send(data: JSONValue, metadata?: JSONObject, buffers?: (ArrayBuffer | ArrayBufferView)[], disposeOnDone?: boolean): IFuture;
+    send(data: JSONValue, options?: KernelMessage.IOptions): IFuture;
 
     /**
      * Close the comm.
@@ -569,7 +577,7 @@ namespace IKernel {
      *
      * This is a no-op if the comm is already closed.
      */
-    close(data?: JSONValue, metadata?: JSONObject): IFuture;
+    close(data?: JSONValue, options?: KernelMessage.IOptions): IFuture;
   }
 
   /**
@@ -1310,11 +1318,12 @@ namespace KernelMessage {
    */
   export
   interface IOptions {
-    [ key: string ]: JSONValue;
-    msgType: string;
-    channel: Channel;
-    session: string;
-    username?: string;
+    msgType?: string;
+    channel?: Channel;
     msgId?: string;
+    parentHeader?: IHeader;
+    content?: JSONObject;
+    metadata?: JSONObject;
+    buffers?: (ArrayBuffer | ArrayBufferView)[];
   }
 }
