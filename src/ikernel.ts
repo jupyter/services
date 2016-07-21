@@ -1194,19 +1194,25 @@ namespace KernelMessage {
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
-  interface IExecuteOkReplyMsg extends IExecuteReplyMsg {
-    /**
-     * A list of payload objects.
-     * Payloads are considered deprecated.
-     * The only requirement of each payload object is that it have a 'source'
-     * key, which is a string classifying the payload (e.g. 'page').
-     */
-    payload?: JSONObject[];
+  interface IExecuteOkReplyMsg extends IShellMessage {
+    content: {
+      [ key: string ]: JSONValue;
+      status: 'ok';
+      execution_count: number;
 
-    /**
-     * Results for the user_expressions.
-     */
-    user_expressions: JSONObject;
+      /**
+       * A list of payload objects.
+       * Payloads are considered deprecated.
+       * The only requirement of each payload object is that it have a 'source'
+       * key, which is a string classifying the payload (e.g. 'page').
+       */
+      payload?: JSONObject[];
+
+      /**
+       * Results for the user_expressions.
+       */
+      user_expressions: JSONObject;
+    };
   }
 
   /**
