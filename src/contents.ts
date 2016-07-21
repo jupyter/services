@@ -688,15 +688,15 @@ namespace ContentsManager {
    * Absolute path in this context is equivalent to a POSIX path without
    * the initial `'/'` because IPEP 27 paths denote `''` as the root.
    * If the resulting path is not contained within the server root,
-   * returns the relative path unchanged, since it cannot be served.
+   * returns `null`, since it cannot be served.
    */
   export
   function getAbsolutePath(relativePath: string, cwd = ''): string {
-    let norm = posix.normalize(posix.join(basePath, relativePath));
+    let norm = posix.normalize(posix.join(cwd, relativePath));
     if (norm.indexOf('../') === 0) {
-      return relativePath;
+      return null;
     }
-    return posix.resolve('/', basePath, relativePath).slice(1);
+    return posix.resolve('/', cwd, relativePath).slice(1);
   }
 
   /**

@@ -124,9 +124,9 @@ describe('jupyter.services - Contents', () => {
       expect(path).to.be('fizz/bar.txt');
     });
 
-    it('should bail if not contained in the base url', () => {
+    it('should return `null` if not contained in the base url', () => {
       let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz');
-      expect(path).to.be('../../bar.txt');
+      expect(path).to.be(null);
     });
 
     it('should short-circuit to the root directory of the server', () => {
