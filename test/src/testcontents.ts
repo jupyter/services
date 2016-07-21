@@ -144,9 +144,9 @@ describe('jupyter.services - Contents', () => {
       expect(path).to.be('fizz');
     });
 
-    it('should not encode a question mark', () => {
-      let path = ContentsManager.getAbsolutePath('foo/bar?.txt');
-      expect(path).to.be('foo/bar?.txt');
+    it('should not encode characters ', () => {
+      let path = ContentsManager.getAbsolutePath('foo/b ar?.txt');
+      expect(path).to.be('foo/b ar?.txt');
     });
 
   });
@@ -163,10 +163,10 @@ describe('jupyter.services - Contents', () => {
       expect(url).to.be('http://foo/files/bar.txt');
     });
 
-    it('should encode a question mark', () => {
+    it('should encode characters', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
-      let url = contents.getDownloadUrl('bar?3.txt');
-      expect(url).to.be('http://foo/files/bar%3F3.txt');
+      let url = contents.getDownloadUrl('b ar?3.txt');
+      expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
     });
 
     it('should handle a relative path', () => {
