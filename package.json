@@ -6,6 +6,7 @@
   "typings": "lib/index.d.ts",
   "dependencies": {
     "minimist": "^1.2.0",
+    "path-posix": "^1.0.0",
     "phosphor-disposable": "^1.0.5",
     "phosphor-signaling": "^1.2.0",
     "requirejs": "^2.2.0"

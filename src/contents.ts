@@ -4,6 +4,9 @@ import {
   IAjaxSettings
 } from './utils';
 
+import * as posix
+ from 'path-posix';
+
 import * as utils
   from './utils';
 
@@ -14,7 +17,12 @@ import * as validate
 /**
  * The url for the contents service.
  */
-let SERVICE_CONTENTS_URL = 'api/contents';
+const SERVICE_CONTENTS_URL = 'api/contents';
+
+/**
+ * The url for the file access.
+ */
+const FILES_URL = 'files';
 
 
 /**
@@ -178,6 +186,13 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
+     * Get an encoded download url given a file path.
+     *
+     * @param path - An absolute POSIX file path on the server.
+     */
+    getDownloadUrl(path: string): string;
+
+    /**
      * Create a new untitled file or directory in the specified directory path.
      *
      * @param options: The options used to create the file.
@@ -295,10 +310,9 @@ class ContentsManager implements IContents.IManager {
    * @param options - The options used to initialize the object.
    */
   constructor(options: ContentsManager.IOptions = {}) {
-    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._ajaxSettings = utils.copy(options.ajaxSettings);
-    this._apiUrl = utils.urlPathJoin(baseUrl, SERVICE_CONTENTS_URL);
   }
 
   /**
@@ -350,6 +364,20 @@ class ContentsManager implements IContents.IManager {
       validate.validateContentsModel(success.data);
       return success.data;
     });
+  }
+
+  /**
+   * Get an encoded download url given a file path.
+   *
+   * @param path - An absolute POSIX file path on the server.
+   *
+   * #### Notes
+   * It is expected that the path contains no relative paths,
+   * use [[ContentsManager.getAbsolutePath]] to get an absolute
+   * path if necessary.
+   */
+  getDownloadUrl(path: string): string {
+    return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
   }
 
   /**
@@ -627,11 +655,11 @@ class ContentsManager implements IContents.IManager {
   private _getUrl(...args: string[]): string {
     let urlParts = [].concat(
                 Array.prototype.slice.apply(args));
-    return utils.urlPathJoin(this._apiUrl,
+    return utils.urlPathJoin(this._baseUrl, SERVICE_CONTENTS_URL,
                              utils.urlJoinEncode.apply(null, urlParts));
   }
 
-  private _apiUrl = 'unknown';
+  private _baseUrl = '';
   private _ajaxSettings: IAjaxSettings = null;
 }
 
@@ -655,5 +683,59 @@ namespace ContentsManager {
      * The default ajax settings to use for the kernel.
      */
     ajaxSettings?: IAjaxSettings;
+  }
+
+  /**
+   * Get the absolute POSIX path to a file on the server.
+   *
+   * @param relativePath - The relative POSIX path to the file.
+   *
+   * @param cwd - The optional POSIX current working directory.  The default is
+   *  an empty string.
+   *
+   * #### Notes
+   * Absolute path in this context is equivalent to a POSIX path without
+   * the initial `'/'` because IPEP 27 paths denote `''` as the root.
+   * If the resulting path is not contained within the server root,
+   * returns `null`, since it cannot be served.
+   */
+  export
+  function getAbsolutePath(relativePath: string, cwd = ''): string {
+    let norm = posix.normalize(posix.join(cwd, relativePath));
+    if (norm.indexOf('../') === 0) {
+      return null;
+    }
+    return posix.resolve('/', cwd, relativePath).slice(1);
+  }
+
+  /**
+   * Get the last portion of a path, similar to the Unix basename command.
+   */
+  export
+  function basename(path: string, ext?: string): string {
+    return posix.basename(path, ext);
+  }
+
+  /**
+   * Get the directory name of a path, similar to the Unix dirname command.
+   */
+  export
+  function dirname(path: string): string {
+    return posix.dirname(path);
+  }
+
+  /**
+   * Get the extension of the path.
+   *
+   * #### Notes
+   * The extension is the string from the last occurance of the `.`
+   * character to end of string in the last portion of the path.
+   * If there is no `.` in the last portion of the path, or if the first
+   * character of the basename of path [[basename]] is `.`, then an
+   * empty string is returned.
+   */
+  export
+  function extname(path: string): string {
+    return posix.extname(path);
   }
 }

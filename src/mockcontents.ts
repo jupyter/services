@@ -43,6 +43,14 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(this._copyModel(model));
   }
 
+  /**
+   * Get a download url given an absolute file path.
+   */
+  getDownloadUrl(path: string): string {
+    // no-op
+    return path;
+  }
+
   newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
     this.methods.push('newUntitled');
     let ext = options.ext || '';

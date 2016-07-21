@@ -8,7 +8,6 @@ import {
   IContents, ContentsManager,
 } from '../../lib/contents';
 
-
 import {
   DEFAULT_FILE, RequestHandler, ajaxSettings, expectFailure
 } from './utils';
@@ -99,6 +98,86 @@ describe('jupyter.services - Contents', () => {
       });
       let get = contents.get('/foo');
       expectFailure(get, done, 'Invalid Status: 201');
+    });
+
+  });
+
+  describe('.getAbsolutePath()', () => {
+
+    it('should get a file in the base directory', () => {
+      let path = ContentsManager.getAbsolutePath('bar.txt');
+      expect(path).to.be('bar.txt');
+    });
+
+    it('should handle a relative path within the path', () => {
+      let url = ContentsManager.getAbsolutePath('fizz/../bar.txt');
+      expect(url).to.be('bar.txt');
+    });
+
+    it('should get a file in the current directory', () => {
+      let path = ContentsManager.getAbsolutePath('./bar.txt', 'baz');
+      expect(path).to.be('baz/bar.txt');
+    });
+
+    it('should get a file in the parent directory', () => {
+      let path = ContentsManager.getAbsolutePath('../bar.txt', '/fizz/buzz');
+      expect(path).to.be('fizz/bar.txt');
+    });
+
+    it('should get a file in the grandparent directory', () => {
+      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
+      expect(path).to.be('fizz/bar.txt');
+    });
+
+    it('should return `null` if not contained in the base url', () => {
+      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz');
+      expect(path).to.be(null);
+    });
+
+    it('should short-circuit to the root directory of the server', () => {
+      let path = ContentsManager.getAbsolutePath('/bar.txt', 'fizz/buzz');
+      expect(path).to.be('bar.txt');
+    });
+
+    it('should yield the current directory', () => {
+      let path = ContentsManager.getAbsolutePath('.', 'fizz/buzz');
+      expect(path).to.be('fizz/buzz');
+    });
+
+    it('should yield the parent directory', () => {
+      let path = ContentsManager.getAbsolutePath('..', 'fizz/buzz');
+      expect(path).to.be('fizz');
+    });
+
+    it('should not encode characters ', () => {
+      let path = ContentsManager.getAbsolutePath('foo/b ar?.txt');
+      expect(path).to.be('foo/b ar?.txt');
+    });
+
+  });
+
+  describe('#getDownloadUrl()', () => {
+
+    it('should get the url of a file', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo', });
+      let url = contents.getDownloadUrl('bar.txt');
+      expect(url).to.be('http://foo/files/bar.txt');
+      url = contents.getDownloadUrl('fizz/buzz/bar.txt');
+      expect(url).to.be('http://foo/files/fizz/buzz/bar.txt');
+      url = contents.getDownloadUrl('/bar.txt');
+      expect(url).to.be('http://foo/files/bar.txt');
+    });
+
+    it('should encode characters', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo', });
+      let url = contents.getDownloadUrl('b ar?3.txt');
+      expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
+    });
+
+    it('should not handle relative paths', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo', });
+      let url = contents.getDownloadUrl('fizz/../bar.txt');
+      expect(url).to.be('http://foo/files/fizz/../bar.txt');
     });
 
   });
