@@ -144,6 +144,11 @@ describe('jupyter.services - Contents', () => {
       expect(path).to.be('fizz');
     });
 
+    it('should not encode a question mark', () => {
+      let path = ContentsManager.getAbsolutePath('foo/bar?.txt');
+      expect(path).to.be('foo/bar?.txt');
+    });
+
   });
 
   describe('#getDownloadUrl()', () => {
@@ -156,6 +161,18 @@ describe('jupyter.services - Contents', () => {
       expect(url).to.be('http://foo/files/fizz/buzz/bar.txt');
       url = contents.getDownloadUrl('/bar.txt');
       expect(url).to.be('http://foo/files/bar.txt');
+    });
+
+    it('should encode a question mark', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo', });
+      let url = contents.getDownloadUrl('bar?3.txt');
+      expect(url).to.be('http://foo/files/bar%3F3.txt');
+    });
+
+    it('should handle a relative path', () => {
+      let contents = new ContentsManager({ baseUrl: 'http://foo', });
+      let url = contents.getDownloadUrl('../bar.txt');
+      expect(url).to.be('http://foo/files/../bar.txt');
     });
 
   });

@@ -368,7 +368,7 @@ class ContentsManager implements IContents.IManager {
    * Get a download url given a file path.
    */
   getDownloadUrl(path: string): string {
-    return utils.urlPathJoin(this._baseUrl, FILES_URL, path);
+    return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
   }
 
   /**
