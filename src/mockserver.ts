@@ -11,7 +11,11 @@ import {
 } from 'mock-xhr';
 
 import {
-  ISignal, Signal
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 import {
@@ -133,12 +137,47 @@ function provideKernelspecs(request: MockXhr): void {
 
 
 /**
- * Convenience function to start and connect to a kernel.
+ * A mock http server.
  */
-export
-function createKernelModel(name: string): Promise<IKernel> {
-  // TODO.
-  return void 0;
+class MockHttpServer implements IDisposable {
+  /**
+   * Construct a new mock http server.
+   */
+  constructor() {
+    this._server = new MockXhrServer((value: MockXhr) => {
+      this.requestReceived.emit(value);
+    });
+    this._server.start();
+  }
+
+  /**
+   * A signal emitted when a request is received.
+   */
+  get requestReceived(): ISignal<MockHttpServer, MockXhr> {
+    return Private.requestReceivedSignal.bind(this);
+  }
+
+  /**
+   * Test whether the server is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the server.
+   */
+  dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    this._server.stop();
+    clearSignalData(this);
+  }
+
+  private _isDisposed = false;
+  private _server: MockXhrServer = null;
 }
 
 
@@ -150,13 +189,21 @@ class KernelHelper {
   /**
    * Construct a new kernel helper.
    */
-  constructor(kernel: IKernel) {
-    this._kernel = kernel;
+  constructor(options: KernelHelper.IOptions) {
+    this._kernel = options.kernel;
     this._sockServer = new MockSocketServer(kernel.wsUrl);
     this._sockServer.start();
     this._sockServer.on('message', (evt: MessageEvent) => {
       this.messageReceived.emit(serialize.deserialize(evt.data));
     });
+    // Automatically handle kernel info requests.
+    if (options.autoInfo !== false) {
+      this.messageReceived.connect((sender, msg) => {
+        if (msg.header.msg_type === 'kernel_info_reply') {
+          this.sendInfo(msg);
+        }
+      });
+    }
   }
 
   /**
@@ -175,27 +222,6 @@ class KernelHelper {
     options.msgId = options.parentHeader.msg_id;
     let msg = createKernelMessage(this._kernel, options);
     this._sockServer.send(serialize.serialize(msg));
-  }
-
-  /**
-   * Send a kernel info reply.
-   */
-  sendInfo(original: KernelMessage.IMessage, language: string, options: KernelMessage.IOptions = {}): void {
-    options = utils.copy(options);
-    options.msgType = 'kernel_info_reply';
-    options.channel = 'shell';
-    if (language in LANGUAGE_INFOS) {
-      let content: KernelMessage.IInfoReply = {
-        protocol_version: '1',
-        implementation: '1',
-        implementation_version: '1',
-        language_info: LANGUAGE_INFOS[language],
-        banner: language,
-        help_links: { }
-      };
-      options.content = content;
-    }
-    this.sendMessage(original, options);
   }
 
   /**
@@ -252,9 +278,56 @@ class KernelHelper {
     this.sendStatus(original, 'idle', options);
   }
 
+  /**
+   * Send a kernel info reply.
+   */
+  sendInfo(original: KernelMessage.IMessage): void {
+    let options: KernelMessage.IOptions = {
+      msgType = 'kernel_info_reply',
+      channel: 'shell'
+    };
+    if (this._kernel.name in LANGUAGE_INFOS) {
+      let content: KernelMessage.IInfoReply = {
+        protocol_version: '5',
+        implementation: '1',
+        implementation_version: '1',
+        language_info: LANGUAGE_INFOS[this._kernel.name],
+        banner: 'hello',
+        help_links: { }
+      };
+      options.content = content;
+    }
+    this.sendMessage(original, options);
+  }
+
   private _kernel: IKernel = null;
   private _sockServer: MockSocketServer = null;
   private _executionCount = 0;
+}
+
+
+/**
+ * The namespace for KernelHelper statics.
+ */
+export
+namespace KernelHelper {
+  /**
+   * The options used to construct a KernelHelper.
+   */
+  export
+  interface IOptions {
+    /**
+     * The kernel being mocked.
+     */
+    kernel: IKernel;
+
+    /**
+     * Whether to automatically respond with an kernel info request.
+     *
+     * The default is `true`.
+     */
+    autoInfo?: boolean;
+  }
 }
 
 
@@ -267,4 +340,10 @@ namespace Private {
    */
   export
   const messageReceivedSignal = new Signal<KernelHelper, KernelMessage.IMessage>();
+
+  /**
+   * A signal emitted when a request is received.
+   */
+  export
+  const requestReceivedSignal = new Signal<MockHttpServer, MockXhr>();
 }
