@@ -365,7 +365,15 @@ class ContentsManager implements IContents.IManager {
   }
 
   /**
-   * Get a download url given a file path.
+   * Get a an encoded download url given a file path.
+   *
+   * @param path - An absolute POSIX file path on the server.
+   *
+   * #### Notes
+   * It is expected that the path contains no relative paths,
+   * use [[ContentsManager.getAbsolutePath]] to get an absolute
+   * path if necessary.
+   *
    */
   getDownloadUrl(path: string): string {
     return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
@@ -677,11 +685,11 @@ namespace ContentsManager {
   }
 
   /**
-   * Get the absolute path to a file on the server.
+   * Get the absolute POSIX path to a file on the server.
    *
-   * @param relativePath - The relative path to the file.
+   * @param relativePath - The relative POSIX path to the file.
    *
-   * @param cwd - The optional current working directory.  The default is
+   * @param cwd - The optional POSIX current working directory.  The default is
    *  an empty string.
    *
    * #### Notes

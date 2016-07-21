@@ -109,6 +109,11 @@ describe('jupyter.services - Contents', () => {
       expect(path).to.be('bar.txt');
     });
 
+    it('should handle a relative path within the path', () => {
+      let url = ContentsManager.getAbsolutePath('fizz/../bar.txt');
+      expect(url).to.be('bar.txt');
+    });
+
     it('should get a file in the current directory', () => {
       let path = ContentsManager.getAbsolutePath('./bar.txt', 'baz');
       expect(path).to.be('baz/bar.txt');
@@ -169,10 +174,10 @@ describe('jupyter.services - Contents', () => {
       expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
     });
 
-    it('should handle a relative path', () => {
+    it('should not handle relative paths', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
-      let url = contents.getDownloadUrl('../bar.txt');
-      expect(url).to.be('http://foo/files/../bar.txt');
+      let url = contents.getDownloadUrl('fizz/../bar.txt');
+      expect(url).to.be('http://foo/files/fizz/../bar.txt');
     });
 
   });
