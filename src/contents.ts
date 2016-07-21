@@ -186,7 +186,9 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
-     * Get a download url given an absolute file path.
+     * Get a an encoded download url given a file path.
+     *
+     * @param path - An absolute POSIX file path on the server.
      */
     getDownloadUrl(path: string): string;
 
@@ -373,7 +375,6 @@ class ContentsManager implements IContents.IManager {
    * It is expected that the path contains no relative paths,
    * use [[ContentsManager.getAbsolutePath]] to get an absolute
    * path if necessary.
-   *
    */
   getDownloadUrl(path: string): string {
     return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
