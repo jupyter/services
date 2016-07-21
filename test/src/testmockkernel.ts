@@ -80,7 +80,7 @@ describe('mockkernel', () => {
 
       it('should execute the code on the mock kernel', (done) => {
         let future = kernel.execute({ code: 'a = 1'});
-        future.onReply = (reply: KernelMessage.IExecuteOkReplyMsg) => {
+        future.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
           expect(reply.content.status).to.be('ok');
           done();
         };
@@ -137,11 +137,11 @@ describe('mockkernel', () => {
         let future0 = kernel.execute({ code: ERROR_INPUT, stop_on_error: true });
         let future1 = kernel.execute({ code: 'b = 2' });
         let called = false;
-        future0.onReply = (reply: KernelMessage.IExecuteErrorReplyMsg) => {
+        future0.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
           expect(reply.content.status).to.be('error');
           called = true;
         };
-        future1.onReply = (reply: KernelMessage.IExecuteErrorReplyMsg) => {
+        future1.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
           expect(called).to.be(true);
           expect(reply.content.status).to.be('error');
           done();

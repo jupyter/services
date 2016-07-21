@@ -1181,20 +1181,27 @@ namespace KernelMessage {
    */
   export
   interface IExecuteReplyMsg extends IShellMessage {
-    content: {
-      [ key: string ]: JSONValue;
-      status: 'ok' | 'error' | 'abort';
-      execution_count: number;
-    };
+    content: IExecuteReply;
   }
 
   /**
-   * An `'execute_reply'` for an `'ok'` status.
+   * The content of an `execute-reply` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
-  interface IExecuteOkReplyMsg extends IExecuteReplyMsg {
+  interface IExecuteReply extends JSONObject {
+    status: 'ok' | 'error' | 'abort';
+    execution_count: number;
+  }
+
+  /**
+   * The `'execute_reply'` contents for an `'ok'` status.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   */
+  export
+  interface IExecuteOkReply extends IExecuteReply {
     /**
      * A list of payload objects.
      * Payloads are considered deprecated.
@@ -1210,12 +1217,12 @@ namespace KernelMessage {
   }
 
   /**
-   * An `'execute_reply'` for an `'error'` status.
+   * The `'execute_reply'` contents for an `'error'` status.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
-  interface IExecuteErrorReplyMsg extends IExecuteReplyMsg {
+  interface IExecuteErrorReply extends IExecuteReply {
     /**
      * The exception name.
      */
