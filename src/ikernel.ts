@@ -368,6 +368,11 @@ namespace IKernel {
     wsUrl?: string;
 
     /**
+     * The known id of the kernel.
+     */
+    id?: string;
+
+    /**
      * The username of the kernel client.
      */
     username?: string;
