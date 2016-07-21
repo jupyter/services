@@ -186,7 +186,7 @@ namespace IContents {
     get(path: string, options?: IFetchOptions): Promise<IModel>;
 
     /**
-     * Get a an encoded download url given a file path.
+     * Get an encoded download url given a file path.
      *
      * @param path - An absolute POSIX file path on the server.
      */
@@ -367,7 +367,7 @@ class ContentsManager implements IContents.IManager {
   }
 
   /**
-   * Get a an encoded download url given a file path.
+   * Get an encoded download url given a file path.
    *
    * @param path - An absolute POSIX file path on the server.
    *
