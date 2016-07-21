@@ -154,6 +154,11 @@ namespace ISession {
     path?: string;
 
     /**
+     * The known id of the session.
+     */
+    id?: string;
+
+    /**
      * The type of kernel (e.g. python3).
      */
     kernelName?: string;

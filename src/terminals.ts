@@ -34,6 +34,11 @@ interface ITerminalSession extends IDisposable {
   messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
 
   /**
+   * A signal emitted when the connection state changes.
+   */
+  connectionChanged: ISignal<ITerminalSession, boolean>;
+
+  /**
    * Get the name of the terminal session.
    *
    * #### Notes
@@ -42,12 +47,30 @@ interface ITerminalSession extends IDisposable {
   name: string;
 
   /**
+   * Get the http url used by the terminal session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  httpUrl: string;
+
+  /**
    * Get the websocket url used by the terminal session.
    *
    * #### Notes
    * This is a read-only property.
    */
-  url: string;
+  wsUrl: string;
+
+  /**
+   * Test whether the session is connected to a websocket.
+   */
+  isConnected: boolean;
+
+  /**
+   * Connect or reconnect to the terminal session.
+   */
+  connect(): Promise<void>;
 
   /**
    * Send a message to the terminal session.
@@ -136,6 +159,14 @@ namespace ITerminalSession {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
+     * The http url used by the terminal manager.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    httpUrl: string;
+
+    /**
      * Create a new terminal session or connect to an existing session.
      *
      * #### Notes
@@ -162,18 +193,52 @@ namespace ITerminalSession {
 
 
 /**
- * Create a terminal session or connect to an existing session.
+ * Create a terminal session object, or connect to an existing client
+ * object.
  *
  * #### Notes
- * If the session is already running on the client, the existing
- * instance will be returned.
+ * If a name is not given, one will be fetched from the server.
+ * If a session with the given name is already running on the client,
+ * the existing instance will be returned.
  */
 export
 function createTerminalSession(options: ITerminalSession.IOptions = {}): Promise<ITerminalSession> {
-  if (options.name && options.name in Private.running) {
-    return Private.running[options.name];
+  let value: ITerminalSession.IOptions = {
+    baseUrl: options.baseUrl || utils.getBaseUrl(),
+    wsUrl: options.wsUrl || utils.getWsUrl(options.baseUrl),
+    ajaxSettings: utils.copy(options.ajaxSettings) || {},
+    name
+  };
+  if (value.name && value.name in Private.running) {
+    return Promise.resolve(Private.running[value.name]);
   }
-  return new TerminalSession(options).connect();
+  if (value.name) {
+    let term = new TerminalSession(value);
+    return Promise.resolve(term);
+  }
+  return Private.getName(value).then(name => {
+    value.name = name;
+    return new TerminalSession(value);
+  });
+}
+
+
+/**
+ * Get the kernel service url based on a base url.
+ */
+export
+function getTerminalServiceUrl(baseUrl: string): string {
+  return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL);
+}
+
+
+/**
+ * Get a kernel sepcific url base on a base url and a name.
+ */
+export
+function getTerminalUrl(baseUrl: string, name: string): string {
+  let url = getTerminalServiceUrl(baseUrl);
+  return utils.urlPathJoin(url, utils.urlJoinEncode(name));
 }
 
 
@@ -189,6 +254,7 @@ class TerminalManager implements ITerminalSession.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = utils.copy(options.ajaxSettings) || {};
+    this._httpUrl = getTerminalServiceUrl(this._baseUrl);
   }
 
   /**
@@ -196,6 +262,16 @@ class TerminalManager implements ITerminalSession.IManager {
    */
   get runningChanged(): ISignal<TerminalManager, ITerminalSession.IModel[]> {
     return Private.runningChangedSignal.bind(this);
+  }
+
+  /**
+   * Get the http url used by the terminal session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get httpUrl(): string {
+    return this._httpUrl;
   }
 
   /**
@@ -272,6 +348,7 @@ class TerminalManager implements ITerminalSession.IManager {
     });
   }
 
+  private _httpUrl = '';
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings: utils.IAjaxSettings = null;
@@ -317,11 +394,21 @@ class TerminalSession implements ITerminalSession {
    * Construct a new terminal session.
    */
   constructor(options: ITerminalSession.IOptions = {}) {
-    this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._ajaxSettings = options.ajaxSettings || {};
+    // The options are already handled by `createTerminalSession`.
+    this._baseUrl = options.baseUrl;
+    this._ajaxSettings = options.ajaxSettings;
     this._name = options.name;
-    this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._promise = new utils.PromiseDelegate<ITerminalSession>();
+    this._wsBaseUrl = options.wsUrl;
+    Private.running[name] = this;
+    this._wsUrl = `${this._wsBaseUrl}terminals/websocket/${name}`;
+    this._httpUrl = getTerminalUrl(this._baseUrl, name);
+  }
+
+  /**
+   * A signal emitted when the connection state changes.
+   */
+  get connectionChanged(): ISignal<ITerminalSession, boolean> {
+    return Private.connectionChangedSignal.bind(this);
   }
 
   /**
@@ -342,13 +429,30 @@ class TerminalSession implements ITerminalSession {
   }
 
   /**
+   * Get the http url used by the terminal session.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get httpUrl(): string {
+    return this._httpUrl;
+  }
+
+  /**
    * Get the websocket url used by the terminal session.
    *
    * #### Notes
    * This is a read-only property.
    */
-  get url(): string {
-    return this._url;
+  get wsUrl(): string {
+    return this._wsUrl;
+  }
+
+  /**
+   * Test whether the session is connected to a websocket.
+   */
+  get isConnected(): boolean {
+    return this._isConnected;
   }
 
   /**
@@ -374,7 +478,6 @@ class TerminalSession implements ITerminalSession {
       this._ws = null;
     }
     delete Private.running[this._name];
-    this._promise = null;
     clearSignalData(this);
   }
 
@@ -391,11 +494,10 @@ class TerminalSession implements ITerminalSession {
    * Shut down the terminal session.
    */
   shutdown(): Promise<void> {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL, this._name);
     let ajaxSettings = utils.copy(this._ajaxSettings);
     ajaxSettings.method = 'DELETE';
 
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+    return utils.ajaxRequest(this._httpUrl, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         throw new Error('Invalid Response: ' + success.xhr.status);
       }
@@ -406,43 +508,22 @@ class TerminalSession implements ITerminalSession {
   /**
    * Connect to the terminal session.
    */
-  connect(): Promise<ITerminalSession> {
-    if (this._name) {
-      return this._initializeSocket();
-    }
-    return this._getName().then(name => {
-      this._name = name;
-      return this._initializeSocket();
-    });
-  }
-
-  /**
-   * Get a name for the terminal from the server.
-   */
-  private _getName(): Promise<string> {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
-    let ajaxSettings = utils.copy(this._ajaxSettings);
-    ajaxSettings.method = 'POST';
-    ajaxSettings.dataType = 'json';
-
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        throw new Error('Invalid Response: ' + success.xhr.status);
+  connect(): Promise<void> {
+    let ws = this._ws;
+    if (ws !== null) {
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.close();
+      ws = null;
+      if (this._isConnected) {
+        this._isConnected = false;
+        this.connectionChanged.emit(false);
       }
-      return (success.data as ITerminalSession.IModel).name;
-    });
-  }
+    }
 
-  /**
-   * Connect to the websocket.
-   */
-  private _initializeSocket(): Promise<ITerminalSession> {
-    let name = this._name;
-    Private.running[name] = this._promise.promise;
-    this._url = `${this._wsUrl}terminals/websocket/${name}`;
-    this._ws = new WebSocket(this._url);
+    ws = this._ws = new WebSocket(this._wsUrl);
 
-    this._ws.onmessage = (event: MessageEvent) => {
+    ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data);
       this.messageReceived.emit({
         type: data[0] as ITerminalSession.MessageType,
@@ -450,21 +531,37 @@ class TerminalSession implements ITerminalSession {
       });
     };
 
-    this._ws.onopen = (event: MessageEvent) => {
-      this._promise.resolve(this);
-    };
+    ws.onclose = (evt: Event) => { this._onWSClose(evt); };
+    ws.onerror = (evt: Event) => { this._onWSClose(evt); };
 
-    return this._promise.promise;
+    return new Promise<void>(resolve => {
+      ws.onopen = (event: MessageEvent) => {
+        this._isConnected = true;
+        this.connectionChanged.emit(true);
+        resolve(void 0);
+      };
+    });
   }
 
-  private _name: string;
-  private _baseUrl: string;
-  private _wsUrl: string;
-  private _url: string;
+  /**
+   * Handle a websocket close or error event.
+   */
+  private _onWSClose(evt: Event) {
+    if (this._isConnected) {
+      this._isConnected = false;
+      this.connectionChanged.emit(false);
+    }
+  }
+
+  private _name = '';
+  private _baseUrl = '';
+  private _httpUrl = '';
+  private _wsUrl = '';
+  private _wsBaseUrl = '';
   private _ajaxSettings: utils.IAjaxSettings = null;
   private _ws: WebSocket = null;
   private _isDisposed = false;
-  private _promise: utils.PromiseDelegate<ITerminalSession> = null;
+  private _isConnected = false;
 }
 
 
@@ -476,13 +573,13 @@ namespace Private {
    * A mapping of running terminals by name.
    */
   export
-  var running: { [key: string]: Promise<ITerminalSession> } = Object.create(null);
+  var running: { [key: string]: ITerminalSession } = Object.create(null);
 
   /**
-   * A signal emitted when the terminal is fully connected.
+   * A signal emitted when the connection state changes.
    */
   export
-  const connectedSignal = new Signal<ITerminalSession, void>();
+  const connectionChangedSignal = new Signal<ITerminalSession, boolean>();
 
   /**
    * A signal emitted when the running terminals change.
@@ -495,4 +592,22 @@ namespace Private {
    */
   export
   const messageReceivedSignal = new Signal<ITerminalSession, ITerminalSession.IMessage>();
+
+  /**
+   * Get a name for the terminal from the server.
+   */
+  export
+  function getName(options: ITerminalSession.IOptions): Promise<string> {
+    let url = utils.urlPathJoin(options.baseUrl, TERMINAL_SERVICE_URL);
+    let ajaxSettings = utils.copy(options.ajaxSettings);
+    ajaxSettings.method = 'POST';
+    ajaxSettings.dataType = 'json';
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        throw new Error('Invalid Response: ' + success.xhr.status);
+      }
+      return (success.data as ITerminalSession.IModel).name;
+    });
+  }
 }
