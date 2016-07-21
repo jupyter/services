@@ -677,21 +677,21 @@ namespace ContentsManager {
   }
 
   /**
-   * Get a path to a file given a relative path using server path logic.
+   * Get the absolute path to a file on the server.
    *
    * @param relativePath - The relative path to the file.
    *
-   * @param basePath - The optional base path of the file.  The
-   *   default is an empty string.
+   * @param cwd - The optional current working directory.  The default is
+   *  an empty string.
    *
    * #### Notes
+   * Absolute path in this context is equivalent to a POSIX path without
+   * the initial `'/'` because IPEP 27 paths denote `''` as the root.
    * If the relative path is not contained within the base path,
    * return the relative path unchanged, since it cannot be served.
-   * The returned path will not start with a forward slash, since
-   * server paths have `''` as the root path.
    */
   export
-  function getPath(relativePath: string, basePath = ''): string {
+  function getAbsolutePath(relativePath: string, cwd = ''): string {
     let norm = posix.normalize(posix.join(basePath, relativePath));
     if (norm.indexOf('../') === 0) {
       return relativePath;

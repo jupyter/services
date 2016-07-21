@@ -102,45 +102,45 @@ describe('jupyter.services - Contents', () => {
 
   });
 
-  describe('.getPath()', () => {
+  describe('.getAbsolutePath()', () => {
 
     it('should get a file in the base directory', () => {
-      let path = ContentsManager.getPath('bar.txt');
+      let path = ContentsManager.getAbsolutePath('bar.txt');
       expect(path).to.be('bar.txt');
     });
 
     it('should get a file in the current directory', () => {
-      let path = ContentsManager.getPath('./bar.txt', 'baz');
+      let path = ContentsManager.getAbsolutePath('./bar.txt', 'baz');
       expect(path).to.be('baz/bar.txt');
     });
 
     it('should get a file in the parent directory', () => {
-      let path = ContentsManager.getPath('../bar.txt', '/fizz/buzz');
+      let path = ContentsManager.getAbsolutePath('../bar.txt', '/fizz/buzz');
       expect(path).to.be('fizz/bar.txt');
     });
 
     it('should get a file in the grandparent directory', () => {
-      let path = ContentsManager.getPath('../../bar.txt', 'fizz/buzz/bing/');
+      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
       expect(path).to.be('fizz/bar.txt');
     });
 
     it('should bail if not contained in the base url', () => {
-      let path = ContentsManager.getPath('../../bar.txt', 'fizz');
+      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz');
       expect(path).to.be('../../bar.txt');
     });
 
     it('should short-circuit to the root directory of the server', () => {
-      let path = ContentsManager.getPath('/bar.txt', 'fizz/buzz');
+      let path = ContentsManager.getAbsolutePath('/bar.txt', 'fizz/buzz');
       expect(path).to.be('bar.txt');
     });
 
     it('should yield the current directory', () => {
-      let path = ContentsManager.getPath('.', 'fizz/buzz');
+      let path = ContentsManager.getAbsolutePath('.', 'fizz/buzz');
       expect(path).to.be('fizz/buzz');
     });
 
     it('should yield the parent directory', () => {
-      let path = ContentsManager.getPath('..', 'fizz/buzz');
+      let path = ContentsManager.getAbsolutePath('..', 'fizz/buzz');
       expect(path).to.be('fizz');
     });
 
