@@ -687,8 +687,8 @@ namespace ContentsManager {
    * #### Notes
    * Absolute path in this context is equivalent to a POSIX path without
    * the initial `'/'` because IPEP 27 paths denote `''` as the root.
-   * If the relative path is not contained within the base path,
-   * return the relative path unchanged, since it cannot be served.
+   * If the resulting path is not contained within the server root,
+   * returns the relative path unchanged, since it cannot be served.
    */
   export
   function getAbsolutePath(relativePath: string, cwd = ''): string {
