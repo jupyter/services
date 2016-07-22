@@ -2197,5 +2197,20 @@ describe('jupyter.services - kernel', () => {
 
   });
 
+  describe('#isInputRequestMsg()', () => {
+
+    it('should check for an input_request message type', () => {
+      let msg = createKernelMessage({
+        msgType: 'input_request', channel: 'stdin', session: 'baz'
+      });
+      expect(KernelMessage.isInputRequestMsg(msg)).to.be(true);
+      msg = createKernelMessage({
+        msgType: 'foo', channel: 'stdin', session: 'baz'
+      });
+      expect(KernelMessage.isStatusMsg(msg)).to.be(false);
+    });
+
+  });
+
 });
 

@@ -1267,6 +1267,14 @@ namespace KernelMessage {
   };
 
   /**
+   * Test whether a kernel message is an `'input_request'` message.
+   */
+  export
+  function isInputRequestMsg(msg: IMessage): msg is IInputRequestMsg {
+    return msg.header.msg_type === 'input_request';
+  }
+
+  /**
    * The content of an `'input_reply'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
