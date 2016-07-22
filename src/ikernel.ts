@@ -1240,6 +1240,28 @@ namespace KernelMessage {
   }
 
   /**
+   * An `'input_request'` message on the `'stdin'` channel.
+   *
+   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   */
+  export
+  interface IInputRequestMsg extends IStdinMessage {
+    content: {
+      [ key: string ]: JSONValue;
+      /**
+       * The text to show at the prompt.
+       */
+      prompt: string;
+
+      /**
+       * Whether the request is for a password.
+       * If so, the frontend shouldn't echo input.
+       */
+      password: boolean;
+    };
+  }
+
+  /**
    * The content of an `'input_reply'` message.
    *
    * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
