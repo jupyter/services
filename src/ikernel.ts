@@ -1246,20 +1246,25 @@ namespace KernelMessage {
    */
   export
   interface IInputRequestMsg extends IStdinMessage {
-    content: {
-      [ key: string ]: JSONValue;
-      /**
-       * The text to show at the prompt.
-       */
-      prompt: string;
-
-      /**
-       * Whether the request is for a password.
-       * If so, the frontend shouldn't echo input.
-       */
-      password: boolean;
-    };
+    content: IInputRequest;
   }
+
+  /**
+   * The content of an `'input_request'` message.
+   */
+  export
+  interface IInputRequest extends JSONObject {
+    /**
+     * The text to show at the prompt.
+     */
+    prompt: string;
+
+    /**
+     * Whether the request is for a password.
+     * If so, the frontend shouldn't echo input.
+     */
+    password: boolean;
+  };
 
   /**
    * The content of an `'input_reply'` message.
@@ -1270,7 +1275,6 @@ namespace KernelMessage {
    */
   export
   interface IInputReply extends JSONObject {
-    [ key: string ]: JSONValue;
     value: string;
   }
 
