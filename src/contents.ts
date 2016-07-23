@@ -7,6 +7,10 @@ import {
 import * as posix
  from 'path-posix';
 
+import {
+  JSONObject
+} from './json';
+
 import * as utils
   from './utils';
 
@@ -352,7 +356,7 @@ class ContentsManager implements IContents.IManager {
       if (options.type === 'notebook') {
         delete options['format'];
       }
-      let params = utils.copy(options);
+      let params: any = utils.copy(options as JSONObject);
       params.content = options.content ? '1' : '0';
       url += utils.jsonToQueryString(params);
     }

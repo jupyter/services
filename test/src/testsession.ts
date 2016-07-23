@@ -74,7 +74,7 @@ describe('jupyter.services - session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, sessionModels);
       });
-      let list = listRunningSessions('http://localhost:8888');
+      let list = listRunningSessions({ baseUrl: 'http://localhost:8888' });
       list.then((response: ISession.IModel[]) => {
         expect(response[0]).to.eql(sessionModels[0]);
         expect(response[1]).to.eql(sessionModels[1]);
@@ -100,7 +100,7 @@ describe('jupyter.services - session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let list = listRunningSessions('http://localhost:8888');
+      let list = listRunningSessions({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done);
     });
 
@@ -109,7 +109,7 @@ describe('jupyter.services - session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let list = listRunningSessions('http://localhost:8888');
+      let list = listRunningSessions();
       expectFailure(list, done);
     });
 
@@ -117,7 +117,7 @@ describe('jupyter.services - session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, [createSessionModel()]);
       });
-      let list = listRunningSessions('http://localhost:8888');
+      let list = listRunningSessions();
       expectFailure(list, done, 'Invalid Status: 201');
     });
 
@@ -125,7 +125,7 @@ describe('jupyter.services - session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(500, { });
       });
-      let list = listRunningSessions('http://localhost:8888');
+      let list = listRunningSessions();
       expectFailure(list, done, '');
     });
 
@@ -150,7 +150,7 @@ describe('jupyter.services - session', () => {
           expect(s.path).to.be('foo/bar.ipynb');
           done();
         });
-        listRunningSessions('htttp://localhost:8888');
+        listRunningSessions();
       });
     });
 

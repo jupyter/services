@@ -226,11 +226,10 @@ function findKernelById(id: string, options?: IKernel.IOptions): Promise<IKernel
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
  */
 export
-function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
-  options = options || {};
+function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecModels> {
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
 
@@ -281,11 +280,10 @@ function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningKernels(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
-  options = options || {};
+function listRunningKernels(options: IKernel.IOptions = {}): Promise<IKernel.IModel[]> {
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
   ajaxSettings.cache = false;
@@ -322,7 +320,7 @@ function startNewKernel(options?: IKernel.IOptions): Promise<IKernel> {
   options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'POST';
   ajaxSettings.data = JSON.stringify({ name: options.name });
   ajaxSettings.dataType = 'json';
@@ -543,7 +541,7 @@ class Kernel implements IKernel {
    * Clone the current kernel with a new clientId.
    */
   clone(): IKernel {
-    let options = {
+    let options: IKernel.IOptions = {
       baseUrl: this._baseUrl,
       wsUrl: this._wsUrl,
       name: this._name,
@@ -799,7 +797,7 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let defaults = {
+    let defaults: JSONObject = {
       silent : false,
       store_history : true,
       user_expressions : {},
@@ -962,7 +960,9 @@ class Kernel implements IKernel {
       return Promise.resolve(this._spec);
     }
     let name = this.name;
-    let options = { baseUrl: this._baseUrl, ajaxSettings: this._ajaxSettings };
+    let options: IKernel.IOptions = {
+      baseUrl: this._baseUrl, ajaxSettings: this.ajaxSettings
+    };
     return getKernelSpecs(options).then(ids => {
       let id = ids.kernelspecs[name];
       if (!id) {

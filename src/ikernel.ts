@@ -323,7 +323,7 @@ namespace IKernel {
    * The options object used to initialize a kernel.
    */
   export
-  interface IOptions {
+  interface IOptions extends JSONObject {
     /**
      * The kernel type (e.g. python3).
      */

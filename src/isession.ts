@@ -147,7 +147,7 @@ namespace ISession {
    * The session initialization options.
    */
   export
-  interface IOptions {
+  interface IOptions extends JSONObject {
     /**
      * The path (not including name) to the session.
      */

@@ -45,8 +45,9 @@ let createMsg = (channel: KernelMessage.Channel, parent_header: JSONObject): Ker
     header: JSON.parse(JSON.stringify(parent_header)),
     metadata: {},
     buffers: []
-  }
-}
+  };
+};
+
 
 describe('jupyter.services - kernel', () => {
 
@@ -60,7 +61,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let options = {
+      let options: IKernel.IOptions = {
         baseUrl: 'http://localhost:8888',
       };
       listRunningKernels(options).then(response => {
@@ -78,7 +79,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let options = {
+      let options: IKernel.IOptions = {
         baseUrl: 'http://localhost:8888',
         ajaxSettings: ajaxSettings
       };
@@ -94,7 +95,7 @@ describe('jupyter.services - kernel', () => {
         let data = { id: uuid(), name: 'test' };
         handler.respond(200, data);
       });
-      let list = listRunningKernels('http://localhost:8888');
+      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done, 'Invalid kernel list');
     });
 
@@ -102,7 +103,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, { });
       });
-      let list = listRunningKernels('http://localhost:8888');
+      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done, 'Invalid Status: 201');
     });
 
@@ -110,7 +111,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(500, { });
       });
-      let list = listRunningKernels('http://localhost:8888');
+      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done, '');
     });
 
@@ -1960,7 +1961,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'python',
                              'kernelspecs': ids });
       });
-      getKernelSpecs('localhost').then(specs => {
+      getKernelSpecs({ baseUrl: 'localhost' }).then(specs => {
         let names = Object.keys(specs.kernelspecs);
         expect(names[0]).to.be('python');
         expect(names[1]).to.be('python3');
@@ -1989,7 +1990,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs({ baseUrl: 'localhost' });
       expectFailure(promise, done);
     });
 
@@ -1998,7 +1999,7 @@ describe('jupyter.services - kernel', () => {
       handler.onRequest = () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       };
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2008,7 +2009,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': [ PYTHON_SPEC ]
                            });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2019,7 +2020,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2030,7 +2031,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'R',
                              'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2041,7 +2042,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2052,7 +2053,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2063,7 +2064,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(200, { 'default': 'R',
                              'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done);
     });
 
@@ -2071,7 +2072,7 @@ describe('jupyter.services - kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, { });
       });
-      let promise = getKernelSpecs('localhost');
+      let promise = getKernelSpecs();
       expectFailure(promise, done, 'Invalid Response: 201');
     });
 

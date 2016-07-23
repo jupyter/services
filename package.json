@@ -9,7 +9,8 @@
     "path-posix": "^1.0.0",
     "phosphor-disposable": "^1.0.5",
     "phosphor-signaling": "^1.2.0",
-    "requirejs": "^2.2.0"
+    "requirejs": "^2.2.0",
+    "url": "^0.11.0"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",

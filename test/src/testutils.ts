@@ -7,7 +7,11 @@ import expect = require('expect.js');
 import requirejs = require('requirejs');
 
 import {
-  PromiseDelegate, extend, copy, shallowEquals, uuid, urlPathJoin,
+  JSONObject
+} from '../../lib/json';
+
+import {
+  PromiseDelegate, extend, copy, uuid, urlPathJoin,
   encodeURIComponents, urlJoinEncode, jsonToQueryString, getConfigOption,
   getBaseUrl, getWsUrl, ajaxRequest, loadObject
 } from '../../lib/utils';
@@ -44,31 +48,14 @@ describe('jupyter-js-utils', () => {
   describe('copy()', () => {
 
     it('should get a copy of an object', () => {
-      let source = {
+      let source: JSONObject = {
         foo: 'bar',
-        baz: { fizz: 0, buzz: 1}
+        baz: { fizz: 0, buzz: [1, 2]}
       };
-      let newObj = copy(source);
-      expect(newObj.baz.buzz).to.be(1);
+      let newObj: any = copy(source);
+      expect(newObj.baz.buzz).to.eql([1, 2]);
       newObj.baz.fizz = 4;
-      expect(source.baz.fizz).to.be(0);
-      expect(copy([1, 2])).to.eql([1, 2]);
-    });
-
-    it('should return null if the object is not copy-able', () => {
-      expect(copy(null)).to.be(null);
-      expect(copy(0)).to.be(null);
-      expect(copy(void 0)).to.be(null);
-    });
-
-  });
-
-  describe('shallowEquals()', () => {
-
-    it('should check for shallow equality of two objects', () => {
-      expect(shallowEquals({ foo: 1}, { foo: 1})).to.be(true);
-      expect(shallowEquals({ foo: 1}, { foo: 1, bar: 2 })).to.be(false);
-      expect(shallowEquals({ foo: { bar: 1} }, { foo: { bar: 1 } })).to.be(false);
+      expect((source as any).baz.fizz).to.be(0);
     });
 
   });

@@ -199,7 +199,7 @@ function listRunningSessions(options?: ISession.IOptions): Promise<ISession.IMod
   options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
   ajaxSettings.cache = false;
@@ -770,7 +770,7 @@ namespace Private {
       kernel: { name: options.kernelName, id: options.kernelId },
       notebook: { path: options.path }
     };
-    let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
     ajaxSettings.data = JSON.stringify(model);
@@ -792,7 +792,7 @@ namespace Private {
    */
   export
   function createKernel(model: ISession.IModel, options: ISession.IOptions): Promise<IKernel> {
-    let kernelOptions = {
+    let kernelOptions: IKernel.IOptions = {
       name: model.kernel.name,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
