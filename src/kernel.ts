@@ -983,11 +983,9 @@ class Kernel implements IKernel {
     let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
     console.log('Starting WebSocket:', display);
 
-    let url = (
-      utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
-        encodeURIComponent(this._id),
+    let url = utils.urlPathJoin(
+        partialUrl,
         'channels?session_id=' + encodeURIComponent(this._clientId)
-      )
     );
 
     this._connectionPromise = new utils.PromiseDelegate<void>();

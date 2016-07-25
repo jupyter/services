@@ -60,6 +60,18 @@ function uuid(): string {
 
 
 /**
+ * Resolve a url.
+ *
+ * Take a base URL, and a href URL, and resolve them as a browser would for
+ * an anchor tag.
+ */
+export
+function urlResolve(from: string, to: string): string {
+  return url.resolve(from, to);
+}
+
+
+/**
  * Join a sequence of url components and resolve them from a base URL.
  *
  * #### Notes
@@ -68,8 +80,8 @@ function uuid(): string {
  * would for an anchor tag.
  */
 export
-function urlPathJoin(from: string, ...parts: string[]): string {
-  return url.resolve(from, urljoin(...parts));
+function urlPathJoin(...parts: string[]): string {
+  return urljoin(...parts);
 }
 
 
