@@ -55,7 +55,7 @@ describe('manager', () => {
       let options = {
         baseUrl: 'foo',
         ajaxSettings: {},
-        kernelspecs: KERNELSPECS
+        kernelspecs: KERNELSPECS,
       };
       createServiceManager(options).then(manager => {
         expect(manager.kernels).to.be.a(KernelManager);
@@ -77,6 +77,35 @@ describe('manager', () => {
         manager = value;
         done();
       });
+    });
+
+    describe('#isDisposed', () => {
+
+      it('should test whether the manager is disposed', () => {
+        expect(manager.isDisposed).to.be(false);
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
+      it('should be read-only', () => {
+        expect(() => { manager.isDisposed = true; }).to.throwError();
+      });
+
+    });
+
+    describe('#dispose()', () => {
+
+      it('should dispose of the resources held by the manager', () => {
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
+      it('should be safe to call multiple times', () => {
+        manager.dispose();
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
     });
 
     describe('#specsChanged', () => {

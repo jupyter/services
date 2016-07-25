@@ -168,7 +168,7 @@ class ServiceManager implements IServiceManager {
   }
 
   /**
-   * Test whether the terminal manager is disposed.
+   * Test whether the service manager is disposed.
    *
    * #### Notes
    * This is a read-only property.
@@ -248,6 +248,7 @@ class ServiceManager implements IServiceManager {
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _cwd = '';
   private _isDisposed = false;
 }
 
@@ -262,4 +263,10 @@ namespace Private {
    */
   export
   const specsChangedSignal = new Signal<IServiceManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<IServiceManager, string>();
 }

@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  ISignal, Signal, clearSignalData
+} from 'phosphor-signaling';
+
+import {
   IAjaxSettings
 } from './utils';
 
@@ -32,6 +36,48 @@ class MockContentsManager implements IContents.IManager {
   }
 
   /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  get cwdChanged(): ISignal<MockContentsManager, string> {
+    return Private.cwdChangedSignal.bind(this);
+  }
+
+  /**
+   * The cwd of the manager.
+   */
+  get cwd(): string {
+    return this._cwd;
+  }
+  set cwd(value: string) {
+    if (value === this._cwd) {
+      return;
+    }
+    this._cwd = value;
+    this.cwdChanged.emit(value);
+  }
+
+  /**
+   * Test whether the terminal manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+  }
+
+  /**
    * Get a path in the format it was saved or created in.
    */
   get(path: string, options: IContents.IFetchOptions = {}): Promise<IContents.IModel> {
@@ -49,6 +95,11 @@ class MockContentsManager implements IContents.IManager {
   getDownloadUrl(path: string): string {
     // no-op
     return path;
+  }
+
+  getAbsolutePath(relativePath: string, cwd?: string): string {
+    // no-op
+    return relativePath;
   }
 
   newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
@@ -155,4 +206,18 @@ class MockContentsManager implements IContents.IManager {
   private _checkpoints: { [key: string]: IContents.ICheckpointModel[] } = Object.create(null);
   private _fileSnaps: { [key: string]: IContents.IModel } = Object.create(null);
   private _id = 0;
+  private _isDisposed = false;
+  private _cwd = '';
+}
+
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<MockContentsManager, string>();
 }

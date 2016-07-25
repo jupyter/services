@@ -126,6 +126,7 @@ class MockServiceManager implements IServiceManager {
   private _contentsManager: MockContentsManager = null;
   private _terminalManager: MockTerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _cwd = '';
   private _isDisposed = false;
 }
 
@@ -140,4 +141,10 @@ namespace Private {
    */
   export
   const specsChangedSignal = new Signal<MockServiceManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<MockServiceManager, string>();
 }
