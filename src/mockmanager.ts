@@ -54,27 +54,6 @@ class MockServiceManager implements IServiceManager {
   }
 
   /**
-   * A signal emitted when the cwd of the manager changes.
-   */
-  get cwdChanged(): ISignal<MockServiceManager, string> {
-    return Private.cwdChangedSignal.bind(this);
-  }
-
-  /**
-   * The cwd of the manager.
-   */
-  get cwd(): string {
-    return this._cwd;
-  }
-  set cwd(value: string) {
-    if (value === this._cwd) {
-      return;
-    }
-    this._cwd = value;
-    this.cwdChanged.emit(value);
-  }
-
-  /**
    * Test whether the terminal manager is disposed.
    *
    * #### Notes

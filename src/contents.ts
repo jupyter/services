@@ -1,8 +1,13 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
+
 import {
-  IAjaxSettings
-} from './utils';
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
+  ISignal, Signal, clearSignalData
+} from 'phosphor-signaling';
 
 import * as posix
  from 'path-posix';
@@ -12,6 +17,10 @@ import * as utils
 
 import * as validate
   from './validate';
+
+import {
+  IAjaxSettings
+} from './utils';
 
 
 /**
@@ -136,6 +145,8 @@ namespace IContents {
   interface ICreateOptions {
     /**
      * The directory in which to create the file.
+     *
+     * Defaults to the cwd of the manager.
      */
      path?: string;
 
@@ -173,7 +184,17 @@ namespace IContents {
    * The interface for a contents manager.
    */
   export
-  interface IManager {
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the cwd of the manager changes.
+     */
+    cwdChanged: ISignal<IManager, string>;
+
+    /**
+     * The cwd of the manager.
+     */
+    cwd: string;
+
     /**
      * Get a file or directory.
      *
@@ -191,6 +212,22 @@ namespace IContents {
      * @param path - An absolute POSIX file path on the server.
      */
     getDownloadUrl(path: string): string;
+
+    /**
+     * Get the absolute POSIX path to a file on the server.
+     *
+     * @param relativePath - The relative POSIX path to the file.
+     *
+     * @param cwd - The optional POSIX current working directory.  The
+     *   default is the cwd of the manager.
+     *
+     * #### Notes
+     * Absolute path in this context is equivalent to a POSIX path without
+     * the initial `'/'` because IPEP 27 paths denote `''` as the root.
+     * If the resulting path is not contained within the server root,
+     * returns `null`, since it cannot be served.
+     */
+    getAbsolutePath(relativePath: string, cwd?: string): string;
 
     /**
      * Create a new untitled file or directory in the specified directory path.
@@ -313,6 +350,28 @@ class ContentsManager implements IContents.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._ajaxSettings = utils.copy(options.ajaxSettings);
+    this._cwd = options.cwd || '';
+  }
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  get cwdChanged(): ISignal<IContents.IManager, string> {
+    return Private.cwdChangedSignal.bind(this);
+  }
+
+  /**
+   * The cwd of the manager.
+   */
+  get cwd(): string {
+    return this._cwd;
+  }
+  set cwd(value: string) {
+    if (value === this._cwd) {
+      return;
+    }
+    this._cwd = value;
+    this.cwdChanged.emit(value);
   }
 
   /**
@@ -327,6 +386,28 @@ class ContentsManager implements IContents.IManager {
   set ajaxSettings(value: IAjaxSettings) {
     this._ajaxSettings = utils.copy(value);
   }
+
+  /**
+   * Test whether the contents manager is disposed.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+  }
+
 
   /**
    * Get a file or directory.
@@ -381,6 +462,29 @@ class ContentsManager implements IContents.IManager {
   }
 
   /**
+   * Get the absolute POSIX path to a file on the server.
+   *
+   * @param relativePath - The relative POSIX path to the file.
+   *
+   * @param cwd - The optional POSIX current working directory.  The
+   *   default is the cwd of the manager.
+   *
+   * #### Notes
+   * Absolute path in this context is equivalent to a POSIX path without
+   * the initial `'/'` because IPEP 27 paths denote `''` as the root.
+   * If the resulting path is not contained within the server root,
+   * returns `null`, since it cannot be served.
+   */
+  getAbsolutePath(relativePath: string, cwd?: string): string {
+    cwd = cwd || this._cwd;
+    let norm = posix.normalize(posix.join(cwd, relativePath));
+    if (norm.indexOf('../') === 0) {
+      return null;
+    }
+    return posix.resolve('/', cwd, relativePath).slice(1);
+  }
+
+  /**
    * Create a new untitled file or directory in the specified directory path.
    *
    * @param options: The options used to create the file.
@@ -399,7 +503,7 @@ class ContentsManager implements IContents.IManager {
       ajaxSettings.data = JSON.stringify(options);
       ajaxSettings.contentType = 'application/json';
     }
-    let url = this._getUrl(options.path || '');
+    let url = this._getUrl(options.path || this._cwd);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
         throw Error('Invalid Status: ' + success.xhr.status);
@@ -660,7 +764,9 @@ class ContentsManager implements IContents.IManager {
   }
 
   private _baseUrl = '';
+  private _cwd = '';
   private _ajaxSettings: IAjaxSettings = null;
+  private _isDisposed = false;
 }
 
 
@@ -683,29 +789,11 @@ namespace ContentsManager {
      * The default ajax settings to use for the kernel.
      */
     ajaxSettings?: IAjaxSettings;
-  }
 
-  /**
-   * Get the absolute POSIX path to a file on the server.
-   *
-   * @param relativePath - The relative POSIX path to the file.
-   *
-   * @param cwd - The optional POSIX current working directory.  The default is
-   *  an empty string.
-   *
-   * #### Notes
-   * Absolute path in this context is equivalent to a POSIX path without
-   * the initial `'/'` because IPEP 27 paths denote `''` as the root.
-   * If the resulting path is not contained within the server root,
-   * returns `null`, since it cannot be served.
-   */
-  export
-  function getAbsolutePath(relativePath: string, cwd = ''): string {
-    let norm = posix.normalize(posix.join(cwd, relativePath));
-    if (norm.indexOf('../') === 0) {
-      return null;
-    }
-    return posix.resolve('/', cwd, relativePath).slice(1);
+    /**
+     * The optional initial cwd of the manager.
+     */
+    cwd?: string;
   }
 
   /**
@@ -738,4 +826,16 @@ namespace ContentsManager {
   function extname(path: string): string {
     return posix.extname(path);
   }
+}
+
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<ContentsManager, string>();
 }

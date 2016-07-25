@@ -56,11 +56,9 @@ describe('manager', () => {
         baseUrl: 'foo',
         ajaxSettings: {},
         kernelspecs: KERNELSPECS,
-        cwd: 'foo/bar'
       };
       createServiceManager(options).then(manager => {
         expect(manager.kernels).to.be.a(KernelManager);
-        expect(manager.cwd).to.be('foo/bar');
         done();
       }).catch(done);
     });
@@ -81,6 +79,35 @@ describe('manager', () => {
       });
     });
 
+    describe('#isDisposed', () => {
+
+      it('should test whether the manager is disposed', () => {
+        expect(manager.isDisposed).to.be(false);
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
+      it('should be read-only', () => {
+        expect(() => { manager.isDisposed = true; }).to.throwError();
+      });
+
+    });
+
+    describe('#dispose()', () => {
+
+      it('should dispose of the resources held by the manager', () => {
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
+      it('should be safe to call multiple times', () => {
+        manager.dispose();
+        manager.dispose();
+        expect(manager.isDisposed).to.be(true);
+      });
+
+    });
+
     describe('#specsChanged', () => {
 
       it('should be emitted when the specs change', (done) => {
@@ -93,32 +120,6 @@ describe('manager', () => {
           handler.respond(200, KERNELSPECS);
         });
         manager.kernels.getSpecs();
-      });
-
-    });
-
-    describe('#cwdChanged', () => {
-
-      it('should be emitted when the cwd changes', (done) => {
-        manager.cwdChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(args).to.be('foo/bar');
-          done();
-        });
-        manager.cwd = 'foo/bar';
-      });
-
-    });
-
-    describe('#cwd', () => {
-
-      it('should default to an empty string', () => {
-        expect(manager.cwd).to.be('');
-      });
-
-      it('should be settable', () => {
-        manager.cwd = 'foo/bar';
-        expect(manager.cwd).to.be('foo/bar');
       });
 
     });

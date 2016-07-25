@@ -43,9 +43,73 @@ describe('jupyter.services - Contents', () => {
     it('should accept options', () => {
       let contents = new ContentsManager({
         baseUrl: 'foo',
-        ajaxSettings: {}
+        ajaxSettings: {},
+        cwd: 'foo/bar'
       });
       expect(contents).to.be.a(ContentsManager);
+      expect(contents.cwd).to.be('foo/bar');
+    });
+
+  });
+
+  describe('#cwdChanged', () => {
+
+    it('should be emitted when the cwd changes', (done) => {
+      let manager = new ContentsManager();
+      manager.cwdChanged.connect((sender, args) => {
+        expect(sender).to.be(manager);
+        expect(args).to.be('foo/bar');
+        done();
+      });
+      manager.cwd = 'foo/bar';
+    });
+
+  });
+
+  describe('#cwd', () => {
+
+    it('should default to an empty string', () => {
+      let manager = new ContentsManager();
+      expect(manager.cwd).to.be('');
+    });
+
+    it('should be settable', () => {
+      let manager = new ContentsManager();
+      manager.cwd = 'foo/bar';
+      expect(manager.cwd).to.be('foo/bar');
+    });
+
+  });
+
+  context('#isDisposed', () => {
+
+    it('should test whether the manager is disposed', () => {
+      let manager = new ContentsManager();
+      expect(manager.isDisposed).to.be(false);
+      manager.dispose();
+      expect(manager.isDisposed).to.be(true);
+    });
+
+    it('should be read-only', () => {
+      let manager = new ContentsManager();
+      expect(() => { manager.isDisposed = true; }).to.throwError();
+    });
+
+  });
+
+  context('#dispose()', () => {
+
+    it('should dispose of the resources held by the manager', () => {
+      let manager = new ContentsManager();
+      manager.dispose();
+      expect(manager.isDisposed).to.be(true);
+    });
+
+    it('should be safe to call multiple times', () => {
+      let manager = new ContentsManager();
+      manager.dispose();
+      manager.dispose();
+      expect(manager.isDisposed).to.be(true);
     });
 
   });
@@ -102,55 +166,65 @@ describe('jupyter.services - Contents', () => {
 
   });
 
-  describe('.getAbsolutePath()', () => {
+  describe('#getAbsolutePath()', () => {
 
     it('should get a file in the base directory', () => {
-      let path = ContentsManager.getAbsolutePath('bar.txt');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('bar.txt');
       expect(path).to.be('bar.txt');
     });
 
     it('should handle a relative path within the path', () => {
-      let url = ContentsManager.getAbsolutePath('fizz/../bar.txt');
-      expect(url).to.be('bar.txt');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('fizz/../bar.txt');
+      expect(path).to.be('bar.txt');
     });
 
     it('should get a file in the current directory', () => {
-      let path = ContentsManager.getAbsolutePath('./bar.txt', 'baz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('./bar.txt', 'baz');
       expect(path).to.be('baz/bar.txt');
     });
 
     it('should get a file in the parent directory', () => {
-      let path = ContentsManager.getAbsolutePath('../bar.txt', '/fizz/buzz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('../bar.txt', '/fizz/buzz');
       expect(path).to.be('fizz/bar.txt');
     });
 
     it('should get a file in the grandparent directory', () => {
-      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
       expect(path).to.be('fizz/bar.txt');
     });
 
     it('should return `null` if not contained in the base url', () => {
-      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('../../bar.txt', 'fizz');
       expect(path).to.be(null);
     });
 
     it('should short-circuit to the root directory of the server', () => {
-      let path = ContentsManager.getAbsolutePath('/bar.txt', 'fizz/buzz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('/bar.txt', 'fizz/buzz');
       expect(path).to.be('bar.txt');
     });
 
     it('should yield the current directory', () => {
-      let path = ContentsManager.getAbsolutePath('.', 'fizz/buzz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('.', 'fizz/buzz');
       expect(path).to.be('fizz/buzz');
     });
 
     it('should yield the parent directory', () => {
-      let path = ContentsManager.getAbsolutePath('..', 'fizz/buzz');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('..', 'fizz/buzz');
       expect(path).to.be('fizz');
     });
 
     it('should not encode characters ', () => {
-      let path = ContentsManager.getAbsolutePath('foo/b ar?.txt');
+      let manager = new ContentsManager();
+      let path = manager.getAbsolutePath('foo/b ar?.txt');
       expect(path).to.be('foo/b ar?.txt');
     });
 
