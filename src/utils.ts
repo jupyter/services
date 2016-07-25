@@ -5,6 +5,9 @@
 import * as minimist
   from 'minimist';
 
+import * as url
+  from 'url';
+
 import * as urljoin
   from 'url-join';
 
@@ -57,31 +60,25 @@ function uuid(): string {
 
 
 /**
- * Join a sequence of url components with `'/'`.
+ * Join a sequence of url components and resolve them from a base URL.
  */
 export
-function urlPathJoin(...paths: string[]): string {
-  return urljoin(...paths);
+function urlPathJoin(from: string, ...parts: string[]): string {
+  return url.resolve(from, urljoin(...parts));
 }
 
 
 /**
- * Encode just the components of a multi-segment uri.
+ * Encode the components of a multi-segment url.
  *
+ * #### Notes
  * Preserves the `'/'` separators.
+ * Should not include the base url, since all parts are escaped.
  */
 export
-function encodeURIComponents(uri: string): string {
-  return uri.split('/').map(encodeURIComponent).join('/');
-}
-
-
-/**
- * Encode and join a sequence of url components with `'/'`.
- */
-export
-function urlJoinEncode(...args: string[]): string {
-  return encodeURIComponents(urlPathJoin.apply(null, args));
+function urlEncodeParts(path: string): string {
+  let parts = path.split('/').map(encodeURIComponent);
+  return urljoin(...parts);
 }
 
 
@@ -91,9 +88,9 @@ function urlJoinEncode(...args: string[]): string {
  * From [stackoverflow](http://stackoverflow.com/a/30707423).
  */
 export
-function jsonToQueryString(json: any): string {
+function jsonToQueryString(json: JSONObject): string {
   return '?' + Object.keys(json).map(key =>
-    encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
+    encodeURIComponent(key) + '=' + encodeURIComponent(String(json[key]))
   ).join('&');
 }
 

@@ -174,10 +174,10 @@ describe('jupyter.services - Contents', () => {
       expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
     });
 
-    it('should not handle relative paths', () => {
+    it('should handle relative paths', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
       let url = contents.getDownloadUrl('fizz/../bar.txt');
-      expect(url).to.be('http://foo/files/fizz/../bar.txt');
+      expect(url).to.be('http://foo/files/bar.txt');
     });
 
   });

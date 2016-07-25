@@ -381,7 +381,8 @@ class ContentsManager implements IContents.IManager {
    * path if necessary.
    */
   getDownloadUrl(path: string): string {
-    return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
+    return utils.urlPathJoin(this._baseUrl, FILES_URL,
+                             utils.urlEncodeParts(path));
   }
 
   /**
@@ -657,10 +658,9 @@ class ContentsManager implements IContents.IManager {
    * Get a REST url for a file given a path.
    */
   private _getUrl(...args: string[]): string {
-    let urlParts = [].concat(
-                Array.prototype.slice.apply(args));
+    let parts = args.map(path => utils.urlEncodeParts(path));
     return utils.urlPathJoin(this._baseUrl, SERVICE_CONTENTS_URL,
-                             utils.urlJoinEncode.apply(null, urlParts));
+                             ...parts);
   }
 
   private _baseUrl = '';

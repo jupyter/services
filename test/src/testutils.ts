@@ -11,8 +11,8 @@ import {
 } from '../../lib/json';
 
 import {
-  PromiseDelegate, extend, copy, uuid, urlPathJoin,
-  encodeURIComponents, urlJoinEncode, jsonToQueryString, getConfigOption,
+  PromiseDelegate, extend, copy, uuid, urlPathJoin, urlEncodeParts,
+  jsonToQueryString, getConfigOption,
   getBaseUrl, getWsUrl, ajaxRequest, loadObject
 } from '../../lib/utils';
 
@@ -75,24 +75,15 @@ describe('jupyter-js-utils', () => {
   describe('#urlPathJoin()', () => {
 
     it('should join a sequence of url components', () => {
-      expect(urlPathJoin('foo', 'bar')).to.be('foo/bar');
       expect(urlPathJoin('/foo/', 'bar/')).to.be('/foo/bar/');
     });
 
   });
 
-  describe('encodeURIComponents()', () => {
-
-    it('should encode just the components of a multi-segment uri', () => {
-      expect(encodeURIComponents('>/>')).to.be('%3E/%3E');
-    });
-
-  });
-
-  describe('urlJoinEncode()', () => {
+  describe('urlEncodeParts()', () => {
 
     it('should encode and join a sequence of url components', () => {
-      expect(urlJoinEncode('>', '>')).to.be('%3E/%3E');
+      expect(urlEncodeParts('>/>')).to.be('%3E/%3E');
     });
 
   });
@@ -100,7 +91,7 @@ describe('jupyter-js-utils', () => {
   describe('jsonToQueryString()', () => {
 
     it('should return a serialized object string suitable for a query', () => {
-      let obj = {
+      let obj: JSONObject = {
         name: 'foo',
         id: 'baz'
       };

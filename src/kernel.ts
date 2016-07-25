@@ -360,7 +360,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
       return Promise.resolve(kernel.clone());
     }
   }
-  return Private.getKernelModel(utils.urlJoinEncode(id), options).then(model => {
+  return Private.getKernelModel(id, options).then(model => {
     return new Kernel(options, id);
   }).catch(() => {
     return Private.typedThrow<IKernel>(`No running kernel with id: ${id}`);
@@ -978,14 +978,14 @@ class Kernel implements IKernel {
    */
   private _createSocket(): void {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
-                                       utils.urlJoinEncode(this._id));
+                                       encodeURIComponent(this._id));
     // Strip any authentication from the display string.
     let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
     console.log('Starting WebSocket:', display);
 
     let url = (
       utils.urlPathJoin(partialUrl, 'channels') +
-      '?session_id=' + this._clientId
+      '?session_id=' + encodeURIComponent(this._clientId)
     );
 
     this._connectionPromise = new utils.PromiseDelegate<void>();
@@ -1513,7 +1513,7 @@ namespace Private {
     }
     let url = utils.urlPathJoin(
       baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'restart')
+      encodeURIComponent(kernel.id), 'restart'
     );
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
@@ -1539,7 +1539,7 @@ namespace Private {
     }
     let url = utils.urlPathJoin(
       baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'interrupt')
+      encodeURIComponent(kernel.id), 'interrupt'
     );
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
@@ -1560,7 +1560,7 @@ namespace Private {
   export
   function shutdownKernel(id: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
-                                utils.urlJoinEncode(id));
+                                encodeURIComponent(id));
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
@@ -1580,7 +1580,8 @@ namespace Private {
   function getKernelModel(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, id);
+    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
+                                encodeURIComponent(id));
     let ajaxSettings = options.ajaxSettings || {};
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
