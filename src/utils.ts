@@ -63,7 +63,7 @@ function uuid(): string {
  * Join a sequence of url components and resolve them from a base URL.
  *
  * #### Notes
- * Joins urls and normalize as in node `path.join` to form the href URL.
+ * Joins urls and normalizes as in node `path.join` to form the href URL.
  * Then takes the base URL, and the href URL, and resolves them as a browser
  * would for an anchor tag.
  */
@@ -81,8 +81,10 @@ function urlPathJoin(from: string, ...parts: string[]): string {
  * Should not include the base url, since all parts are escaped.
  */
 export
-function urlEncodeParts(path: string): string {
-  let parts = path.split('/').map(encodeURIComponent);
+function urlEncodeParts(uri: string): string {
+  // Normalize and join, split, encode, then join.
+  uri = urljoin(uri);
+  let parts = uri.split('/').map(encodeURIComponent);
   return urljoin(...parts);
 }
 
