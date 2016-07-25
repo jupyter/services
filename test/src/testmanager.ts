@@ -55,10 +55,12 @@ describe('manager', () => {
       let options = {
         baseUrl: 'foo',
         ajaxSettings: {},
-        kernelspecs: KERNELSPECS
+        kernelspecs: KERNELSPECS,
+        cwd: 'foo/bar'
       };
       createServiceManager(options).then(manager => {
         expect(manager.kernels).to.be.a(KernelManager);
+        expect(manager.cwd).to.be('foo/bar');
         done();
       }).catch(done);
     });
@@ -91,6 +93,32 @@ describe('manager', () => {
           handler.respond(200, KERNELSPECS);
         });
         manager.kernels.getSpecs();
+      });
+
+    });
+
+    describe('#cwdChanged', () => {
+
+      it('should be emitted when the cwd changes', (done) => {
+        manager.cwdChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(args).to.be('foo/bar');
+          done();
+        });
+        manager.cwd = 'foo/bar';
+      });
+
+    });
+
+    describe('#cwd', () => {
+
+      it('should default to an empty string', () => {
+        expect(manager.cwd).to.be('');
+      });
+
+      it('should be settable', () => {
+        manager.cwd = 'foo/bar';
+        expect(manager.cwd).to.be('foo/bar');
       });
 
     });

@@ -49,6 +49,16 @@ interface IServiceManager extends IDisposable {
   specsChanged: ISignal<IServiceManager, IKernel.ISpecModels>;
 
   /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  cwdChanged: ISignal<IServiceManager, string>;
+
+  /**
+   * The cwd of the manager.
+   */
+  cwd: string;
+
+  /**
    * The kernel specs for the manager.
    *
    * #### Notes
@@ -114,6 +124,13 @@ namespace IServiceManager {
      * The kernelspecs for the manager.
      */
     kernelspecs?: IKernel.ISpecModels;
+
+    /**
+     * The optional initial cwd of the manager.
+     *
+     * Defaults to an empty string.
+     */
+    cwd?: string;
   }
 }
 
@@ -151,6 +168,7 @@ class ServiceManager implements IServiceManager {
       baseUrl: options.baseUrl,
       ajaxSettings: options.ajaxSettings
     };
+    this._cwd = options.cwd || '';
     this._kernelspecs = options.kernelspecs;
     this._kernelManager = new KernelManager(subOptions);
     this._sessionManager = new SessionManager(subOptions);
@@ -165,6 +183,27 @@ class ServiceManager implements IServiceManager {
    */
   get specsChanged(): ISignal<ServiceManager, IKernel.ISpecModels> {
     return Private.specsChangedSignal.bind(this);
+  }
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  get cwdChanged(): ISignal<IServiceManager, string> {
+    return Private.cwdChangedSignal.bind(this);
+  }
+
+  /**
+   * The cwd of the manager.
+   */
+  get cwd(): string {
+    return this._cwd;
+  }
+  set cwd(value: string) {
+    if (value === this._cwd) {
+      return;
+    }
+    this._cwd = value;
+    this.cwdChanged.emit(value);
   }
 
   /**
@@ -248,6 +287,7 @@ class ServiceManager implements IServiceManager {
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _cwd = '';
   private _isDisposed = false;
 }
 
@@ -262,4 +302,10 @@ namespace Private {
    */
   export
   const specsChangedSignal = new Signal<IServiceManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<IServiceManager, string>();
 }

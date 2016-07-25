@@ -54,6 +54,27 @@ class MockServiceManager implements IServiceManager {
   }
 
   /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  get cwdChanged(): ISignal<MockServiceManager, string> {
+    return Private.cwdChangedSignal.bind(this);
+  }
+
+  /**
+   * The cwd of the manager.
+   */
+  get cwd(): string {
+    return this._cwd;
+  }
+  set cwd(value: string) {
+    if (value === this._cwd) {
+      return;
+    }
+    this._cwd = value;
+    this.cwdChanged.emit(value);
+  }
+
+  /**
    * Test whether the terminal manager is disposed.
    *
    * #### Notes
@@ -126,6 +147,7 @@ class MockServiceManager implements IServiceManager {
   private _contentsManager: MockContentsManager = null;
   private _terminalManager: MockTerminalManager = null;
   private _kernelspecs: IKernel.ISpecModels = null;
+  private _cwd = '';
   private _isDisposed = false;
 }
 
@@ -140,4 +162,10 @@ namespace Private {
    */
   export
   const specsChangedSignal = new Signal<MockServiceManager, IKernel.ISpecModels>();
+
+  /**
+   * A signal emitted when the cwd of the manager changes.
+   */
+  export
+  const cwdChangedSignal = new Signal<MockServiceManager, string>();
 }
