@@ -114,7 +114,7 @@ namespace IContents {
    * The options used to fetch a file.
    */
   export
-  interface IFetchOptions {
+  interface IFetchOptions extends JSONObject {
     /**
      * The override file type for the request.
      */
@@ -137,7 +137,7 @@ namespace IContents {
    * The options used to create a file.
    */
   export
-  interface ICreateOptions {
+  interface ICreateOptions extends JSONObject {
     /**
      * The directory in which to create the file.
      */
@@ -356,7 +356,7 @@ class ContentsManager implements IContents.IManager {
       if (options.type === 'notebook') {
         delete options['format'];
       }
-      let params: any = utils.copy(options as JSONObject);
+      let params: any = utils.copy(options);
       params.content = options.content ? '1' : '0';
       url += utils.jsonToQueryString(params);
     }
