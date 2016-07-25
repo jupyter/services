@@ -984,8 +984,10 @@ class Kernel implements IKernel {
     console.log('Starting WebSocket:', display);
 
     let url = (
-      utils.urlPathJoin(partialUrl, 'channels') +
-      '?session_id=' + encodeURIComponent(this._clientId)
+      utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
+        encodeURIComponent(this._id),
+        'channels?session_id=' + encodeURIComponent(this._clientId)
+      )
     );
 
     this._connectionPromise = new utils.PromiseDelegate<void>();
