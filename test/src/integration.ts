@@ -137,7 +137,7 @@ describe('jupyter.services - Integration', () => {
   describe('Session', () => {
 
     it('should start, connect to existing session and list running sessions', (done) => {
-      let options = { path: 'Untitled1.ipynb' };
+      let options: ISession.IOptions = { path: 'Untitled1.ipynb' };
       let session: ISession;
       let session2: ISession;
       startNewSession(options).then(value => {
@@ -168,7 +168,7 @@ describe('jupyter.services - Integration', () => {
       let kernel: IKernel;
       startNewKernel().then(value => {
         kernel = value;
-        let sessionOptions = {
+        let sessionOptions: ISession.IOptions = {
           kernelId: kernel.id,
           path: 'Untitled1.ipynb'
         };
@@ -184,7 +184,7 @@ describe('jupyter.services - Integration', () => {
       let session: ISession;
       startNewKernel().then(value => {
         kernel = value;
-        let sessionOptions = { path: 'Untitled1.ipynb' };
+        let sessionOptions: ISession.IOptions = { path: 'Untitled1.ipynb' };
         return startNewSession(sessionOptions);
       }).then(value => {
         session = value;
@@ -197,7 +197,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should be able to switch to a new kernel by name', (done) => {
       // Get info about the available kernels and connect to one.
-      let options = { path: 'Untitled1.ipynb' };
+      let options: ISession.IOptions = { path: 'Untitled1.ipynb' };
       let id: string;
       let session: ISession;
       startNewSession(options).then(value => {

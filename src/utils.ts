@@ -5,6 +5,16 @@
 import * as minimist
   from 'minimist';
 
+import * as url
+  from 'url';
+
+import * as urljoin
+  from 'url-join';
+
+import {
+  JSONObject
+} from './json';
+
 
 /**
  * Copy the contents of one object to another, recursively.
@@ -14,7 +24,7 @@ import * as minimist
 export
 function extend(target: any, source: any): any {
   target = target || {};
-  for (var prop in source) {
+  for (let prop in source) {
     if (typeof source[prop] === 'object') {
       target[prop] = extend(target[prop], source[prop]);
     } else {
@@ -26,36 +36,12 @@ function extend(target: any, source: any): any {
 
 
 /**
- * Get a copy of an object, or null.
+ * Get a deep copy of a JSON object.
  */
 export
-function copy(object: any): any {
-  if (object !== null && typeof object === 'object') {
-    return JSON.parse(JSON.stringify(object));
-  }
-  return null;
+function copy(object: JSONObject): JSONObject {
+  return JSON.parse(JSON.stringify(object));
 }
-
-
-/**
- * Check for shallow equality of two objects.
- */
-export
-function shallowEquals(o1: any, o2: any): boolean {
-  for (var p in o1) {
-    if (o1.hasOwnProperty(p)) {
-      if (o1[p] !== o2[p]) {
-        return false;
-      }
-    }
-  }
-  for (var p in o2) {
-    if (o2.hasOwnProperty(p) && !o1.hasOwnProperty(p)) {
-      return false;
-    }
-  }
-  return true;
-};
 
 
 /**
@@ -63,57 +49,50 @@ function shallowEquals(o1: any, o2: any): boolean {
  */
 export
 function uuid(): string {
-  var s: string[] = [];
-  var hexDigits = "0123456789abcdef";
-  var nChars = hexDigits.length;
-  for (var i = 0; i < 32; i++) {
+  let s: string[] = [];
+  let hexDigits = '0123456789abcdef';
+  let nChars = hexDigits.length;
+  for (let i = 0; i < 32; i++) {
     s[i] = hexDigits.charAt(Math.floor(Math.random() * nChars));
   }
-  return s.join("");
+  return s.join('');
 }
 
 
 /**
- * Join a sequence of url components with `'/'`.
- */
-export
-function urlPathJoin(...paths: string[]): string {
-  var url = '';
-  for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-    if (path === '') {
-      continue;
-    }
-    if (i > 0) {
-      path = path.replace(/\/\/+/, '/');
-    }
-    if (url.length > 0 && url.charAt(url.length - 1) != '/' && path[0] != '/') {
-      url = url + '/' + path;
-    } else {
-      url = url + path;
-    }
-  }
-  return url
-}
-
-
-/**
- * Encode just the components of a multi-segment uri.
+ * Resolve a url.
  *
- * Preserves the `'/'` separators.
+ * Take a base URL, and a href URL, and resolve them as a browser would for
+ * an anchor tag.
  */
 export
-function encodeURIComponents(uri: string): string {
-  return uri.split('/').map(encodeURIComponent).join('/');
+function urlResolve(from: string, to: string): string {
+  return url.resolve(from, to);
 }
 
 
 /**
- * Encode and join a sequence of url components with `'/'`.
+ * Join a sequence of url components and normalizes as in node `path.join`.
  */
 export
-function urlJoinEncode(...args: string[]): string {
-  return encodeURIComponents(urlPathJoin.apply(null, args));
+function urlPathJoin(...parts: string[]): string {
+  return urljoin(...parts);
+}
+
+
+/**
+ * Encode the components of a multi-segment url.
+ *
+ * #### Notes
+ * Preserves the `'/'` separators.
+ * Should not include the base url, since all parts are escaped.
+ */
+export
+function urlEncodeParts(uri: string): string {
+  // Normalize and join, split, encode, then join.
+  uri = urljoin(uri);
+  let parts = uri.split('/').map(encodeURIComponent);
+  return urljoin(...parts);
 }
 
 
@@ -123,9 +102,9 @@ function urlJoinEncode(...args: string[]): string {
  * From [stackoverflow](http://stackoverflow.com/a/30707423).
  */
 export
-function jsonToQueryString(json: any): string {
+function jsonToQueryString(json: JSONObject): string {
   return '?' + Object.keys(json).map(key =>
-    encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
+    encodeURIComponent(key) + '=' + encodeURIComponent(String(json[key]))
   ).join('&');
 }
 
@@ -134,7 +113,7 @@ function jsonToQueryString(json: any): string {
  * Input settings for an AJAX request.
  */
 export
-interface IAjaxSettings {
+interface IAjaxSettings extends JSONObject {
   /**
    * The HTTP method to use.  Defaults to `'GET'`.
    */
@@ -252,7 +231,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess
   let password = settings.password || '';
   if (!settings.cache) {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache.
-    url += ((/\?/).test(url) ? "&" : "?") + (new Date()).getTime();
+    url += ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
   }
 
   return new Promise((resolve, reject) => {
@@ -262,7 +241,9 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess
     if (settings.contentType !== void 0) {
       req.setRequestHeader('Content-Type', settings.contentType);
     }
-    if (settings.timeout !== void 0) req.timeout = settings.timeout;
+    if (settings.timeout !== void 0) {
+      req.timeout = settings.timeout;
+    }
     if (!!settings.withCredentials) {
       req.withCredentials = true;
     }
@@ -292,7 +273,7 @@ function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess
     req.ontimeout = () => {
       reject({ xhr: req, statusText: req.statusText,
                error: new Error('Operation Timed Out') });
-    }
+    };
 
     if (settings.data) {
       req.send(settings.data);
@@ -316,7 +297,7 @@ function loadObject(name: string, moduleName: string, registry?: { [key: string]
     // Try loading the view module using require.js
     if (moduleName) {
       if (typeof requirejs === 'undefined') {
-        throw new Error('requirejs not found.')
+        throw new Error('requirejs not found');
       }
       requirejs([moduleName], (mod: any) => {
         if (mod[name] === void 0) {
@@ -388,7 +369,7 @@ class PromiseDelegate<T> {
 /**
  * Global config data for the Jupyter application.
  */
-var configData: any = null;
+let configData: any = null;
 
 
 /**
@@ -404,11 +385,12 @@ function deepFreeze(obj: any): any {
 
   // Freeze properties before freezing self
   Object.getOwnPropertyNames(obj).forEach(function(name) {
-    var prop = obj[name];
+    let prop = obj[name];
 
     // Freeze prop if it is an object
-    if (typeof prop == 'object' && prop !== null && !Object.isFrozen(prop))
+    if (typeof prop === 'object' && prop !== null && !Object.isFrozen(prop)) {
       deepFreeze(prop);
+    }
   });
 
   // Freeze self
@@ -459,7 +441,7 @@ function getBaseUrl(): string {
   let baseUrl = getConfigOption('baseUrl');
   if (!baseUrl || baseUrl === '/') {
     baseUrl = (typeof location === 'undefined' ?
-               'http://localhost:8888/': location.origin + '/');
+               'http://localhost:8888/' : location.origin + '/');
   }
   return baseUrl;
 }

@@ -54,7 +54,6 @@ describe('manager', () => {
     it('should accept arguments', (done) => {
       let options = {
         baseUrl: 'foo',
-        ajaxSettings: {},
         kernelspecs: KERNELSPECS
       };
       createServiceManager(options).then(manager => {

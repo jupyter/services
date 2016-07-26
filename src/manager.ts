@@ -26,6 +26,10 @@ import {
 } from './isession';
 
 import {
+  JSONObject
+} from './json';
+
+import {
   KernelManager, getKernelSpecs
 } from './kernel';
 
@@ -131,7 +135,11 @@ function createServiceManager(options: IServiceManager.IOptions = {}): Promise<I
   if (options.kernelspecs) {
     return Promise.resolve(new ServiceManager(options));
   }
-  return getKernelSpecs(options.baseUrl).then(specs => {
+  let kernelOptions: IKernel.IOptions = {
+    baseUrl: options.baseUrl,
+    ajaxSettings: options.ajaxSettings
+  };
+  return getKernelSpecs(kernelOptions).then(specs => {
     options.kernelspecs = specs;
     return new ServiceManager(options);
   });
@@ -147,7 +155,7 @@ class ServiceManager implements IServiceManager {
    * Construct a new services provider.
    */
   constructor(options: IServiceManager.IOptions) {
-    let subOptions = {
+    let subOptions: JSONObject = {
       baseUrl: options.baseUrl,
       ajaxSettings: options.ajaxSettings
     };

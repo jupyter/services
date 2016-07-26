@@ -7,6 +7,10 @@ import {
 import * as posix
  from 'path-posix';
 
+import {
+  JSONObject
+} from './json';
+
 import * as utils
   from './utils';
 
@@ -110,7 +114,7 @@ namespace IContents {
    * The options used to fetch a file.
    */
   export
-  interface IFetchOptions {
+  interface IFetchOptions extends JSONObject {
     /**
      * The override file type for the request.
      */
@@ -133,7 +137,7 @@ namespace IContents {
    * The options used to create a file.
    */
   export
-  interface ICreateOptions {
+  interface ICreateOptions extends JSONObject {
     /**
      * The directory in which to create the file.
      */
@@ -352,7 +356,7 @@ class ContentsManager implements IContents.IManager {
       if (options.type === 'notebook') {
         delete options['format'];
       }
-      let params = utils.copy(options);
+      let params: any = utils.copy(options);
       params.content = options.content ? '1' : '0';
       url += utils.jsonToQueryString(params);
     }
@@ -377,7 +381,8 @@ class ContentsManager implements IContents.IManager {
    * path if necessary.
    */
   getDownloadUrl(path: string): string {
-    return utils.urlPathJoin(this._baseUrl, FILES_URL, utils.encodeURIComponents(path));
+    return utils.urlPathJoin(this._baseUrl, FILES_URL,
+                             utils.urlEncodeParts(path));
   }
 
   /**
@@ -653,10 +658,9 @@ class ContentsManager implements IContents.IManager {
    * Get a REST url for a file given a path.
    */
   private _getUrl(...args: string[]): string {
-    let urlParts = [].concat(
-                Array.prototype.slice.apply(args));
+    let parts = args.map(path => utils.urlEncodeParts(path));
     return utils.urlPathJoin(this._baseUrl, SERVICE_CONTENTS_URL,
-                             utils.urlJoinEncode.apply(null, urlParts));
+                             ...parts);
   }
 
   private _baseUrl = '';

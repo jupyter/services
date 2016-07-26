@@ -226,11 +226,10 @@ function findKernelById(id: string, options?: IKernel.IOptions): Promise<IKernel
  * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
  */
 export
-function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
-  options = options || {};
+function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecModels> {
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
 
@@ -281,11 +280,10 @@ function getKernelSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels
  * The promise is fulfilled on a valid response and rejected otherwise.
  */
 export
-function listRunningKernels(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
-  options = options || {};
+function listRunningKernels(options: IKernel.IOptions = {}): Promise<IKernel.IModel[]> {
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'GET';
   ajaxSettings.dataType = 'json';
   ajaxSettings.cache = false;
@@ -322,7 +320,7 @@ function startNewKernel(options?: IKernel.IOptions): Promise<IKernel> {
   options = options || {};
   let baseUrl = options.baseUrl || utils.getBaseUrl();
   let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-  let ajaxSettings = utils.copy(options.ajaxSettings) || {};
+  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
   ajaxSettings.method = 'POST';
   ajaxSettings.data = JSON.stringify({ name: options.name });
   ajaxSettings.dataType = 'json';
@@ -362,7 +360,7 @@ function connectToKernel(id: string, options?: IKernel.IOptions): Promise<IKerne
       return Promise.resolve(kernel.clone());
     }
   }
-  return Private.getKernelModel(utils.urlJoinEncode(id), options).then(model => {
+  return Private.getKernelModel(id, options).then(model => {
     return new Kernel(options, id);
   }).catch(() => {
     return Private.typedThrow<IKernel>(`No running kernel with id: ${id}`);
@@ -543,7 +541,7 @@ class Kernel implements IKernel {
    * Clone the current kernel with a new clientId.
    */
   clone(): IKernel {
-    let options = {
+    let options: IKernel.IOptions = {
       baseUrl: this._baseUrl,
       wsUrl: this._wsUrl,
       name: this._name,
@@ -799,7 +797,7 @@ class Kernel implements IKernel {
       username: this._username,
       session: this._clientId
     };
-    let defaults = {
+    let defaults: JSONObject = {
       silent : false,
       store_history : true,
       user_expressions : {},
@@ -962,7 +960,9 @@ class Kernel implements IKernel {
       return Promise.resolve(this._spec);
     }
     let name = this.name;
-    let options = { baseUrl: this._baseUrl, ajaxSettings: this._ajaxSettings };
+    let options: IKernel.IOptions = {
+      baseUrl: this._baseUrl, ajaxSettings: this.ajaxSettings
+    };
     return getKernelSpecs(options).then(ids => {
       let id = ids.kernelspecs[name];
       if (!id) {
@@ -978,14 +978,14 @@ class Kernel implements IKernel {
    */
   private _createSocket(): void {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
-                                       utils.urlJoinEncode(this._id));
+                                       encodeURIComponent(this._id));
     // Strip any authentication from the display string.
     let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
     console.log('Starting WebSocket:', display);
 
-    let url = (
-      utils.urlPathJoin(partialUrl, 'channels') +
-      '?session_id=' + this._clientId
+    let url = utils.urlPathJoin(
+        partialUrl,
+        'channels?session_id=' + encodeURIComponent(this._clientId)
     );
 
     this._connectionPromise = new utils.PromiseDelegate<void>();
@@ -1513,7 +1513,7 @@ namespace Private {
     }
     let url = utils.urlPathJoin(
       baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'restart')
+      encodeURIComponent(kernel.id), 'restart'
     );
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
@@ -1539,7 +1539,7 @@ namespace Private {
     }
     let url = utils.urlPathJoin(
       baseUrl, KERNEL_SERVICE_URL,
-      utils.urlJoinEncode(kernel.id, 'interrupt')
+      encodeURIComponent(kernel.id), 'interrupt'
     );
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
@@ -1560,7 +1560,7 @@ namespace Private {
   export
   function shutdownKernel(id: string, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
-                                utils.urlJoinEncode(id));
+                                encodeURIComponent(id));
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'DELETE';
     ajaxSettings.dataType = 'json';
@@ -1580,7 +1580,8 @@ namespace Private {
   function getKernelModel(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL, id);
+    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
+                                encodeURIComponent(id));
     let ajaxSettings = options.ajaxSettings || {};
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';

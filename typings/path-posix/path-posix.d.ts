@@ -20,7 +20,7 @@ declare module 'path-posix' {
   function isAbsolute(path: string): boolean;
 
   export
-  function join(path: string, ...others: string[]): string;
+  function join(...parts: string[]): string;
 
   export
   function normalize(path: string): string;

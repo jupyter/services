@@ -102,7 +102,7 @@ class ConfigSection implements IConfigSection {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     this.ajaxSettings = options.ajaxSettings || {};
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
-                                  utils.urlJoinEncode(options.name));
+                                  encodeURIComponent(options.name));
   }
 
   /**

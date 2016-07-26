@@ -189,7 +189,7 @@ describe('jupyter.services - Contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_FILE);
       });
-      contents.newUntitled('/foo').then(model => {
+      contents.newUntitled({ path: '/foo' }).then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
         done();
       });

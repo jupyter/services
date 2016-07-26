@@ -13,6 +13,10 @@ import {
   JSONPrimitive, JSONObject, deepEqual
 } from './json';
 
+import {
+  IAjaxSettings
+} from './utils';
+
 import * as utils
   from './utils';
 
@@ -70,7 +74,7 @@ namespace ITerminalSession {
    * The options for intializing a terminal session object.
    */
   export
-  interface IOptions {
+  interface IOptions extends JSONObject {
     /**
      * The name of the terminal.
      */
@@ -188,7 +192,7 @@ class TerminalManager implements ITerminalSession.IManager {
   constructor(options: TerminalManager.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._ajaxSettings = utils.copy(options.ajaxSettings) || {};
+    this._ajaxSettings = utils.copy(options.ajaxSettings || {});
   }
 
   /**
@@ -237,7 +241,7 @@ class TerminalManager implements ITerminalSession.IManager {
    */
   shutdown(name: string): Promise<void> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL, name);
-    let ajaxSettings = utils.copy(this._ajaxSettings) || {};
+    let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'DELETE';
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -252,7 +256,7 @@ class TerminalManager implements ITerminalSession.IManager {
    */
   listRunning(): Promise<ITerminalSession.IModel[]> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
-    let ajaxSettings = utils.copy(this._ajaxSettings) || {};
+    let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
 
@@ -392,7 +396,7 @@ class TerminalSession implements ITerminalSession {
    */
   shutdown(): Promise<void> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL, this._name);
-    let ajaxSettings = utils.copy(this._ajaxSettings);
+    let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings);
     ajaxSettings.method = 'DELETE';
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -421,7 +425,7 @@ class TerminalSession implements ITerminalSession {
    */
   private _getName(): Promise<string> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
-    let ajaxSettings = utils.copy(this._ajaxSettings);
+    let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings);
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
 
