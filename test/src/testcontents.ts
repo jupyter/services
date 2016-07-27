@@ -156,6 +156,25 @@ describe('jupyter.services - Contents', () => {
 
   });
 
+  describe('.normalizeExtension()', () => {
+
+    it('should add pass a valid extension through unmodified', () => {
+      let ext = ContentsManager.normalizeExtension('.txt');
+      expect(ext).to.be('.txt');
+    });
+
+    it('should add a leading dot if not present', () => {
+      let ext = ContentsManager.normalizeExtension('txt');
+      expect(ext).to.be('.txt');
+    });
+
+    it('should convert to lower case', () => {
+      let ext = ContentsManager.normalizeExtension('.TXT');
+      expect(ext).to.be('.txt');
+    });
+
+  });
+
   describe('#getDownloadUrl()', () => {
 
     it('should get the url of a file', () => {
