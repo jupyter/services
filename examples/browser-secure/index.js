@@ -3,21 +3,24 @@ require(['jquery', 'jupyter-js-services'], function ($, services) {
   'use strict';
 
   var baseUrl = services.utils.getBaseUrl();
-  var url = services.utils.urlPathJoin(baseUrl, 'login');
-  services.utils.ajaxRequest(url, {
-    data: JSON.stringify({ password: 'password' }),
-    method: 'POST',
-    contentType: 'application/json'
-  }).then(function (success) {
+
+  // need ajaxSettings.withCredentials = true
+  // for cookies to be sent to the server
+  var options = {
+    ajaxSettings: {
+      withCredentials: true,
+    }
+  };
+
+  services.listRunningKernels(options)
+    .then(function (success) {
 
       var startNewKernel = services.startNewKernel;
+      $('#kernel-info').text('Starting...');
 
       var kernelOptions = {
         name: 'python',
-        ajaxSettings: {
-          withCredentials: true,
-          password: 'password'
-        }
+        ajaxSettings: options.ajaxSettings,
       };
 
     // start a single kernel for the page
@@ -27,7 +30,7 @@ require(['jquery', 'jupyter-js-services'], function ($, services) {
         var content = reply.content;
         $('#kernel-info').text(content.banner);
         console.log('Kernel info:', content);
-      })
+      });
       $('#run').click(function () {
         var code = $('#cell').val();
         console.log('Executing:', code);
@@ -56,5 +59,17 @@ require(['jquery', 'jupyter-js-services'], function ($, services) {
         };
       });
     });
+  }).catch(function (error) {
+    // FIXME: assume the error was permission, because the error doesn't include this info
+    $("#kernel-info").text('').append(
+      // FIXME: can't use ?next=window.location, because notebook server
+      // restricts login redirect to its own pages.
+      // open a new tab, instead.
+      $("<a>").attr('href', baseUrl + 'login')
+      .attr('target', '_blank')
+      .text("Click here to login with the notebook server.")
+    ).append(
+      $("<p>").text("Reload the page once login is complete.")
+    );
   });
 });
