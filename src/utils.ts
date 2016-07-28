@@ -266,7 +266,6 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
     xhr.onload = (event: ProgressEvent) => {
       if (xhr.status >= 400) {
         reject({ event, xhr, ajaxSettings, throwError: xhr.statusText });
-        return;
       }
       let data = xhr.responseText;
       if (ajaxSettings.dataType === 'json' && data) {
@@ -333,6 +332,24 @@ function loadObject(name: string, moduleName: string, registry?: { [key: string]
     }
   });
 };
+
+
+/**
+ * Create an ajax error from an ajax success.
+ *
+ * @param success - The original success object.
+ *
+ * @param throwError - The optional new error name.  If not given
+ *  we use "Invalid Status: <xhr.status>"
+ */
+export
+function makeAjaxError(success: IAjaxSuccess, throwError?: string): Promise<any> {
+  let xhr = success.xhr;
+  let ajaxSettings = success.ajaxSettings;
+  let event = success.event;
+  throwError = throwError || `Invalid Status: ${xhr.status}`;
+  return Promise.reject({ xhr, ajaxSettings, event, throwError });
+}
 
 
 /**
