@@ -17,6 +17,7 @@ declare module 'url' {
   interface IUrlObject {
     href: string;
     protocol: string;
+    slashes: boolean;
     host: string;
     auth: string;
     hostname: string;

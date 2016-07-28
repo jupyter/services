@@ -980,7 +980,8 @@ class Kernel implements IKernel {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        encodeURIComponent(this._id));
     // Strip any authentication from the display string.
-    let display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
+    let parsed = utils.urlParse(partialUrl);
+    let display = partialUrl.replace(parsed.auth, '');
     console.log('Starting WebSocket:', display);
 
     let url = utils.urlPathJoin(
