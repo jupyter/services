@@ -708,6 +708,11 @@ namespace ContentsManager {
    */
   export
   function getAbsolutePath(relativePath: string, cwd = ''): string {
+    // Bail if it looks like a url.
+    let urlObj = utils.urlParse(relativePath);
+    if (urlObj.protocol) {
+      return relativePath;
+    }
     let norm = posix.normalize(posix.join(cwd, relativePath));
     if (norm.indexOf('../') === 0) {
       return null;
@@ -753,7 +758,7 @@ namespace ContentsManager {
    */
   export
   function normalizeExtension(extension: string): string {
-    if (extension.indexOf('.') !== 0) {
+    if (extension.length > 0 && extension.indexOf('.') !== 0) {
       extension = `.${extension}`;
     }
     return extension.toLowerCase();
