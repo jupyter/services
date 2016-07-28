@@ -897,7 +897,7 @@ namespace Private {
       if (rejected.xhr.status === 410) {
         throw Error('The kernel was deleted but the session was not');
       }
-      onSessionError(rejected);
+      return onSessionError(rejected);
     });
   }
 
@@ -913,12 +913,13 @@ namespace Private {
    * Handle an error on a session Ajax call.
    */
   export
-  function onSessionError(error: utils.IAjaxError): any {
-    let text = (error.statusText ||
-                error.error.message ||
+  function onSessionError(error: utils.IAjaxError): Promise<any> {
+    let text = (error.throwError ||
+                error.xhr.statusText ||
                 error.xhr.responseText);
-    let msg = `API request failed (${error.xhr.status}):  ${text}`;
-    throw Error(msg);
+    let msg = `API request failed: ${text}`;
+    console.error(msg);
+    return Promise.reject(error);
   }
 
   /**

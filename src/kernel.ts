@@ -234,19 +234,12 @@ function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecMo
   ajaxSettings.dataType = 'json';
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
-    let err = new Error('Invalid KernelSpecs Model');
     if (success.xhr.status !== 200) {
-      throw new Error('Invalid Response: ' + success.xhr.status);
+      throw new Error(success.xhr.statusText);
     }
-    let data = success.data;
-    if (!data.hasOwnProperty('default') ||
-        typeof data.default !== 'string') {
-      console.error(err);
-      return data;
-    }
+    let data = success.data as IKernel.ISpecModels;
     if (!data.hasOwnProperty('kernelspecs')) {
-      console.error(err);
-      return data;
+      throw new Error('No kernelspecs found');
     }
     let keys = Object.keys(data.kernelspecs);
     for (let i = 0; i < keys.length; i++) {
@@ -254,17 +247,20 @@ function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecMo
       try {
         validate.validateKernelSpecModel(ks);
       } catch (err) {
+        // Remove the errant kernel spec.
         console.error(err);
-        return data;
+        delete data.kernelspecs[keys[i]];
       }
     }
-    if (!data.kernelspecs.hasOwnProperty(data.default)) {
-      if (keys.length) {
-        data.default = keys[0];
-        console.error(`Default kernel name '${data.default}' not found, using '${keys[0]}'`);
-      } else {
-        console.error('No kernelspecs found');
-      }
+    keys = Object.keys(data.kernelspecs);
+    if (!keys.length) {
+      throw new Error('No valid kernelspecs found');
+    }
+    if (!data.hasOwnProperty('default') ||
+        typeof data.default !== 'string' ||
+        !data.kernelspecs.hasOwnProperty(data.default)) {
+      data.default = keys[0];
+      console.error(`Default kernel not found, using '${keys[0]}'`);
     }
     return data;
   });
@@ -1617,12 +1613,13 @@ namespace Private {
    * Handle an error on a kernel Ajax call.
    */
   export
-  function onKernelError(error: utils.IAjaxError): any {
-    let text = (error.statusText ||
-                error.error.message ||
+  function onKernelError(error: utils.IAjaxError): Promise<any> {
+    let text = (error.throwError ||
+                error.xhr.statusText ||
                 error.xhr.responseText);
-    let msg = `API request failed (${error.xhr.status}): ${text}`;
-    throw Error(msg);
+    let msg = `API request failed: ${text}`;
+    console.error(msg);
+    return Promise.reject(error);
   }
 
   /**
