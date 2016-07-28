@@ -9,7 +9,7 @@ import {
 } from '../../lib/contents';
 
 import {
-  DEFAULT_FILE, RequestHandler, ajaxSettings, expectFailure
+  DEFAULT_FILE, RequestHandler, ajaxSettings, expectFailure, expectAjaxError
 } from './utils';
 
 
@@ -31,7 +31,7 @@ let DEFAULT_CP: IContents.ICheckpointModel = {
 };
 
 
-describe('jupyter.services - Contents', () => {
+describe('contents', () => {
 
   describe('#constructor()', () => {
 
@@ -97,7 +97,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, DEFAULT_DIR);
       });
       let get = contents.get('/foo');
-      expectFailure(get, done, 'Invalid Status: 201');
+      expectAjaxError(get, done, 'Invalid Status: 201');
     });
 
   });
@@ -249,7 +249,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_DIR);
       });
       let newDir = contents.newUntitled();
-      expectFailure(newDir, done, 'Invalid Status: 200');
+      expectAjaxError(newDir, done, 'Invalid Status: 200');
     });
 
   });
@@ -282,7 +282,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, { });
       });
       let del = contents.delete('/foo/bar.txt');
-      expectFailure(del, done, 'Invalid Status: 200');
+      expectAjaxError(del, done, 'Invalid Status: 200');
     });
 
     it('should throw a specific error', (done) => {
@@ -348,7 +348,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, DEFAULT_FILE);
       });
       let rename = contents.rename('/foo/bar.txt', '/foo/baz.txt');
-      expectFailure(rename, done, 'Invalid Status: 201');
+      expectAjaxError(rename, done, 'Invalid Status: 201');
     });
 
   });
@@ -408,7 +408,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(204, DEFAULT_FILE);
       });
       let save = contents.save('/foo', { type: 'file', name: 'test' });
-      expectFailure(save, done, 'Invalid Status: 204');
+      expectAjaxError(save, done, 'Invalid Status: 204');
     });
 
   });
@@ -454,7 +454,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_FILE);
       });
       let copy = contents.copy('/foo/bar.txt', '/baz');
-      expectFailure(copy, done, 'Invalid Status: 200');
+      expectAjaxError(copy, done, 'Invalid Status: 200');
     });
 
   });
@@ -502,7 +502,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(200, DEFAULT_CP);
       });
       let checkpoint = contents.createCheckpoint('/foo/bar.txt');
-      expectFailure(checkpoint, done, 'Invalid Status: 200');
+      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
     });
 
   });
@@ -546,7 +546,7 @@ describe('jupyter.services - Contents', () => {
           handler.respond(200, DEFAULT_CP);
         };
         let newCheckpoints = contents.listCheckpoints('/foo/bar.txt');
-        expectFailure(newCheckpoints, done, 'Invalid Checkpoint list');
+        expectAjaxError(newCheckpoints, done, 'Invalid Checkpoint list');
       };
 
       expectFailure(checkpoints, second);
@@ -558,7 +558,7 @@ describe('jupyter.services - Contents', () => {
         handler.respond(201, { });
       });
       let checkpoints = contents.listCheckpoints('/foo/bar.txt');
-      expectFailure(checkpoints, done, 'Invalid Status: 201');
+      expectAjaxError(checkpoints, done, 'Invalid Status: 201');
     });
 
   });
@@ -596,7 +596,7 @@ describe('jupyter.services - Contents', () => {
       });
       let checkpoint = contents.restoreCheckpoint('/foo/bar.txt',
                                                   DEFAULT_CP.id);
-      expectFailure(checkpoint, done, 'Invalid Status: 200');
+      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
     });
 
   });
@@ -628,7 +628,7 @@ describe('jupyter.services - Contents', () => {
       });
       let checkpoint = contents.deleteCheckpoint('/foo/bar.txt',
                                                   DEFAULT_CP.id);
-      expectFailure(checkpoint, done, 'Invalid Status: 200');
+      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
     });
 
   });

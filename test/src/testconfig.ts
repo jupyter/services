@@ -13,11 +13,11 @@ import {
 } from '../../lib/json';
 
 import {
-  RequestHandler, ajaxSettings, expectFailure
+  RequestHandler, ajaxSettings, expectFailure, expectAjaxError
 } from './utils';
 
 
-describe('jupyter.services - IConfigSection', () => {
+describe('config', () => {
 
   describe('getConfigSection()', () => {
 
@@ -54,7 +54,7 @@ describe('jupyter.services - IConfigSection', () => {
         handler.respond(201, { });
       });
       let configPromise = getConfigSection({ name: 'test' });
-      expectFailure(configPromise, done, 'Invalid Status: 201');
+      expectAjaxError(configPromise, done, 'Invalid Status: 201');
     });
 
   });
@@ -105,7 +105,7 @@ describe('jupyter.services - IConfigSection', () => {
           handler.respond(201, { });
         };
         let update = config.update({ foo: 'baz' });
-        expectFailure(update, done, 'Invalid Status: 201');
+        expectAjaxError(update, done, 'Invalid Status: 201');
       });
     });
 
@@ -229,7 +229,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
         let config = new ConfigWithDefaults({ section });
         let set = config.set('foo', 'bar');
         expect(section.data['foo']).to.be('bar');
-        expectFailure(set, done, 'Invalid Status: 201');
+        expectAjaxError(set, done, 'Invalid Status: 201');
       });
 
     });

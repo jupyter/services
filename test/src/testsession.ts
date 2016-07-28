@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import {
-  uuid
+  uuid, IAjaxError
 } from '../../lib/utils';
 
 import {
@@ -65,7 +65,7 @@ function createSessionOptions(sessionModel?: ISession.IModel): ISession.IOptions
 }
 
 
-describe('jupyter.services - session', () => {
+describe('session', () => {
 
   describe('listRunningSessions()', () => {
 
@@ -118,7 +118,7 @@ describe('jupyter.services - session', () => {
         handler.respond(201, [createSessionModel()]);
       });
       let list = listRunningSessions();
-      expectFailure(list, done, 'Invalid Status: 201');
+      expectFailure(list, done);
     });
 
     it('should fail for error response status', (done) => {
@@ -243,7 +243,7 @@ describe('jupyter.services - session', () => {
       });
       let options = createSessionOptions(sessionModel);
       let sessionPromise = startNewSession(options);
-      expectFailure(sessionPromise, done, 'Invalid Status: 200');
+      expectFailure(sessionPromise, done);
     });
 
     it('should fail for error response status', (done) => {
@@ -270,7 +270,7 @@ describe('jupyter.services - session', () => {
       });
       let options = createSessionOptions(sessionModel);
       let sessionPromise = startNewSession(options);
-      let msg = `Session failed to start: No running kernel with id: ${sessionModel.kernel.id}`
+      let msg = `Session failed to start: No running kernel with id: ${sessionModel.kernel.id}`;
       expectFailure(sessionPromise, done, msg);
     });
 
@@ -691,7 +691,7 @@ describe('jupyter.services - session', () => {
           let promise = session.rename(newPath);
           tester.onRequest = () => {
             tester.respond(201, { });
-            expectFailure(promise, done, 'Invalid Status: 201');
+            expectFailure(promise, done);
           };
         });
       });
@@ -891,7 +891,7 @@ describe('jupyter.services - session', () => {
             tester.respond(200, { });
           };
           let promise = session.shutdown();
-          expectFailure(promise, done, 'Invalid Status: 200');
+          expectFailure(promise, done);
         });
       });
 
@@ -902,10 +902,10 @@ describe('jupyter.services - session', () => {
           tester.onRequest = () => {
             tester.respond(410, { });
           };
-          let promise = session.shutdown();
-          expectFailure(
-            promise, done, 'The kernel was deleted but the session was not'
-          );
+          session.shutdown().catch((err: IAjaxError) => {
+            let text ='The kernel was deleted but the session was not';
+            expect(err.throwError).to.contain(text);
+          }).then(done, done);
         });
       });
 
