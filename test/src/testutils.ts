@@ -210,10 +210,11 @@ describe('jupyter-js-utils', () => {
         called = true;
         request.respond(200, 'hello!');
       };
+
       ajaxRequest('hello', {}).then(response => {
         expect(called).to.be(true);
         expect(response.data).to.be('hello!');
-        expect(response.statusText).to.be('200 OK');
+        expect(response.xhr.statusText).to.be('200 OK');
       }).then(done, done);
     });
 
@@ -238,7 +239,8 @@ describe('jupyter-js-utils', () => {
         timeout: 5
       }).then(response => {
         expect(response.data).to.be('hello!');
-        expect(response.statusText).to.be('200 OK');
+        expect(response.xhr.statusText).to.be('200 OK');
+        expect(response.ajaxSettings.method).to.be('POST');
       }).then(done, done);
     });
 
@@ -247,8 +249,8 @@ describe('jupyter-js-utils', () => {
         request.respond(400, 'denied!');
       };
       ajaxRequest('hello', {}).catch(response => {
-        expect(response.statusText).to.be('400 Bad Request');
-        expect(response.error.message).to.be('400 Bad Request');
+        expect(response.xhr.statusText).to.be('400 Bad Request');
+        expect(response.throwError).to.be('400 Bad Request');
       }).then(done, done);
     });
 
@@ -257,8 +259,7 @@ describe('jupyter-js-utils', () => {
         request.error(new Error('Denied!'));
       };
       ajaxRequest('hello', {}).catch(response => {
-        expect(response.statusText).to.be('');
-        expect(response.error.message).to.be('Denied!');
+        expect(response.event.message).to.be('Denied!');
       }).then(done, done);
     });
 

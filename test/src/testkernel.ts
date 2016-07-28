@@ -1986,34 +1986,40 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    it('should throw an error for missing default parameter', (done) => {
+    it('should handle a missing default parameter', (done) => {
       let handler = new RequestHandler(() => {
-        handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
+        handler.respond(200, { 'kernelspecs': { 'python': PYTHON_SPEC } });
       });
-      let promise = getKernelSpecs({ baseUrl: 'localhost' });
-      expectFailure(promise, done);
+      getKernelSpecs().then(specs => {
+        expect(specs.default).to.be('python');
+      }).then(done, done);
     });
 
-    it('should throw an error for missing kernelspecs parameter', (done) => {
+    it('should throw for a missing kernelspecs parameter', (done) => {
       let handler = new RequestHandler();
       handler.onRequest = () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       };
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No kernelspecs found');
     });
 
-    it('should throw an error for incorrect kernelspecs parameter type', (done) => {
+    it('should omit an invalid kernelspec', (done) => {
+      let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.name = 1;
       let handler = new RequestHandler(() => {
-        handler.respond(200, { 'default': PYTHON_SPEC.name,
-                             'kernelspecs': [ PYTHON_SPEC ]
-                           });
+        handler.respond(200, { 'default': 'python',
+                               'kernelspecs': { 'R': R_SPEC,
+                                                'python': PYTHON_SPEC }
+        });
       });
-      let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      getKernelSpecs().then(specs => {
+        expect(specs.default).to.be('python');
+        expect(specs.kernelspecs['R']).to.be(void 0);
+      }).then(done, done);
     });
 
-    it('should throw an error for improper name', (done) => {
+    it('should handle an improper name', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.name = 1;
       let handler = new RequestHandler(() => {
@@ -2021,10 +2027,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper language', (done) => {
+    it('should handle an improper language', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.language = 1;
       let handler = new RequestHandler(() => {
@@ -2032,10 +2038,10 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper argv', (done) => {
+    it('should handle an improper argv', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.argv = 'hello';
       let handler = new RequestHandler(() => {
@@ -2043,10 +2049,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper display_name', (done) => {
+    it('should handle an improper display_name', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.display_name = ['hello'];
       let handler = new RequestHandler(() => {
@@ -2054,10 +2060,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for missing resources', (done) => {
+    it('should handle missing resources', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       delete R_SPEC.resources;
       let handler = new RequestHandler(() => {
@@ -2065,7 +2071,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectFailure(promise, done, 'No valid kernelspecs found');
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -2073,7 +2079,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(201, { });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done, 'Invalid Response: 201');
+      expectFailure(promise, done, '201 Created');
     });
 
   });
