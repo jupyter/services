@@ -144,7 +144,7 @@ namespace IContents {
      path?: string;
 
      /**
-      * The optional file extension for the new file.
+      * The optional file extension for the new file (e.g. `".txt"`).
       *
       * #### Notes
       * This ignored if `type` is `'notebook'`.
@@ -401,6 +401,9 @@ class ContentsManager implements IContents.IManager {
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
     if (options) {
+      if (options.ext) {
+        options.ext = ContentsManager.normalizeExtension(options.ext);
+      }
       ajaxSettings.data = JSON.stringify(options);
       ajaxSettings.contentType = 'application/json';
     }
@@ -705,6 +708,11 @@ namespace ContentsManager {
    */
   export
   function getAbsolutePath(relativePath: string, cwd = ''): string {
+    // Bail if it looks like a url.
+    let urlObj = utils.urlParse(relativePath);
+    if (urlObj.protocol) {
+      return relativePath;
+    }
     let norm = posix.normalize(posix.join(cwd, relativePath));
     if (norm.indexOf('../') === 0) {
       return null;
@@ -741,5 +749,18 @@ namespace ContentsManager {
   export
   function extname(path: string): string {
     return posix.extname(path);
+  }
+
+  /**
+   * Normalize a file extension to be of the type `'.foo'`.
+   *
+   * Adds a leading dot if not present and converts to lower case.
+   */
+  export
+  function normalizeExtension(extension: string): string {
+    if (extension.length > 0 && extension.indexOf('.') !== 0) {
+      extension = `.${extension}`;
+    }
+    return extension.toLowerCase();
   }
 }

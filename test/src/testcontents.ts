@@ -154,6 +154,35 @@ describe('jupyter.services - Contents', () => {
       expect(path).to.be('foo/b ar?.txt');
     });
 
+    it('should bail on a url', () => {
+      let path = ContentsManager.getAbsolutePath('http://../foo.txt');
+      expect(path).to.be('http://../foo.txt');
+    });
+
+  });
+
+  describe('.normalizeExtension()', () => {
+
+    it('should add pass a valid extension through unmodified', () => {
+      let ext = ContentsManager.normalizeExtension('.txt');
+      expect(ext).to.be('.txt');
+    });
+
+    it('should add a leading dot if not present', () => {
+      let ext = ContentsManager.normalizeExtension('txt');
+      expect(ext).to.be('.txt');
+    });
+
+    it('should convert to lower case', () => {
+      let ext = ContentsManager.normalizeExtension('.TXT');
+      expect(ext).to.be('.txt');
+    });
+
+    it('should handle an empty extension', () => {
+      let ext = ContentsManager.normalizeExtension('');
+      expect(ext).to.be('');
+    });
+
   });
 
   describe('#getDownloadUrl()', () => {

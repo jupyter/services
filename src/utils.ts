@@ -60,6 +60,112 @@ function uuid(): string {
 
 
 /**
+ * An object describing a url.
+ */
+export
+interface IUrlObject {
+  /**
+   * The full URL string that was parsed with both the `protocol` and `host`
+   * components converted to lower-case.
+   */
+  href: string;
+
+  /**
+   * The URL's lower-cased protocol scheme.
+   */
+  protocol: string;
+
+  /**
+   * Whether two ASCII forward-slash characters `(/)` are required following
+   * the colon in the protocol.
+   */
+  slashes: boolean;
+
+  /**
+   * The full lower-cased host portion of the URL, including the `port` if
+   * specified.
+   */
+  host: string;
+
+  /**
+   * The username and password portion of the URL, also referred to as
+   * "userinfo". This string subset follows the `protocol` and double slashes
+   * (if present) and preceeds the host component, delimited by an ASCII "at
+   * sign" `(@)`. The format of the string is `{username}[:{password}]`, with
+   * the `[:{password}]` portion being optional.
+   */
+  auth: string;
+
+  /**
+   * The lower-cased host name portion of the `host` component *without* the
+   * port included.
+   */
+  hostname: string;
+
+  /**
+   * The numeric port portion of the `host` component.
+   */
+  port: string;
+
+  /**
+   * The entire path section of the URL. This is everything following the
+   * `host` (including the `port`) and before the start of the `query` or
+   * `hash` components, delimited by either the ASCII question mark `(?)` or
+   * hash `(#)` characters.
+   */
+  pathname: string;
+
+  /**
+   * The entire "query string" portion of the URL, including the leading ASCII
+   * question mark `(?)` character.
+   */
+  search: string;
+
+  /**
+   * A concatenation of the `pathname` and `search` components.
+   */
+  path: string;
+
+  /**
+   * Either the "params" portion of the `query` string ( everything except the
+   *  leading ASCII question mark `(?)`, or an object returned by the
+   *  `querystring` module's `parse()` method.
+   */
+  query: string;
+
+  /**
+   * The "fragment" portion of the URL including the leading ASCII hash
+   * `(#)` character.
+   */
+  hash: string;
+}
+
+
+/**
+ * Parse a url into a URL object.
+ *
+ * @param urlString - The URL string to parse.
+ *
+ * @param parseQueryString - If `true`, the query property will always be set
+ *   to an object returned by the `querystring` module's `parse()` method.
+ *   If `false`, the `query` property on the returned URL object will be an
+ *   unparsed, undecoded string. Defaults to `false`.
+ *
+ * @param slashedDenoteHost - If `true`, the first token after the literal
+ *   string `//` and preceeding the next `/` will be interpreted as the `host`.
+ *   For instance, given `//foo/bar`, the result would be
+ *   `{host: 'foo', pathname: '/bar'}` rather than `{pathname: '//foo/bar'}`.
+ *   Defaults to `false`.
+ *
+ * @returns A URL object.
+ */
+export
+function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrlObject {
+  return url.parse(urlStr, parseQueryString, slashesDenoteHost);
+}
+
+
+/**
  * Resolve a url.
  *
  * Take a base URL, and a href URL, and resolve them as a browser would for
