@@ -363,9 +363,13 @@ class ContentsManager implements IContents.IManager {
 
     return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContents.IModel => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateContentsModel(success.data);
+      try {
+         validate.validateContentsModel(success.data);
+       } catch (err) {
+         return utils.makeAjaxError(success, err.message);
+       }
       return success.data;
     });
   }
@@ -410,9 +414,13 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(options.path || '');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateContentsModel(success.data);
+      try {
+        validate.validateContentsModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return success.data;
     });
   }
@@ -435,7 +443,7 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     }, error => {
         // Translate certain errors to more specific ones.
@@ -444,10 +452,10 @@ class ContentsManager implements IContents.IManager {
         if (error.xhr.status === 400) {
           let err = JSON.parse(error.xhr.response);
           if (err.message) {
-            throw new Error(err.message);
+            error.throwError = err.message;
           }
         }
-        throw new Error(error.xhr.statusText);
+        return Promise.reject(error);
       }
     );
   }
@@ -475,9 +483,13 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateContentsModel(success.data);
+      try {
+        validate.validateContentsModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return success.data;
     });
   }
@@ -509,9 +521,13 @@ class ContentsManager implements IContents.IManager {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       // will return 200 for an existing file and 201 for a new file
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateContentsModel(success.data);
+      try {
+        validate.validateContentsModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return success.data;
     });
   }
@@ -541,9 +557,13 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(toDir);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateContentsModel(success.data);
+      try {
+        validate.validateContentsModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return success.data;
     });
   }
@@ -567,9 +587,13 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateCheckpointModel(success.data);
+      try {
+        validate.validateCheckpointModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return success.data;
     });
   }
@@ -594,13 +618,17 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       if (!Array.isArray(success.data)) {
-        throw Error('Invalid Checkpoint list');
+        return utils.makeAjaxError(success, 'Invalid Checkpoint list');
       }
       for (let i = 0; i < success.data.length; i++) {
+        try {
         validate.validateCheckpointModel(success.data[i]);
+        } catch (err) {
+          return utils.makeAjaxError(success, err.message);
+        }
       }
       return success.data;
     });
@@ -626,7 +654,7 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     });
 
@@ -652,7 +680,7 @@ class ContentsManager implements IContents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     });
   }

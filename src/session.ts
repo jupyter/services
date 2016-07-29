@@ -206,13 +206,17 @@ function listRunningSessions(options?: ISession.IOptions): Promise<ISession.IMod
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
-      throw Error('Invalid Status: ' + success.xhr.status);
+      return utils.makeAjaxError(success);
     }
     if (!Array.isArray(success.data)) {
-      throw Error('Invalid Session list');
+      return utils.makeAjaxError(success, 'Invalid Session list');
     }
     for (let i = 0; i < success.data.length; i++) {
-      validate.validateSessionModel(success.data[i]);
+      try {
+        validate.validateSessionModel(success.data[i]);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
     }
     return Private.updateRunningSessions(success.data);
   }, Private.onSessionError);
@@ -676,12 +680,16 @@ class Session implements ISession {
     this._updating = true;
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      this._updating = false;
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       let data = success.data as ISession.IModel;
-      validate.validateSessionModel(data);
-      this._updating = false;
+      try {
+        validate.validateSessionModel(data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return Private.updateByModel(data);
     }, error => {
       this._updating = false;
@@ -779,9 +787,13 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-      validate.validateSessionModel(success.data);
+      try {
+        validate.validateSessionModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       let data = success.data as ISession.IModel;
       return updateByModel(data);
     }, onSessionError);
@@ -832,10 +844,14 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       let data = success.data as ISession.IModel;
-      validate.validateSessionModel(data);
+      try {
+        validate.validateSessionModel(data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return updateByModel(data);
     }, Private.onSessionError);
   }
@@ -891,13 +907,13 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
-    }, rejected => {
-      if (rejected.xhr.status === 410) {
-        throw Error('The kernel was deleted but the session was not');
+    }, err => {
+      if (err.xhr.status === 410) {
+        err.throwError = 'The kernel was deleted but the session was not';
       }
-      onSessionError(rejected);
+      return onSessionError(err);
     });
   }
 
@@ -913,12 +929,13 @@ namespace Private {
    * Handle an error on a session Ajax call.
    */
   export
-  function onSessionError(error: utils.IAjaxError): any {
-    let text = (error.statusText ||
-                error.error.message ||
+  function onSessionError(error: utils.IAjaxError): Promise<any> {
+    let text = (error.throwError ||
+                error.xhr.statusText ||
                 error.xhr.responseText);
-    let msg = `API request failed (${error.xhr.status}):  ${text}`;
-    throw Error(msg);
+    let msg = `API request failed: ${text}`;
+    console.error(msg);
+    return Promise.reject(error);
   }
 
   /**

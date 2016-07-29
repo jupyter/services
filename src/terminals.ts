@@ -246,7 +246,7 @@ class TerminalManager implements ITerminalSession.IManager {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw new Error('Invalid Response: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     });
   }
@@ -262,11 +262,11 @@ class TerminalManager implements ITerminalSession.IManager {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw new Error('Invalid Response: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       let data = success.data as ITerminalSession.IModel[];
       if (!Array.isArray(data)) {
-        throw new Error('Invalid terminal data');
+        return utils.makeAjaxError(success, 'Invalid terminal data');
       }
       if (!deepEqual(data, this._running)) {
         this._running = data.slice();
@@ -401,7 +401,7 @@ class TerminalSession implements ITerminalSession {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw new Error('Invalid Response: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       this.dispose();
     });
@@ -431,7 +431,7 @@ class TerminalSession implements ITerminalSession {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw new Error('Invalid Response: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       return (success.data as ITerminalSession.IModel).name;
     });

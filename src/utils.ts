@@ -277,46 +277,56 @@ interface IAjaxSettings extends JSONObject {
 
 
 /**
- * Success handler for AJAX request.
+ * Data for a successful  AJAX request.
  */
 export
 interface IAjaxSuccess {
   /**
-   * The data returned by the ajax call.
+   * The `onload` event.
    */
-  data: any;
-
-  /**
-   * The status text of the response.
-   */
-  statusText: string;
+  event: ProgressEvent;
 
   /**
    * The XHR object.
    */
   xhr: XMLHttpRequest;
+
+  /**
+   * The ajax settings associated with the request.
+   */
+  ajaxSettings: IAjaxSettings;
+
+  /**
+   * The data returned by the ajax call.
+   */
+  data: any;
 }
 
 
 /**
- * Error handler for AJAX request.
+ * Data for an unsuccesful AJAX request.
  */
 export
 interface IAjaxError {
+  /**
+   * The event triggering the error.
+   */
+  event: Event;
+
   /**
    * The XHR object.
    */
   xhr: XMLHttpRequest;
 
   /**
-   * The status text of the response.
+   * The ajax settings associated with the request.
    */
-  statusText: string;
+  ajaxSettings: IAjaxSettings;
 
   /**
-   * The response error object.
+   * The error message, if `onerror`.
    */
-  error: ErrorEvent;
+  throwError?: string;
 }
 
 
@@ -331,62 +341,86 @@ interface IAjaxError {
  * Based on this [example](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promisifying-xmlhttprequest).
  */
 export
-function ajaxRequest(url: string, settings: IAjaxSettings): Promise<IAjaxSuccess> {
-  let method = settings.method || 'GET';
-  let user = settings.user || '';
-  let password = settings.password || '';
-  if (!settings.cache) {
+function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuccess> {
+  let method = ajaxSettings.method || 'GET';
+  let user = ajaxSettings.user || '';
+  let password = ajaxSettings.password || '';
+  if (!ajaxSettings.cache) {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache.
     url += ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
   }
 
   return new Promise((resolve, reject) => {
-    let req = new XMLHttpRequest();
-    req.open(method, url, true, user, password);
+    let xhr = new XMLHttpRequest();
+    xhr.open(method, url, true, user, password);
 
-    if (settings.contentType !== void 0) {
-      req.setRequestHeader('Content-Type', settings.contentType);
+    if (ajaxSettings.contentType !== void 0) {
+      xhr.setRequestHeader('Content-Type', ajaxSettings.contentType);
     }
-    if (settings.timeout !== void 0) {
-      req.timeout = settings.timeout;
+    if (ajaxSettings.timeout !== void 0) {
+      xhr.timeout = ajaxSettings.timeout;
     }
-    if (!!settings.withCredentials) {
-      req.withCredentials = true;
+    if (!!ajaxSettings.withCredentials) {
+      xhr.withCredentials = true;
     }
-    if (settings.requestHeaders !== void 0) {
-       for (let prop in settings.requestHeaders) {
-         req.setRequestHeader(prop, (settings as any).requestHeaders[prop]);
+    if (ajaxSettings.requestHeaders !== void 0) {
+       for (let prop in ajaxSettings.requestHeaders) {
+         xhr.setRequestHeader(prop, ajaxSettings.requestHeaders[prop]);
        }
     }
 
-    req.onload = () => {
-      if (req.status >= 400) {
-        let error = new Error(req.statusText);
-        reject({ xhr: req, statusText: req.statusText, error: error });
-        return;
+    xhr.onload = (event: ProgressEvent) => {
+      if (xhr.status >= 300) {
+        reject({ event, xhr, ajaxSettings, throwError: xhr.statusText });
       }
-      let response = req.responseText;
-      if (settings.dataType === 'json' && response) {
-        response = JSON.parse(response);
+      let data = xhr.responseText;
+      if (ajaxSettings.dataType === 'json' && data) {
+        try {
+          data = JSON.parse(data);
+        } catch (err) {
+          let throwError = err.message;
+          reject({ event, xhr, ajaxSettings, throwError });
+        }
       }
-      resolve({ data: response, statusText: req.statusText, xhr: req });
+      resolve({ xhr, ajaxSettings, data, event });
     };
 
-    req.onerror = (err: ErrorEvent) => {
-      reject({ xhr: req, statusText: req.statusText, error: err });
+    xhr.onabort = (event: Event) => {
+      reject({ xhr, event, ajaxSettings });
     };
 
-    req.ontimeout = () => {
-      reject({ xhr: req, statusText: req.statusText,
-               error: new Error('Operation Timed Out') });
+    xhr.onerror = (event: ErrorEvent) => {
+      reject({ xhr, event, ajaxSettings });
     };
 
-    if (settings.data) {
-      req.send(settings.data);
+    xhr.ontimeout = (ev: ProgressEvent) => {
+      reject({ xhr, event, ajaxSettings });
+    };
+
+    if (ajaxSettings.data) {
+      xhr.send(ajaxSettings.data);
     } else {
-      req.send();
+      xhr.send();
     }
   });
+}
+
+
+/**
+ * Create an ajax error from an ajax success.
+ *
+ * @param success - The original success object.
+ *
+ * @param throwError - The optional new error name.  If not given
+ *  we use "Invalid Status: <xhr.status>"
+ */
+export
+function makeAjaxError(success: IAjaxSuccess, throwError?: string): Promise<any> {
+  let xhr = success.xhr;
+  let ajaxSettings = success.ajaxSettings;
+  let event = success.event;
+  throwError = throwError || `Invalid Status: ${xhr.status}`;
+  return Promise.reject({ xhr, ajaxSettings, event, throwError });
 }
 
 

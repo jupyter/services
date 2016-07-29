@@ -143,7 +143,7 @@ class ConfigSection implements IConfigSection {
     ajaxSettings.cache = false;
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       this._data = success.data;
     });
@@ -171,7 +171,7 @@ class ConfigSection implements IConfigSection {
 
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+       return utils.makeAjaxError(success);
       }
 
       this._data = success.data;

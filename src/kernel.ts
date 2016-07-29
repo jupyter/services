@@ -234,19 +234,12 @@ function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecMo
   ajaxSettings.dataType = 'json';
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
-    let err = new Error('Invalid KernelSpecs Model');
     if (success.xhr.status !== 200) {
-      throw new Error('Invalid Response: ' + success.xhr.status);
+      return utils.makeAjaxError(success);
     }
-    let data = success.data;
-    if (!data.hasOwnProperty('default') ||
-        typeof data.default !== 'string') {
-      console.error(err);
-      return data;
-    }
+    let data = success.data as IKernel.ISpecModels;
     if (!data.hasOwnProperty('kernelspecs')) {
-      console.error(err);
-      return data;
+      return utils.makeAjaxError(success, 'No kernelspecs found');
     }
     let keys = Object.keys(data.kernelspecs);
     for (let i = 0; i < keys.length; i++) {
@@ -254,17 +247,20 @@ function getKernelSpecs(options: IKernel.IOptions = {}): Promise<IKernel.ISpecMo
       try {
         validate.validateKernelSpecModel(ks);
       } catch (err) {
-        console.error(err);
-        return data;
+        // Remove the errant kernel spec.
+        console.warn(`Removing errant kernel spec: ${keys[i]}`);
+        delete data.kernelspecs[keys[i]];
       }
     }
-    if (!data.kernelspecs.hasOwnProperty(data.default)) {
-      if (keys.length) {
-        data.default = keys[0];
-        console.error(`Default kernel name '${data.default}' not found, using '${keys[0]}'`);
-      } else {
-        console.error('No kernelspecs found');
-      }
+    keys = Object.keys(data.kernelspecs);
+    if (!keys.length) {
+      return utils.makeAjaxError(success, 'No valid kernelspecs found');
+    }
+    if (!data.hasOwnProperty('default') ||
+        typeof data.default !== 'string' ||
+        !data.kernelspecs.hasOwnProperty(data.default)) {
+      data.default = keys[0];
+      console.warn(`Default kernel not found, using '${keys[0]}'`);
     }
     return data;
   });
@@ -290,13 +286,17 @@ function listRunningKernels(options: IKernel.IOptions = {}): Promise<IKernel.IMo
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
-      throw Error('Invalid Status: ' + success.xhr.status);
+      return utils.makeAjaxError(success);;
     }
     if (!Array.isArray(success.data)) {
-      throw Error('Invalid kernel list');
+      return utils.makeAjaxError(success, 'Invalid kernel list');
     }
     for (let i = 0; i < success.data.length; i++) {
-      validate.validateKernelModel(success.data[i]);
+      try {
+        validate.validateKernelModel(success.data[i]);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
     }
     return success.data as IKernel.IModel[];
   }, Private.onKernelError);
@@ -329,7 +329,7 @@ function startNewKernel(options?: IKernel.IOptions): Promise<IKernel> {
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 201) {
-      throw Error('Invalid Status: ' + success.xhr.status);
+      return utils.makeAjaxError(success);
     }
     validate.validateKernelModel(success.data);
     return new Kernel(options, success.data.id);
@@ -1524,7 +1524,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       validate.validateKernelModel(success.data);
     }, onKernelError);
@@ -1550,7 +1550,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     }, onKernelError);
   }
@@ -1569,7 +1569,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
     }, onKernelError);
   }
@@ -1590,7 +1590,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        throw Error('Invalid Status: ' + success.xhr.status);
+        return utils.makeAjaxError(success);
       }
       let data = success.data as IKernel.IModel;
       validate.validateKernelModel(data);
@@ -1618,12 +1618,13 @@ namespace Private {
    * Handle an error on a kernel Ajax call.
    */
   export
-  function onKernelError(error: utils.IAjaxError): any {
-    let text = (error.statusText ||
-                error.error.message ||
+  function onKernelError(error: utils.IAjaxError): Promise<any> {
+    let text = (error.throwError ||
+                error.xhr.statusText ||
                 error.xhr.responseText);
-    let msg = `API request failed (${error.xhr.status}): ${text}`;
-    throw Error(msg);
+    let msg = `API request failed: ${text}`;
+    console.error(msg);
+    return Promise.reject(error);
   }
 
   /**

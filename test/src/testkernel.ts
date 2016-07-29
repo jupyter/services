@@ -5,7 +5,7 @@
 import expect = require('expect.js');
 
 import {
-  uuid
+  uuid, IAjaxError
 } from '../../lib/utils';
 
 import {
@@ -26,8 +26,9 @@ import {
 } from '../../lib/json';
 
 import {
-  RequestHandler, ajaxSettings, doLater, expectFailure, createKernel,
-  KernelTester, KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
+  RequestHandler, ajaxSettings, doLater, expectFailure, expectAjaxError,
+  createKernel, KernelTester,
+  KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
   PYTHON_SPEC
 } from './utils';
 
@@ -49,7 +50,7 @@ let createMsg = (channel: KernelMessage.Channel, parent_header: JSONObject): Ker
 };
 
 
-describe('jupyter.services - kernel', () => {
+describe('kernel', () => {
 
   describe('listRunningKernels()', () => {
 
@@ -95,8 +96,8 @@ describe('jupyter.services - kernel', () => {
         let data = { id: uuid(), name: 'test' };
         handler.respond(200, data);
       });
-      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
-      expectFailure(list, done, 'Invalid kernel list');
+      let promise = listRunningKernels({ baseUrl: 'http://localhost:8888' });
+      expectAjaxError(promise, done, 'Invalid kernel list');
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -104,7 +105,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(201, { });
       });
       let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
-      expectFailure(list, done, 'Invalid Status: 201');
+      expectAjaxError(list, done, 'Invalid Status: 201');
     });
 
     it('should throw an error for an error response', (done) => {
@@ -178,7 +179,7 @@ describe('jupyter.services - kernel', () => {
         tester.respond(200, data);
       });
       let kernelPromise = startNewKernel(KERNEL_OPTIONS);
-      expectFailure(kernelPromise, done, 'Invalid Status: 200');
+      expectAjaxError(kernelPromise, done, 'Invalid Status: 200');
     });
 
     it('should throw an error for an error response', (done) => {
@@ -744,7 +745,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200,  { id: kernel.id, name: kernel.name });
           };
           let interrupt = kernel.interrupt();
-          expectFailure(interrupt, done, 'Invalid Status: 200');
+          expectAjaxError(interrupt, done, 'Invalid Status: 200');
         });
       });
 
@@ -814,7 +815,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(204, { id: kernel.id, name: kernel.name });
           };
           let restart = kernel.restart();
-          expectFailure(restart, done, 'Invalid Status: 204');
+          expectAjaxError(restart, done, 'Invalid Status: 204');
         });
       });
 
@@ -913,7 +914,7 @@ describe('jupyter.services - kernel', () => {
             tester.respond(200, { id: uuid(), name: KERNEL_OPTIONS.name });
           };
           let shutdown = kernel.shutdown();
-          expectFailure(shutdown, done, 'Invalid Status: 200');
+          expectAjaxError(shutdown, done, 'Invalid Status: 200');
         });
       });
 
@@ -1986,34 +1987,40 @@ describe('jupyter.services - kernel', () => {
       });
     });
 
-    it('should throw an error for missing default parameter', (done) => {
+    it('should handle a missing default parameter', (done) => {
       let handler = new RequestHandler(() => {
-        handler.respond(200, { 'kernelspecs': [PYTHON_SPEC, PYTHON3_SPEC] });
+        handler.respond(200, { 'kernelspecs': { 'python': PYTHON_SPEC } });
       });
-      let promise = getKernelSpecs({ baseUrl: 'localhost' });
-      expectFailure(promise, done);
+      getKernelSpecs().then(specs => {
+        expect(specs.default).to.be('python');
+      }).then(done, done);
     });
 
-    it('should throw an error for missing kernelspecs parameter', (done) => {
+    it('should throw for a missing kernelspecs parameter', (done) => {
       let handler = new RequestHandler();
       handler.onRequest = () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       };
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No kernelspecs found');
     });
 
-    it('should throw an error for incorrect kernelspecs parameter type', (done) => {
+    it('should omit an invalid kernelspec', (done) => {
+      let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
+      R_SPEC.name = 1;
       let handler = new RequestHandler(() => {
-        handler.respond(200, { 'default': PYTHON_SPEC.name,
-                             'kernelspecs': [ PYTHON_SPEC ]
-                           });
+        handler.respond(200, { 'default': 'python',
+                               'kernelspecs': { 'R': R_SPEC,
+                                                'python': PYTHON_SPEC }
+        });
       });
-      let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      getKernelSpecs().then(specs => {
+        expect(specs.default).to.be('python');
+        expect(specs.kernelspecs['R']).to.be(void 0);
+      }).then(done, done);
     });
 
-    it('should throw an error for improper name', (done) => {
+    it('should handle an improper name', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.name = 1;
       let handler = new RequestHandler(() => {
@@ -2021,10 +2028,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper language', (done) => {
+    it('should handle an improper language', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.language = 1;
       let handler = new RequestHandler(() => {
@@ -2032,10 +2039,10 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper argv', (done) => {
+    it('should handle an improper argv', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.argv = 'hello';
       let handler = new RequestHandler(() => {
@@ -2043,10 +2050,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for improper display_name', (done) => {
+    it('should handle an improper display_name', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       R_SPEC.spec.display_name = ['hello'];
       let handler = new RequestHandler(() => {
@@ -2054,10 +2061,10 @@ describe('jupyter.services - kernel', () => {
                                'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
-    it('should throw an error for missing resources', (done) => {
+    it('should handle missing resources', (done) => {
       let R_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
       delete R_SPEC.resources;
       let handler = new RequestHandler(() => {
@@ -2065,7 +2072,7 @@ describe('jupyter.services - kernel', () => {
                              'kernelspecs': { 'R': R_SPEC } });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done);
+      expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
     it('should throw an error for an invalid response', (done) => {
@@ -2073,7 +2080,7 @@ describe('jupyter.services - kernel', () => {
         handler.respond(201, { });
       });
       let promise = getKernelSpecs();
-      expectFailure(promise, done, 'Invalid Response: 201');
+      expectAjaxError(promise, done, 'Invalid Status: 201');
     });
 
   });

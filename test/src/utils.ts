@@ -5,7 +5,7 @@
 import encoding = require('text-encoding');
 
 import {
-  IAjaxSettings, PromiseDelegate, uuid
+  IAjaxSettings, PromiseDelegate, uuid, IAjaxError
 } from '../../lib/utils';
 
 import {
@@ -261,15 +261,27 @@ function createKernel(tester?: KernelTester): Promise<IKernel> {
 export
 function expectFailure(promise: Promise<any>, done: () => void, message?: string): Promise<any> {
   return promise.then((msg: any) => {
-    console.error('***should not reach this point');
-    throw Error('Should not reach this point');
-  }).catch((error) => {
+    throw Error('Expected failure did not occur');
+  }, (error: Error) => {
     if (message && error.message.indexOf(message) === -1) {
-      console.error('****', message, 'not in:', error.message);
-      return;
+      throw Error(`Error "${message}" not in: "${error.message}"`);
     }
-    done();
-  });
+  }).then(done, done);
+}
+
+
+/**
+ * Expect an Ajax failure with a given throwError.
+ */
+export
+function expectAjaxError(promise: Promise<any>, done: () => void, throwError: string): Promise<any> {
+  return promise.then((msg: any) => {
+    throw Error('Expected failure did not occur');
+  }, (error: IAjaxError) => {
+    if (error.throwError !== throwError) {
+      throw Error(`Error "${throwError}" not equal to "${error.throwError}"`);
+    }
+  }).then(done, done);
 }
 
 
