@@ -554,6 +554,53 @@ describe('kernel', () => {
       });
     });
 
+    context('#info', () => {
+
+      it('should be null by default', (done) => {
+        createKernel().then(kernel => {
+          expect(kernel.info).to.be(null);
+        }).then(done, done);
+      });
+
+      it('should be set after calling kernelInfo', (done) => {
+        let kernel: IKernel;
+        createKernel().then(value => {
+          kernel = value;
+          // resolved by KernelTester
+          return kernel.kernelInfo();
+        }).then(() => {
+          let name = kernel.info.language_info.name;
+          expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
+        }).then(done, done);
+
+      });
+
+    });
+
+    context('#spec', () => {
+
+      it('should be null by default', (done) => {
+        createKernel().then(kernel => {
+          expect(kernel.spec).to.be(null);
+        }).then(done, done);
+      });
+
+      it('should be set after calling getKernelSpec', (done) => {
+        let kernel: IKernel;
+        let tester = new KernelTester();
+        createKernel(tester).then(value => {
+          kernel = value;
+          tester.onRequest = () => {
+            tester.respond(200, PYTHON_SPEC);
+          };
+          return kernel.getKernelSpec();
+        }).then(() => {
+          expect(kernel.spec.language).to.be('python');
+        }).then(done, done);
+      });
+
+    });
+
     context('#isDisposed', () => {
 
       it('should be true after we dispose of the kernel', (done) => {
