@@ -4,11 +4,11 @@
 
 import {
   IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor/lib/core/disposable';
 
 import {
   ISignal
-} from 'phosphor-signaling';
+} from 'phosphor/lib/core/signaling';
 
 import {
   JSONObject, JSONValue

@@ -3,8 +3,8 @@ import {
 } from './utils';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   ISession
@@ -54,44 +54,32 @@ class MockSession implements ISession {
   /**
    * A signal emitted when the session dies.
    */
-  get sessionDied(): ISignal<MockSession, void> {
-    return Private.sessionDiedSignal.bind(this);
-  }
+  sessionDied: ISignal<MockSession, void>;
 
   /**
    * A signal emitted when the kernel changes.
    */
-  get kernelChanged(): ISignal<MockSession, MockKernel> {
-    return Private.kernelChangedSignal.bind(this);
-  }
+  kernelChanged: ISignal<MockSession, MockKernel>;
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<MockSession, IKernel.Status> {
-    return Private.statusChangedSignal.bind(this);
-  }
+  statusChanged: ISignal<MockSession, IKernel.Status>;
 
   /**
    * A signal emitted for a kernel messages.
    */
-  get iopubMessage(): ISignal<MockSession, KernelMessage.IIOPubMessage> {
-    return Private.iopubMessageSignal.bind(this);
-  }
+  iopubMessage: ISignal<MockSession, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<MockSession, KernelMessage.IMessage> {
-    return Private.unhandledMessageSignal.bind(this);
-  }
+  unhandledMessage: ISignal<MockSession, KernelMessage.IMessage>;
 
   /**
    * A signal emitted when the session path changes.
    */
-  get pathChanged(): ISignal<MockSession, string> {
-    return Private.pathChangedSignal.bind(this);
-  }
+  pathChanged: ISignal<MockSession, string>;
 
   /**
    * Get the session kernel object.
@@ -196,16 +184,12 @@ class MockSessionManager implements ISession.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  get specsChanged(): ISignal<MockSessionManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<MockSessionManager, IKernel.ISpecModels>;
 
   /**
    * A signal emitted when the running sessions change.
    */
-  get runningChanged(): ISignal<MockSessionManager, ISession.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<MockSessionManager, ISession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -315,58 +299,24 @@ class MockSessionManager implements ISession.IManager {
 }
 
 
+// Define the signals for the `MockSession` class.
+defineSignal(MockSession.prototype, 'sessionDied');
+defineSignal(MockSession.prototype, 'kernelChanged');
+defineSignal(MockSession.prototype, 'statusChanged');
+defineSignal(MockSession.prototype, 'iopubMessage');
+defineSignal(MockSession.prototype, 'unhandledMessage');
+defineSignal(MockSession.prototype, 'pathChanged');
+
+
+// Define the signals for the `MockSessionManager` class.
+defineSignal(MockSessionManager.prototype, 'specsChanged');
+defineSignal(MockSessionManager.prototype, 'runningChanged');
+
+
 /**
  * A namespace for notebook session private data.
  */
 namespace Private {
-  /**
-   * A signal emitted when the session is shut down.
-   */
-  export
-  const sessionDiedSignal = new Signal<ISession, void>();
-
-  /**
-   * A signal emitted when the kernel changes.
-   */
-  export
-  const kernelChangedSignal = new Signal<ISession, IKernel>();
-
-  /**
-   * A signal emitted when the session kernel status changes.
-   */
-  export
-  const statusChangedSignal = new Signal<ISession, IKernel.Status>();
-
-  /**
-   * A signal emitted for iopub kernel messages.
-   */
-  export
-  const iopubMessageSignal = new Signal<ISession, KernelMessage.IIOPubMessage>();
-
-  /**
-   * A signal emitted for an unhandled kernel message.
-   */
-  export
-  const unhandledMessageSignal = new Signal<ISession, KernelMessage.IMessage>();
-
-  /**
-   * A signal emitted when the session path changes.
-   */
-  export
-  const pathChangedSignal = new Signal<ISession, string>();
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<MockSessionManager, IKernel.ISpecModels>();
-
-  /**
-   * A signal emitted when the running kernels change.
-   */
-  export
-  const runningChangedSignal = new Signal<MockSessionManager, ISession.IModel[]>();
-
   /**
    * A module private store for running mock sessions.
    */

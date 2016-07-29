@@ -2,8 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   IKernel
@@ -49,9 +49,7 @@ class MockServiceManager implements IServiceManager {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  get specsChanged(): ISignal<MockServiceManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<MockServiceManager, IKernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -130,14 +128,5 @@ class MockServiceManager implements IServiceManager {
 }
 
 
-/**
- * A namespace for private data.
- */
-namespace Private {
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<MockServiceManager, IKernel.ISpecModels>();
-}
+// Define the signals for the `MockServiceManager` class.
+defineSignal(MockServiceManager.prototype, 'specsChanged');

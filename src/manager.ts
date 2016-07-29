@@ -2,16 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IAjaxSettings, getBaseUrl
-} from './utils';
-
-import {
   IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   IContents, ContentsManager
@@ -41,6 +37,9 @@ import {
   ITerminalSession, TerminalManager
 } from './terminals';
 
+import {
+  IAjaxSettings, getBaseUrl
+} from './utils';
 
 /**
  * A service manager interface.
@@ -171,9 +170,7 @@ class ServiceManager implements IServiceManager {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  get specsChanged(): ISignal<ServiceManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<ServiceManager, IKernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -260,14 +257,5 @@ class ServiceManager implements IServiceManager {
 }
 
 
-/**
- * A namespace for private data.
- */
-namespace Private {
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<IServiceManager, IKernel.ISpecModels>();
-}
+// Define the signals for the `ServiceManager` class.
+defineSignal(ServiceManager.prototype, 'specsChanged');
