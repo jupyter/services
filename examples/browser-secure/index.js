@@ -60,16 +60,19 @@ require(['jquery', 'jupyter-js-services'], function ($, services) {
       });
     });
   }).catch(function (error) {
-    // FIXME: assume the error was permission, because the error doesn't include this info
-    $("#kernel-info").text('').append(
-      // FIXME: can't use ?next=window.location, because notebook server
-      // restricts login redirect to its own pages.
-      // open a new tab, instead.
-      $("<a>").attr('href', baseUrl + 'login')
-      .attr('target', '_blank')
-      .text("Click here to login with the notebook server.")
-    ).append(
-      $("<p>").text("Reload the page once login is complete.")
-    );
+    if (error.xhr.status === 302) {
+      $("#kernel-info").text('').append(
+        // FIXME: can't use ?next=window.location, because notebook server
+        // restricts login redirect to its own pages.
+        // open a new tab, instead.
+        $("<a>").attr('href', baseUrl + 'login')
+        .attr('target', '_blank')
+        .text("Click here to login with the notebook server.")
+      ).append(
+        $("<p>").text("Reload the page once login is complete.")
+      );
+    } else {
+      console.error(error);
+    }
   });
 });
