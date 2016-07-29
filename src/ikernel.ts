@@ -76,7 +76,7 @@ interface IKernel extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-   username: string;
+  username: string;
 
   /**
    * The client unique id.
@@ -93,6 +93,26 @@ interface IKernel extends IDisposable {
    * This is a read-only property.
    */
   status: IKernel.Status;
+
+  /**
+   * The cached info for the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   * If `null`, call [[kernelInfo]] to get the value,
+   * which will populate this value.
+   */
+  info: KernelMessage.IInfoReply;
+
+  /**
+   * The cached spec for the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   * If `null`, call [[getKernelSpecs]] to get the value,
+   * which will populate this value.
+   */
+  spec: IKernel.ISpec;
 
   /**
    * Send a shell message to the kernel.
@@ -301,7 +321,7 @@ interface IKernel extends IDisposable {
    *
    * See also [[IFuture.registerMessageHook]].
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
+  registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
 
   /**
    * Get the kernel spec associated with the kernel.

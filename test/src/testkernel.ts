@@ -1258,32 +1258,10 @@ describe('kernel', () => {
     describe('#getKernelSpec()', () => {
 
       it('should load the kernelspec', (done) => {
-        let ids = {
-          'python': PYTHON_SPEC,
-          'python3': PYTHON3_SPEC
-        };
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           tester.onRequest = () => {
-            tester.respond(200, { 'default': 'python',
-                                 'kernelspecs': ids });
-          };
-          kernel.getKernelSpec().then(spec => {
-            expect(spec.language).to.be('python');
-            done();
-          });
-        });
-      });
-
-      it('should still load if the default is incorrect', (done) => {
-        let ids = {
-          'python': PYTHON_SPEC
-        };
-        let tester = new KernelTester();
-        createKernel(tester).then(kernel => {
-          tester.onRequest = () => {
-            tester.respond(200, { 'default': 'r',
-                                 'kernelspecs': ids });
+            tester.respond(200, PYTHON_SPEC);
           };
           kernel.getKernelSpec().then(spec => {
             expect(spec.language).to.be('python');

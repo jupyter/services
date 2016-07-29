@@ -167,6 +167,14 @@ class MockKernel implements IKernel {
     return { name: this.name, id: this.id };
   }
 
+  get info(): KernelMessage.IInfoReply {
+    return this._kernelInfo;
+  }
+
+  get spec(): IKernel.ISpec {
+    return this._kernelspec;
+  }
+
   /**
    * Test whether the kernel has been disposed.
    */
