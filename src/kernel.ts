@@ -94,7 +94,7 @@ class KernelManager implements IKernel.IManager {
     }
     this._isDisposed = true;
     clearSignalData(this);
-    this._specs = null;
+    this._spec = null;
     this._running = [];
   }
 
@@ -105,8 +105,8 @@ class KernelManager implements IKernel.IManager {
    */
   getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
     return getKernelSpecs(this._getOptions(options)).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
-        this._specs = specs;
+      if (!deepEqual(specs, this._spec)) {
+        this._spec = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -186,7 +186,7 @@ class KernelManager implements IKernel.IManager {
 
   private _options: IKernel.IOptions = null;
   private _running: IKernel.IModel[] = [];
-  private _specs: IKernel.ISpecModels = null;
+  private _spec: IKernel.ISpecModels = null;
   private _isDisposed = false;
 }
 
@@ -515,6 +515,30 @@ class Kernel implements IKernel {
   }
 
   /**
+   * The cached info for the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   * If `null`, call [[kernelInfo]] to get the value,
+   * which will populate this value.
+   */
+  get info(): KernelMessage.IInfoReply {
+    return this._info;
+  }
+
+  /**
+   * The cached specs for the kernel.
+   *
+   * #### Notes
+   * This is a read-only property.
+   * If `null`, call [[getKernelSpecs]] to get the value,
+   * which will populate this value.
+   */
+  get spec(): IKernel.ISpec {
+    return this._spec;
+  }
+
+  /**
    * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -712,7 +736,10 @@ class Kernel implements IKernel {
       session: this._clientId
     };
     let msg = createShellMessage(options);
-    return Private.handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg).then(reply => {
+      this._info = reply.content as KernelMessage.IInfoReply;
+      return reply;
+    });
   }
 
   /**
@@ -890,13 +917,13 @@ class Kernel implements IKernel {
    *
    * See also [[IFuture.registerMessageHook]].
    */
-  registerMessageHook(msg_id: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
-    let future = this._futures && this._futures.get(msg_id);
+  registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable {
+    let future = this._futures && this._futures.get(msgId);
     if (future) {
       future.registerMessageHook(hook);
     }
     return new DisposableDelegate(() => {
-      let future = this._futures && this._futures.get(msg_id);
+      future = this._futures && this._futures.get(msgId);
       if (future) {
         future.removeMessageHook(hook);
       }
@@ -956,20 +983,10 @@ class Kernel implements IKernel {
    * This value is cached and only fetched the first time it is requested.
    */
   getKernelSpec(): Promise<IKernel.ISpec> {
-    if (this._spec) {
-      return Promise.resolve(this._spec);
-    }
-    let name = this.name;
-    let options: IKernel.IOptions = {
-      baseUrl: this._baseUrl, ajaxSettings: this.ajaxSettings
-    };
-    return getKernelSpecs(options).then(ids => {
-      let id = ids.kernelspecs[name];
-      if (!id) {
-        throw new Error(`Could not find kernel spec for ${name}`);
-      }
-      this._spec = id.spec;
-      return this._spec;
+    return Private.getKernelSpec(this, this._baseUrl, this.ajaxSettings)
+    .then(specs => {
+      this._spec = specs;
+      return specs;
     });
   }
 
@@ -1264,6 +1281,7 @@ class Kernel implements IKernel {
   private _comms: Map<string, IKernel.IComm> = null;
   private _targetRegistry: { [key: string]: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _spec: IKernel.ISpec = null;
+  private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
 }
@@ -1526,7 +1544,11 @@ namespace Private {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      validate.validateKernelModel(success.data);
+      try {
+        validate.validateKernelModel(success.data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
     }, onKernelError);
   }
 
@@ -1575,6 +1597,31 @@ namespace Private {
   }
 
   /**
+   * Get the kernelspec for a kernel.
+   */
+  export
+  function getKernelSpec(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<IKernel.ISpec> {
+    let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL,
+                                encodeURIComponent(kernel.name));
+    ajaxSettings = ajaxSettings || { };
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        return utils.makeAjaxError(success);
+      }
+      let data = success.data as IKernel.ISpecModel;
+      try {
+        validate.validateKernelSpecModel(data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
+      return data.spec;
+    }, onKernelError);
+  }
+
+  /**
    * Get a full kernel model from the server by kernel id string.
    */
   export
@@ -1593,7 +1640,11 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       let data = success.data as IKernel.IModel;
-      validate.validateKernelModel(data);
+      try {
+        validate.validateKernelModel(data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
       return data;
     }, Private.onKernelError);
   }

@@ -554,6 +554,53 @@ describe('kernel', () => {
       });
     });
 
+    context('#info', () => {
+
+      it('should be null by default', (done) => {
+        createKernel().then(kernel => {
+          expect(kernel.info).to.be(null);
+        }).then(done, done);
+      });
+
+      it('should be set after calling kernelInfo', (done) => {
+        let kernel: IKernel;
+        createKernel().then(value => {
+          kernel = value;
+          // resolved by KernelTester
+          return kernel.kernelInfo();
+        }).then(() => {
+          let name = kernel.info.language_info.name;
+          expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
+        }).then(done, done);
+
+      });
+
+    });
+
+    context('#spec', () => {
+
+      it('should be null by default', (done) => {
+        createKernel().then(kernel => {
+          expect(kernel.spec).to.be(null);
+        }).then(done, done);
+      });
+
+      it('should be set after calling getKernelSpec', (done) => {
+        let kernel: IKernel;
+        let tester = new KernelTester();
+        createKernel(tester).then(value => {
+          kernel = value;
+          tester.onRequest = () => {
+            tester.respond(200, PYTHON_SPEC);
+          };
+          return kernel.getKernelSpec();
+        }).then(() => {
+          expect(kernel.spec.language).to.be('python');
+        }).then(done, done);
+      });
+
+    });
+
     context('#isDisposed', () => {
 
       it('should be true after we dispose of the kernel', (done) => {
@@ -1258,32 +1305,10 @@ describe('kernel', () => {
     describe('#getKernelSpec()', () => {
 
       it('should load the kernelspec', (done) => {
-        let ids = {
-          'python': PYTHON_SPEC,
-          'python3': PYTHON3_SPEC
-        };
         let tester = new KernelTester();
         createKernel(tester).then(kernel => {
           tester.onRequest = () => {
-            tester.respond(200, { 'default': 'python',
-                                 'kernelspecs': ids });
-          };
-          kernel.getKernelSpec().then(spec => {
-            expect(spec.language).to.be('python');
-            done();
-          });
-        });
-      });
-
-      it('should still load if the default is incorrect', (done) => {
-        let ids = {
-          'python': PYTHON_SPEC
-        };
-        let tester = new KernelTester();
-        createKernel(tester).then(kernel => {
-          tester.onRequest = () => {
-            tester.respond(200, { 'default': 'r',
-                                 'kernelspecs': ids });
+            tester.respond(200, PYTHON_SPEC);
           };
           kernel.getKernelSpec().then(spec => {
             expect(spec.language).to.be('python');
