@@ -3,19 +3,12 @@
 'use strict';
 
 import {
-  IAjaxSettings
-} from './utils';
-
-import * as utils
-  from './utils';
-
-import {
   DisposableDelegate, IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   IKernel, KernelMessage
@@ -34,6 +27,13 @@ import * as serialize
 
 import * as validate
   from './validate';
+
+import {
+  IAjaxSettings
+} from './utils';
+
+import * as utils
+  from './utils';
 
 
 /**
@@ -64,16 +64,12 @@ class KernelManager implements IKernel.IManager {
   /**
    * A signal emitted when the specs change.
    */
-  get specsChanged(): ISignal<IKernel.IManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<IKernel.IManager, IKernel.ISpecModels>;
 
   /**
    * A signal emitted when the running kernels change.
    */
-  get runningChanged(): ISignal<IKernel.IManager, IKernel.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<IKernel.IManager, IKernel.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -286,7 +282,7 @@ function listRunningKernels(options: IKernel.IOptions = {}): Promise<IKernel.IMo
 
   return utils.ajaxRequest(url, ajaxSettings).then(success => {
     if (success.xhr.status !== 200) {
-      return utils.makeAjaxError(success);;
+      return utils.makeAjaxError(success);
     }
     if (!Array.isArray(success.data)) {
       return utils.makeAjaxError(success, 'Invalid kernel list');
@@ -436,23 +432,17 @@ class Kernel implements IKernel {
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<IKernel, IKernel.Status> {
-    return Private.statusChangedSignal.bind(this);
-  }
+  statusChanged: ISignal<IKernel, IKernel.Status>;
 
   /**
    * A signal emitted for iopub kernel messages.
    */
-  get iopubMessage(): ISignal<IKernel, KernelMessage.IIOPubMessage> {
-    return Private.iopubMessageSignal.bind(this);
-  }
+  iopubMessage: ISignal<IKernel, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<IKernel, KernelMessage.IMessage> {
-    return Private.unhandledMessageSignal.bind(this);
-  }
+  unhandledMessage: ISignal<IKernel, KernelMessage.IMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -1482,40 +1472,21 @@ class Comm extends DisposableDelegate implements IKernel.IComm {
 }
 
 
+// Define the signals for the `Kernel` class.
+defineSignal(Kernel.prototype, 'statusChanged');
+defineSignal(Kernel.prototype, 'iopubMessage');
+defineSignal(Kernel.prototype, 'unhandledMessage');
+
+
+// Define the signal for the `KernelManager` class.
+defineSignal(KernelManager.prototype, 'specsChanged');
+defineSignal(KernelManager.prototype, 'runningChanged');
+
+
 /**
  * A private namespace for the Kernel.
  */
 namespace Private {
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  export
-  const statusChangedSignal = new Signal<IKernel, IKernel.Status>();
-
-  /**
-   * A signal emitted for iopub kernel messages.
-   */
-  export
-  const iopubMessageSignal = new Signal<IKernel, KernelMessage.IIOPubMessage>();
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   */
-  export
-  const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<IKernel.IManager, IKernel.ISpecModels>();
-
-  /**
-   * A signal emitted when the running kernels change.
-   */
-  export
-  const runningChangedSignal = new Signal<IKernel.IManager, IKernel.IModel[]>();
-
   /**
    * A module private store for running kernels.
    */

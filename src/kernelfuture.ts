@@ -3,8 +3,8 @@
 'use strict';
 
 import {
-  DisposableDelegate, IDisposable
-} from 'phosphor-disposable';
+  DisposableDelegate
+} from 'phosphor/lib/core/disposable';
 
 import {
   IKernel, KernelMessage

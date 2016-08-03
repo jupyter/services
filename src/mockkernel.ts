@@ -7,11 +7,11 @@ import * as utils
 
 import {
   IDisposable, DisposableDelegate
-} from 'phosphor-disposable';
+} from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   KernelFutureHandler
@@ -132,23 +132,17 @@ class MockKernel implements IKernel {
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<IKernel, IKernel.Status> {
-    return Private.statusChangedSignal.bind(this);
-  }
+  statusChanged: ISignal<IKernel, IKernel.Status>;
 
   /**
    * A signal emitted for iopub kernel messages.
    */
-  get iopubMessage(): ISignal<IKernel, KernelMessage.IIOPubMessage> {
-    return Private.iopubMessageSignal.bind(this);
-  }
+  iopubMessage: ISignal<IKernel, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<IKernel, KernelMessage.IMessage> {
-    return Private.unhandledMessageSignal.bind(this);
-  }
+  unhandledMessage: ISignal<IKernel, KernelMessage.IMessage>;
 
   /**
    * The current status of the kernel.
@@ -511,16 +505,12 @@ class MockKernelManager implements IKernel.IManager {
   /**
    * A signal emitted when the specs change.
    */
-  get specsChanged(): ISignal<IKernel.IManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<IKernel.IManager, IKernel.ISpecModels>;
 
   /**
    * A signal emitted when the running kernels change.
    */
-  get runningChanged(): ISignal<IKernel.IManager, IKernel.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<IKernel.IManager, IKernel.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -595,37 +585,19 @@ class MockKernelManager implements IKernel.IManager {
 }
 
 
+// Define the signals for the `MockKernel` class.
+defineSignal(MockKernel.prototype, 'statusChanged');
+defineSignal(MockKernel.prototype, 'iopubMessage');
+defineSignal(MockKernel.prototype, 'unhandledMessage');
+
+
+// Define the signal for the `MockKernelKernelManager` class.
+defineSignal(MockKernelManager.prototype, 'specsChanged');
+defineSignal(MockKernelManager.prototype, 'runningChanged');
+
+
+
 namespace Private {
-  /**
-   * A signal emitted when the kernel status changes.
-   */
-  export
-  const statusChangedSignal = new Signal<IKernel, IKernel.Status>();
-
-  /**
-   * A signal emitted for iopub kernel messages.
-   */
-  export
-  const iopubMessageSignal = new Signal<IKernel, KernelMessage.IIOPubMessage>();
-
-  /**
-   * A signal emitted for unhandled kernel message.
-   */
-  export
-  const unhandledMessageSignal = new Signal<IKernel, KernelMessage.IMessage>();
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<IKernel.IManager, IKernel.ISpecModels>();
-
-  /**
-   * A signal emitted when the running kernels change.
-   */
-  export
-  const runningChangedSignal = new Signal<IKernel.IManager, IKernel.IModel[]>();
-
   /**
    * A module private store for running mock kernels.
    */

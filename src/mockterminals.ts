@@ -2,8 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   deepEqual
@@ -22,14 +22,14 @@ class MockTerminalManager implements ITerminalSession.IManager {
   /**
    * Construct a new mock terminal manager.
    */
-  constructor() { }
+  constructor() {
+    // no-op
+  }
 
   /**
    * A signal emitted when the running terminals change.
    */
-  get runningChanged(): ISignal<MockTerminalManager, ITerminalSession.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<MockTerminalManager, ITerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -120,9 +120,7 @@ class MockTerminalSession implements ITerminalSession {
   /**
    * A signal emitted when a message is received from the server.
    */
-  get messageReceived(): ISignal<ITerminalSession, ITerminalSession.IMessage> {
-    return Private.messageReceivedSignal.bind(this);
-  }
+  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -190,6 +188,14 @@ class MockTerminalSession implements ITerminalSession {
 }
 
 
+// Define the signals for the `MockTerminalManager` class.
+defineSignal(MockTerminalManager.prototype, 'runningChanged');
+
+
+// Define the signals for the `MockTerminalSession` class.
+defineSignal(MockTerminalSession.prototype, 'messageReceived');
+
+
 /**
  * A namespace for private data.
  */
@@ -199,22 +205,4 @@ namespace Private {
    */
   export
   var running: { [key: string]: MockTerminalSession } = Object.create(null);
-
-  /**
-   * A signal emitted when the terminal is fully connected.
-   */
-  export
-  const connectedSignal = new Signal<MockTerminalSession, void>();
-
-  /**
-   * A signal emitted when a message is received.
-   */
-  export
-  const messageReceivedSignal = new Signal<MockTerminalSession, ITerminalSession.IMessage>();
-
-  /**
-   * A signal emitted when the running terminals change.
-   */
-  export
-  const runningChangedSignal = new Signal<MockTerminalManager, ITerminalSession.IModel[]>();
 }

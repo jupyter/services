@@ -3,8 +3,8 @@
 'use strict';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   IKernel, KernelMessage
@@ -56,16 +56,12 @@ class SessionManager implements ISession.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  get specsChanged(): ISignal<SessionManager, IKernel.ISpecModels> {
-    return Private.specsChangedSignal.bind(this);
-  }
+  specsChanged: ISignal<SessionManager, IKernel.ISpecModels>;
 
   /**
    * A signal emitted when the running sessions change.
    */
-  get runningChanged(): ISignal<SessionManager, ISession.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<SessionManager, ISession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -391,44 +387,32 @@ class Session implements ISession {
   /**
    * A signal emitted when the session dies.
    */
-  get sessionDied(): ISignal<ISession, void> {
-    return Private.sessionDiedSignal.bind(this);
-  }
+  sessionDied: ISignal<ISession, void>;
 
   /**
    * A signal emitted when the kernel changes.
    */
-  get kernelChanged(): ISignal<ISession, IKernel> {
-    return Private.kernelChangedSignal.bind(this);
-  }
+  kernelChanged: ISignal<ISession, IKernel>;
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  get statusChanged(): ISignal<ISession, IKernel.Status> {
-    return Private.statusChangedSignal.bind(this);
-  }
+  statusChanged: ISignal<ISession, IKernel.Status>;
 
   /**
    * A signal emitted for a kernel messages.
    */
-  get iopubMessage(): ISignal<ISession, KernelMessage.IMessage> {
-    return Private.iopubMessageSignal.bind(this);
-  }
+  iopubMessage: ISignal<ISession, KernelMessage.IMessage>;
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  get unhandledMessage(): ISignal<ISession, KernelMessage.IMessage> {
-    return Private.unhandledMessageSignal.bind(this);
-  }
+  unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
 
   /**
    * A signal emitted when the session path changes.
    */
-  get pathChanged(): ISignal<ISession, string> {
-    return Private.pathChangedSignal.bind(this);
-  }
+  pathChanged: ISignal<ISession, string>;
 
   /**
    * Get the session id.
@@ -708,58 +692,24 @@ class Session implements ISession {
 }
 
 
+// Define the signals for the `Session` class.
+defineSignal(Session.prototype, 'sessionDied');
+defineSignal(Session.prototype, 'kernelChanged');
+defineSignal(Session.prototype, 'statusChanged');
+defineSignal(Session.prototype, 'iopubMessage');
+defineSignal(Session.prototype, 'unhandledMessage');
+defineSignal(Session.prototype, 'pathChanged');
+
+
+// Define the signals for the `SessionManager` class.
+defineSignal(SessionManager.prototype, 'specsChanged');
+defineSignal(SessionManager.prototype, 'runningChanged');
+
+
 /**
  * A namespace for session private data.
  */
 namespace Private {
-  /**
-   * A signal emitted when the session is shut down.
-   */
-  export
-  const sessionDiedSignal = new Signal<ISession, void>();
-
-  /**
-   * A signal emitted when the kernel changes.
-   */
-  export
-  const kernelChangedSignal = new Signal<ISession, IKernel>();
-
-  /**
-   * A signal emitted when the session kernel status changes.
-   */
-  export
-  const statusChangedSignal = new Signal<ISession, IKernel.Status>();
-
-  /**
-   * A signal emitted for iopub kernel messages.
-   */
-  export
-  const iopubMessageSignal = new Signal<ISession, KernelMessage.IIOPubMessage>();
-
-  /**
-   * A signal emitted for an unhandled kernel message.
-   */
-  export
-  const unhandledMessageSignal = new Signal<ISession, KernelMessage.IMessage>();
-
-  /**
-   * A signal emitted when the session path changes.
-   */
-  export
-  const pathChangedSignal = new Signal<ISession, string>();
-
-  /**
-   * A signal emitted when the specs change.
-   */
-  export
-  const specsChangedSignal = new Signal<ISession.IManager, IKernel.ISpecModels>();
-
-  /**
-   * A signal emitted when the running kernels change.
-   */
-  export
-  const runningChangedSignal = new Signal<ISession.IManager, ISession.IModel[]>();
-
   /**
    * The running sessions.
    */

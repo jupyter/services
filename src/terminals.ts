@@ -3,11 +3,11 @@
 
 import {
   IDisposable
-} from 'phosphor-disposable';
+} from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, Signal, clearSignalData
-} from 'phosphor-signaling';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   JSONPrimitive, JSONObject, deepEqual
@@ -198,9 +198,7 @@ class TerminalManager implements ITerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  get runningChanged(): ISignal<TerminalManager, ITerminalSession.IModel[]> {
-    return Private.runningChangedSignal.bind(this);
-  }
+  runningChanged: ISignal<TerminalManager, ITerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -331,9 +329,7 @@ class TerminalSession implements ITerminalSession {
   /**
    * A signal emitted when a message is received from the server.
    */
-  get messageReceived(): ISignal<ITerminalSession, ITerminalSession.IMessage> {
-    return Private.messageReceivedSignal.bind(this);
-  }
+  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -472,6 +468,14 @@ class TerminalSession implements ITerminalSession {
 }
 
 
+// Define the signals for the `TerminalManager` class.
+defineSignal(TerminalManager.prototype, 'runningChanged');
+
+
+// Define the signals for the `TerminalSession` class.
+defineSignal(TerminalSession.prototype, 'messageReceived');
+
+
 /**
  * A namespace for private data.
  */
@@ -481,22 +485,4 @@ namespace Private {
    */
   export
   var running: { [key: string]: Promise<ITerminalSession> } = Object.create(null);
-
-  /**
-   * A signal emitted when the terminal is fully connected.
-   */
-  export
-  const connectedSignal = new Signal<ITerminalSession, void>();
-
-  /**
-   * A signal emitted when the running terminals change.
-   */
-  export
-  const runningChangedSignal = new Signal<TerminalManager, ITerminalSession.IModel[]>();
-
-  /**
-   * A signal emitted when a message is received.
-   */
-  export
-  const messageReceivedSignal = new Signal<ITerminalSession, ITerminalSession.IMessage>();
 }
