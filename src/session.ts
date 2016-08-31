@@ -752,17 +752,16 @@ namespace Private {
   /**
    * Create a Promise for a kernel object given a session model and options.
    */
-  export
-  function createKernel(model: ISession.IModel, options: ISession.IOptions): Promise<IKernel> {
+  function createKernel(options: ISession.IOptions): Promise<IKernel> {
     let kernelOptions: IKernel.IOptions = {
-      name: model.kernel.name,
+      name: options.kernelName,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
       username: options.username,
       clientId: options.clientId,
       ajaxSettings: options.ajaxSettings
     };
-    return connectToKernel(model.kernel.id, kernelOptions);
+    return connectToKernel(options.kernelId, kernelOptions);
   }
 
   /**
@@ -772,8 +771,11 @@ namespace Private {
    */
   export
   function createSession(model: ISession.IModel, options: ISession.IOptions): Promise<Session> {
-    return createKernel(model, options).then(kernel => {
-       return new Session(options, model.id, kernel);
+    options.kernelName = model.kernel.name;
+    options.kernelId = model.kernel.id;
+    options.path = model.notebook.path;
+    return createKernel(options).then(kernel => {
+      return new Session(options, model.id, kernel);
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
     });
