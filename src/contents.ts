@@ -789,6 +789,6 @@ namespace ContentsManager {
     if (extension.length > 0 && extension.indexOf('.') !== 0) {
       extension = `.${extension}`;
     }
-    return extension.toLowerCase();
+    return extension;
   }
 }
