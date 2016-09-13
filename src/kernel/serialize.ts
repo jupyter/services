@@ -4,7 +4,7 @@
 
 import {
   KernelMessage
-} from './ikernel';
+} from './messages';
 
 
 /**
