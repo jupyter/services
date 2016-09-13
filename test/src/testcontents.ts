@@ -173,9 +173,9 @@ describe('contents', () => {
       expect(ext).to.be('.txt');
     });
 
-    it('should convert to lower case', () => {
+    it('should not convert to lower case', () => {
       let ext = ContentsManager.normalizeExtension('.TXT');
-      expect(ext).to.be('.txt');
+      expect(ext).to.be('.TXT');
     });
 
     it('should handle an empty extension', () => {
