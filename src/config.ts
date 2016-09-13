@@ -203,7 +203,8 @@ class ConfigWithDefaults {
    * Get data from the config section or fall back to defaults.
    */
   get(key: string): JSONValue {
-    return this._classData()[key] || this._defaults[key];
+    let data = this._classData();
+    return key in data ? data[key] : this._defaults[key];
   }
 
   /**
@@ -236,11 +237,11 @@ class ConfigWithDefaults {
    * If we have no classname, get all of the data in the Section
    */
   private _classData(): JSONObject {
-    if (this._className) {
-      return this._section.data[this._className] as JSONObject || {};
-    } else {
-      return this._section.data;
+    let data = this._section.data;
+    if (this._className && this._className in data) {
+      return data[this._className] as JSONObject;
     }
+    return data;
   }
 
   private _section: IConfigSection = null;

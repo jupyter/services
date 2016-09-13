@@ -177,6 +177,19 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
     });
 
+    it('should get a falsey value', (done) => {
+      let handler = new RequestHandler(() => {
+        handler.respond(200, { testclass: { foo: 0 } });
+      });
+      let defaults: JSONObject = { foo: true };
+      let className = 'testclass';
+      getConfigSection({ name: 'test' }).then(section => {
+        let config = new ConfigWithDefaults({ section, defaults, className });
+        let data = config.get('foo');
+        expect(data).to.not.be.ok();
+        done();
+      });
+    });
   });
 
   describe('#set()', () => {
