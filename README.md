@@ -145,8 +145,7 @@ A translator such as Babel can be used to convert from ES6 -> ES5.
 
 ```typescript
 import {
-  KernelMessage, connectToKernel, getKernelSpecs, listRunningKernels,
-  startNewKernel
+  KernelMessage, Kernel
 } from 'jupyter-js-services';
 
 // The base url of the notebook server.
@@ -154,27 +153,27 @@ const BASE_URL = 'http://localhost:8000';
 
 
 // Get a list of available kernels and connect to one.
-listRunningKernels({ baseUrl: BASE_URL }).then(kernelModels => {
-  let options = {
+Kernel.listRunning({ baseUrl: BASE_URL }).then(kernelModels => {
+  let options: Kernel.IOptions = {
     baseUrl: BASE_URL,
     name: kernelModels[0].name
   };
-  connectToKernel(kernelModels[0].id, options).then((kernel) => {
+  Kernel.connectTo(kernelModels[0].id, options).then((kernel) => {
     console.log(kernel.name);
   });
 });
 
 
 // Get info about the available kernels and start a new one.
-getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   console.log('Default spec:', kernelSpecs.default);
   console.log('Available specs', Object.keys(kernelSpecs.kernelspecs));
   // use the default name
-  let options = {
+  let options: Kernel.IOptions = {
     baseUrl: BASE_URL,
     name: kernelSpecs.default
   };
-  startNewKernel(options).then(kernel => {
+  Kernel.startNew(options).then(kernel => {
     // Execute and handle replies.
     let future = kernel.execute({ code: 'a = 1' } );
     future.onDone = () => {
