@@ -3,24 +3,20 @@
 'use strict';
 
 import {
+  deepEqual
+} from 'phosphor/lib/algorithm/json';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
 import {
-  IKernel, KernelMessage
-} from './ikernel';
+  IKernel, Kernel, KernelMessage
+} from './kernel';
 
 import {
   ISession
 } from './isession';
-
-import {
-  deepEqual
-} from './json';
-
-import {
-  connectToKernel, getKernelSpecs
-} from './kernel';
 
 import {
   IAjaxSettings
@@ -56,7 +52,7 @@ class SessionManager implements ISession.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  specsChanged: ISignal<SessionManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<SessionManager, Kernel.ISpecModels>;
 
   /**
    * A signal emitted when the running sessions change.
@@ -86,12 +82,12 @@ class SessionManager implements ISession.IManager {
   }
 
   /**
-   * Get the available kernel specs. See also [[getKernelSpecs]].
+   * Get the available kernel specs. See also [[Kernel.getSpecs]].
    *
    * @param options - Overrides for the default options.
    */
-  getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
-    return getKernelSpecs(this._getOptions(options)).then(specs => {
+  getSpecs(options?: ISession.IOptions): Promise<Kernel.ISpecModels> {
+    return Kernel.getSpecs(this._getOptions(options)).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
@@ -176,7 +172,7 @@ class SessionManager implements ISession.IManager {
   private _options: ISession.IOptions = null;
   private _isDisposed = false;
   private _running: ISession.IModel[] = [];
-  private _specs: IKernel.ISpecModels = null;
+  private _specs: Kernel.ISpecModels = null;
 }
 
 
@@ -397,7 +393,7 @@ class Session implements ISession {
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<ISession, IKernel.Status>;
+  statusChanged: ISignal<ISession, Kernel.Status>;
 
   /**
    * A signal emitted for a kernel messages.
@@ -468,7 +464,7 @@ class Session implements ISession {
    * #### Notes
    * This is a read-only property, and is a delegate to the kernel status.
    */
-  get status(): IKernel.Status {
+  get status(): Kernel.Status {
     return this._kernel ? this._kernel.status : 'dead';
   }
 
@@ -501,7 +497,7 @@ class Session implements ISession {
    */
   clone(): Promise<ISession> {
     let options = this._getKernelOptions();
-    return connectToKernel(this.kernel.id, options).then(kernel => {
+    return Kernel.connectTo(this.kernel.id, options).then(kernel => {
       options = utils.copy(this._options);
       options.ajaxSettings = this.ajaxSettings;
       return new Session(options, this._id, kernel);
@@ -523,7 +519,7 @@ class Session implements ISession {
     if (model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
-      return connectToKernel(model.kernel.id, options).then(kernel => {
+      return Kernel.connectTo(model.kernel.id, options).then(kernel => {
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
       });
@@ -575,7 +571,7 @@ class Session implements ISession {
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and session path.
    */
-  changeKernel(options: IKernel.IModel): Promise<IKernel> {
+  changeKernel(options: Kernel.IModel): Promise<IKernel> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
@@ -620,7 +616,7 @@ class Session implements ISession {
   /**
    * Handle to changes in the Kernel status.
    */
-  protected onKernelStatus(sender: IKernel, state: IKernel.Status) {
+  protected onKernelStatus(sender: IKernel, state: Kernel.Status) {
     this.statusChanged.emit(state);
   }
 
@@ -641,7 +637,7 @@ class Session implements ISession {
   /**
    * Get the options used to create a new kernel.
    */
-  private _getKernelOptions(): IKernel.IOptions {
+  private _getKernelOptions(): Kernel.IOptions {
     return {
       baseUrl: this._options.baseUrl,
       wsUrl: this._options.wsUrl,
@@ -753,7 +749,7 @@ namespace Private {
    * Create a Promise for a kernel object given a session model and options.
    */
   function createKernel(options: ISession.IOptions): Promise<IKernel> {
-    let kernelOptions: IKernel.IOptions = {
+    let kernelOptions: Kernel.IOptions = {
       name: options.kernelName,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
       wsUrl: options.wsUrl,
@@ -761,7 +757,7 @@ namespace Private {
       clientId: options.clientId,
       ajaxSettings: options.ajaxSettings
     };
-    return connectToKernel(options.kernelId, kernelOptions);
+    return Kernel.connectTo(options.kernelId, kernelOptions);
   }
 
   /**

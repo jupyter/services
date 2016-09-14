@@ -2,15 +2,15 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  JSONObject, JSONValue
+} from 'phosphor/lib/algorithm/json';
+
+import {
   IAjaxSettings
 } from './utils';
 
 import * as utils
    from './utils';
-
-import {
-  JSONObject, JSONValue
-} from './json';
 
 
 /**

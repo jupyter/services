@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  JSONObject
+} from 'phosphor/lib/algorithm/json';
+
+import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
@@ -14,19 +18,11 @@ import {
 } from './contents';
 
 import {
-  IKernel
-} from './ikernel';
-
-import {
   ISession
 } from './isession';
 
 import {
-  JSONObject
-} from './json';
-
-import {
-  KernelManager, getKernelSpecs
+  IKernel, KernelManager, Kernel
 } from './kernel';
 
 import {
@@ -49,7 +45,7 @@ interface IServiceManager extends IDisposable {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  specsChanged: ISignal<IServiceManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<IServiceManager, Kernel.ISpecModels>;
 
   /**
    * The kernel specs for the manager.
@@ -57,7 +53,7 @@ interface IServiceManager extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  kernelspecs: IKernel.ISpecModels;
+  kernelspecs: Kernel.ISpecModels;
 
   /**
    * The kernel manager for the manager.
@@ -65,7 +61,7 @@ interface IServiceManager extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  kernels: IKernel.IManager;
+  kernels: Kernel.IManager;
 
   /**
    * The session manager for the manager.
@@ -116,7 +112,7 @@ namespace IServiceManager {
     /**
      * The kernelspecs for the manager.
      */
-    kernelspecs?: IKernel.ISpecModels;
+    kernelspecs?: Kernel.ISpecModels;
   }
 }
 
@@ -134,11 +130,11 @@ function createServiceManager(options: IServiceManager.IOptions = {}): Promise<I
   if (options.kernelspecs) {
     return Promise.resolve(new ServiceManager(options));
   }
-  let kernelOptions: IKernel.IOptions = {
+  let kernelOptions: Kernel.IOptions = {
     baseUrl: options.baseUrl,
     ajaxSettings: options.ajaxSettings
   };
-  return getKernelSpecs(kernelOptions).then(specs => {
+  return Kernel.getSpecs(kernelOptions).then(specs => {
     options.kernelspecs = specs;
     return new ServiceManager(options);
   });
@@ -170,7 +166,7 @@ class ServiceManager implements IServiceManager {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  specsChanged: ISignal<ServiceManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<ServiceManager, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -196,7 +192,7 @@ class ServiceManager implements IServiceManager {
   /**
    * Get kernel specs.
    */
-  get kernelspecs(): IKernel.ISpecModels {
+  get kernelspecs(): Kernel.ISpecModels {
     return this._kernelspecs;
   }
 
@@ -243,7 +239,7 @@ class ServiceManager implements IServiceManager {
   /**
    * Handle a change in kernel specs.
    */
-  private _onSpecsChanged(sender: any, args: IKernel.ISpecModels): void {
+  private _onSpecsChanged(sender: any, args: Kernel.ISpecModels): void {
     this._kernelspecs = args;
     this.specsChanged.emit(args);
   }
@@ -252,7 +248,7 @@ class ServiceManager implements IServiceManager {
   private _sessionManager: SessionManager = null;
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
-  private _kernelspecs: IKernel.ISpecModels = null;
+  private _kernelspecs: Kernel.ISpecModels = null;
   private _isDisposed = false;
 }
 

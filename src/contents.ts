@@ -1,18 +1,19 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-import {
-  IAjaxSettings
-} from './utils';
 
 import * as posix
  from 'path-posix';
 
 import {
   JSONObject
-} from './json';
+} from 'phosphor/lib/algorithm/json';
 
 import * as utils
   from './utils';
+
+import {
+  IAjaxSettings
+} from './utils';
 
 import * as validate
   from './validate';

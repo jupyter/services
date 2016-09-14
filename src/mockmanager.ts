@@ -6,8 +6,8 @@ import {
 } from 'phosphor/lib/core/signaling';
 
 import {
-  IKernel
-} from './ikernel';
+  Kernel
+} from './kernel';
 
 import {
   IServiceManager
@@ -49,7 +49,7 @@ class MockServiceManager implements IServiceManager {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  specsChanged: ISignal<MockServiceManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<MockServiceManager, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -75,7 +75,7 @@ class MockServiceManager implements IServiceManager {
   /**
    * Get kernel specs.
    */
-  get kernelspecs(): IKernel.ISpecModels {
+  get kernelspecs(): Kernel.ISpecModels {
     return this._kernelspecs;
   }
 
@@ -123,7 +123,7 @@ class MockServiceManager implements IServiceManager {
   private _sessionManager: MockSessionManager = null;
   private _contentsManager: MockContentsManager = null;
   private _terminalManager: MockTerminalManager = null;
-  private _kernelspecs: IKernel.ISpecModels = null;
+  private _kernelspecs: Kernel.ISpecModels = null;
   private _isDisposed = false;
 }
 

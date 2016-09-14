@@ -2,16 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  JSONPrimitive, JSONObject, deepEqual
+} from 'phosphor/lib/algorithm/json';
+
+import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
 import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
-
-import {
-  JSONPrimitive, JSONObject, deepEqual
-} from './json';
 
 import {
   IAjaxSettings
