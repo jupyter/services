@@ -1,7 +1,7 @@
 
 require(['jquery', 'jupyter-js-services'], function ($, services) {
   'use strict';
-  var startNewKernel = services.startNewKernel;
+  var startNewKernel = services.Kernel.startNew;
 
   var kernelOptions = {
     name: 'python',
