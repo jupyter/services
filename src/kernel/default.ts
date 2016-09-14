@@ -1078,6 +1078,7 @@ namespace Private {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
+      return data;
     });
   }
 
