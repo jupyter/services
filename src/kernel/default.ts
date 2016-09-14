@@ -1,6 +1,5 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import {
   JSONObject
@@ -257,7 +256,7 @@ class DefaultKernel implements IKernel {
    *
    * All replies are validated as valid kernel messages.
    *
-   * If the kernel status is `Dead`, this will throw an error.
+   * If the kernel status is `dead`, this will throw an error.
    */
   sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): Kernel.IFuture {
     if (this.status === 'dead') {
@@ -944,7 +943,7 @@ namespace DefaultKernel {
    * If the kernel was already started via `startNewKernel`, we return its
    * `Kernel.IModel`.
    *
-   * Otherwise, if `options` are given, we attempt to find to the existing
+   * Otherwise, if `options` are given, we attempt to find the existing
    * kernel.
    * The promise is fulfilled when the kernel is found,
    * otherwise the promise is rejected.
