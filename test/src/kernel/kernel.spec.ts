@@ -5,32 +5,27 @@
 import expect = require('expect.js');
 
 import {
-  uuid, IAjaxError
-} from '../../lib/utils';
+  JSONObject, deepEqual
+} from 'phosphor/lib/algorithm/json';
 
 import {
-  KernelManager, connectToKernel, createKernelMessage, createShellMessage,
-  getKernelSpecs, listRunningKernels, startNewKernel, shutdownKernel
-} from '../../lib/kernel';
+  uuid
+} from '../../../lib/utils';
 
 import {
-  IKernel, KernelMessage
-} from '../../lib/ikernel';
+  IKernel, KernelManager, Kernel, KernelMessage
+} from '../../../lib/kernel';
 
 import {
   KERNELSPECS
-} from '../../lib/mockkernel';
-
-import {
-  JSONObject, deepEqual
-} from '../../lib/json';
+} from '../../../lib/mockkernel';
 
 import {
   RequestHandler, ajaxSettings, doLater, expectFailure, expectAjaxError,
   createKernel, KernelTester,
   KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
   PYTHON_SPEC
-} from './utils';
+} from '../utils';
 
 
 
@@ -52,7 +47,7 @@ let createMsg = (channel: KernelMessage.Channel, parent_header: JSONObject): Ker
 
 describe('kernel', () => {
 
-  describe('listRunningKernels()', () => {
+  describe('Kernel.listRunning()', () => {
 
     it('should yield a list of valid kernel ids', (done) => {
       let data = [
@@ -62,10 +57,10 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let options: IKernel.IOptions = {
+      let options: Kernel.IOptions = {
         baseUrl: 'http://localhost:8888',
       };
-      listRunningKernels(options).then(response => {
+      Kernel.listRunning(options).then(response => {
         expect(response[0]).to.eql(data[0]);
         expect(response[1]).to.eql(data[1]);
         done();
@@ -80,11 +75,11 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let options: IKernel.IOptions = {
+      let options: Kernel.IOptions = {
         baseUrl: 'http://localhost:8888',
         ajaxSettings: ajaxSettings
       };
-      listRunningKernels(options).then((response: IKernel.IModel[]) => {
+      Kernel.listRunning(options).then((response: Kernel.IModel[]) => {
         expect(response[0]).to.eql(data[0]);
         expect(response[1]).to.eql(data[1]);
         done();
@@ -96,7 +91,7 @@ describe('kernel', () => {
         let data = { id: uuid(), name: 'test' };
         handler.respond(200, data);
       });
-      let promise = listRunningKernels({ baseUrl: 'http://localhost:8888' });
+      let promise = Kernel.listRunning({ baseUrl: 'http://localhost:8888' });
       expectAjaxError(promise, done, 'Invalid kernel list');
     });
 
@@ -104,7 +99,7 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, { });
       });
-      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
+      let list = Kernel.listRunning({ baseUrl: 'http://localhost:8888' });
       expectAjaxError(list, done, 'Invalid Status: 201');
     });
 
@@ -112,19 +107,19 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(500, { });
       });
-      let list = listRunningKernels({ baseUrl: 'http://localhost:8888' });
+      let list = Kernel.listRunning({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done, '');
     });
 
   });
 
-  describe('startNewKernel()', () => {
+  describe('Kernel.startNew()', () => {
 
     it('should create an IKernel object', (done) => {
       let tester = new KernelTester(() => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
-      startNewKernel(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
         expect(kernel.status).to.be('unknown');
         done();
       });
@@ -134,7 +129,7 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
-      let kernelPromise = startNewKernel(AJAX_KERNEL_OPTIONS);
+      let kernelPromise = Kernel.startNew(AJAX_KERNEL_OPTIONS);
       kernelPromise.then(kernel => {
         expect(kernel.status).to.be('unknown');
         done();
@@ -146,7 +141,7 @@ describe('kernel', () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
       tester.initialStatus = 'dead';
-      startNewKernel(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
         kernel.statusChanged.connect((sender, state) => {
           if (state === 'dead') {
             done();
@@ -160,7 +155,7 @@ describe('kernel', () => {
         let data = { id: uuid() };
         tester.respond(201, data);
       });
-      let kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
       expectFailure(kernelPromise, done);
     });
 
@@ -169,7 +164,7 @@ describe('kernel', () => {
         let data = { id: uuid(), name: 1 };
         tester.respond(201, data);
       });
-      let kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
       expectFailure(kernelPromise, done);
     });
 
@@ -178,7 +173,7 @@ describe('kernel', () => {
         let data = { id: uuid(), name: KERNEL_OPTIONS.name };
         tester.respond(200, data);
       });
-      let kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
       expectAjaxError(kernelPromise, done, 'Invalid Status: 200');
     });
 
@@ -186,7 +181,7 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(500, { });
       });
-      let kernelPromise = startNewKernel(KERNEL_OPTIONS);
+      let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, '');
     });
 
@@ -194,7 +189,7 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       });
-      startNewKernel(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
         expect(kernel.status).to.be('unknown');
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'reconnecting') {
@@ -229,15 +224,15 @@ describe('kernel', () => {
 
   });
 
-  describe('connectToKernel()', () => {
+  describe('Kernel.connectTo()', () => {
 
     it('should reuse an exisiting kernel', (done) => {
       let id = uuid();
       let tester = new KernelTester(() => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
-      connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
-        connectToKernel(id).then(newKernel => {
+      Kernel.connectTo(id, KERNEL_OPTIONS).then(kernel => {
+        Kernel.connectTo(id).then(newKernel => {
           expect(newKernel.name).to.be(kernel.name);
           expect(newKernel.id).to.be(kernel.id);
           done();
@@ -250,7 +245,7 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
-      connectToKernel(id, KERNEL_OPTIONS).then(kernel => {
+      Kernel.connectTo(id, KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
@@ -262,7 +257,7 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       });
-      connectToKernel(id, AJAX_KERNEL_OPTIONS).then(kernel => {
+      Kernel.connectTo(id, AJAX_KERNEL_OPTIONS).then(kernel => {
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
@@ -274,19 +269,19 @@ describe('kernel', () => {
       let tester = new KernelTester(() => {
         tester.respond(400, { });
       });
-      let kernelPromise = connectToKernel(id, KERNEL_OPTIONS);
+      let kernelPromise = Kernel.connectTo(id, KERNEL_OPTIONS);
       expectFailure(kernelPromise, done, 'No running kernel with id: ' + id);
     });
 
   });
 
-  describe('shutdownKernel()', () => {
+  describe('Kernel.shutdown()', () => {
 
     it('should shut down a kernel by id', (done) => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      shutdownKernel('foo').then(done, done);
+      Kernel.shutdown('foo').then(done, done);
     });
 
   });
@@ -319,7 +314,7 @@ describe('kernel', () => {
             kernel.dispose();
             done();
           });
-          let msg = createKernelMessage({
+          let msg = KernelMessage.createMessage({
             msgType: 'status',
             channel: 'iopub',
             session: kernel.clientId
@@ -338,7 +333,7 @@ describe('kernel', () => {
             kernel.dispose();
             done();
           });
-          let msg = createKernelMessage({
+          let msg = KernelMessage.createMessage({
             msgType: 'status',
             channel: 'iopub',
             session: 'baz'
@@ -360,7 +355,7 @@ describe('kernel', () => {
             expect(msg.header.msg_type).to.be('foo');
             done();
           });
-          let msg = createShellMessage({
+          let msg = KernelMessage.createShellMessage({
             msgType: 'foo',
             channel: 'shell',
             session: kernel.clientId
@@ -377,7 +372,7 @@ describe('kernel', () => {
           kernel.unhandledMessage.connect((k, msg) => {
             called = true;
           });
-          let msg = createKernelMessage({
+          let msg = KernelMessage.createMessage({
             msgType: 'status',
             channel: 'iopub',
             session: kernel.clientId
@@ -397,7 +392,7 @@ describe('kernel', () => {
           kernel.unhandledMessage.connect((k, msg) => {
             called = true;
           });
-          let msg = createShellMessage({
+          let msg = KernelMessage.createShellMessage({
             msgType: 'foo',
             channel: 'shell',
             session: 'baz'
@@ -593,7 +588,7 @@ describe('kernel', () => {
           tester.onRequest = () => {
             tester.respond(200, PYTHON_SPEC);
           };
-          return kernel.getKernelSpec();
+          return kernel.getSpec();
         }).then(() => {
           expect(kernel.spec.language).to.be('python');
         }).then(done, done);
@@ -669,7 +664,7 @@ describe('kernel', () => {
             username: kernel.username,
             session: kernel.clientId
           };
-          let msg = createShellMessage(options);
+          let msg = KernelMessage.createShellMessage(options);
           kernel.sendShellMessage(msg, true);
           tester.onMessage((msg) => {
             expect(msg.header.msg_type).to.be('custom');
@@ -689,7 +684,7 @@ describe('kernel', () => {
           };
           let encoder = new TextEncoder('utf8');
           let data = encoder.encode('hello');
-          let msg = createShellMessage(options, {}, {}, [data, data.buffer]);
+          let msg = KernelMessage.createShellMessage(options, {}, {}, [data, data.buffer]);
           kernel.sendShellMessage(msg, true);
 
           tester.onMessage((msg: any) => {
@@ -710,7 +705,7 @@ describe('kernel', () => {
             username: kernel.username,
             session: kernel.clientId
           };
-          let msg = createShellMessage(options);
+          let msg = KernelMessage.createShellMessage(options);
           tester.sendStatus('dead');
           kernel.statusChanged.connect(() => {
             try {
@@ -732,7 +727,7 @@ describe('kernel', () => {
             username: kernel.username,
             session: kernel.clientId
           };
-          let msg = createShellMessage(options);
+          let msg = KernelMessage.createShellMessage(options);
           let future = kernel.sendShellMessage(msg, true);
           let newMsg: KernelMessage.IMessage;
 
@@ -740,14 +735,14 @@ describe('kernel', () => {
             // trigger onDone
             options.msgType = 'status';
             options.channel = 'iopub';
-            newMsg = createKernelMessage(options, { execution_state: 'idle' });
+            newMsg = KernelMessage.createMessage(options, { execution_state: 'idle' });
             newMsg.parent_header = msg.header;
             tester.send(newMsg);
 
             future.onIOPub = () => {
               options.msgType = 'custom';
               options.channel = 'shell';
-              newMsg = createShellMessage(options);
+              newMsg = KernelMessage.createShellMessage(options);
               newMsg.parent_header = msg.header;
               tester.send(newMsg);
             };
@@ -777,7 +772,7 @@ describe('kernel', () => {
         let tester = new KernelTester(() => {
           tester.respond(201, data);
         });
-        startNewKernel(AJAX_KERNEL_OPTIONS).then(kernel => {
+        Kernel.startNew(AJAX_KERNEL_OPTIONS).then(kernel => {
           tester.onRequest = () => {
             tester.respond(204,  { id: kernel.id, name: kernel.name });
           };
@@ -946,7 +941,7 @@ describe('kernel', () => {
         let tester = new KernelTester(() => {
           tester.respond(201, data);
         });
-        startNewKernel(AJAX_KERNEL_OPTIONS).then(kernel => {
+        Kernel.startNew(AJAX_KERNEL_OPTIONS).then(kernel => {
           tester.onRequest = () => {
             tester.respond(204, data);
           };
@@ -1199,14 +1194,14 @@ describe('kernel', () => {
 
             // send a reply
             options.channel = 'shell';
-            newMsg = createKernelMessage(options);
+            newMsg = KernelMessage.createMessage(options);
             newMsg.parent_header = msg.header;
             tester.send(newMsg);
 
             future.onReply = () => {
               // trigger onStdin
               options.channel = 'stdin';
-              newMsg = createKernelMessage(options);
+              newMsg = KernelMessage.createMessage(options);
               newMsg.parent_header = msg.header;
               tester.send(newMsg);
             };
@@ -1216,7 +1211,7 @@ describe('kernel', () => {
               options.channel = 'iopub';
               options.msgType = 'stream';
               let streamContent: JSONObject = { name: 'stdout', text: '' };
-              newMsg = createKernelMessage(options, streamContent);
+              newMsg = KernelMessage.createMessage(options, streamContent);
               newMsg.parent_header = msg.header;
               tester.send(newMsg);
             };
@@ -1225,7 +1220,7 @@ describe('kernel', () => {
               if (ioMsg.header.msg_type === 'stream') {
                 // trigger onDone
                 options.msgType = 'status';
-                newMsg = createKernelMessage(options, { execution_state: 'idle' });
+                newMsg = KernelMessage.createMessage(options, { execution_state: 'idle' });
                 newMsg.parent_header = msg.header;
                 tester.send(newMsg);
               }
@@ -1310,7 +1305,7 @@ describe('kernel', () => {
           tester.onRequest = () => {
             tester.respond(200, PYTHON_SPEC);
           };
-          kernel.getKernelSpec().then(spec => {
+          kernel.getSpec().then(spec => {
             expect(spec.language).to.be('python');
             done();
           });
@@ -1843,7 +1838,7 @@ describe('kernel', () => {
 
       it('should be emitted in listRunning when the running kernels changed', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
-        let data: IKernel.IModel[] = [
+        let data: Kernel.IModel[] = [
           { id: uuid(), name: 'test' },
           { id: uuid(), name: 'test2' }
         ];
@@ -1976,7 +1971,7 @@ describe('kernel', () => {
 
   });
 
-  describe('getKernelSpecs()', () => {
+  describe('Kernel.getSpecs()', () => {
 
     it('should load the kernelspecs', (done) => {
       let ids = {
@@ -1987,7 +1982,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'python',
                              'kernelspecs': ids });
       });
-      getKernelSpecs({ baseUrl: 'localhost' }).then(specs => {
+      Kernel.getSpecs({ baseUrl: 'localhost' }).then(specs => {
         let names = Object.keys(specs.kernelspecs);
         expect(names[0]).to.be('python');
         expect(names[1]).to.be('python3');
@@ -2004,7 +1999,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
       });
-      getKernelSpecs({ ajaxSettings: ajaxSettings }).then(specs => {
+      Kernel.getSpecs({ ajaxSettings: ajaxSettings }).then(specs => {
         let names = Object.keys(specs.kernelspecs);
         expect(names[0]).to.be('python');
         expect(names[1]).to.be('python3');
@@ -2016,7 +2011,7 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, { 'kernelspecs': { 'python': PYTHON_SPEC } });
       });
-      getKernelSpecs().then(specs => {
+      Kernel.getSpecs().then(specs => {
         expect(specs.default).to.be('python');
       }).then(done, done);
     });
@@ -2026,7 +2021,7 @@ describe('kernel', () => {
       handler.onRequest = () => {
         handler.respond(200, { 'default': PYTHON_SPEC.name });
       };
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No kernelspecs found');
     });
 
@@ -2039,7 +2034,7 @@ describe('kernel', () => {
                                                 'python': PYTHON_SPEC }
         });
       });
-      getKernelSpecs().then(specs => {
+      Kernel.getSpecs().then(specs => {
         expect(specs.default).to.be('python');
         expect(specs.kernelspecs['R']).to.be(void 0);
       }).then(done, done);
@@ -2052,7 +2047,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
@@ -2063,7 +2058,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'R',
                              'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
@@ -2074,7 +2069,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
@@ -2085,7 +2080,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'R',
                                'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
@@ -2096,7 +2091,7 @@ describe('kernel', () => {
         handler.respond(200, { 'default': 'R',
                              'kernelspecs': { 'R': R_SPEC } });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'No valid kernelspecs found');
     });
 
@@ -2104,7 +2099,7 @@ describe('kernel', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, { });
       });
-      let promise = getKernelSpecs();
+      let promise = Kernel.getSpecs();
       expectAjaxError(promise, done, 'Invalid Status: 201');
     });
 
@@ -2113,11 +2108,11 @@ describe('kernel', () => {
   describe('#isStreamMsg()', () => {
 
     it('should check for a stream message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'stream', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isStreamMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isStreamMsg(msg)).to.be(false);
@@ -2128,11 +2123,11 @@ describe('kernel', () => {
   describe('#isDisplayDataMsg()', () => {
 
     it('should check for a display data message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'display_data', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isDisplayDataMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isDisplayDataMsg(msg)).to.be(false);
@@ -2143,11 +2138,11 @@ describe('kernel', () => {
   describe('#isExecuteInputMsg()', () => {
 
     it('should check for a execute input message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'execute_input', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isExecuteInputMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isExecuteInputMsg(msg)).to.be(false);
@@ -2158,11 +2153,11 @@ describe('kernel', () => {
   describe('#isExecuteResultMsg()', () => {
 
     it('should check for an execute result message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'execute_result', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isExecuteResultMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isExecuteResultMsg(msg)).to.be(false);
@@ -2173,11 +2168,11 @@ describe('kernel', () => {
   describe('#isStatusMsg()', () => {
 
     it('should check for a status message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'status', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isStatusMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isStatusMsg(msg)).to.be(false);
@@ -2188,11 +2183,11 @@ describe('kernel', () => {
   describe('#isClearOutputMsg()', () => {
 
     it('should check for a clear output message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'clear_output', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isClearOutputMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isClearOutputMsg(msg)).to.be(false);
@@ -2203,11 +2198,11 @@ describe('kernel', () => {
   describe('#isCommOpenMsg()', () => {
 
     it('should check for a comm open message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'comm_open', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isCommOpenMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isCommOpenMsg(msg)).to.be(false);
@@ -2218,11 +2213,11 @@ describe('kernel', () => {
   describe('#isErrorMsg()', () => {
 
     it('should check for an message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'error', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isErrorMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       });
       expect(KernelMessage.isErrorMsg(msg)).to.be(false);
@@ -2233,11 +2228,11 @@ describe('kernel', () => {
   describe('#isInputRequestMsg()', () => {
 
     it('should check for an input_request message type', () => {
-      let msg = createKernelMessage({
+      let msg = KernelMessage.createMessage({
         msgType: 'input_request', channel: 'stdin', session: 'baz'
       });
       expect(KernelMessage.isInputRequestMsg(msg)).to.be(true);
-      msg = createKernelMessage({
+      msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'stdin', session: 'baz'
       });
       expect(KernelMessage.isStatusMsg(msg)).to.be(false);

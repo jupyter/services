@@ -9,15 +9,11 @@ import {
 } from '../../lib/utils';
 
 import {
-  KernelMessage
-} from '../../lib/ikernel';
-
-import {
   deepEqual
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 import {
-  createKernelMessage
+  KernelMessage
 } from '../../lib/kernel';
 
 import {
@@ -476,7 +472,7 @@ describe('session', () => {
             session.dispose();
             done();
           });
-          let msg = createKernelMessage({
+          let msg = KernelMessage.createMessage({
             msgType: 'status',
             channel: 'iopub',
             session: ''
@@ -499,7 +495,7 @@ describe('session', () => {
             session.dispose();
             done();
           });
-          let msg = createKernelMessage({
+          let msg = KernelMessage.createMessage({
             msgType: 'foo',
             channel: 'shell',
             session: session.kernel.clientId

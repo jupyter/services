@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   KernelMessage
-} from '../../lib/ikernel';
+} from '../../lib/kernel';
 
 import {
   MockKernel, MockKernelManager, ERROR_INPUT, KERNELSPECS
@@ -168,7 +168,7 @@ describe('mockkernel', () => {
       it('should get the kernel spec for the mock kernel', (done) => {
         let kernel = new MockKernel({ name: 'shell' });
         expect(kernel.name).to.be('shell');
-        kernel.getKernelSpec().then(spec => {
+        kernel.getSpec().then(spec => {
           expect(spec.display_name).to.be('Shell');
           done();
         });

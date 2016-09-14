@@ -10,7 +10,7 @@ import {
 
 import {
   deepEqual
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 import {
   IServiceManager, createServiceManager

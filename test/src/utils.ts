@@ -17,12 +17,12 @@ import {
 } from '../../lib/mockxhr';
 
 import {
-  IContents, IKernel, KernelMessage, createKernelMessage, startNewKernel
+  IContents, IKernel, Kernel, KernelMessage
 } from '../../lib';
 
 import {
   deserialize, serialize
-} from '../../lib/serialize';
+} from '../../lib/kernel/serialize';
 
 
 // stub for node global
@@ -66,7 +66,7 @@ const EXAMPLE_KERNEL_INFO: KernelMessage.IInfoReply = {
 
 
 export
-const KERNEL_OPTIONS: IKernel.IOptions = {
+const KERNEL_OPTIONS: Kernel.IOptions = {
   baseUrl: 'http://localhost:8888',
   name: 'python',
   username: 'testUser',
@@ -74,7 +74,7 @@ const KERNEL_OPTIONS: IKernel.IOptions = {
 
 
 export
-const AJAX_KERNEL_OPTIONS: IKernel.IOptions = {
+const AJAX_KERNEL_OPTIONS: Kernel.IOptions = {
   baseUrl: 'http://localhost:8888',
   name: 'python',
   username: 'testUser',
@@ -83,7 +83,7 @@ const AJAX_KERNEL_OPTIONS: IKernel.IOptions = {
 
 
 export
-const PYTHON_SPEC: IKernel.ISpecModel = {
+const PYTHON_SPEC: Kernel.ISpecModel = {
   name: 'Python',
   spec: {
     language: 'python',
@@ -187,7 +187,7 @@ class KernelTester extends RequestHandler {
       channel: 'iopub',
       session: uuid(),
     };
-    let msg = createKernelMessage(options, { execution_state: status } );
+    let msg = KernelMessage.createMessage(options, { execution_state: status } );
     this.send(msg);
   }
 
@@ -250,7 +250,7 @@ function createKernel(tester?: KernelTester): Promise<IKernel> {
   tester.onRequest = () => {
     tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
   };
-  let kernelPromise = startNewKernel(KERNEL_OPTIONS);
+  let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
   return kernelPromise;
 }
 
