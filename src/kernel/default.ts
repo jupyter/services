@@ -682,7 +682,7 @@ class DefaultKernel implements IKernel {
     }
     let msg = serialize.deserialize(evt.data);
     try {
-      validate.validateKernelMessage(msg);
+      validate.validateMessage(msg);
     } catch (error) {
       console.error(error.message);
       return;
@@ -1037,6 +1037,150 @@ namespace Private {
   const runningKernels: { [key: string]: DefaultKernel; } = Object.create(null);
 
   /**
+   * Find a kernel by id.
+   */
+  export
+  function findById(id: string, options?: Kernel.IOptions): Promise<Kernel.IModel> {
+    let kernels = runningKernels;
+    for (let clientId in kernels) {
+      let kernel = kernels[clientId];
+      if (kernel.id === id) {
+        let result: Kernel.IModel = { id: kernel.id, name: kernel.name };
+        return Promise.resolve(result);
+      }
+    }
+    return getKernelModel(id, options).catch(() => {
+      return typedThrow<Kernel.IModel>(`No running kernel with id: ${id}`);
+    });
+  }
+
+  /**
+   * Fetch all of the kernel specs.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
+   */
+  export
+  function getSpecs(options: Kernel.IOptions = {}): Promise<Kernel.ISpecModels> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
+    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        return utils.makeAjaxError(success);
+      }
+      let data = success.data as Kernel.ISpecModels;
+      try {
+        validate.validateSpecModels(data);
+      } catch (err) {
+        return utils.makeAjaxError(success, err.message);
+      }
+    });
+  }
+
+  /**
+   * Fetch the running kernels.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  export
+  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
+    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        return utils.makeAjaxError(success);
+      }
+      if (!Array.isArray(success.data)) {
+        return utils.makeAjaxError(success, 'Invalid kernel list');
+      }
+      for (let i = 0; i < success.data.length; i++) {
+        try {
+          validate.validateModel(success.data[i]);
+        } catch (err) {
+          return utils.makeAjaxError(success, err.message);
+        }
+      }
+      return success.data as Kernel.IModel[];
+    }, onKernelError);
+  }
+
+  /**
+   * Start a new kernel.
+   */
+  export
+  function startNew(options?: Kernel.IOptions): Promise<IKernel> {
+    options = options || {};
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
+    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    ajaxSettings.method = 'POST';
+    ajaxSettings.data = JSON.stringify({ name: options.name });
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.contentType = 'application/json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 201) {
+        return utils.makeAjaxError(success);
+      }
+      validate.validateModel(success.data);
+      return new DefaultKernel(options, success.data.id);
+    }, onKernelError);
+  }
+
+  /**
+   * Connect to a running kernel.
+   *
+   * #### Notes
+   * If the kernel was already started via `startNewKernel`, the existing
+   * Kernel object info is used to create another instance.
+   *
+   * Otherwise, if `options` are given, we attempt to connect to the existing
+   * kernel found by calling `listRunningKernels`.
+   * The promise is fulfilled when the kernel is running on the server,
+   * otherwise the promise is rejected.
+   *
+   * If the kernel was not already started and no `options` are given,
+   * the promise is rejected.
+   */
+  export
+  function connectTo(id: string, options?: Kernel.IOptions): Promise<IKernel> {
+    for (let clientId in runningKernels) {
+      let kernel = runningKernels[clientId];
+      if (kernel.id === id) {
+        return Promise.resolve(kernel.clone());
+      }
+    }
+    return getKernelModel(id, options).then(model => {
+      return new DefaultKernel(options, id);
+    }).catch(() => {
+      return typedThrow<IKernel>(`No running kernel with id: ${id}`);
+    });
+  }
+
+  /**
+   * Shut down a kernel by id.
+   */
+  export
+  function shutdown(id: string, options: Kernel.IOptions = {}): Promise<void> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let ajaxSettings = options.ajaxSettings || {};
+    return shutdownKernel(id, baseUrl, ajaxSettings);
+  }
+
+  /**
    * Restart a kernel.
    */
   export
@@ -1059,7 +1203,7 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       try {
-        validate.validateKernelModel(success.data);
+        validate.validateModel(success.data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
@@ -1127,7 +1271,7 @@ namespace Private {
       }
       let data = success.data as Kernel.ISpecModel;
       try {
-        validate.validateKernelSpecModel(data);
+        validate.validateSpecModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
@@ -1155,7 +1299,7 @@ namespace Private {
       }
       let data = success.data as Kernel.IModel;
       try {
-        validate.validateKernelModel(data);
+        validate.validateModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }

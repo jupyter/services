@@ -36,7 +36,6 @@ const IOPUB_CONTENT_FIELDS: {[key: string]: any} = {
 };
 
 
-
 /**
  * Validate a property as being on an object, and optionally
  * of a given type.
@@ -68,7 +67,7 @@ function validateProperty(object: any, name: string, typeName?: string): void {
 /**
  * Validate the header of a kernel message.
  */
-function validateKernelHeader(header: KernelMessage.IHeader): void {
+function validateHeader(header: KernelMessage.IHeader): void {
   for (let i = 0; i < HEADER_FIELDS.length; i++) {
     validateProperty(header, HEADER_FIELDS[i], 'string');
   }
@@ -79,14 +78,14 @@ function validateKernelHeader(header: KernelMessage.IHeader): void {
  * Validate a kernel message object.
  */
 export
-function validateKernelMessage(msg: KernelMessage.IMessage) : void {
+function validateMessage(msg: KernelMessage.IMessage) : void {
   validateProperty(msg, 'metadata', 'object');
   validateProperty(msg, 'content', 'object');
   validateProperty(msg, 'channel', 'string');
   validateProperty(msg, 'buffers', 'array');
-  validateKernelHeader(msg.header);
+  validateHeader(msg.header);
   if (Object.keys(msg.parent_header).length > 0) {
-    validateKernelHeader(msg.parent_header as KernelMessage.IHeader);
+    validateHeader(msg.parent_header as KernelMessage.IHeader);
   }
   if (msg.channel === 'iopub') {
     validateIOPubContent(msg as KernelMessage.IIOPubMessage);
@@ -113,20 +112,20 @@ function validateIOPubContent(msg: KernelMessage.IIOPubMessage) : void {
 
 
 /**
- * Validate an `IKernel.IModel` object.
+ * Validate a `Kernel.IModel` object.
  */
 export
-function validateKernelModel(model: Kernel.IModel) : void {
+function validateModel(model: Kernel.IModel) : void {
   validateProperty(model, 'name', 'string');
   validateProperty(model, 'id', 'string');
 }
 
 
 /**
- * Validate an `IKernel.ISpecModel` object.
+ * Validate a `Kernel.ISpecModel` object.
  */
- export
-function validateKernelSpecModel(info: Kernel.ISpecModel): void {
+export
+function validateSpecModel(info: Kernel.ISpecModel): void {
   validateProperty(info, 'name', 'string');
   validateProperty(info, 'spec', 'object');
   validateProperty(info, 'resources', 'object');
@@ -134,4 +133,36 @@ function validateKernelSpecModel(info: Kernel.ISpecModel): void {
   validateProperty(spec, 'language', 'string');
   validateProperty(spec, 'display_name', 'string');
   validateProperty(spec, 'argv', 'array');
+}
+
+
+/**
+ * Validate a `Kernel.ISpecModels` object.
+ */
+export
+function validateSpecModels(data: Kernel.ISpecModels): void {
+  if (!data.hasOwnProperty('kernelspecs')) {
+    throw new Error('No kernelspecs found');
+  }
+  let keys = Object.keys(data.kernelspecs);
+  for (let i = 0; i < keys.length; i++) {
+    let ks = data.kernelspecs[keys[i]];
+    try {
+      validateSpecModel(ks);
+    } catch (err) {
+      // Remove the errant kernel spec.
+      console.warn(`Removing errant kernel spec: ${keys[i]}`);
+      delete data.kernelspecs[keys[i]];
+    }
+  }
+  keys = Object.keys(data.kernelspecs);
+  if (!keys.length) {
+    throw new Error('No valid kernelspecs found');
+  }
+  if (!data.hasOwnProperty('default') ||
+      typeof data.default !== 'string' ||
+      !data.kernelspecs.hasOwnProperty(data.default)) {
+    data.default = keys[0];
+    console.warn(`Default kernel not found, using '${keys[0]}'`);
+  }
 }

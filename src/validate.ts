@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  validateKernelModel
+  validateModel as validateKernelModel
 } from './kernel/validate';
 
 import {
