@@ -10,7 +10,7 @@ import {
 
 import {
   JSONObject
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 import {
   RequestHandler, ajaxSettings, expectFailure, expectAjaxError

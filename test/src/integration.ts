@@ -13,14 +13,14 @@ import * as NodeWebSocket
 
 import {
   ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
-  ISession, TerminalManager, connectToKernel, connectToSession,
-  createTerminalSession, getConfigSection, getKernelSpecs, listRunningKernels,
-  listRunningSessions, startNewKernel, startNewSession
+  ISession, TerminalManager, connectToSession, startNewSession,
+  createTerminalSession, getConfigSection,
+  listRunningSessions, Kernel
 } from '../../lib';
 
 import {
   JSONObject
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 
 // Stub for node global.
@@ -35,8 +35,8 @@ describe('jupyter.services - Integration', () => {
 
     it('should get kernel specs and start', (done) => {
       // get info about the available kernels and connect to one
-      getKernelSpecs().then((specs) => {
-        return startNewKernel({ name: specs.default });
+      Kernel.getSpecs().then((specs) => {
+        return Kernel.startNew({ name: specs.default });
       }).then(kernel => {
         return kernel.shutdown();
       }).then(done, done);
@@ -44,7 +44,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should interrupt and restart', (done) => {
       let kernel: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         return kernel.interrupt();
       }).then(() => {
@@ -56,7 +56,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should get info', (done) => {
       let kernel: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         return kernel.kernelInfo();
       }).then((info) => {
@@ -67,10 +67,10 @@ describe('jupyter.services - Integration', () => {
     it('should connect to existing kernel and list running kernels', (done) => {
       let kernel: IKernel;
       let kernel2: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         // should grab the same kernel object
-        return connectToKernel(kernel.id);
+        return Kernel.connectTo(kernel.id);
       }).then(value => {
         kernel2 = value;
         if (kernel2.clientId === kernel.clientId) {
@@ -79,7 +79,7 @@ describe('jupyter.services - Integration', () => {
         if (kernel2.id !== kernel.id) {
           throw Error('Did clone kernel');
         }
-        return listRunningKernels();
+        return Kernel.listRunning();
       }).then(kernels => {
         if (!kernels.length) {
           throw Error('Should be one at least one running kernel');
@@ -90,7 +90,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should trigger a reconnect', (done) => {
       let kernel: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         return kernel.reconnect();
       }).then(() => {
@@ -100,7 +100,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should handle other kernel messages', (done) => {
       let kernel: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         return kernel.complete({ code: 'impor', cursor_pos: 4 });
       }).then(msg => {
@@ -167,7 +167,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should connect to an existing kernel', (done) => {
       let kernel: IKernel;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: ISession.IOptions = {
           kernelId: kernel.id,
@@ -183,7 +183,7 @@ describe('jupyter.services - Integration', () => {
     it('should be able to switch to an existing kernel by id', (done) => {
       let kernel: IKernel;
       let session: ISession;
-      startNewKernel().then(value => {
+      Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: ISession.IOptions = { path: 'Untitled1.ipynb' };
         return startNewSession(sessionOptions);
@@ -216,7 +216,7 @@ describe('jupyter.services - Integration', () => {
   describe('Comm', () => {
 
     it('should start a comm from the server end', (done) => {
-      startNewKernel().then((kernel) => {
+      Kernel.startNew().then((kernel) => {
         kernel.registerCommTarget('test', (comm, msg) => {
           let content = msg.content;
           expect(content.target_name).to.be('test');

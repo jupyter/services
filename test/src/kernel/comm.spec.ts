@@ -1,23 +1,18 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
 
 import * as utils
-  from '../../lib/utils';
+  from '../../../lib/utils';
 
 import {
   IKernel, KernelMessage
-} from '../../lib/ikernel';
-
-import {
-  createKernelMessage
-} from '../../lib/kernel';
+} from '../../../lib/kernel';
 
 import {
   createKernel, KernelTester
-} from './utils';
+} from '../utils';
 
 
 // stub for node global
@@ -314,7 +309,7 @@ describe('jupyter.services - Comm', () => {
             username: kernel.username,
             session: kernel.clientId
           };
-          let msg = createKernelMessage(options);
+          let msg = KernelMessage.createMessage(options);
           comm.onMsg(msg as KernelMessage.ICommMsgMsg);
         });
       });
@@ -491,6 +486,6 @@ function sendCommMessage(tester: KernelTester, kernel: IKernel, msgType: string,
     username: kernel.username,
     session: kernel.clientId
   };
-  let msg = createKernelMessage(options, content);
+  let msg = KernelMessage.createMessage(options, content);
   tester.send(msg);
 }

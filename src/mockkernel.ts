@@ -2,8 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-import * as utils
-  from './utils';
+import {
+  JSONObject, deepEqual
+} from 'phosphor/lib/algorithm/json';
 
 import {
   IDisposable, DisposableDelegate
@@ -15,26 +16,20 @@ import {
 
 import {
   KernelFutureHandler
-} from './kernelfuture';
+} from './kernel/future';
 
 import {
-  IKernel, KernelMessage
-} from './ikernel';
-
-import {
-  JSONObject, deepEqual
-} from './json';
-
-import {
-  createKernelMessage
+  IKernel, Kernel, KernelMessage
 } from './kernel';
 
+import * as utils
+  from './utils';
 
 /**
  * The default kernel spec models.
  */
 export
-const KERNELSPECS: IKernel.ISpecModels = {
+const KERNELSPECS: Kernel.ISpecModels = {
   default: 'python',
   kernelspecs: {
     python: {
@@ -107,7 +102,7 @@ class MockKernel implements IKernel {
   /**
    * Construct a new mock kernel.
    */
-  constructor(options: IKernel.IModel = {}) {
+  constructor(options: Kernel.IModel = {}) {
     this.id = options.id || utils.uuid();
     this.name = options.name || 'python';
     let name = this.name;
@@ -132,7 +127,7 @@ class MockKernel implements IKernel {
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<IKernel, IKernel.Status>;
+  statusChanged: ISignal<IKernel, Kernel.Status>;
 
   /**
    * A signal emitted for iopub kernel messages.
@@ -147,7 +142,7 @@ class MockKernel implements IKernel {
   /**
    * The current status of the kernel.
    */
-  get status(): IKernel.Status {
+  get status(): Kernel.Status {
     return this._status;
   }
 
@@ -157,7 +152,7 @@ class MockKernel implements IKernel {
    * #### Notes
    * This is a read-only property.
    */
-  get model(): IKernel.IModel {
+  get model(): Kernel.IModel {
     return { name: this.name, id: this.id };
   }
 
@@ -165,7 +160,7 @@ class MockKernel implements IKernel {
     return this._kernelInfo;
   }
 
-  get spec(): IKernel.ISpec {
+  get spec(): Kernel.ISpec {
     return this._kernelspec;
   }
 
@@ -191,7 +186,7 @@ class MockKernel implements IKernel {
   /**
    * Send a shell message to the kernel.
    */
-  sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): IKernel.IFuture {
+  sendShellMessage(msg: KernelMessage.IShellMessage, expectReply=false, disposeOnDone=true): Kernel.IFuture {
     let future = new KernelFutureHandler(() => {
       let index = this._futures.indexOf(future);
       if (index !== -1) {
@@ -205,7 +200,7 @@ class MockKernel implements IKernel {
   /**
    * Send a message to the kernel.
    */
-  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, future: IKernel.IFuture): void {
+  sendServerMessage(msgType: string, channel: KernelMessage.Channel, content: JSONObject, future: Kernel.IFuture): void {
     if (future.isDisposed) {
       return;
     }
@@ -215,7 +210,7 @@ class MockKernel implements IKernel {
       username: this.username,
       session: this.clientId
     };
-    let msg = createKernelMessage(options, content);
+    let msg = KernelMessage.createMessage(options, content);
     if (msgType === 'status') {
       let statusMsg = msg as KernelMessage.IStatusMsg;
       this._changeStatus(statusMsg.content.execution_state);
@@ -290,7 +285,7 @@ class MockKernel implements IKernel {
       username: '',
       session: ''
     };
-    let msg = createKernelMessage(options, this._kernelInfo);
+    let msg = KernelMessage.createMessage(options, this._kernelInfo);
     return Promise.resolve(msg);
   }
 
@@ -323,7 +318,7 @@ class MockKernel implements IKernel {
    * This simulates an actual exection on the server.
    * Use `ERROR_INPUT` to simulate an input error.
    */
-  execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): IKernel.IFuture {
+  execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): Kernel.IFuture {
     let options: KernelMessage.IOptions = {
       msgType: 'execute_request',
       channel: 'shell',
@@ -338,7 +333,7 @@ class MockKernel implements IKernel {
       stop_on_error : false
     };
     content = utils.extend(defaults, content);
-    let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
+    let msg = KernelMessage.createMessage(options, content) as KernelMessage.IShellMessage;
     let future = this.sendShellMessage(msg, true, disposeOnDone);
     let count = ++this._executionCount;
 
@@ -405,21 +400,21 @@ class MockKernel implements IKernel {
   /**
    * Register a comm target handler.
    */
-  registerCommTarget(targetName: string, callback: (comm: IKernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable {
+  registerCommTarget(targetName: string, callback: (comm: Kernel.IComm, msg: KernelMessage.ICommOpenMsg) => void): IDisposable {
     return void 0;
   }
 
   /**
    * Connect to a comm, or create a new one.
    */
-  connectToComm(targetName: string, commId?: string): IKernel.IComm {
+  connectToComm(targetName: string, commId?: string): Kernel.IComm {
     return void 0;
   }
 
   /**
    * Get the kernel spec associated with the kernel.
    */
-  getKernelSpec(): Promise<IKernel.ISpec> {
+  getSpec(): Promise<Kernel.ISpec> {
     return Promise.resolve(this._kernelspec);
   }
 
@@ -440,8 +435,8 @@ class MockKernel implements IKernel {
       username: this.username,
       session: this.clientId
     };
-    let msg = createKernelMessage(options, content) as KernelMessage.IShellMessage;
-    let future: IKernel.IFuture;
+    let msg = KernelMessage.createMessage(options, content) as KernelMessage.IShellMessage;
+    let future: Kernel.IFuture;
     try {
       future = this.sendShellMessage(msg, true);
     } catch (e) {
@@ -479,7 +474,7 @@ class MockKernel implements IKernel {
   /**
    * Change the status of the mock kernel.
    */
-  private _changeStatus(status: IKernel.Status): void {
+  private _changeStatus(status: Kernel.Status): void {
     if (this._status === status) {
       return;
     }
@@ -487,10 +482,10 @@ class MockKernel implements IKernel {
     this.statusChanged.emit(status);
   }
 
-  private _status: IKernel.Status = 'unknown';
+  private _status: Kernel.Status = 'unknown';
   private _isDisposed = false;
   private _futures: KernelFutureHandler[] = [];
-  private _kernelspec: IKernel.ISpec = null;
+  private _kernelspec: Kernel.ISpec = null;
   private _kernelInfo: KernelMessage.IInfoReply = null;
   private _executionCount = 0;
 }
@@ -500,17 +495,17 @@ class MockKernel implements IKernel {
  * A mock kernel manager object.
  */
 export
-class MockKernelManager implements IKernel.IManager {
+class MockKernelManager implements Kernel.IManager {
 
   /**
    * A signal emitted when the specs change.
    */
-  specsChanged: ISignal<IKernel.IManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<Kernel.IManager, Kernel.ISpecModels>;
 
   /**
    * A signal emitted when the running kernels change.
    */
-  runningChanged: ISignal<IKernel.IManager, IKernel.IModel[]>;
+  runningChanged: ISignal<Kernel.IManager, Kernel.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -535,12 +530,12 @@ class MockKernelManager implements IKernel.IManager {
     this._running = [];
   }
 
-  getSpecs(options?: IKernel.IOptions): Promise<IKernel.ISpecModels> {
+  getSpecs(options?: Kernel.IOptions): Promise<Kernel.ISpecModels> {
     return Promise.resolve(KERNELSPECS);
   }
 
-  listRunning(options?: IKernel.IOptions): Promise<IKernel.IModel[]> {
-    let models: IKernel.IModel[] = [];
+  listRunning(options?: Kernel.IOptions): Promise<Kernel.IModel[]> {
+    let models: Kernel.IModel[] = [];
     for (let id in Private.runningKernels) {
       let kernel = Private.runningKernels[id];
       models.push({ name: kernel.name, id });
@@ -552,26 +547,26 @@ class MockKernelManager implements IKernel.IManager {
     return Promise.resolve(models);
   }
 
-  startNew(options?: IKernel.IOptions, id?: string): Promise<MockKernel> {
+  startNew(options?: Kernel.IOptions, id?: string): Promise<MockKernel> {
     let name = options ? options.name : void 0;
     return Promise.resolve(new MockKernel({ name, id }));
   }
 
-  findById(id: string, options?: IKernel.IOptions): Promise<IKernel.IModel> {
+  findById(id: string, options?: Kernel.IOptions): Promise<Kernel.IModel> {
     if (id in Private.runningKernels) {
       return Promise.resolve(Private.runningKernels[id].model);
     }
     return Promise.resolve(void 0);
   }
 
-  connectTo(id: string, options?: IKernel.IOptions): Promise<MockKernel> {
+  connectTo(id: string, options?: Kernel.IOptions): Promise<MockKernel> {
     if (id in Private.runningKernels) {
       return Promise.resolve(Private.runningKernels[id]);
     }
     return this.startNew(options, id);
   }
 
-  shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
+  shutdown(id: string, options?: Kernel.IOptions): Promise<void> {
     let kernel = Private.runningKernels[id];
     if (!kernel) {
       return Promise.reject(`No running kernel with id: ${id}`);
@@ -579,8 +574,8 @@ class MockKernelManager implements IKernel.IManager {
     return kernel.shutdown();
   }
 
-  private _running: IKernel.IModel[] = [];
-  private _specs: IKernel.ISpecModels = null;
+  private _running: Kernel.IModel[] = [];
+  private _specs: Kernel.ISpecModels = null;
   private _isDisposed = false;
 }
 

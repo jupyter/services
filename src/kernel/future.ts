@@ -1,21 +1,24 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import {
   DisposableDelegate
 } from 'phosphor/lib/core/disposable';
 
 import {
-  IKernel, KernelMessage
-} from './ikernel';
+  Kernel
+} from './kernel';
+
+import {
+  KernelMessage
+} from './messages';
 
 
 /**
  * Implementation of a kernel future.
  */
 export
-class KernelFutureHandler extends DisposableDelegate implements IKernel.IFuture {
+class KernelFutureHandler extends DisposableDelegate implements Kernel.IFuture {
   /**
    * Construct a new KernelFutureHandler.
    */

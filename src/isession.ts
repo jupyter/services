@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  JSONObject
+} from 'phosphor/lib/algorithm/json';
+
+import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
@@ -11,12 +15,8 @@ import {
 } from 'phosphor/lib/core/signaling';
 
 import {
-  IKernel, KernelMessage
-} from './ikernel';
-
-import {
-  JSONObject
-} from './json';
+  IKernel, Kernel, KernelMessage
+} from './kernel';
 
 import {
   IAjaxSettings
@@ -41,7 +41,7 @@ interface ISession extends IDisposable {
   /**
    * A signal emitted when the session status changes.
    */
-  statusChanged: ISignal<ISession, IKernel.Status>;
+  statusChanged: ISignal<ISession, Kernel.Status>;
 
   /**
    * A signal emitted when the session path changes.
@@ -98,7 +98,7 @@ interface ISession extends IDisposable {
    * #### Notes
    * This is a read-only property, and is a delegate to the kernel status.
    */
-  status: IKernel.Status;
+  status: Kernel.Status;
 
   /**
    * Optional default settings for ajax requests, if applicable.
@@ -125,7 +125,7 @@ interface ISession extends IDisposable {
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and path.
    */
-  changeKernel(options: IKernel.IModel): Promise<IKernel>;
+  changeKernel(options: Kernel.IModel): Promise<IKernel>;
 
   /**
    * Kill the kernel and shutdown the session.
@@ -197,7 +197,7 @@ namespace ISession {
     /**
      * A signal emitted when the kernel specs change.
      */
-    specsChanged: ISignal<IManager, IKernel.ISpecModels>;
+    specsChanged: ISignal<IManager, Kernel.ISpecModels>;
 
     /**
      * A signal emitted when the running sessions change.
@@ -211,7 +211,7 @@ namespace ISession {
      * This will emit a [[specsChange]] signal if the value
      * has changed since the last fetch.
      */
-    getSpecs(options?: IOptions): Promise<IKernel.ISpecModels>;
+    getSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
 
     /*
      * Get the running sessions.
@@ -264,6 +264,6 @@ namespace ISession {
       [ key: string ]: string;
       path: string;
     };
-    kernel?: IKernel.IModel;
+    kernel?: Kernel.IModel;
   }
 }

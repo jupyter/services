@@ -2,12 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  deepEqual
+} from 'phosphor/lib/algorithm/json';
 
 import {
-  deepEqual
-} from './json';
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
 
 import {
   ITerminalSession

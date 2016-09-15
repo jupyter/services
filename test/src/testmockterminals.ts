@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   deepEqual
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 import {
   ITerminalSession

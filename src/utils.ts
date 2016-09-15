@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
+import {
+  JSONObject
+} from 'phosphor/lib/algorithm/json';
+
 import * as minimist
   from 'minimist';
 
@@ -10,10 +14,6 @@ import * as url
 
 import * as urljoin
   from 'url-join';
-
-import {
-  JSONObject
-} from './json';
 
 
 /**

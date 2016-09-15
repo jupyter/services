@@ -35,10 +35,10 @@
     "build:examples": "npm run example:browser && npm run example:node",
     "docs": "typedoc --mode file --module commonjs --excludeNotExported --target es5 --moduleResolution node --out docs/ src",
     "prepublish": "npm run build && webpack",
-    "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js --foo bar",
+    "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/test*.js \"test/build/**/*.spec.js\" --foo bar",
     "test:integration": "cd test && python integration_test.py",
-    "test:debug": "mocha test/build/test*.js --foo bar --debug-brk",
-    "test": "mocha test/build/test*.js --foo bar"
+    "test:debug": "mocha test/build/test*.js \"test/build/**/*.spec.js\" --foo bar --debug-brk",
+    "test": "mocha test/build/test*.js \"test/build/**/*.spec.js\" --foo bar"
   },
   "repository": {
     "type": "git",

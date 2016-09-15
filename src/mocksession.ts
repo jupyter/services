@@ -1,6 +1,9 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+
 import {
-  IAjaxSettings, uuid
-} from './utils';
+  deepEqual
+} from 'phosphor/lib/algorithm/json';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -11,16 +14,16 @@ import {
 } from './isession';
 
 import {
-  IKernel, KernelMessage
-} from './ikernel';
-
-import {
-  deepEqual
-} from './json';
+  IKernel, KernelMessage, Kernel
+} from './kernel';
 
 import {
   KERNELSPECS, MockKernel
 } from './mockkernel';
+
+import {
+  IAjaxSettings, uuid
+} from './utils';
 
 
 /**
@@ -64,7 +67,7 @@ class MockSession implements ISession {
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<MockSession, IKernel.Status>;
+  statusChanged: ISignal<MockSession, Kernel.Status>;
 
   /**
    * A signal emitted for a kernel messages.
@@ -104,7 +107,7 @@ class MockSession implements ISession {
   /**
    * The current status of the session.
    */
-  get status(): IKernel.Status {
+  get status(): Kernel.Status {
     return this._kernel.status;
   }
 
@@ -140,7 +143,7 @@ class MockSession implements ISession {
   /**
    * Change the kernel.
    */
-  changeKernel(options: IKernel.IModel): Promise<MockKernel> {
+  changeKernel(options: Kernel.IModel): Promise<MockKernel> {
     this._kernel.dispose();
     this._kernel = new MockKernel(options);
     this.kernelChanged.emit(this._kernel);
@@ -160,7 +163,7 @@ class MockSession implements ISession {
   /**
    * Handle to changes in the Kernel status.
    */
-  protected onKernelStatus(sender: IKernel, state: IKernel.Status) {
+  protected onKernelStatus(sender: IKernel, state: Kernel.Status) {
     this.statusChanged.emit(state);
   }
 
@@ -184,7 +187,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  specsChanged: ISignal<MockSessionManager, IKernel.ISpecModels>;
+  specsChanged: ISignal<MockSessionManager, Kernel.ISpecModels>;
 
   /**
    * A signal emitted when the running sessions change.
@@ -216,7 +219,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Get the available kernel specs.
    */
-  getSpecs(options?: ISession.IOptions): Promise<IKernel.ISpecModels> {
+  getSpecs(options?: ISession.IOptions): Promise<Kernel.ISpecModels> {
     return Promise.resolve(KERNELSPECS);
   }
 
@@ -286,7 +289,7 @@ class MockSessionManager implements ISession.IManager {
     return this.startNew(options, id);
   }
 
-  shutdown(id: string, options?: IKernel.IOptions): Promise<void> {
+  shutdown(id: string, options?: Kernel.IOptions): Promise<void> {
     let session = Private.runningSessions[id];
     if (!session) {
       return Promise.reject(`No running sessions with id: ${id}`);

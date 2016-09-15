@@ -8,7 +8,7 @@ import requirejs = require('requirejs');
 
 import {
   JSONObject
-} from '../../lib/json';
+} from 'phosphor/lib/algorithm/json';
 
 import {
   PromiseDelegate, extend, copy, uuid, urlPathJoin, urlEncodeParts,
