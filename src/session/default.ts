@@ -1,10 +1,5 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
-
-import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -12,18 +7,18 @@ import {
 
 import {
   IKernel, Kernel, KernelMessage
-} from './kernel';
-
-import {
-  ISession
-} from './isession';
+} from '../kernel';
 
 import {
   IAjaxSettings
-} from './utils';
+} from '../utils';
 
 import * as utils
-  from './utils';
+  from '../utils';
+
+import {
+  ISession, Session
+} from './session';
 
 import * as validate
   from './validate';
@@ -36,340 +31,16 @@ const SESSION_SERVICE_URL = 'api/sessions';
 
 
 /**
- * An implementation of a session manager.
- */
-export
-class SessionManager implements ISession.IManager {
-  /**
-   * Construct a new session manager.
-   *
-   * @param options - The default options for each session.
-   */
-  constructor(options?: ISession.IOptions) {
-    this._options = utils.copy(options || {});
-  }
-
-  /**
-   * A signal emitted when the kernel specs change.
-   */
-  specsChanged: ISignal<SessionManager, Kernel.ISpecModels>;
-
-  /**
-   * A signal emitted when the running sessions change.
-   */
-  runningChanged: ISignal<SessionManager, ISession.IModel[]>;
-
-  /**
-   * Test whether the terminal manager is disposed.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get isDisposed(): boolean {
-    return this._isDisposed;
-  }
-
-  /**
-   * Dispose of the resources used by the manager.
-   */
-  dispose(): void {
-    if (this.isDisposed) {
-      return;
-    }
-    this._isDisposed = true;
-    clearSignalData(this);
-    this._running = [];
-  }
-
-  /**
-   * Get the available kernel specs. See also [[Kernel.getSpecs]].
-   *
-   * @param options - Overrides for the default options.
-   */
-  getSpecs(options?: ISession.IOptions): Promise<Kernel.ISpecModels> {
-    return Kernel.getSpecs(this._getOptions(options)).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
-        this._specs = specs;
-        this.specsChanged.emit(specs);
-      }
-      return specs;
-    });
-  }
-
-  /**
-   * List the running sessions.  See also [[listRunningSessions]].
-   *
-   * @param options - Overrides for the default options.
-   */
-  listRunning(options?: ISession.IOptions): Promise<ISession.IModel[]> {
-    return listRunningSessions(this._getOptions(options)).then(running => {
-      if (!deepEqual(running, this._running)) {
-        this._running = running.slice();
-        this.runningChanged.emit(running);
-      }
-      return running;
-    });
-  }
-
-  /**
-   * Start a new session.  See also [[startNewSession]].
-   *
-   * @param options - Overrides for the default options, must include a
-   *   `'path'`.
-   *
-   * #### Notes
-   * This will emit [[runningChanged]] if the running kernels list
-   * changes.
-   */
-  startNew(options: ISession.IOptions): Promise<ISession> {
-    return startNewSession(this._getOptions(options));
-  }
-
-  /**
-   * Find a session by id.
-   */
-  findById(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
-    return findSessionById(id, this._getOptions(options));
-  }
-
-  /**
-   * Find a session by path.
-   */
-  findByPath(path: string, options?: ISession.IOptions): Promise<ISession.IModel> {
-    return findSessionByPath(path, this._getOptions(options));
-  }
-
-  /*
-   * Connect to a running session.  See also [[connectToSession]].
-   */
-  connectTo(id: string, options?: ISession.IOptions): Promise<ISession> {
-    return connectToSession(id, this._getOptions(options));
-  }
-
-  /**
-   * Shut down a session by id.
-   *
-   * #### Notes
-   * This will emit [[runningChanged]] if the running kernels list
-   * changes.
-   */
-  shutdown(id: string, options?: ISession.IOptions): Promise<void> {
-    return shutdownSession(id, this._getOptions(options));
-  }
-
-  /**
-   * Get optionally overidden options.
-   */
-  private _getOptions(options: ISession.IOptions): ISession.IOptions {
-    if (options) {
-      options = utils.extend(utils.copy(this._options), options);
-    } else {
-      options = this._options;
-    }
-    return options;
-  }
-
-  private _options: ISession.IOptions = null;
-  private _isDisposed = false;
-  private _running: ISession.IModel[] = [];
-  private _specs: Kernel.ISpecModels = null;
-}
-
-
-/**
- * List the running sessions.
- *
- * #### Notes
- * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
- *
- * All client-side sessions are updated with current information.
- *
- * The promise is fulfilled on a valid response and rejected otherwise.
- */
-export
-function listRunningSessions(options?: ISession.IOptions): Promise<ISession.IModel[]> {
-  options = options || {};
-  let baseUrl = options.baseUrl || utils.getBaseUrl();
-  let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-  let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
-  ajaxSettings.method = 'GET';
-  ajaxSettings.dataType = 'json';
-  ajaxSettings.cache = false;
-
-  return utils.ajaxRequest(url, ajaxSettings).then(success => {
-    if (success.xhr.status !== 200) {
-      return utils.makeAjaxError(success);
-    }
-    if (!Array.isArray(success.data)) {
-      return utils.makeAjaxError(success, 'Invalid Session list');
-    }
-    for (let i = 0; i < success.data.length; i++) {
-      try {
-        validate.validateSessionModel(success.data[i]);
-      } catch (err) {
-        return utils.makeAjaxError(success, err.message);
-      }
-    }
-    return Private.updateRunningSessions(success.data);
-  }, Private.onSessionError);
-}
-
-
-/**
- * Start a new session.
- *
- * #### Notes
- * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
- *
- * A path must be provided.  If a kernel id is given, it will
- * connect to an existing kernel.  If no kernel id or name is given,
- * the server will start the default kernel type.
- *
- * The promise is fulfilled on a valid response and rejected otherwise.
- *
- * Wrap the result in an Session object. The promise is fulfilled
- * when the session is created on the server, otherwise the promise is
- * rejected.
- */
-export
-function startNewSession(options: ISession.IOptions): Promise<ISession> {
-  if (options.path === void 0) {
-    return Promise.reject(new Error('Must specify a path'));
-  }
-  return Private.startSession(options).then(model => {
-    return Private.createSession(model, options);
-  });
-}
-
-
-/**
- * Find a session by id.
- *
- * #### Notes
- * If the session was already started via `startNewSession`, the existing
- * Session object's information is used in the fulfillment value.
- *
- * Otherwise, if `options` are given, we attempt to find to the existing
- * session.
- * The promise is fulfilled when the session is found,
- * otherwise the promise is rejected.
- */
-export
-function findSessionById(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
-  let sessions = Private.runningSessions;
-  for (let clientId in sessions) {
-    let session = sessions[clientId];
-    if (session.id === id) {
-      let model: ISession.IModel = {
-        id,
-        notebook: { path: session.path },
-        kernel: { name: session.kernel.name, id: session.kernel.id }
-      };
-      return Promise.resolve(model);
-    }
-  }
-  return Private.getSessionModel(id, options).catch(() => {
-    let msg = `No running session for id: ${id}`;
-    return Private.typedThrow<ISession.IModel>(msg);
-  });
-}
-
-
-/**
- * Find a session by path.
- *
- * #### Notes
- * If the session was already started via `startNewSession`, the existing
- * Session object's info is used in the fulfillment value.
- *
- * Otherwise, if `options` are given, we attempt to find to the existing
- * session using [listRunningSessions].
- * The promise is fulfilled when the session is found,
- * otherwise the promise is rejected.
- *
- * If the session was not already started and no `options` are given,
- * the promise is rejected.
- */
-export
-function findSessionByPath(path: string, options?: ISession.IOptions): Promise<ISession.IModel> {
-  let sessions = Private.runningSessions;
-  for (let clientId in sessions) {
-    let session = sessions[clientId];
-    if (session.path === path) {
-      let model: ISession.IModel = {
-        id: session.id,
-        notebook: { path: session.path },
-        kernel: { name: session.kernel.name, id: session.kernel.id }
-      };
-      return Promise.resolve(model);
-    }
-  }
-  return listRunningSessions(options).then(models => {
-    for (let model of models) {
-      if (model.notebook.path === path) {
-        return model;
-      }
-    }
-    let msg = `No running session for path: ${path}`;
-    return Private.typedThrow<ISession.IModel>(msg);
-  });
-}
-
-
-/**
- * Connect to a running session.
- *
- * #### Notes
- * If the session was already started via `startNewSession`, the existing
- * Session object is used as the fulfillment value.
- *
- * Otherwise, if `options` are given, we attempt to connect to the existing
- * session.
- * The promise is fulfilled when the session is ready on the server,
- * otherwise the promise is rejected.
- *
- * If the session was not already started and no `options` are given,
- * the promise is rejected.
- */
-export
-function connectToSession(id: string, options?: ISession.IOptions): Promise<ISession> {
-  for (let clientId in Private.runningSessions) {
-    let session = Private.runningSessions[clientId];
-    if (session.id === id) {
-      return session.clone();
-    }
-  }
-  return Private.getSessionModel(id, options).then(model => {
-    return Private.createSession(model, options);
-  }).catch(() => {
-    let msg = `No running session with id: ${id}`;
-    return Private.typedThrow<ISession>(msg);
-  });
-}
-
-
-/**
- * Shut down a session by id.
- */
-export
-function shutdownSession(id: string, options: ISession.IOptions = {}): Promise<void> {
-  let baseUrl = options.baseUrl || utils.getBaseUrl();
-  let ajaxSettings = options.ajaxSettings || {};
-  return Private.shutdownSession(id, baseUrl, ajaxSettings);
-}
-
-
-
-/**
  * Session object for accessing the session REST api. The session
  * should be used to start kernels and then shut them down -- for
  * all other operations, the kernel object should be used.
  */
-class Session implements ISession {
+export
+class DefaultSession implements ISession {
   /**
    * Construct a new session.
    */
-  constructor(options: ISession.IOptions, id: string, kernel: IKernel) {
+  constructor(options: Session.IOptions, id: string, kernel: IKernel) {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
@@ -448,7 +119,7 @@ class Session implements ISession {
    * #### Notes
    * This is a read-only property.
    */
-  get model(): ISession.IModel {
+  get model(): Session.IModel {
     return {
       id: this.id,
       kernel: this.kernel.model,
@@ -500,14 +171,14 @@ class Session implements ISession {
     return Kernel.connectTo(this.kernel.id, options).then(kernel => {
       options = utils.copy(this._options);
       options.ajaxSettings = this.ajaxSettings;
-      return new Session(options, this._id, kernel);
+      return new DefaultSession(options, this._id, kernel);
     });
   }
 
   /**
    * Update the session based on a session model from the server.
    */
-  update(model: ISession.IModel): Promise<void> {
+  update(model: Session.IModel): Promise<void> {
     // Avoid a race condition if we are waiting for a REST call return.
     if (this._updating) {
       return Promise.resolve(void 0);
@@ -649,7 +320,7 @@ class Session implements ISession {
   /**
    * Send a PATCH to the server, updating the session path or the kernel.
    */
-  private _patch(data: string): Promise<ISession.IModel> {
+  private _patch(data: string): Promise<Session.IModel> {
     let url = Private.getSessionUrl(this._baseUrl, this._id);
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
@@ -664,9 +335,9 @@ class Session implements ISession {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as ISession.IModel;
+      let data = success.data as Session.IModel;
       try {
-        validate.validateSessionModel(data);
+        validate.validateModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
@@ -683,23 +354,73 @@ class Session implements ISession {
   private _kernel: IKernel = null;
   private _uuid = '';
   private _baseUrl = '';
-  private _options: ISession.IOptions = null;
+  private _options: Session.IOptions = null;
   private _updating = false;
 }
 
 
 // Define the signals for the `Session` class.
-defineSignal(Session.prototype, 'sessionDied');
-defineSignal(Session.prototype, 'kernelChanged');
-defineSignal(Session.prototype, 'statusChanged');
-defineSignal(Session.prototype, 'iopubMessage');
-defineSignal(Session.prototype, 'unhandledMessage');
-defineSignal(Session.prototype, 'pathChanged');
+defineSignal(DefaultSession.prototype, 'sessionDied');
+defineSignal(DefaultSession.prototype, 'kernelChanged');
+defineSignal(DefaultSession.prototype, 'statusChanged');
+defineSignal(DefaultSession.prototype, 'iopubMessage');
+defineSignal(DefaultSession.prototype, 'unhandledMessage');
+defineSignal(DefaultSession.prototype, 'pathChanged');
 
 
-// Define the signals for the `SessionManager` class.
-defineSignal(SessionManager.prototype, 'specsChanged');
-defineSignal(SessionManager.prototype, 'runningChanged');
+/**
+ * The namespace for `DefaultSession` statics.
+ */
+export
+namespace DefaultSession {
+  /**
+   * List the running sessions.
+   */
+  export
+  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+    return Private.listRunning(options);
+  }
+
+  /**
+   * Start a new session.
+   */
+  export
+  function startNew(options: Session.IOptions): Promise<ISession> {
+    return Private.startNew(options);
+  }
+
+  /**
+   * Find a session by id.
+   */
+  export
+  function findById(id: string, options?: Session.IOptions): Promise<Session.IModel> {
+    return Private.findById(id, options);
+  }
+
+  /**
+   * Find a session by path.
+   */
+  export
+  function findByPath(path: string, options?: Session.IOptions): Promise<Session.IModel> {
+    return Private.findByPath(path, options);
+  }
+
+  /**
+   * Connect to a running session.
+   */
+  export
+  function connectTo(id: string, options?: Session.IOptions): Promise<ISession> {
+    return Private.connectTo(id, options);
+  }
+
+  /**
+   * Shut down a session by id.
+   */
+  export
+  function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {
+    return Private.shutdown(id, options);
+  }
+}
 
 
 /**
@@ -710,14 +431,137 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions: { [key: string]: Session; } = Object.create(null);
+  const runningSessions: { [key: string]: DefaultSession; } = Object.create(null);
+
+  /**
+   * List the running sessions.
+   */
+  export
+  function listRunning(options: Session.IOptions = {}): Promise<Session.IModel[]> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
+    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    ajaxSettings.method = 'GET';
+    ajaxSettings.dataType = 'json';
+    ajaxSettings.cache = false;
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        return utils.makeAjaxError(success);
+      }
+      if (!Array.isArray(success.data)) {
+        return utils.makeAjaxError(success, 'Invalid Session list');
+      }
+      for (let i = 0; i < success.data.length; i++) {
+        try {
+          validate.validateModel(success.data[i]);
+        } catch (err) {
+          return utils.makeAjaxError(success, err.message);
+        }
+      }
+      return updateRunningSessions(success.data);
+    }, Private.onSessionError);
+  }
+
+  /**
+   * Start a new session.
+   */
+  export
+  function startNew(options: Session.IOptions): Promise<ISession> {
+    if (options.path === void 0) {
+      return Promise.reject(new Error('Must specify a path'));
+    }
+    return startSession(options).then(model => {
+      return createSession(model, options);
+    });
+  }
+
+  /**
+   * Find a session by id.
+   */
+  export
+  function findById(id: string, options: Session.IOptions = {}): Promise<Session.IModel> {
+    let sessions = runningSessions;
+    for (let clientId in sessions) {
+      let session = sessions[clientId];
+      if (session.id === id) {
+        let model: Session.IModel = {
+          id,
+          notebook: { path: session.path },
+          kernel: { name: session.kernel.name, id: session.kernel.id }
+        };
+        return Promise.resolve(model);
+      }
+    }
+    return getSessionModel(id, options).catch(() => {
+      let msg = `No running session for id: ${id}`;
+      return typedThrow<Session.IModel>(msg);
+    });
+  }
+
+  /**
+   * Find a session by path.
+   */
+  export
+  function findByPath(path: string, options: Session.IOptions = {}): Promise<Session.IModel> {
+    let sessions = runningSessions;
+    for (let clientId in sessions) {
+      let session = sessions[clientId];
+      if (session.path === path) {
+        let model: Session.IModel = {
+          id: session.id,
+          notebook: { path: session.path },
+          kernel: { name: session.kernel.name, id: session.kernel.id }
+        };
+        return Promise.resolve(model);
+      }
+    }
+    return listRunning(options).then(models => {
+      for (let model of models) {
+        if (model.notebook.path === path) {
+          return model;
+        }
+      }
+      let msg = `No running session for path: ${path}`;
+      return typedThrow<Session.IModel>(msg);
+    });
+  }
+
+  /**
+   * Connect to a running session.
+   */
+  export
+  function connectTo(id: string, options: Session.IOptions = {}): Promise<ISession> {
+    for (let clientId in runningSessions) {
+      let session = runningSessions[clientId];
+      if (session.id === id) {
+        return session.clone();
+      }
+    }
+    return getSessionModel(id, options).then(model => {
+      return createSession(model, options);
+    }).catch(() => {
+      let msg = `No running session with id: ${id}`;
+      return typedThrow<ISession>(msg);
+    });
+  }
+
+  /**
+   * Shut down a session by id.
+   */
+  export
+  function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let ajaxSettings = options.ajaxSettings || {};
+    return shutdownSession(id, baseUrl, ajaxSettings);
+  }
 
   /**
    * Create a new session, or return an existing session if a session if
    * the session path already exists
    */
   export
-  function startSession(options: ISession.IOptions): Promise<ISession.IModel> {
+  function startSession(options: Session.IOptions): Promise<Session.IModel> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let model = {
@@ -736,11 +580,11 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       try {
-        validate.validateSessionModel(success.data);
+        validate.validateModel(success.data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      let data = success.data as ISession.IModel;
+      let data = success.data as Session.IModel;
       return updateByModel(data);
     }, onSessionError);
   }
@@ -748,7 +592,7 @@ namespace Private {
   /**
    * Create a Promise for a kernel object given a session model and options.
    */
-  function createKernel(options: ISession.IOptions): Promise<IKernel> {
+  function createKernel(options: Session.IOptions): Promise<IKernel> {
     let kernelOptions: Kernel.IOptions = {
       name: options.kernelName,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
@@ -766,12 +610,12 @@ namespace Private {
    * @returns - A promise that resolves with a started session.
    */
   export
-  function createSession(model: ISession.IModel, options: ISession.IOptions): Promise<Session> {
+  function createSession(model: Session.IModel, options: Session.IOptions): Promise<DefaultSession> {
     options.kernelName = model.kernel.name;
     options.kernelId = model.kernel.id;
     options.path = model.notebook.path;
     return createKernel(options).then(kernel => {
-      return new Session(options, model.id, kernel);
+      return new DefaultSession(options, model.id, kernel);
     }).catch(error => {
       return typedThrow('Session failed to start: ' + error.message);
     });
@@ -781,7 +625,7 @@ namespace Private {
    * Get a full session model from the server by session id string.
    */
   export
-  function getSessionModel(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+  function getSessionModel(id: string, options?: Session.IOptions): Promise<Session.IModel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = getSessionUrl(baseUrl, id);
@@ -794,9 +638,9 @@ namespace Private {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as ISession.IModel;
+      let data = success.data as Session.IModel;
       try {
-        validate.validateSessionModel(data);
+        validate.validateModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
@@ -808,7 +652,7 @@ namespace Private {
    * Update the running sessions based on new data from the server.
    */
   export
-  function updateRunningSessions(sessions: ISession.IModel[]): Promise<ISession.IModel[]> {
+  function updateRunningSessions(sessions: Session.IModel[]): Promise<Session.IModel[]> {
     let promises: Promise<void>[] = [];
     for (let uuid in runningSessions) {
       let session = runningSessions[uuid];
@@ -832,7 +676,7 @@ namespace Private {
    * Update the running sessions given an updated session Id.
    */
   export
-  function updateByModel(model: ISession.IModel): Promise<ISession.IModel> {
+  function updateByModel(model: Session.IModel): Promise<Session.IModel> {
     let promises: Promise<void>[] = [];
     for (let uuid in runningSessions) {
       let session = runningSessions[uuid];

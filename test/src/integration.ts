@@ -5,22 +5,21 @@
 import expect = require('expect.js');
 
 import {
-  XMLHttpRequest as NodeXMLHttpRequest
-} from 'xmlhttprequest';
+  JSONObject
+} from 'phosphor/lib/algorithm/json';
 
 import * as NodeWebSocket
   from 'ws';
 
 import {
-  ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
-  ISession, TerminalManager, connectToSession, startNewSession,
-  createTerminalSession, getConfigSection,
-  listRunningSessions, Kernel
-} from '../../lib';
+  XMLHttpRequest as NodeXMLHttpRequest
+} from 'xmlhttprequest';
 
 import {
-  JSONObject
-} from 'phosphor/lib/algorithm/json';
+  ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
+  ISession, TerminalManager, Session, Kernel,
+  createTerminalSession, getConfigSection
+} from '../../lib';
 
 
 // Stub for node global.
@@ -137,16 +136,16 @@ describe('jupyter.services - Integration', () => {
   describe('Session', () => {
 
     it('should start, connect to existing session and list running sessions', (done) => {
-      let options: ISession.IOptions = { path: 'Untitled1.ipynb' };
+      let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let session: ISession;
       let session2: ISession;
-      startNewSession(options).then(value => {
+      Session.startNew(options).then(value => {
         session = value;
         return session.rename('Untitled2.ipynb');
       }).then(() => {
         expect(session.path).to.be('Untitled2.ipynb');
         // should grab the same session object
-        return connectToSession(session.id);
+        return Session.connectTo(session.id);
       }).then(value => {
         expect(value.path).to.be(options.path);
         session2 = value;
@@ -156,7 +155,7 @@ describe('jupyter.services - Integration', () => {
         if (session2.kernel.id !== session.kernel.id) {
           throw Error('Did not clone the session');
         }
-        return listRunningSessions();
+        return Session.listRunning();
       }).then(sessions => {
         if (!sessions.length) {
           throw Error('Should be one at least one running session');
@@ -169,11 +168,11 @@ describe('jupyter.services - Integration', () => {
       let kernel: IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
-        let sessionOptions: ISession.IOptions = {
+        let sessionOptions: Session.IOptions = {
           kernelId: kernel.id,
           path: 'Untitled1.ipynb'
         };
-        return startNewSession(sessionOptions);
+        return Session.startNew(sessionOptions);
       }).then(session => {
         expect(session.kernel.id).to.be(kernel.id);
         return session.shutdown();
@@ -185,8 +184,8 @@ describe('jupyter.services - Integration', () => {
       let session: ISession;
       Kernel.startNew().then(value => {
         kernel = value;
-        let sessionOptions: ISession.IOptions = { path: 'Untitled1.ipynb' };
-        return startNewSession(sessionOptions);
+        let sessionOptions: Session.IOptions = { path: 'Untitled1.ipynb' };
+        return Session.startNew(sessionOptions);
       }).then(value => {
         session = value;
         return session.changeKernel({ id: kernel.id });
@@ -198,10 +197,10 @@ describe('jupyter.services - Integration', () => {
 
     it('should be able to switch to a new kernel by name', (done) => {
       // Get info about the available kernels and connect to one.
-      let options: ISession.IOptions = { path: 'Untitled1.ipynb' };
+      let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let id: string;
       let session: ISession;
-      startNewSession(options).then(value => {
+      Session.startNew(options).then(value => {
         session = value;
         id = session.kernel.id;
         return session.changeKernel({ name: session.kernel.name });

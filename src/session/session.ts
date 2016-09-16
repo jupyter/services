@@ -16,11 +16,15 @@ import {
 
 import {
   IKernel, Kernel, KernelMessage
-} from './kernel';
+} from '../kernel';
 
 import {
   IAjaxSettings
-} from './utils';
+} from '../utils';
+
+import {
+  DefaultSession
+} from './default';
 
 
 /**
@@ -80,7 +84,7 @@ interface ISession extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  model: ISession.IModel;
+  model: Session.IModel;
 
   /**
    * The kernel.
@@ -139,10 +143,111 @@ interface ISession extends IDisposable {
 
 
 /**
- * A namespace for session interfaces.
+ * A namespace for session interfaces and factory functions.
  */
 export
-namespace ISession {
+namespace Session {
+  /**
+   * List the running sessions.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
+   *
+   * All client-side sessions are updated with current information.
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  export
+  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+    return DefaultSession.listRunning(options);
+  }
+
+  /**
+   * Start a new session.
+   *
+   * #### Notes
+   * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
+   *
+   * A path must be provided.  If a kernel id is given, it will
+   * connect to an existing kernel.  If no kernel id or name is given,
+   * the server will start the default kernel type.
+   *
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   *
+   * Wrap the result in an Session object. The promise is fulfilled
+   * when the session is created on the server, otherwise the promise is
+   * rejected.
+   */
+  export
+  function startNew(options: Session.IOptions): Promise<ISession> {
+    return DefaultSession.startNew(options);
+  }
+
+  /**
+   * Find a session by id.
+   *
+   * #### Notes
+   * If the session was already started via `startNewSession`, the existing
+   * Session object's information is used in the fulfillment value.
+   *
+   * Otherwise, if `options` are given, we attempt to find to the existing
+   * session.
+   * The promise is fulfilled when the session is found,
+   * otherwise the promise is rejected.
+   */
+  export
+  function findById(id: string, options?: Session.IOptions): Promise<Session.IModel> {
+    return DefaultSession.findById(id, options);
+  }
+
+  /**
+   * Find a session by path.
+   *
+   * #### Notes
+   * If the session was already started via `startNewSession`, the existing
+   * Session object's info is used in the fulfillment value.
+   *
+   * Otherwise, if `options` are given, we attempt to find to the existing
+   * session using [listRunningSessions].
+   * The promise is fulfilled when the session is found,
+   * otherwise the promise is rejected.
+   *
+   * If the session was not already started and no `options` are given,
+   * the promise is rejected.
+   */
+  export
+  function findByPath(path: string, options?: Session.IOptions): Promise<Session.IModel> {
+    return DefaultSession.findByPath(path, options);
+  }
+
+  /**
+   * Connect to a running session.
+   *
+   * #### Notes
+   * If the session was already started via `startNewSession`, the existing
+   * Session object is used as the fulfillment value.
+   *
+   * Otherwise, if `options` are given, we attempt to connect to the existing
+   * session.
+   * The promise is fulfilled when the session is ready on the server,
+   * otherwise the promise is rejected.
+   *
+   * If the session was not already started and no `options` are given,
+   * the promise is rejected.
+   */
+  export
+  function connectTo(id: string, options?: Session.IOptions): Promise<ISession> {
+    return DefaultSession.connectTo(id, options);
+  }
+
+  /**
+   * Shut down a session by id.
+   */
+  export
+  function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {
+    return DefaultSession.shutdown(id, options);
+  }
+
   /**
    * The session initialization options.
    */

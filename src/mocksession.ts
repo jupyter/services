@@ -10,8 +10,8 @@ import {
 } from 'phosphor/lib/core/signaling';
 
 import {
-  ISession
-} from './isession';
+  ISession, Session
+} from './session';
 
 import {
   IKernel, KernelMessage, Kernel
@@ -36,7 +36,7 @@ class MockSession implements ISession {
   path: string;
   ajaxSettings: IAjaxSettings = {};
 
-  constructor(model?: ISession.IModel) {
+  constructor(model?: Session.IModel) {
     if (!model) {
       model = {
         id: uuid(),
@@ -94,7 +94,7 @@ class MockSession implements ISession {
   /**
    * Get the session model.
    */
-  get model(): ISession.IModel {
+  get model(): Session.IModel {
     return {
       id: this.id,
       kernel: this.kernel.model,
@@ -183,7 +183,7 @@ class MockSession implements ISession {
  *  A mock session manager object.
  */
 export
-class MockSessionManager implements ISession.IManager {
+class MockSessionManager implements Session.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
@@ -192,7 +192,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * A signal emitted when the running sessions change.
    */
-  runningChanged: ISignal<MockSessionManager, ISession.IModel[]>;
+  runningChanged: ISignal<MockSessionManager, Session.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -219,15 +219,15 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Get the available kernel specs.
    */
-  getSpecs(options?: ISession.IOptions): Promise<Kernel.ISpecModels> {
+  getSpecs(options?: Session.IOptions): Promise<Kernel.ISpecModels> {
     return Promise.resolve(KERNELSPECS);
   }
 
   /*
    * Get the running sessions.
    */
-  listRunning(options?: ISession.IOptions): Promise<ISession.IModel[]> {
-    let models: ISession.IModel[] = [];
+  listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+    let models: Session.IModel[] = [];
     for (let id in Private.runningSessions) {
       let session = Private.runningSessions[id];
       models.push(session.model);
@@ -242,7 +242,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Start a new session.
    */
-  startNew(options: ISession.IOptions, id?: string): Promise<MockSession> {
+  startNew(options: Session.IOptions, id?: string): Promise<MockSession> {
     let session = new MockSession({
       id,
       notebook: {
@@ -259,7 +259,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Find a session by id.
    */
-  findById(id: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+  findById(id: string, options?: Session.IOptions): Promise<Session.IModel> {
     if (id in Private.runningSessions) {
       return Promise.resolve(Private.runningSessions[id].model);
     }
@@ -269,7 +269,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Find a session by path.
    */
-  findByPath(path: string, options?: ISession.IOptions): Promise<ISession.IModel> {
+  findByPath(path: string, options?: Session.IOptions): Promise<Session.IModel> {
     for (let id in Private.runningSessions) {
       let session = Private.runningSessions[id];
       if (session.path === path) {
@@ -282,7 +282,7 @@ class MockSessionManager implements ISession.IManager {
   /**
    * Connect to a running session.
    */
-  connectTo(id: string, options?: ISession.IOptions): Promise<MockSession> {
+  connectTo(id: string, options?: Session.IOptions): Promise<MockSession> {
     if (id in Private.runningSessions) {
       return Promise.resolve(Private.runningSessions[id]);
     }
@@ -298,7 +298,7 @@ class MockSessionManager implements ISession.IManager {
   }
 
   private _isDisposed = false;
-  private _running: ISession.IModel[] = [];
+  private _running: Session.IModel[] = [];
 }
 
 
