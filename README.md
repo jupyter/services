@@ -217,7 +217,7 @@ Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 
 ```typescript
 import {
-  connectToSession, listRunningSessions, startNewSession
+  Session
 } from 'jupyter-js-services';
 
 // The base url of the Jupyter server.
@@ -226,13 +226,13 @@ const BASE_URL = 'http://localhost:8000';
 
 
 // Get a list of available sessions and connect to one.
-listRunningSessions({ baseUrl: BASE_URL }).then(sessionModels => {
+Session.listRunning({ baseUrl: BASE_URL }).then(sessionModels => {
   let options = {
     baseUrl: BASE_URL,
     kernelName: sessionModels[0].kernel.name,
     path: sessionModels[0].notebook.path
   };
-  connectToSession(sessionModels[0].id, options).then((session) => {
+  session.connectTo(sessionModels[0].id, options).then((session) => {
     console.log(session.kernel.name);
   });
 });
@@ -244,7 +244,7 @@ let options = {
   path: '/tmp/foo.ipynb'
 };
 
-startNewSession(options).then(session => {
+Session.startNew(options).then(session => {
   // Execute and handle replies on the kernel.
   let future = session.kernel.execute({ code: 'a = 1' });
   future.onDone = () => {
@@ -273,7 +273,7 @@ startNewSession(options).then(session => {
 
 ```typescript
 import {
-  getKernelSpecs, startNewKernel
+  Kernel
 } from 'jupyter-js-services';
 
 // The base url of the Jupyter server.
@@ -283,8 +283,8 @@ const BASE_URL = 'http://localhost:8000';
 // Create a comm from the server side.
 //
 // Get info about the available kernels and connect to one.
-getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
-  return startNewKernel({
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
+  return Kernel.startNew({
     baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
@@ -297,7 +297,7 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 
 // Create a comm from the client side.
 getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
-  return startNewKernel({
+  return kernel.startNew({
     baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
