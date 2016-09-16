@@ -31,7 +31,7 @@ var options = {
   kernelName: 'python',
   path: 'foo.ipynb'
 }
-services.startNewSession(options).then(function(session) {
+services.Session.startNew(options).then(function(session) {
   // Rename the session.
   session.rename('bar.ipynb').then(function() {
     console.log('Session renamed to', session.path);
@@ -48,7 +48,7 @@ services.startNewSession(options).then(function(session) {
         process.exit(0);
       });
     }
-   
+
   });
 });
 

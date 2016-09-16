@@ -9,7 +9,7 @@
 import 'es6-promise';
 
 import {
-  startNewSession
+  Session
 } from 'jupyter-js-services';
 
 import {
@@ -23,13 +23,13 @@ const WS_URL = getWsUrl();
 
 function main() {
   // Start a new session.
-  let options = {
+  let options: Session.IOptions = {
     baseUrl: BASE_URL,
     wsUrl: WS_URL,
     kernelName: 'python',
     path: 'foo.ipynb'
   };
-  startNewSession(options).then(session => {
+  Session.startNew(options).then(session => {
     // Rename the session.
     session.rename('bar.ipynb').then(() => {
       console.log('Session renamed to', session.path);
