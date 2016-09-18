@@ -9,8 +9,8 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  ITerminalSession
-} from '../../lib/terminals';
+  TerminalSession
+} from '../../lib/terminal';
 
 import {
   MockTerminalManager, MockTerminalSession
@@ -75,7 +75,7 @@ describe('mockterminals', () => {
 
       it('should list the running session models', (done) => {
         let manager = new MockTerminalManager();
-        let models: ITerminalSession.IModel[] = [];
+        let models: TerminalSession.IModel[] = [];
         manager.create().then(session => {
           models.push({ name: session.name });
           return manager.create();

@@ -18,7 +18,7 @@ import {
 import {
   ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
   ISession, TerminalManager, Session, Kernel,
-  createTerminalSession, getConfigSection
+  TerminalSession, getConfigSection
 } from '../../lib';
 
 
@@ -329,10 +329,10 @@ describe('jupyter.services - Integration', () => {
 
   });
 
-  describe('createTerminalSession', () => {
+  describe('TerminalSession.open', () => {
 
     it('should create and shut down a terminal session', (done) => {
-      createTerminalSession().then(session => {
+      TerminalSession.open().then(session => {
         return session.shutdown();
       }).then(done, done);
     });

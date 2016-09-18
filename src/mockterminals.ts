@@ -10,15 +10,15 @@ import {
 } from 'phosphor/lib/core/signaling';
 
 import {
-  ITerminalSession
-} from './terminals';
+  ITerminalSession, TerminalSession
+} from './terminal';
 
 
 /**
  * A mock terminal session manager.
  */
 export
-class MockTerminalManager implements ITerminalSession.IManager {
+class MockTerminalManager implements TerminalSession.IManager {
   /**
    * Construct a new mock terminal manager.
    */
@@ -29,7 +29,7 @@ class MockTerminalManager implements ITerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<MockTerminalManager, ITerminalSession.IModel[]>;
+  runningChanged: ISignal<MockTerminalManager, TerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -56,7 +56,7 @@ class MockTerminalManager implements ITerminalSession.IManager {
   /**
    * Create a new terminal session or connect to an existing session.
    */
-  create(options: ITerminalSession.IOptions = {}): Promise<MockTerminalSession> {
+  create(options: TerminalSession.IOptions = {}): Promise<MockTerminalSession> {
     let name = options.name;
     if (name in Private.running) {
       return Promise.resolve(Private.running[name]);
@@ -87,8 +87,8 @@ class MockTerminalManager implements ITerminalSession.IManager {
   /**
    * Get the list of models for the terminals running on the server.
    */
-  listRunning(): Promise<ITerminalSession.IModel[]> {
-    let models: ITerminalSession.IModel[] = [];
+  listRunning(): Promise<TerminalSession.IModel[]> {
+    let models: TerminalSession.IModel[] = [];
     for (let name in Private.running) {
       models.push({ name });
     }
@@ -99,7 +99,7 @@ class MockTerminalManager implements ITerminalSession.IManager {
     return Promise.resolve(models);
   }
 
-  private _running: ITerminalSession.IModel[] = [];
+  private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
 }
 
@@ -120,7 +120,7 @@ class MockTerminalSession implements ITerminalSession {
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
+  messageReceived: ISignal<ITerminalSession, TerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -167,7 +167,7 @@ class MockTerminalSession implements ITerminalSession {
   /**
    * Send a message to the terminal session.
    */
-  send(message: ITerminalSession.IMessage): void {
+  send(message: TerminalSession.IMessage): void {
     // Echo the message back on stdout.
     message.content = [`${message.type}: ${message.content}`];
     message.type = 'stdout';

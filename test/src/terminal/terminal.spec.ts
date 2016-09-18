@@ -1,43 +1,42 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
-
-import {
-  MockSocketServer
-} from '../../lib/mocksocket';
-
-import {
-  ITerminalSession, TerminalManager, createTerminalSession
-} from '../../lib/terminals';
 
 import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  MockSocketServer
+} from '../../../lib/mocksocket';
+
+import {
+  TerminalSession, TerminalManager
+} from '../../../lib/terminal';
+
+import {
   RequestHandler
-} from './utils';
+} from '../utils';
 
 
 describe('terminals', () => {
 
-  describe('createTerminalSession()', () => {
+  describe('TerminalSession.open()', () => {
 
     it('should create a terminal session', (done) => {
       let handler = new RequestHandler(() => {
         handler.respond(200, { name: '1' });
       });
-      createTerminalSession().then(session => {
+      TerminalSession.open().then(session => {
         expect(session.name).to.be('1');
         done();
       }).catch(done);
     });
 
     it('should give back an existing session', (done) => {
-      createTerminalSession({ name: 'foo' }).then(session => {
-        return createTerminalSession({ name: 'foo' }).then(newSession => {
+      TerminalSession.open({ name: 'foo' }).then(session => {
+        return TerminalSession.open({ name: 'foo' }).then(newSession => {
           expect(newSession).to.be(session);
           done();
         });
@@ -100,7 +99,7 @@ describe('terminals', () => {
     describe('#runningChanged', () => {
 
       it('should be emitted in listRunning when the running terminals changed', (done) => {
-        let data: ITerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
         let manager = new TerminalManager();
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
@@ -118,7 +117,7 @@ describe('terminals', () => {
     describe('#listRunning()', () => {
 
       it('should list the running session models', (done) => {
-        let data: ITerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
         let handler = new RequestHandler(() => {
           handler.respond(200, data);
         });
@@ -138,7 +137,7 @@ describe('terminals', () => {
     describe('#messageReceived', () => {
 
       it('should be emitted when a message is received', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           session.messageReceived.connect((sender, msg) => {
             expect(sender).to.be(session);
             expect(msg.type).to.be('stdout');
@@ -155,14 +154,14 @@ describe('terminals', () => {
     describe('#name', () => {
 
       it('should be the name of the session', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           expect(session.name).to.be('foo');
           done();
         }).catch(done);
       });
 
       it('should be read-only', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           expect(() => { session.name = ''; }).to.throwError();
           done();
         }).catch(done);
@@ -173,7 +172,7 @@ describe('terminals', () => {
     describe('#isDisposed', () => {
 
       it('should test whether the object is disposed', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           expect(session.isDisposed).to.be(false);
           session.dispose();
           expect(session.isDisposed).to.be(true);
@@ -182,7 +181,7 @@ describe('terminals', () => {
       });
 
       it('should be read-only', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           expect(() => { session.isDisposed = false; }).to.throwError();
           done();
         }).catch(done);
@@ -193,7 +192,7 @@ describe('terminals', () => {
     describe('#dispose()', () => {
 
       it('should dispose of the resources used by the session', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           session.dispose();
           expect(session.isDisposed).to.be(true);
           done();
@@ -201,7 +200,7 @@ describe('terminals', () => {
       });
 
       it('should be safe to call more than once', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           session.dispose();
           session.dispose();
           expect(session.isDisposed).to.be(true);
@@ -214,7 +213,7 @@ describe('terminals', () => {
     describe('#send()', () => {
 
       it('should send a message to the socket', (done) => {
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           let server = MockSocketServer.servers[session.url];
           server.onmessage = (msg: any) => {
             let data = JSON.parse(msg.data) as any[];
@@ -233,7 +232,7 @@ describe('terminals', () => {
         let handler = new RequestHandler(() => {
           handler.respond(204, {});
         });
-        createTerminalSession({ name: 'foo' }).then(session => {
+        TerminalSession.open({ name: 'foo' }).then(session => {
           return session.shutdown();
         }).then(done, done);
       });

@@ -15,10 +15,10 @@ import {
 
 import {
   IAjaxSettings
-} from './utils';
+} from '../utils';
 
 import * as utils
-  from './utils';
+  from '../utils';
 
 
 /**
@@ -35,7 +35,7 @@ interface ITerminalSession extends IDisposable {
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
+  messageReceived: ISignal<ITerminalSession, TerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -56,7 +56,7 @@ interface ITerminalSession extends IDisposable {
   /**
    * Send a message to the terminal session.
    */
-  send(message: ITerminalSession.IMessage): void;
+  send(message: TerminalSession.IMessage): void;
 
   /**
    * Shut down the terminal session.
@@ -69,7 +69,22 @@ interface ITerminalSession extends IDisposable {
  * The namespace for ITerminalSession statics.
  */
 export
-namespace ITerminalSession {
+namespace TerminalSession {
+  /**
+   * Create a terminal session or connect to an existing session.
+   *
+   * #### Notes
+   * If the session is already running on the client, the existing
+   * instance will be returned.
+   */
+  export
+  function open(options: TerminalSession.IOptions = {}): Promise<ITerminalSession> {
+    if (options.name && options.name in Private.running) {
+      return Private.running[options.name];
+    }
+    return new DefaultTerminalSession(options).connect();
+  }
+
   /**
    * The options for intializing a terminal session object.
    */
@@ -146,7 +161,7 @@ namespace ITerminalSession {
      * This will emit [[runningChanged]] if the running terminals list
      * changes.
      */
-    create(options?: ITerminalSession.IOptions): Promise<ITerminalSession>;
+    create(options?: TerminalSession.IOptions): Promise<ITerminalSession>;
 
     /**
      * Shut down a terminal session by name.
@@ -166,26 +181,10 @@ namespace ITerminalSession {
 
 
 /**
- * Create a terminal session or connect to an existing session.
- *
- * #### Notes
- * If the session is already running on the client, the existing
- * instance will be returned.
- */
-export
-function createTerminalSession(options: ITerminalSession.IOptions = {}): Promise<ITerminalSession> {
-  if (options.name && options.name in Private.running) {
-    return Private.running[options.name];
-  }
-  return new TerminalSession(options).connect();
-}
-
-
-/**
  * A terminal session manager.
  */
 export
-class TerminalManager implements ITerminalSession.IManager {
+class TerminalManager implements TerminalSession.IManager {
   /**
    * Construct a new terminal manager.
    */
@@ -198,7 +197,7 @@ class TerminalManager implements ITerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<TerminalManager, ITerminalSession.IModel[]>;
+  runningChanged: ISignal<TerminalManager, TerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -225,13 +224,13 @@ class TerminalManager implements ITerminalSession.IManager {
   /**
    * Create a new terminal session or connect to an existing session.
    */
-  create(options: ITerminalSession.IOptions = {}): Promise<ITerminalSession> {
+  create(options: TerminalSession.IOptions = {}): Promise<ITerminalSession> {
     options.baseUrl = options.baseUrl || this._baseUrl;
     options.wsUrl = options.wsUrl || this._wsUrl;
     options.ajaxSettings = (
       options.ajaxSettings || utils.copy(this._ajaxSettings)
     );
-    return createTerminalSession(options);
+    return TerminalSession.open(options);
   }
 
   /**
@@ -252,7 +251,7 @@ class TerminalManager implements ITerminalSession.IManager {
   /**
    * Get the list of models for the terminals running on the server.
    */
-  listRunning(): Promise<ITerminalSession.IModel[]> {
+  listRunning(): Promise<TerminalSession.IModel[]> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'GET';
@@ -262,7 +261,7 @@ class TerminalManager implements ITerminalSession.IManager {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as ITerminalSession.IModel[];
+      let data = success.data as TerminalSession.IModel[];
       if (!Array.isArray(data)) {
         return utils.makeAjaxError(success, 'Invalid terminal data');
       }
@@ -277,7 +276,7 @@ class TerminalManager implements ITerminalSession.IManager {
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings: utils.IAjaxSettings = null;
-  private _running: ITerminalSession.IModel[] = [];
+  private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
 }
 
@@ -314,11 +313,11 @@ namespace TerminalManager {
 /**
  * An implementation of a terminal interface.
  */
-class TerminalSession implements ITerminalSession {
+class DefaultTerminalSession implements ITerminalSession {
   /**
    * Construct a new terminal session.
    */
-  constructor(options: ITerminalSession.IOptions = {}) {
+  constructor(options: TerminalSession.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._ajaxSettings = options.ajaxSettings || {};
     this._name = options.name;
@@ -329,7 +328,7 @@ class TerminalSession implements ITerminalSession {
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<ITerminalSession, ITerminalSession.IMessage>;
+  messageReceived: ISignal<ITerminalSession, TerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -381,7 +380,7 @@ class TerminalSession implements ITerminalSession {
   /**
    * Send a message to the terminal session.
    */
-  send(message: ITerminalSession.IMessage): void {
+  send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
     msg.push(...message.content);
     this._ws.send(JSON.stringify(msg));
@@ -429,7 +428,7 @@ class TerminalSession implements ITerminalSession {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      return (success.data as ITerminalSession.IModel).name;
+      return (success.data as TerminalSession.IModel).name;
     });
   }
 
@@ -445,7 +444,7 @@ class TerminalSession implements ITerminalSession {
     this._ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data);
       this.messageReceived.emit({
-        type: data[0] as ITerminalSession.MessageType,
+        type: data[0] as TerminalSession.MessageType,
         content: data.slice(1)
       });
     };
@@ -472,8 +471,8 @@ class TerminalSession implements ITerminalSession {
 defineSignal(TerminalManager.prototype, 'runningChanged');
 
 
-// Define the signals for the `TerminalSession` class.
-defineSignal(TerminalSession.prototype, 'messageReceived');
+// Define the signals for the `DefaultTerminalSession` class.
+defineSignal(DefaultTerminalSession.prototype, 'messageReceived');
 
 
 /**
