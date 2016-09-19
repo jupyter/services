@@ -26,8 +26,8 @@ import {
 } from './session';
 
 import {
-  ITerminalSession, TerminalManager
-} from './terminals';
+  TerminalSession, TerminalManager
+} from './terminal';
 
 import {
   IAjaxSettings, getBaseUrl
@@ -81,7 +81,7 @@ interface IServiceManager extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  terminals: ITerminalSession.IManager;
+  terminals: TerminalSession.IManager;
 }
 
 

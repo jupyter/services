@@ -30,7 +30,7 @@ import {
 
 import {
   TerminalManager
-} from '../../lib/terminals';
+} from '../../lib/terminal';
 
 import {
   RequestHandler
