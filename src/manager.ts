@@ -18,15 +18,11 @@ import {
 } from './contents';
 
 import {
-  ISession
-} from './isession';
-
-import {
-  IKernel, KernelManager, Kernel
+  KernelManager, Kernel
 } from './kernel';
 
 import {
-  SessionManager
+  Session, SessionManager
 } from './session';
 
 import {
@@ -69,7 +65,7 @@ interface IServiceManager extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  sessions: ISession.IManager;
+  sessions: Session.IManager;
 
   /**
    * The contents manager for the manager.

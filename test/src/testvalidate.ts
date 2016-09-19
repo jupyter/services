@@ -1,15 +1,10 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
 
 import {
-  ISession
-} from '../../lib/isession';
-
-import {
-  validateSessionModel, validateContentsModel, validateCheckpointModel
+  validateContentsModel, validateCheckpointModel
 } from '../../lib/validate';
 
 import {
@@ -18,27 +13,6 @@ import {
 
 
 describe('validate', () => {
-
-  describe('#validateSessionModel()', () => {
-
-    it('should pass a valid id', () => {
-      let id: ISession.IModel = {
-        id: 'foo',
-        kernel: { name: 'foo', id: '123'},
-        notebook: { path: 'bar' }
-      };
-      validateSessionModel(id);
-    });
-
-    it('should fail on missing data', () => {
-      let id: ISession.IModel = {
-        id: 'foo',
-        kernel: { name: 'foo', id: '123'},
-      };
-      expect(() => validateSessionModel(id)).to.throwError();
-    });
-
-  });
 
   describe('validateContentsModel()', () => {
 

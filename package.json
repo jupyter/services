@@ -50,9 +50,12 @@
     "notebook"
   ],
   "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
     "lib/*.js",
     "lib/*.d.ts",
-    "dist/*.js"
+    "dist/*.js",
+    "dist/**/*.js"
   ],
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",

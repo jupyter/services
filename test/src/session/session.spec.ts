@@ -1,44 +1,30 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
 
 import {
   uuid, IAjaxError
-} from '../../lib/utils';
-
-import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+} from '../../../lib/utils';
 
 import {
   KernelMessage
-} from '../../lib/kernel';
+} from '../../../lib/kernel';
 
 import {
-  KERNELSPECS
-} from '../../lib/mockkernel';
-
-import {
-  SessionManager, connectToSession, listRunningSessions,
-  startNewSession, findSessionById, findSessionByPath, shutdownSession
-} from '../../lib/session';
-
-import {
-  ISession
-} from '../../lib/isession';
+  ISession, Session
+} from '../../../lib/session';
 
 import {
   RequestHandler, ajaxSettings, expectFailure, KernelTester,
   createKernel
-} from './utils';
+} from '../utils';
 
 
 /**
  * Create a unique session id.
  */
-function createSessionModel(): ISession.IModel {
+function createSessionModel(): Session.IModel {
   return {
     id: uuid(),
     notebook: { path: uuid() },
@@ -50,7 +36,7 @@ function createSessionModel(): ISession.IModel {
 /**
  * Create session options based on a sessionModel.
  */
-function createSessionOptions(sessionModel?: ISession.IModel): ISession.IOptions {
+function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
   sessionModel = sessionModel || createSessionModel();
   return {
     path: sessionModel.notebook.path,
@@ -63,15 +49,15 @@ function createSessionOptions(sessionModel?: ISession.IModel): ISession.IOptions
 
 describe('session', () => {
 
-  describe('listRunningSessions()', () => {
+  describe('Session.listRunning()', () => {
 
     it('should yield a list of valid session models', (done) => {
       let sessionModels = [createSessionModel(), createSessionModel()];
       let handler = new RequestHandler(() => {
         handler.respond(200, sessionModels);
       });
-      let list = listRunningSessions({ baseUrl: 'http://localhost:8888' });
-      list.then((response: ISession.IModel[]) => {
+      let list = Session.listRunning({ baseUrl: 'http://localhost:8888' });
+      list.then((response: Session.IModel[]) => {
         expect(response[0]).to.eql(sessionModels[0]);
         expect(response[1]).to.eql(sessionModels[1]);
         done();
@@ -83,8 +69,8 @@ describe('session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, sessionModels);
       });
-      let list = listRunningSessions({ ajaxSettings: ajaxSettings });
-      list.then((response: ISession.IModel[]) => {
+      let list = Session.listRunning({ ajaxSettings: ajaxSettings });
+      list.then((response: Session.IModel[]) => {
         expect(response[0]).to.eql(sessionModels[0]);
         expect(response[1]).to.eql(sessionModels[1]);
         done();
@@ -96,7 +82,7 @@ describe('session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let list = listRunningSessions({ baseUrl: 'http://localhost:8888' });
+      let list = Session.listRunning({ baseUrl: 'http://localhost:8888' });
       expectFailure(list, done);
     });
 
@@ -105,7 +91,7 @@ describe('session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, data);
       });
-      let list = listRunningSessions();
+      let list = Session.listRunning();
       expectFailure(list, done);
     });
 
@@ -113,7 +99,7 @@ describe('session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, [createSessionModel()]);
       });
-      let list = listRunningSessions();
+      let list = Session.listRunning();
       expectFailure(list, done);
     });
 
@@ -121,7 +107,7 @@ describe('session', () => {
       let handler = new RequestHandler(() => {
         handler.respond(500, { });
       });
-      let list = listRunningSessions();
+      let list = Session.listRunning();
       expectFailure(list, done, '');
     });
 
@@ -146,13 +132,13 @@ describe('session', () => {
           expect(s.path).to.be('foo/bar.ipynb');
           done();
         });
-        listRunningSessions();
+        Session.listRunning();
       });
     });
 
   });
 
-  describe('startNewSession()', () => {
+  describe('Session.startNew()', () => {
 
     it('should start a session', (done) => {
       let sessionModel = createSessionModel();
@@ -165,7 +151,7 @@ describe('session', () => {
         }
       });
       let options = createSessionOptions(sessionModel);
-      startNewSession(options).then(session => {
+      Session.startNew(options).then(session => {
         expect(session.id).to.be(sessionModel.id);
         session.dispose();
         done();
@@ -187,7 +173,7 @@ describe('session', () => {
           }
         };
         let options = createSessionOptions(sessionModel);
-        startNewSession(options).then(session => {
+        Session.startNew(options).then(session => {
           expect(session.id).to.be(sessionModel.id);
           session.dispose();
           done();
@@ -207,7 +193,7 @@ describe('session', () => {
       });
       let options = createSessionOptions(sessionModel);
       options.ajaxSettings = ajaxSettings;
-      startNewSession(options).then(session => {
+      Session.startNew(options).then(session => {
         expect(session.id).to.be(sessionModel.id);
         session.dispose();
         done();
@@ -226,7 +212,7 @@ describe('session', () => {
       tester.initialStatus = 'dead';
       let sessionModel = createSessionModel();
       let options = createSessionOptions(sessionModel);
-      startNewSession(options).then(session => {
+      Session.startNew(options).then(session => {
         session.dispose();
         done();
       });
@@ -238,7 +224,7 @@ describe('session', () => {
         tester.respond(200, sessionModel);
       });
       let options = createSessionOptions(sessionModel);
-      let sessionPromise = startNewSession(options);
+      let sessionPromise = Session.startNew(options);
       expectFailure(sessionPromise, done);
     });
 
@@ -248,7 +234,7 @@ describe('session', () => {
       });
       let sessionModel = createSessionModel();
       let options = createSessionOptions(sessionModel);
-      let sessionPromise = startNewSession(options);
+      let sessionPromise = Session.startNew(options);
       expectFailure(sessionPromise, done, '');
     });
 
@@ -265,7 +251,7 @@ describe('session', () => {
         }
       });
       let options = createSessionOptions(sessionModel);
-      let sessionPromise = startNewSession(options);
+      let sessionPromise = Session.startNew(options);
       let msg = `Session failed to start: No running kernel with id: ${sessionModel.kernel.id}`;
       expectFailure(sessionPromise, done, msg);
     });
@@ -280,19 +266,19 @@ describe('session', () => {
         }
       });
       let options = createSessionOptions(sessionModel);
-      let sessionPromise = startNewSession(options);
+      let sessionPromise = Session.startNew(options);
       expectFailure(sessionPromise, done, 'Session failed to start');
     });
   });
 
-  describe('findSessionByPath()', () => {
+  describe('Session.findByPath()', () => {
 
     it('should find an existing session by path', (done) => {
       let sessionModel = createSessionModel();
       let tester = new KernelTester(request => {
         tester.respond(200, [sessionModel]);
       });
-      findSessionByPath(sessionModel.notebook.path).then(newId => {
+      Session.findByPath(sessionModel.notebook.path).then(newId => {
         expect(newId.notebook.path).to.be(sessionModel.notebook.path);
         done();
       });
@@ -300,14 +286,14 @@ describe('session', () => {
 
   });
 
-  describe('findSessionById()', () => {
+  describe('Session.findById()', () => {
 
     it('should find an existing session by id', (done) => {
       let sessionModel = createSessionModel();
       let tester = new KernelTester(request => {
         tester.respond(200, sessionModel);
       });
-      findSessionById(sessionModel.id).then(newId => {
+      Session.findById(sessionModel.id).then(newId => {
         expect(newId.id).to.be(sessionModel.id);
         done();
       });
@@ -315,13 +301,13 @@ describe('session', () => {
 
   });
 
-  describe('connectToSession()', () => {
+  describe('Session.connectTo()', () => {
 
     it('should connect to a running session', (done) => {
       let tester = new KernelTester();
       let sessionModel = createSessionModel();
       startSession(sessionModel).then(session => {
-        connectToSession(sessionModel.id).then((newSession) => {
+        Session.connectTo(sessionModel.id).then((newSession) => {
           expect(newSession.id).to.be(sessionModel.id);
           expect(newSession.kernel.id).to.be(sessionModel.kernel.id);
           expect(newSession).to.not.be(session);
@@ -343,7 +329,7 @@ describe('session', () => {
         }
       });
       let options = createSessionOptions(sessionModel);
-      connectToSession(sessionModel.id, options).then(session => {
+      Session.connectTo(sessionModel.id, options).then(session => {
         expect(session.id).to.be(sessionModel.id);
         session.dispose();
         done();
@@ -362,7 +348,7 @@ describe('session', () => {
       });
       let options = createSessionOptions(sessionModel);
       options.ajaxSettings = ajaxSettings;
-      connectToSession(sessionModel.id, options).then(session => {
+      Session.connectTo(sessionModel.id, options).then(session => {
         expect(session.id).to.be(sessionModel.id);
         session.dispose();
         done();
@@ -375,20 +361,20 @@ describe('session', () => {
       });
       let sessionModel = createSessionModel();
       let options = createSessionOptions(sessionModel);
-      let sessionPromise = connectToSession(sessionModel.id, options);
+      let sessionPromise = Session.connectTo(sessionModel.id, options);
       expectFailure(
         sessionPromise, done, 'No running session with id: ' + sessionModel.id
       );
     });
   });
 
-  describe('shutdownSession()', () => {
+  describe('Session.shutdown()', () => {
 
     it('should shut down a kernel by id', (done) => {
       let handler = new RequestHandler(() => {
         handler.respond(204, { });
       });
-      shutdownSession('foo').then(done, done);
+      Session.shutdown('foo').then(done, done);
     });
 
   });
@@ -931,197 +917,13 @@ describe('session', () => {
     });
   });
 
-  describe('SessionManager', () => {
-
-    describe('#constructor()', () => {
-
-      it('should take the options as an argument', () => {
-        let manager = new SessionManager(createSessionOptions());
-        expect(manager instanceof SessionManager).to.be(true);
-      });
-
-    });
-
-    describe('#specsChanged', () => {
-
-      it('should be emitted when the specs change', (done) => {
-        let manager = new SessionManager();
-        manager.specsChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(true);
-          done();
-        });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.getSpecs();
-      });
-
-    });
-
-    describe('#runningChanged', () => {
-
-      it('should be emitted in listRunning when the running sessions changed', (done) => {
-        let manager = new SessionManager();
-        let sessionModels = [createSessionModel(), createSessionModel()];
-        manager.runningChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(args, sessionModels)).to.be(true);
-          done();
-        });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, sessionModels);
-        });
-        manager.listRunning();
-      });
-
-    });
-
-    describe('#listRunning()', () => {
-
-      it('should a return list of session ids', (done) => {
-        let handler = new RequestHandler();
-        let manager = new SessionManager(createSessionOptions());
-        let sessionModels = [createSessionModel(), createSessionModel()];
-        handler.onRequest = () => {
-          handler.respond(200, sessionModels);
-        };
-        manager.listRunning().then((response: ISession.IModel[]) => {
-          expect(response[0]).to.eql(sessionModels[0]);
-          expect(response[1]).to.eql(sessionModels[1]);
-          done();
-        });
-
-      });
-
-    });
-
-    describe('#startNew()', () => {
-
-      it('should start a session', (done) => {
-        let tester = new KernelTester();
-        let model = createSessionModel();
-        let manager = new SessionManager(createSessionOptions(model));
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb'}).then(session => {
-          expect(session.id).to.be(model.id);
-          session.dispose();
-          done();
-        });
-      });
-
-    });
-
-    describe('#findByPath()', () => {
-
-      it('should find an existing session by path', (done) => {
-        let tester = new KernelTester();
-        let model = createSessionModel();
-        let manager = new SessionManager(createSessionOptions(model));
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
-          manager.findByPath(session.path).then(newModel => {
-            expect(newModel.id).to.be(session.id);
-            session.dispose();
-            done();
-          });
-        });
-      });
-
-    });
-
-
-    describe('#findById()', () => {
-
-      it('should find an existing session by id', (done) => {
-        let tester = new KernelTester();
-        let model = createSessionModel();
-        let manager = new SessionManager(createSessionOptions(model));
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model)
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
-          manager.findById(session.id).then(newModel => {
-            expect(newModel.id).to.be(session.id);
-            session.dispose();
-            done();
-          });
-        });
-      });
-
-    });
-
-    describe('#connectTo()', () => {
-
-      it('should connect to a running session', (done) => {
-        let tester = new KernelTester();
-        let model = createSessionModel();
-        let manager = new SessionManager(createSessionOptions(model));
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
-          manager.connectTo(session.id).then(newSession => {
-            expect(newSession.id).to.be(session.id);
-            expect(newSession.kernel.id).to.be(session.kernel.id);
-            expect(newSession).to.not.be(session);
-            expect(newSession.kernel).to.not.be(session.kernel);
-            session.dispose();
-            done();
-          });
-        });
-      });
-
-    });
-
-    describe('shutdown()', () => {
-
-      it('should shut down a session by id', (done) => {
-        let manager = new SessionManager();
-        let handler = new RequestHandler(() => {
-          handler.respond(204, { });
-        });
-        manager.shutdown('foo').then(done, done);
-      });
-
-    });
-
-  });
-
 });
 
 
 /**
  * Start a session with the given options.
  */
-function startSession(sessionModel: ISession.IModel, tester?: KernelTester): Promise<ISession> {
+function startSession(sessionModel: Session.IModel, tester?: KernelTester): Promise<ISession> {
   tester = tester || new KernelTester();
   tester.onRequest = request => {
     tester.respond(200, sessionModel);
@@ -1131,5 +933,5 @@ function startSession(sessionModel: ISession.IModel, tester?: KernelTester): Pro
     };
   };
   let options = createSessionOptions(sessionModel);
-  return connectToSession(sessionModel.id, options);
+  return Session.connectTo(sessionModel.id, options);
 }

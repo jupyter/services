@@ -2,8 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IContents
-} from './contents';
+  validateModel as validateKernelModel
+} from '../kernel/validate';
+
+import {
+  Session
+} from './session';
 
 
 /**
@@ -33,27 +37,15 @@ function validateProperty(object: any, name: string, typeName?: string): void {
   }
 }
 
-/**
- * Validate an `IContents.IModel` object.
- */
-export
-function validateContentsModel(model: IContents.IModel): void {
-  validateProperty(model, 'name', 'string');
-  validateProperty(model, 'path', 'string');
-  validateProperty(model, 'type', 'string');
-  validateProperty(model, 'created', 'string');
-  validateProperty(model, 'last_modified', 'string');
-  validateProperty(model, 'mimetype', 'object');
-  validateProperty(model, 'content', 'object');
-  validateProperty(model, 'format', 'object');
-}
-
 
 /**
- * Validate an `IContents.ICheckpointModel` object.
+ * Validate an `Session.IModel` object.
  */
 export
-function validateCheckpointModel(model: IContents.ICheckpointModel): void  {
+function validateModel(model: Session.IModel): void {
   validateProperty(model, 'id', 'string');
-  validateProperty(model, 'last_modified', 'string');
+  validateProperty(model, 'notebook', 'object');
+  validateProperty(model, 'kernel', 'object');
+  validateKernelModel(model.kernel);
+  validateProperty(model.notebook, 'path', 'string');
 }
