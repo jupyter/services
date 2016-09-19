@@ -374,13 +374,10 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
         reject({ event, xhr, ajaxSettings, throwError: xhr.statusText });
       }
       let data = xhr.responseText;
-      if (ajaxSettings.dataType === 'json' && data) {
-        try {
-          data = JSON.parse(data);
-        } catch (err) {
-          let throwError = err.message;
-          reject({ event, xhr, ajaxSettings, throwError });
-        }
+      try {
+        data = JSON.parse(data);
+      } catch (err) {
+        // no-op
       }
       resolve({ xhr, ajaxSettings, data, event });
     };
