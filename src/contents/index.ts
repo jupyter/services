@@ -9,11 +9,11 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import * as utils
-  from './utils';
+  from '../utils';
 
 import {
   IAjaxSettings
-} from './utils';
+} from '../utils';
 
 import * as validate
   from './validate';
@@ -34,7 +34,7 @@ const FILES_URL = 'files';
  * A namespace for contents interfaces.
  */
 export
-namespace IContents {
+namespace Contents {
   /**
    * A contents model.
    */
@@ -308,7 +308,7 @@ namespace IContents {
  * This includes checkpointing with the normal file operations.
  */
 export
-class ContentsManager implements IContents.IManager {
+class ContentsManager implements Contents.IManager {
   /**
    * Construct a new contents manager object.
    *
@@ -344,7 +344,7 @@ class ContentsManager implements IContents.IManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  get(path: string, options?: IContents.IFetchOptions): Promise<IContents.IModel> {
+  get(path: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -362,7 +362,7 @@ class ContentsManager implements IContents.IManager {
       url += utils.jsonToQueryString(params);
     }
 
-    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): IContents.IModel => {
+    return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): Contents.IModel => {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
@@ -401,7 +401,7 @@ class ContentsManager implements IContents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
+  newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -474,7 +474,7 @@ class ContentsManager implements IContents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  rename(path: string, newPath: string): Promise<IContents.IModel> {
+  rename(path: string, newPath: string): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PATCH';
     ajaxSettings.dataType = 'json';
@@ -510,7 +510,7 @@ class ContentsManager implements IContents.IManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  save(path: string, options: IContents.IModel = {}): Promise<IContents.IModel> {
+  save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'PUT';
     ajaxSettings.dataType = 'json';
@@ -548,7 +548,7 @@ class ContentsManager implements IContents.IManager {
    *
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  copy(fromFile: string, toDir: string): Promise<IContents.IModel> {
+  copy(fromFile: string, toDir: string): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.data = JSON.stringify({ copy_from: fromFile });
@@ -580,7 +580,7 @@ class ContentsManager implements IContents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  createCheckpoint(path: string): Promise<IContents.ICheckpointModel> {
+  createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
@@ -610,7 +610,7 @@ class ContentsManager implements IContents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  listCheckpoints(path: string): Promise<IContents.ICheckpointModel[]> {
+  listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';

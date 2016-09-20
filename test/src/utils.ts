@@ -1,6 +1,5 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import encoding = require('text-encoding');
 
@@ -17,7 +16,7 @@ import {
 } from '../../lib/mockxhr';
 
 import {
-  IContents, IKernel, Kernel, KernelMessage
+  Contents, IKernel, Kernel, KernelMessage
 } from '../../lib';
 
 import {
@@ -98,7 +97,7 @@ const PYTHON_SPEC: Kernel.ISpecModel = {
 
 
 export
-const DEFAULT_FILE: IContents.IModel = {
+const DEFAULT_FILE: Contents.IModel = {
   name: 'test',
   path: '',
   type: 'file',

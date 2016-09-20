@@ -1,6 +1,5 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
 
@@ -16,7 +15,7 @@ import {
 } from 'xmlhttprequest';
 
 import {
-  ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
+  ConfigWithDefaults, ContentsManager, KernelMessage, Contents, IKernel,
   ISession, TerminalManager, Session, Kernel,
   TerminalSession, getConfigSection
 } from '../../lib';
@@ -268,10 +267,10 @@ describe('jupyter.services - Integration', () => {
 
     it('should list a directory and get the file contents', (done) => {
       let contents = new ContentsManager();
-      let content: IContents.IModel[];
+      let content: Contents.IModel[];
       let path = '';
       contents.get('src').then(listing => {
-        content = listing.content as IContents.IModel[];
+        content = listing.content as Contents.IModel[];
         for (let i = 0; i < content.length; i++) {
           if (content[i].type === 'file') {
             path = content[i].path;
@@ -286,7 +285,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should create a new file, rename it, and delete it', (done) => {
       let contents = new ContentsManager();
-      let options: IContents.ICreateOptions = { type: 'file', ext: '.ipynb' };
+      let options: Contents.ICreateOptions = { type: 'file', ext: '.ipynb' };
       contents.newUntitled(options).then(model0 => {
         return contents.rename(model0.path, 'foo.ipynb');
       }).then(model1 => {
@@ -297,7 +296,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should create a file by name and delete it', (done) => {
       let contents = new ContentsManager();
-      let options: IContents.IModel = {
+      let options: Contents.IModel = {
         type: 'file', content: '', format: 'text'
       };
       contents.save('baz.txt', options).then(model0 => {
@@ -307,10 +306,10 @@ describe('jupyter.services - Integration', () => {
 
     it('should exercise the checkpoint API', (done) => {
       let contents = new ContentsManager();
-      let options: IContents.IModel = {
+      let options: Contents.IModel = {
         type: 'file', format: 'text', content: 'foo'
       };
-      let checkpoint: IContents.ICheckpointModel;
+      let checkpoint: Contents.ICheckpointModel;
       contents.save('baz.txt', options).then(model0 => {
         expect(model0.name).to.be('baz.txt');
         return contents.createCheckpoint('baz.txt');
