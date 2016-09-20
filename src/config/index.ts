@@ -7,10 +7,10 @@ import {
 
 import {
   IAjaxSettings
-} from './utils';
+} from '../utils';
 
 import * as utils
-   from './utils';
+   from '../utils';
 
 
 /**
@@ -53,7 +53,20 @@ interface IConfigSection {
  * The namespace for ConfigSection statics.
  */
 export
-namespace IConfigSection {
+namespace ConfigSection {
+  /**
+   * Create a config section.
+   *
+   * @returns A Promise that is fulfilled with the config section is loaded.
+   */
+  export
+  function create(options: ConfigSection.IOptions): Promise<IConfigSection> {
+    let section = new DefaultConfigSection(options);
+    return section.load().then(() => {
+      return section;
+    });
+  }
+
   /**
    * The options used to create a config section.
    */
@@ -78,27 +91,13 @@ namespace IConfigSection {
 
 
 /**
- * Create a config section.
- *
- * @returns A Promise that is fulfilled with the config section is loaded.
- */
-export
-function getConfigSection(options: IConfigSection.IOptions): Promise<IConfigSection> {
-  let section = new ConfigSection(options);
-  return section.load().then(() => {
-    return section;
-  });
-}
-
-
-/**
  * Implementation of the Configurable data section.
  */
-class ConfigSection implements IConfigSection {
+class DefaultConfigSection implements IConfigSection {
   /**
    * Construct a new config section.
    */
-  constructor(options: IConfigSection.IOptions) {
+  constructor(options: ConfigSection.IOptions) {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     this.ajaxSettings = options.ajaxSettings || {};
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
