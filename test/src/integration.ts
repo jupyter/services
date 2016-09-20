@@ -18,7 +18,7 @@ import {
 import {
   ConfigWithDefaults, ContentsManager, KernelMessage, IContents, IKernel,
   ISession, TerminalManager, Session, Kernel,
-  TerminalSession, getConfigSection
+  TerminalSession, ConfigSection
 } from '../../lib';
 
 
@@ -251,7 +251,7 @@ describe('jupyter.services - Integration', () => {
 
     it('should get a config section on the server and update it', (done) => {
       let config: ConfigWithDefaults;
-      getConfigSection({ name: 'notebook' }).then(section => {
+      ConfigSection.create({ name: 'notebook' }).then(section => {
         let defaults: JSONObject = { default_cell_type: 'code' };
         config = new ConfigWithDefaults({ section, defaults, className: 'Notebook' });
         expect(config.get('default_cell_type')).to.be('code');

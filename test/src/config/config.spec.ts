@@ -1,31 +1,30 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
-
-import {
-  getConfigSection, ConfigWithDefaults
-} from '../../lib/config';
 
 import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  RequestHandler, ajaxSettings, expectFailure, expectAjaxError
-} from './utils';
+  ConfigSection, ConfigWithDefaults
+} from '../../../lib/config';
+
+import {
+  RequestHandler, ajaxSettings, expectAjaxError
+} from '../utils';
 
 
 describe('config', () => {
 
-  describe('getConfigSection()', () => {
+  describe('ConfigSection.create()', () => {
 
     it('should complete properly', (done) => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test' }).then(config => {
+      ConfigSection.create({ name: 'test' }).then(config => {
         done();
       });
     });
@@ -34,7 +33,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test', ajaxSettings }).then(config => {
+      ConfigSection.create({ name: 'test', ajaxSettings }).then(config => {
         done();
       });
     });
@@ -43,7 +42,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, { foo: 'bar' });
       });
-      getConfigSection({ name: 'test' }).then(config => {
+      ConfigSection.create({ name: 'test' }).then(config => {
         expect(config.data['foo']).to.be('bar');
         done();
       });
@@ -53,7 +52,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, { });
       });
-      let configPromise = getConfigSection({ name: 'test' });
+      let configPromise = ConfigSection.create({ name: 'test' });
       expectAjaxError(configPromise, done, 'Invalid Status: 201');
     });
 
@@ -65,7 +64,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test' }).then(config => {
+      ConfigSection.create({ name: 'test' }).then(config => {
         handler.onRequest = () => {
           handler.respond(200, config.data );
         };
@@ -84,7 +83,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test', ajaxSettings }).then(config => {
+      ConfigSection.create({ name: 'test', ajaxSettings }).then(config => {
         handler.onRequest = () => {
           handler.respond(200, config.data );
         };
@@ -100,7 +99,7 @@ describe('config', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test' }).then(config => {
+      ConfigSection.create({ name: 'test' }).then(config => {
         handler.onRequest = () => {
           handler.respond(201, { });
         };
@@ -124,7 +123,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
       let defaults: JSONObject = { spam: 'eggs' };
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, defaults, className });
         expect(config).to.be.a(ConfigWithDefaults);
         done();
@@ -141,7 +140,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
       let defaults: JSONObject = { foo: 'bar' };
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, defaults, className });
         let data = config.get('foo');
         expect(data).to.be('bar');
@@ -155,7 +154,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
       let defaults: JSONObject = { spam: 'eggs' };
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, defaults, className });
         let data = config.get('spam');
         expect(data).to.be('eggs');
@@ -169,7 +168,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
       let defaults: JSONObject = { spam: 'eggs' };
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, defaults, className });
         let data = config.get('spam');
         expect(data).to.be('eggs');
@@ -183,7 +182,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       });
       let defaults: JSONObject = { foo: true };
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, defaults, className });
         let data = config.get('foo');
         expect(data).to.not.be.ok();
@@ -199,7 +198,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
         handler.respond(200, {});
       });
       let className = 'testclass';
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         let config = new ConfigWithDefaults({ section, className });
         handler.onRequest = () => {
           handler.respond(200, {});
@@ -216,7 +215,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         handler.onRequest = () => {
           handler.respond(200, {foo: 'bar'});
         };
@@ -235,7 +234,7 @@ describe('jupyter.services - ConfigWithDefaults', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, {});
       });
-      getConfigSection({ name: 'test' }).then(section => {
+      ConfigSection.create({ name: 'test' }).then(section => {
         handler.onRequest = () => {
           handler.respond(201, {foo: 'bar'});
         };
