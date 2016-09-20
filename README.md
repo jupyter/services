@@ -386,13 +386,13 @@ contents.listCheckpoints('/foo/bar.txt').then((models) => {
 
 ```typescript
 import {
-  ConfigWithDefaults, getConfigSection, getKernelSpecs, startNewKernel
+  ConfigWithDefaults, ConfigSection
 } from 'jupyter-js-services';
 
 // The base url of the Jupyter server.
 let baseUrl = 'http://localhost:8000';
 
-getConfigSection({ name: 'notebook', baseUrl }).then(section => {
+ConfigSection.create({ name: 'notebook', baseUrl }).then(section => {
   let config = new ConfigWithDefaults({
     section,
     defaults: { default_cell_type: 'code' },
