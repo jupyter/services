@@ -2,8 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IContents
-} from './contents';
+  Contents
+} from './index';
 
 
 /**
@@ -34,10 +34,10 @@ function validateProperty(object: any, name: string, typeName?: string): void {
 }
 
 /**
- * Validate an `IContents.IModel` object.
+ * Validate an `Contents.IModel` object.
  */
 export
-function validateContentsModel(model: IContents.IModel): void {
+function validateContentsModel(model: Contents.IModel): void {
   validateProperty(model, 'name', 'string');
   validateProperty(model, 'path', 'string');
   validateProperty(model, 'type', 'string');
@@ -50,10 +50,10 @@ function validateContentsModel(model: IContents.IModel): void {
 
 
 /**
- * Validate an `IContents.ICheckpointModel` object.
+ * Validate an `Contents.ICheckpointModel` object.
  */
 export
-function validateCheckpointModel(model: IContents.ICheckpointModel): void  {
+function validateCheckpointModel(model: Contents.ICheckpointModel): void  {
   validateProperty(model, 'id', 'string');
   validateProperty(model, 'last_modified', 'string');
 }

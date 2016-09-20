@@ -7,12 +7,12 @@ import {
 } from './utils';
 
 import {
-  IContents
+  Contents
 } from './contents';
 
 
 export
-class MockContentsManager implements IContents.IManager {
+class MockContentsManager implements Contents.IManager {
 
   methods: string[] = [];
 
@@ -22,7 +22,7 @@ class MockContentsManager implements IContents.IManager {
    * Create a file with default content.
    */
   createFile(path: string): void {
-    let model: IContents.IModel = {
+    let model: Contents.IModel = {
       name: path.split('/').pop(),
       path: path,
       type: 'file',
@@ -34,7 +34,7 @@ class MockContentsManager implements IContents.IManager {
   /**
    * Get a path in the format it was saved or created in.
    */
-  get(path: string, options: IContents.IFetchOptions = {}): Promise<IContents.IModel> {
+  get(path: string, options: Contents.IFetchOptions = {}): Promise<Contents.IModel> {
     this.methods.push('get');
     let model = this._files[path];
     if (!model) {
@@ -51,12 +51,12 @@ class MockContentsManager implements IContents.IManager {
     return path;
   }
 
-  newUntitled(options: IContents.ICreateOptions = {}): Promise<IContents.IModel> {
+  newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
     this.methods.push('newUntitled');
     let ext = options.ext || '';
     let name = `untitled${ext}`;
     let path = `${options.path}/${name}`;
-    let format: IContents.FileFormat = 'text';
+    let format: Contents.FileFormat = 'text';
     if (options.type === 'notebook') {
       format = 'json';
     }
@@ -77,7 +77,7 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(void 0);
   }
 
-  rename(path: string, newPath: string): Promise<IContents.IModel> {
+  rename(path: string, newPath: string): Promise<Contents.IModel> {
     this.methods.push('rename');
     let model = this._files[path];
     if (!model) {
@@ -90,7 +90,7 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(model);
   }
 
-  save(path: string, options: IContents.IModel = {}): Promise<IContents.IModel> {
+  save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
     this.methods.push('save');
     if (options) {
       this._files[path] = this._copyModel(options);
@@ -98,38 +98,38 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(options);
   }
 
-  copy(path: string, toDir: string): Promise<IContents.IModel> {
+  copy(path: string, toDir: string): Promise<Contents.IModel> {
     this.methods.push('copy');
     let model = this._files[path];
     if (!model) {
       return Promise.reject(new Error('Path not found'));
     }
-    let newModel = JSON.parse(JSON.stringify(model)) as IContents.IModel;
+    let newModel = JSON.parse(JSON.stringify(model)) as Contents.IModel;
     newModel.path = `${toDir}/${model.name}`;
     this._files[newModel.path] = newModel;
     return Promise.resolve(newModel);
   }
 
-  createCheckpoint(path: string): Promise<IContents.ICheckpointModel> {
+  createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
     this.methods.push('createCheckpoint');
     let fileModel = this._files[path];
     if (!fileModel) {
       return Promise.reject(new Error('Path not found'));
     }
-    let checkpoints: IContents.ICheckpointModel[] = this._checkpoints[path] || [];
+    let checkpoints: Contents.ICheckpointModel[] = this._checkpoints[path] || [];
     let id = String(this._id++);
     let date = new Date(Date.now());
     let last_modified = date.toISOString();
-    let model: IContents.ICheckpointModel = { id, last_modified };
+    let model: Contents.ICheckpointModel = { id, last_modified };
     checkpoints.push(model);
     this._checkpoints[path] = checkpoints;
     this._fileSnaps[id] = this._copyModel(fileModel);
     return Promise.resolve(model);
   }
 
-  listCheckpoints(path: string): Promise<IContents.ICheckpointModel[]> {
+  listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
     this.methods.push('listCheckpoints');
-    let checkpoints: IContents.ICheckpointModel[] = this._checkpoints[path] || [];
+    let checkpoints: Contents.ICheckpointModel[] = this._checkpoints[path] || [];
     return Promise.resolve(checkpoints);
   }
 
@@ -145,14 +145,14 @@ class MockContentsManager implements IContents.IManager {
     return Promise.resolve(void 0);
   }
 
-  private _copyModel(model: IContents.IModel): IContents.IModel {
-    return JSON.parse(JSON.stringify(model)) as IContents.IModel;
+  private _copyModel(model: Contents.IModel): Contents.IModel {
+    return JSON.parse(JSON.stringify(model)) as Contents.IModel;
   }
 
   ajaxSettings: IAjaxSettings = {};
 
-  private _files: { [key: string]: IContents.IModel } = Object.create(null);
-  private _checkpoints: { [key: string]: IContents.ICheckpointModel[] } = Object.create(null);
-  private _fileSnaps: { [key: string]: IContents.IModel } = Object.create(null);
+  private _files: { [key: string]: Contents.IModel } = Object.create(null);
+  private _checkpoints: { [key: string]: Contents.ICheckpointModel[] } = Object.create(null);
+  private _fileSnaps: { [key: string]: Contents.IModel } = Object.create(null);
   private _id = 0;
 }

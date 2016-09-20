@@ -1,19 +1,18 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use strict';
 
 import expect = require('expect.js');
 
 import {
-  IContents, ContentsManager,
-} from '../../lib/contents';
+  Contents, ContentsManager
+} from '../../../lib/contents';
 
 import {
   DEFAULT_FILE, RequestHandler, ajaxSettings, expectFailure, expectAjaxError
-} from './utils';
+} from '../utils';
 
 
-let DEFAULT_DIR: IContents.IModel = {
+let DEFAULT_DIR: Contents.IModel = {
   name: 'bar',
   path: '/foo/bar',
   type: 'file',
@@ -25,7 +24,7 @@ let DEFAULT_DIR: IContents.IModel = {
   format: 'json'
 };
 
-let DEFAULT_CP: IContents.ICheckpointModel = {
+let DEFAULT_CP: Contents.ICheckpointModel = {
   id: '1234',
   last_modified: 'yesterday'
 };
@@ -57,7 +56,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, DEFAULT_FILE);
       });
-      let options: IContents.IFetchOptions = { type: 'file' };
+      let options: Contents.IFetchOptions = { type: 'file' };
       let get = contents.get('/foo', options);
       get.then(model => {
         expect(model.path).to.be(DEFAULT_FILE.path);
@@ -70,7 +69,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, DEFAULT_DIR);
       });
-      let options: IContents.IFetchOptions = { type: 'directory' };
+      let options: Contents.IFetchOptions = { type: 'directory' };
       let get = contents.get('/foo', options);
       get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
@@ -83,7 +82,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, DEFAULT_DIR);
       });
-      let options: IContents.IFetchOptions = { type: 'directory' };
+      let options: Contents.IFetchOptions = { type: 'directory' };
       let get = contents.get('/foo', options);
       get.then(model => {
         expect(model.content).to.be(DEFAULT_DIR.content);
@@ -229,7 +228,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_DIR);
       });
-      let options: IContents.ICreateOptions = {
+      let options: Contents.ICreateOptions = {
         path: '/foo',
         type: 'directory'
       };
@@ -245,7 +244,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, DEFAULT_DIR);
       });
-      let options: IContents.ICreateOptions = {
+      let options: Contents.ICreateOptions = {
         path: '/foo',
         type: 'file',
         ext: 'txt'
@@ -263,7 +262,7 @@ describe('contents', () => {
       let handler = new RequestHandler(() => {
         handler.respond(201, dir);
       });
-      let options: IContents.ICreateOptions = {
+      let options: Contents.ICreateOptions = {
         path: '/foo',
         type: 'file',
         ext: 'py'
@@ -544,7 +543,7 @@ describe('contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints('/foo/bar.txt');
-      checkpoints.then((obj: IContents.ICheckpointModel[]) => {
+      checkpoints.then((obj: Contents.ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
@@ -556,7 +555,7 @@ describe('contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints('/foo/bar.txt');
-      checkpoints.then((obj: IContents.ICheckpointModel[]) => {
+      checkpoints.then((obj: Contents.ICheckpointModel[]) => {
         expect(obj[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });

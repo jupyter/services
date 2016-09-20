@@ -14,7 +14,7 @@ import {
 } from 'phosphor/lib/core/signaling';
 
 import {
-  IContents, ContentsManager
+  Contents, ContentsManager
 } from './contents';
 
 import {
@@ -73,7 +73,7 @@ interface IServiceManager extends IDisposable {
    * #### Notes
    * This is a read-only property.
    */
-  contents: IContents.IManager;
+  contents: Contents.IManager;
 
   /**
    * The terminals manager for the manager.

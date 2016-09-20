@@ -5,11 +5,11 @@ import expect = require('expect.js');
 
 import {
   validateContentsModel, validateCheckpointModel
-} from '../../lib/validate';
+} from '../../../lib/contents/validate';
 
 import {
   DEFAULT_FILE
-} from './utils';
+} from '../utils';
 
 
 describe('validate', () => {
