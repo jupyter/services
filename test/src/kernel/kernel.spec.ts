@@ -197,7 +197,7 @@ describe('kernel', () => {
             return;
           }
           if (kernel.status === 'starting') {
-            tester.triggerError('Error event');
+            tester.close();
           }
         });
       });
@@ -516,7 +516,7 @@ describe('kernel', () => {
               done();
             }
           });
-          tester.triggerError('Error event');
+          tester.close();
         });
       });
 
@@ -1060,7 +1060,7 @@ describe('kernel', () => {
             cursor_pos: 4,
             detail_level: 0
           };
-          tester.triggerError('foo');
+          tester.close();
           let called = false;
           tester.onMessage((msg) => {
             called = true;

@@ -7,9 +7,12 @@ import {
   IAjaxSettings, PromiseDelegate, uuid, IAjaxError
 } from '../../lib/utils';
 
+import * as WebSocket
+  from  'ws';
+
 import {
-  MockSocket, MockSocketServer, overrideWebSocket
-} from '../../lib/mocksocket';
+  Server
+} from 'ws';
 
 import {
   MockXMLHttpRequest
@@ -28,7 +31,7 @@ import {
 declare var global: any;
 
 
-overrideWebSocket();
+global.WebSocket = WebSocket;
 
 
 /**
@@ -153,11 +156,12 @@ class KernelTester extends RequestHandler {
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this._promiseDelegate = new PromiseDelegate<void>();
-    MockSocketServer.onConnect = (server: MockSocketServer) => {
-      this._server = server;
+    this._server = new Server({ port: 8080 });
+    this._server.on('connection', (sock: WebSocket) => {
+      this._ws = sock;
       this.sendStatus(this._initialStatus);
       this._promiseDelegate.resolve();
-      this._server.onmessage = (msg: any) => {
+      this._ws.on('message', (msg: any) => {
         let data = deserialize(msg.data);
         if (data.header.msg_type === 'kernel_info_request') {
           data.parent_header = data.header;
@@ -166,10 +170,12 @@ class KernelTester extends RequestHandler {
           this.send(data);
         } else {
           let onMessage = this._onMessage;
-          if (onMessage) onMessage(data);
+          if (onMessage) {
+            onMessage(data);
+          }
         }
-      };
-    };
+      });
+    });
   }
 
   get initialStatus(): string {
@@ -191,15 +197,6 @@ class KernelTester extends RequestHandler {
   }
 
   /**
-   * Register a connection callback with the websocket server.
-   */
-  onConnect(cb: (server: MockSocketServer) => void) {
-    this._promiseDelegate.promise.then(() => {
-      cb(this._server);
-    });
-  }
-
-  /**
    * Register a message callback with the websocket server.
    */
   onMessage(cb: (msg: KernelMessage.IMessage) => void) {
@@ -207,36 +204,28 @@ class KernelTester extends RequestHandler {
   }
 
   /**
-   * Register a close with the websocket server.
-   */
-  onClose(cb: (ws: MockSocket) => void) {
-    this._promiseDelegate.promise.then(() => {
-      this._server.onWSClose = cb;
-    });
-  }
-
-  /**
    * Send a message to the server.
    */
   send(msg: KernelMessage.IMessage) {
     this._promiseDelegate.promise.then(() => {
-      this._server.send(serialize(msg));
+      this._ws.send(serialize(msg));
     });
   }
 
   /**
-   * Trigger an error on the server.
+   * Close the server.
    */
-  triggerError(msg: string) {
+  close() {
     this._promiseDelegate.promise.then(() => {
-      this._server.triggerError(msg);
+      this._server.close();
     });
   }
 
-  private _server: MockSocketServer = null;
+  private _server: Server = null;
   private _onMessage: (msg: KernelMessage.IMessage) => void = null;
   private _promiseDelegate: PromiseDelegate<void> = null;
   private _initialStatus = 'starting';
+  private _ws: WebSocket = null;
 }
 
 
