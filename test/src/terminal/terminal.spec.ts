@@ -22,6 +22,16 @@ import {
 
 describe('terminals', () => {
 
+  let server: Server;
+
+  beforeEach(() => {
+    server = new Server({ port: 8888 });
+  });
+
+  afterEach(() => {
+    server.close();
+  });
+
   describe('TerminalSession.open()', () => {
 
     it('should create a terminal session', (done) => {
@@ -134,23 +144,13 @@ describe('terminals', () => {
 
   describe('ITerminalSession', () => {
 
-    let server: Server;
-
-    beforeEach(() => {
-      server = new Server({ port: 8080 });
-    });
-
-    afterEach(() => {
-      server.close();
-    });
-
     describe('#messageReceived', () => {
 
       it('should be emitted when a message is received', (done) => {
         server.on('connection', ws => {
           ws.send(JSON.stringify(['stdout', 'foo bar']));
         });
-        TerminalSession.open({ name: 'foo' }).then(session => {
+        TerminalSession.open().then(session => {
           session.messageReceived.connect((sender, msg) => {
             expect(sender).to.be(session);
             expect(msg.type).to.be('stdout');
@@ -227,12 +227,12 @@ describe('terminals', () => {
         server.on('connection', ws => {
           ws.send(JSON.stringify(['stdout', 'foo bar']));
           ws.on('message', msg => {
-            let data = JSON.parse(msg.data) as any[];
+            let data = JSON.parse(msg) as any[];
             expect(data).to.eql(['stdin', 1, 2]);
             done();
           });
         });
-        TerminalSession.open({ name: 'foo' }).then(session => {
+        TerminalSession.open().then(session => {
           session.send({ type: 'stdin', content: [1, 2] });
         }).catch(done);
       });

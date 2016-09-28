@@ -156,7 +156,7 @@ class KernelTester extends RequestHandler {
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this._promiseDelegate = new PromiseDelegate<void>();
-    this._server = new Server({ port: 8080 });
+    this._server = new Server({ port: 8888 });
     this._server.on('connection', (sock: WebSocket) => {
       this._ws = sock;
       this.sendStatus(this._initialStatus);
