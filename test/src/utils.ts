@@ -150,19 +150,23 @@ class RequestHandler {
  */
 export
 class KernelTester extends RequestHandler {
+
+  static server = new Server({ port: 8888 });
+
   /**
    * Create a new Kernel tester.
    */
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this._promiseDelegate = new PromiseDelegate<void>();
-    this._server = new Server({ port: 8888 });
-    this._server.on('connection', (sock: WebSocket) => {
+    KernelTester.server.close();
+    let server = KernelTester.server = new Server({ port: 8888 });
+    server.on('connection', (sock: WebSocket) => {
       this._ws = sock;
       this.sendStatus(this._initialStatus);
       this._promiseDelegate.resolve();
       this._ws.on('message', (msg: any) => {
-        let data = deserialize(msg.data);
+        let data = deserialize(msg);
         if (data.header.msg_type === 'kernel_info_request') {
           data.parent_header = data.header;
           data.header.msg_type = 'kernel_info_reply';
