@@ -113,6 +113,22 @@ const DEFAULT_FILE: Contents.IModel = {
 };
 
 
+
+let server = new Server({ port: 8888 });
+
+
+/**
+ * Get a web socket server instance.
+ */
+export
+function getServer(): Server {
+  server.close();
+  server = new Server({ port: 8888 });
+  return server;
+}
+
+
+
 export
 class RequestHandler {
   /**
@@ -151,21 +167,21 @@ class RequestHandler {
 export
 class KernelTester extends RequestHandler {
 
-  static server = new Server({ port: 8888 });
-
   /**
    * Create a new Kernel tester.
    */
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this._promiseDelegate = new PromiseDelegate<void>();
-    KernelTester.server.close();
-    let server = KernelTester.server = new Server({ port: 8888 });
+    server = getServer();
     server.on('connection', (sock: WebSocket) => {
       this._ws = sock;
       this.sendStatus(this._initialStatus);
       this._promiseDelegate.resolve();
       this._ws.on('message', (msg: any) => {
+        if (msg instanceof Buffer) {
+          msg = new Uint8Array(msg).buffer;
+        }
         let data = deserialize(msg);
         if (data.header.msg_type === 'kernel_info_request') {
           data.parent_header = data.header;
@@ -217,15 +233,15 @@ class KernelTester extends RequestHandler {
   }
 
   /**
-   * Close the server.
+   * Close the socket.
    */
   close() {
     this._promiseDelegate.promise.then(() => {
-      this._server.close();
+      this._promiseDelegate = new PromiseDelegate<void>();
+      this._ws.close();
     });
   }
 
-  private _server: Server = null;
   private _onMessage: (msg: KernelMessage.IMessage) => void = null;
   private _promiseDelegate: PromiseDelegate<void> = null;
   private _initialStatus = 'starting';

@@ -304,7 +304,6 @@ describe('session', () => {
   describe('Session.connectTo()', () => {
 
     it('should connect to a running session', (done) => {
-      let tester = new KernelTester();
       let sessionModel = createSessionModel();
       startSession(sessionModel).then(session => {
         Session.connectTo(sessionModel.id).then((newSession) => {

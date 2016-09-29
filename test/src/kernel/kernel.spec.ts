@@ -1052,38 +1052,6 @@ describe('kernel', () => {
         });
       });
 
-      it('should delay the promise if the kernel is reconnecting', (done) => {
-        let tester = new KernelTester();
-        createKernel(tester).then(kernel => {
-          let options: KernelMessage.IInspectRequest = {
-            code: 'hello',
-            cursor_pos: 4,
-            detail_level: 0
-          };
-          tester.close();
-          let called = false;
-          tester.onMessage((msg) => {
-            called = true;
-            expect(msg.header.msg_type).to.be('inspect_request');
-            msg.parent_header = msg.header;
-            tester.send(msg);
-          });
-          let promise: Promise<KernelMessage.IInspectReplyMsg>;
-          kernel.statusChanged.connect(() => {
-            if (kernel.status === 'reconnecting') {
-              promise = kernel.inspect(options);
-              tester.sendStatus('idle');
-            }
-            if (kernel.status === 'idle') {
-              expect(called).to.be(false);
-              promise.then(() => {
-                expect(called).to.be(true);
-                done();
-              });
-            }
-          });
-        });
-      });
     });
 
     context('#isComplete()', () => {

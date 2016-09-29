@@ -16,7 +16,7 @@ import {
 } from '../../../lib/terminal';
 
 import {
-  RequestHandler
+  RequestHandler, getServer
 } from '../utils';
 
 
@@ -25,11 +25,7 @@ describe('terminals', () => {
   let server: Server;
 
   beforeEach(() => {
-    server = new Server({ port: 8888 });
-  });
-
-  afterEach(() => {
-    server.close();
+    server = getServer();
   });
 
   describe('TerminalSession.open()', () => {
