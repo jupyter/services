@@ -8,32 +8,29 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  Server
-} from 'ws';
-
-import {
   TerminalSession, TerminalManager
 } from '../../../lib/terminal';
 
 import {
-  RequestHandler, getServer
+  TerminalTester
 } from '../utils';
 
 
 describe('terminals', () => {
 
-  let server: Server;
+  let tester: TerminalTester;
 
   beforeEach(() => {
-    server = getServer();
+    tester = new TerminalTester();
+  });
+
+  afterEach(() => {
+    tester.dispose();
   });
 
   describe('TerminalSession.open()', () => {
 
     it('should create a terminal session', (done) => {
-      let handler = new RequestHandler(() => {
-        handler.respond(200, { name: '1' });
-      });
       TerminalSession.open().then(session => {
         expect(session.name).to.be('1');
         done();
@@ -75,9 +72,9 @@ describe('terminals', () => {
 
       it('should create a new terminal session', (done) => {
         let manager = new TerminalManager();
-        let handler = new RequestHandler(() => {
-          handler.respond(200, { name: '1' });
-        });
+        tester.onRequest = () => {
+          tester.respond(200, { name: '1' });
+        };
         manager.create().then(session => {
           expect(session.name).to.be('1');
           done();
@@ -90,9 +87,9 @@ describe('terminals', () => {
 
       it('should shut down a terminal session by name', (done) => {
         let manager = new TerminalManager();
-        let handler = new RequestHandler(() => {
-          handler.respond(204, {});
-        });
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
         manager.create({ name: 'foo' }).then(session => {
           return manager.shutdown('foo');
         }).then(() => {
@@ -112,9 +109,9 @@ describe('terminals', () => {
           expect(deepEqual(args, data)).to.be(true);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         manager.listRunning();
       });
 
@@ -124,9 +121,9 @@ describe('terminals', () => {
 
       it('should list the running session models', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         let manager = new TerminalManager();
         manager.listRunning().then(models => {
           expect(deepEqual(data, models)).to.be(true);
@@ -143,7 +140,7 @@ describe('terminals', () => {
     describe('#messageReceived', () => {
 
       it('should be emitted when a message is received', (done) => {
-        server.on('connection', ws => {
+        tester.onConnect(ws => {
           ws.send(JSON.stringify(['stdout', 'foo bar']));
         });
         TerminalSession.open().then(session => {
@@ -220,7 +217,7 @@ describe('terminals', () => {
     describe('#send()', () => {
 
       it('should send a message to the socket', (done) => {
-        server.on('connection', ws => {
+        tester.onConnect(ws => {
           ws.send(JSON.stringify(['stdout', 'foo bar']));
           ws.on('message', msg => {
             let data = JSON.parse(msg) as any[];
@@ -238,9 +235,9 @@ describe('terminals', () => {
     describe('#shutdown()', () => {
 
       it('should shut down the terminal session', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(204, {});
-        });
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
         TerminalSession.open({ name: 'foo' }).then(session => {
           return session.shutdown();
         }).then(done, done);

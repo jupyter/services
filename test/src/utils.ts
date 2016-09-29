@@ -4,8 +4,8 @@
 import encoding = require('text-encoding');
 
 import {
-  IAjaxSettings, PromiseDelegate, uuid, IAjaxError
-} from '../../lib/utils';
+  useFakeXMLHttpRequest
+} from 'sinon';
 
 import * as WebSocket
   from  'ws';
@@ -15,12 +15,12 @@ import {
 } from 'ws';
 
 import {
-  MockXMLHttpRequest
-} from '../../lib/mockxhr';
+  Contents, IKernel, Kernel, KernelMessage, ITerminalSession, TerminalSession
+} from '../../lib';
 
 import {
-  Contents, IKernel, Kernel, KernelMessage
-} from '../../lib';
+  IAjaxSettings, PromiseDelegate, uuid, IAjaxError
+} from '../../lib/utils';
 
 import {
   deserialize, serialize
@@ -29,7 +29,6 @@ import {
 
 // stub for node global
 declare var global: any;
-
 
 global.WebSocket = WebSocket;
 
@@ -113,20 +112,23 @@ const DEFAULT_FILE: Contents.IModel = {
 };
 
 
-
-let server = new Server({ port: 8888 });
-
-
-/**
- * Get a web socket server instance.
- */
 export
-function getServer(): Server {
-  server.close();
-  server = new Server({ port: 8888 });
-  return server;
+interface IFakeRequest {
+  url: string;
+  method: string;
+  requestHeaders: any;
+  requestBody: string;
+  status: number;
+  statusText: string;
+  async: boolean;
+  username: string;
+  password: string;
+  withCredentials: boolean;
+  respond(status: number, headers: any, body: string): void;
 }
 
+
+const xhr = useFakeXMLHttpRequest();
 
 
 export
@@ -134,30 +136,105 @@ class RequestHandler {
   /**
    * Create a new RequestHandler.
    */
-  constructor(onRequest?: (request: MockXMLHttpRequest) => void) {
+  constructor(onRequest?: (request: IFakeRequest) => void) {
     if (typeof window === 'undefined') {
-      global.XMLHttpRequest = MockXMLHttpRequest;
       global.TextEncoder = encoding.TextEncoder;
       global.TextDecoder = encoding.TextDecoder;
-    } else {
-      (window as any).XMLHttpRequest = MockXMLHttpRequest;
     }
-    MockXMLHttpRequest.requests = [];
-    this.onRequest = onRequest;
+    this._onRequest = onRequest;
+    xhr.onCreate = value => {
+      this._requests.push(value);
+      let handler = this.onRequest;
+      if (handler) {
+        handler(value);
+      }
+    };
   }
 
-  set onRequest(cb: (request: MockXMLHttpRequest) => void) {
-    MockXMLHttpRequest.onRequest = cb;
+  set onRequest(cb: (request: IFakeRequest) => void) {
+    this._onRequest = cb;
   }
 
   /**
    * Respond to the latest Ajax request.
    */
-  respond(statusCode: number, data: any, header?: any): void {
-    let len = MockXMLHttpRequest.requests.length;
-    let request = MockXMLHttpRequest.requests[len - 1];
-    request.respond(statusCode, data, header);
+  respond(status: number, body: any, headers: any = {}): void {
+    let len = this._requests.length;
+    let request = this._requests[len - 1];
+    request.respond(status, headers, JSON.stringify(body));
   }
+
+  private _requests: IFakeRequest[] = [];
+  private _onRequest: (request: IFakeRequest) => void = null;
+}
+
+
+/**
+ * Request and socket class test rig.
+ */
+class RequestSocketTester extends RequestHandler {
+  /**
+   * Create a new request and socket tester.
+   */
+  constructor(onRequest?: (request: any) => void) {
+    super(onRequest);
+    this._server = new Server({ port: 8888 });
+    this._promiseDelegate = new PromiseDelegate<void>();
+    this._server.on('connection', ws => {
+      this._ws = ws;
+      this.onSocket(ws);
+      this._promiseDelegate.resolve();
+      let connect = this._onConnect;
+      if (connect) {
+        connect(ws);
+      }
+    });
+  }
+
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._server.close();
+    this._server = null;
+  }
+
+  get isDisposed(): boolean {
+    return this._server === null;
+  }
+
+  /**
+   * Send a raw message to the server.
+   */
+  sendRaw(msg: string | ArrayBuffer) {
+    this._promiseDelegate.promise.then(() => {
+      this._ws.send(msg);
+    });
+  }
+
+  /**
+   * Close the socket.
+   */
+  close() {
+    this._promiseDelegate.promise.then(() => {
+      this._promiseDelegate = new PromiseDelegate<void>();
+      this._ws.close();
+    });
+  }
+
+  /**
+   * Register the handler for connections.
+   */
+  onConnect(cb: (ws: WebSocket) => void): void {
+    this._onConnect = cb;
+  }
+
+  protected onSocket(sock: WebSocket): void { /* no-op */ }
+
+  private _ws: WebSocket = null;
+  private _promiseDelegate: PromiseDelegate<void> = null;
+  private _server: Server = null;
+  private _onConnect: (ws: WebSocket) => void = null;
 }
 
 
@@ -165,37 +242,17 @@ class RequestHandler {
  * Kernel class test rig.
  */
 export
-class KernelTester extends RequestHandler {
-
+class KernelTester extends RequestSocketTester {
   /**
-   * Create a new Kernel tester.
+   * Create a new kernel tester.
    */
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
-    this._promiseDelegate = new PromiseDelegate<void>();
-    server = getServer();
-    server.on('connection', (sock: WebSocket) => {
-      this._ws = sock;
-      this.sendStatus(this._initialStatus);
-      this._promiseDelegate.resolve();
-      this._ws.on('message', (msg: any) => {
-        if (msg instanceof Buffer) {
-          msg = new Uint8Array(msg).buffer;
-        }
-        let data = deserialize(msg);
-        if (data.header.msg_type === 'kernel_info_request') {
-          data.parent_header = data.header;
-          data.header.msg_type = 'kernel_info_reply';
-          data.content = EXAMPLE_KERNEL_INFO;
-          this.send(data);
-        } else {
-          let onMessage = this._onMessage;
-          if (onMessage) {
-            onMessage(data);
-          }
-        }
-      });
-    });
+    if (!onRequest) {
+      this.onRequest = () => {
+        this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      };
+    }
   }
 
   get initialStatus(): string {
@@ -216,50 +273,80 @@ class KernelTester extends RequestHandler {
     this.send(msg);
   }
 
+  send(msg: KernelMessage.IMessage): void {
+    this.sendRaw(serialize(msg));
+  }
+
   /**
-   * Register a message callback with the websocket server.
+   * Register the message callback with the websocket server.
    */
-  onMessage(cb: (msg: KernelMessage.IMessage) => void) {
+  onMessage(cb: (msg: KernelMessage.IMessage) => void): void {
     this._onMessage = cb;
   }
 
-  /**
-   * Send a message to the server.
-   */
-  send(msg: KernelMessage.IMessage) {
-    this._promiseDelegate.promise.then(() => {
-      this._ws.send(serialize(msg));
+  protected onSocket(sock: WebSocket): void {
+    super.onSocket(sock);
+    this.sendStatus(this._initialStatus);
+    sock.on('message', (msg: any) => {
+      if (msg instanceof Buffer) {
+        msg = new Uint8Array(msg).buffer;
+      }
+      let data = deserialize(msg);
+      if (data.header.msg_type === 'kernel_info_request') {
+        data.parent_header = data.header;
+        data.header.msg_type = 'kernel_info_reply';
+        data.content = EXAMPLE_KERNEL_INFO;
+        this.send(data);
+      } else {
+        let onMessage = this._onMessage;
+        if (onMessage) {
+          onMessage(data);
+        }
+      }
     });
   }
 
-  /**
-   * Close the socket.
-   */
-  close() {
-    this._promiseDelegate.promise.then(() => {
-      this._promiseDelegate = new PromiseDelegate<void>();
-      this._ws.close();
-    });
-  }
-
-  private _onMessage: (msg: KernelMessage.IMessage) => void = null;
-  private _promiseDelegate: PromiseDelegate<void> = null;
   private _initialStatus = 'starting';
-  private _ws: WebSocket = null;
+  private _onMessage: (msg: KernelMessage.IMessage) => void = null;
 }
 
 
 /**
- * Convenience function to start a kernel fully.
+ * Terminal session test rig.
  */
 export
-function createKernel(tester?: KernelTester): Promise<IKernel> {
-  tester = tester || new KernelTester();
-  tester.onRequest = () => {
-    tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
-  };
-  let kernelPromise = Kernel.startNew(KERNEL_OPTIONS);
-  return kernelPromise;
+class TerminalTester extends RequestSocketTester {
+  /**
+   * Construct a new terminal tester.
+   */
+  constructor(onRequest?: (request: any) => void) {
+    super(onRequest);
+    this.onRequest = (request) => {
+      let model = JSON.parse(request.requestBody) as TerminalSession.IModel;
+      let name = model.name || String(++this._count);
+      this.respond(200, { name });
+    };
+  }
+
+  /**
+   * Register the message callback with the websocket server.
+   */
+  onMessage(cb: (msg: TerminalSession.IMessage) => void) {
+    this._onMessage = cb;
+  }
+
+  protected onSocket(sock: WebSocket): void {
+    super.onSocket(sock);
+    sock.on('message', (msg: any) => {
+      let onMessage = this._onMessage;
+      if (onMessage) {
+        onMessage(JSON.parse(msg) as TerminalSession.IMessage);
+      }
+    });
+  }
+
+  private _onMessage: (msg: TerminalSession.IMessage) => void = null;
+  private _count = 0;
 }
 
 
