@@ -8,34 +8,43 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  MockSocketServer
-} from '../../../lib/mocksocket';
-
-import {
-  TerminalSession, TerminalManager
+  TerminalSession, TerminalManager, ITerminalSession
 } from '../../../lib/terminal';
 
 import {
-  RequestHandler
+  TerminalTester
 } from '../utils';
 
 
 describe('terminals', () => {
 
+  let tester: TerminalTester;
+  let session: ITerminalSession;
+
+  beforeEach(() => {
+    tester = new TerminalTester();
+  });
+
+  afterEach(() => {
+    if (session) {
+      session.dispose();
+    }
+    tester.dispose();
+  });
+
   describe('TerminalSession.open()', () => {
 
     it('should create a terminal session', (done) => {
-      let handler = new RequestHandler(() => {
-        handler.respond(200, { name: '1' });
-      });
-      TerminalSession.open().then(session => {
+      TerminalSession.open().then(s => {
+        session = s;
         expect(session.name).to.be('1');
         done();
       }).catch(done);
     });
 
     it('should give back an existing session', (done) => {
-      TerminalSession.open({ name: 'foo' }).then(session => {
+      TerminalSession.open({ name: 'foo' }).then(s => {
+        session = s;
         return TerminalSession.open({ name: 'foo' }).then(newSession => {
           expect(newSession).to.be(session);
           done();
@@ -69,10 +78,11 @@ describe('terminals', () => {
 
       it('should create a new terminal session', (done) => {
         let manager = new TerminalManager();
-        let handler = new RequestHandler(() => {
-          handler.respond(200, { name: '1' });
-        });
-        manager.create().then(session => {
+        tester.onRequest = () => {
+          tester.respond(200, { name: '1' });
+        };
+        manager.create().then(s => {
+          session = s;
           expect(session.name).to.be('1');
           done();
         }).catch(done);
@@ -84,10 +94,11 @@ describe('terminals', () => {
 
       it('should shut down a terminal session by name', (done) => {
         let manager = new TerminalManager();
-        let handler = new RequestHandler(() => {
-          handler.respond(204, {});
-        });
-        manager.create({ name: 'foo' }).then(session => {
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
+        manager.create({ name: 'foo' }).then(s => {
+          session = s;
           return manager.shutdown('foo');
         }).then(() => {
           done();
@@ -106,9 +117,9 @@ describe('terminals', () => {
           expect(deepEqual(args, data)).to.be(true);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         manager.listRunning();
       });
 
@@ -118,9 +129,9 @@ describe('terminals', () => {
 
       it('should list the running session models', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         let manager = new TerminalManager();
         manager.listRunning().then(models => {
           expect(deepEqual(data, models)).to.be(true);
@@ -134,19 +145,23 @@ describe('terminals', () => {
 
   describe('ITerminalSession', () => {
 
+    beforeEach((done) => {
+      TerminalSession.open().then(s => {
+        session = s;
+        done();
+      });
+    });
+
     describe('#messageReceived', () => {
 
       it('should be emitted when a message is received', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          session.messageReceived.connect((sender, msg) => {
-            expect(sender).to.be(session);
-            expect(msg.type).to.be('stdout');
-            expect(msg.content).to.eql(['foo bar']);
-            done();
-          });
-          let server = MockSocketServer.servers[session.url];
-          server.send(JSON.stringify(['stdout', 'foo bar']));
-        }).catch(done);
+        session.messageReceived.connect((sender, msg) => {
+          expect(sender).to.be(session);
+          expect(msg.type).to.be('stdout');
+          expect(msg.content).to.eql(['foo bar']);
+          done();
+        });
+        tester.sendRaw(JSON.stringify(['stdout', 'foo bar']));
       });
 
     });
@@ -154,58 +169,45 @@ describe('terminals', () => {
     describe('#name', () => {
 
       it('should be the name of the session', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
+        session.dispose();
+        TerminalSession.open({ name: 'foo' }).then(s => {
+          session = s;
           expect(session.name).to.be('foo');
           done();
         }).catch(done);
       });
 
-      it('should be read-only', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(() => { session.name = ''; }).to.throwError();
-          done();
-        }).catch(done);
+      it('should be read-only', () => {
+        expect(() => { session.name = ''; }).to.throwError();
       });
 
     });
 
     describe('#isDisposed', () => {
 
-      it('should test whether the object is disposed', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(session.isDisposed).to.be(false);
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should test whether the object is disposed', () => {
+        expect(session.isDisposed).to.be(false);
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
-      it('should be read-only', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(() => { session.isDisposed = false; }).to.throwError();
-          done();
-        }).catch(done);
+      it('should be read-only', () => {
+        expect(() => { session.isDisposed = false; }).to.throwError();
       });
 
     });
 
     describe('#dispose()', () => {
 
-      it('should dispose of the resources used by the session', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should dispose of the resources used by the session', () => {
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
-      it('should be safe to call more than once', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          session.dispose();
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should be safe to call more than once', () => {
+        session.dispose();
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
     });
@@ -213,15 +215,11 @@ describe('terminals', () => {
     describe('#send()', () => {
 
       it('should send a message to the socket', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          let server = MockSocketServer.servers[session.url];
-          server.onmessage = (msg: any) => {
-            let data = JSON.parse(msg.data) as any[];
-            expect(data).to.eql(['stdin', 1, 2]);
-            done();
-          };
-          session.send({ type: 'stdin', content: [1, 2] });
-        }).catch(done);
+        tester.onMessage(msg => {
+          expect(msg.type).to.be('stdin');
+          done();
+        });
+        session.send({ type: 'stdin', content: [1, 2] });
       });
 
     });
@@ -229,12 +227,10 @@ describe('terminals', () => {
     describe('#shutdown()', () => {
 
       it('should shut down the terminal session', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(204, {});
-        });
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          return session.shutdown();
-        }).then(done, done);
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
+        session.shutdown().then(done, done);
       });
 
     });

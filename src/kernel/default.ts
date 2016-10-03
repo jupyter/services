@@ -1136,6 +1136,7 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       validate.validateModel(success.data);
+      options.name = success.data.name;
       return new DefaultKernel(options, success.data.id);
     }, onKernelError);
   }

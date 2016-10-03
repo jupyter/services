@@ -18,7 +18,7 @@ import {
 
 import {
   MockXMLHttpRequest
-} from '../../lib/mockxhr';
+} from './mockxhr';
 
 
 declare var global: any;
