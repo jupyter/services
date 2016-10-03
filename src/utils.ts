@@ -16,6 +16,10 @@ import * as urljoin
   from 'url-join';
 
 
+// Stub for requirejs
+declare var requirejs: any;
+
+
 /**
  * Copy the contents of one object to another, recursively.
  *
@@ -60,88 +64,6 @@ function uuid(): string {
 
 
 /**
- * An object describing a url.
- */
-export
-interface IUrlObject {
-  /**
-   * The full URL string that was parsed with both the `protocol` and `host`
-   * components converted to lower-case.
-   */
-  href: string;
-
-  /**
-   * The URL's lower-cased protocol scheme.
-   */
-  protocol: string;
-
-  /**
-   * Whether two ASCII forward-slash characters `(/)` are required following
-   * the colon in the protocol.
-   */
-  slashes: boolean;
-
-  /**
-   * The full lower-cased host portion of the URL, including the `port` if
-   * specified.
-   */
-  host: string;
-
-  /**
-   * The username and password portion of the URL, also referred to as
-   * "userinfo". This string subset follows the `protocol` and double slashes
-   * (if present) and preceeds the host component, delimited by an ASCII "at
-   * sign" `(@)`. The format of the string is `{username}[:{password}]`, with
-   * the `[:{password}]` portion being optional.
-   */
-  auth: string;
-
-  /**
-   * The lower-cased host name portion of the `host` component *without* the
-   * port included.
-   */
-  hostname: string;
-
-  /**
-   * The numeric port portion of the `host` component.
-   */
-  port: string;
-
-  /**
-   * The entire path section of the URL. This is everything following the
-   * `host` (including the `port`) and before the start of the `query` or
-   * `hash` components, delimited by either the ASCII question mark `(?)` or
-   * hash `(#)` characters.
-   */
-  pathname: string;
-
-  /**
-   * The entire "query string" portion of the URL, including the leading ASCII
-   * question mark `(?)` character.
-   */
-  search: string;
-
-  /**
-   * A concatenation of the `pathname` and `search` components.
-   */
-  path: string;
-
-  /**
-   * Either the "params" portion of the `query` string ( everything except the
-   *  leading ASCII question mark `(?)`, or an object returned by the
-   *  `querystring` module's `parse()` method.
-   */
-  query: string;
-
-  /**
-   * The "fragment" portion of the URL including the leading ASCII hash
-   * `(#)` character.
-   */
-  hash: string;
-}
-
-
-/**
  * Parse a url into a URL object.
  *
  * @param urlString - The URL string to parse.
@@ -160,7 +82,7 @@ interface IUrlObject {
  * @returns A URL object.
  */
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrlObject {
+function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): url.Url {
   return url.parse(urlStr, parseQueryString, slashesDenoteHost);
 }
 
@@ -481,7 +403,7 @@ class PromiseDelegate<T> {
   /**
    * Resolve the underlying Promise with an optional value or another Promise.
    */
-  resolve(value?: T | Thenable<T>): void {
+  resolve(value?: T | Promise<T>): void {
     // Note: according to the Promise spec, and the `this` context for resolve
     // and reject are ignored
     this._resolve(value);
@@ -497,7 +419,7 @@ class PromiseDelegate<T> {
   }
 
   private _promise: Promise<T>;
-  private _resolve: (value?: T | Thenable<T>) => void;
+  private _resolve: (value?: T | Promise<T>) => void;
   private _reject: (reason?: any) => void;
 }
 
