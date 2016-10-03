@@ -3,7 +3,6 @@
 /// <reference path="../../typings/es6-promise/es6-promise.d.ts"/>
 /// <reference path="../../typings/mocha/mocha.d.ts"/>
 /// <reference path="../../typings/requirejs/r.d.ts"/>
-/// <reference path="../../typings/sinon/sinon.d.ts"/>
 /// <reference path="../../typings/text-encoding/text-encoding.d.ts"/>
 /// <reference path="../../typings/xmlhttprequest/xmlhttprequest.d.ts"/>
 /// <reference path="../../typings/ws/ws.d.ts"/>
