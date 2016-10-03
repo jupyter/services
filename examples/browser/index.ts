@@ -9,16 +9,12 @@
 import 'es6-promise';
 
 import {
-  Session
+  Session, utils
 } from 'jupyter-js-services';
 
-import {
-  getBaseUrl, getWsUrl
-} from 'jupyter-js-utils';
 
-
-const BASE_URL = getBaseUrl();
-const WS_URL = getWsUrl();
+const BASE_URL = utils.getBaseUrl();
+const WS_URL = utils.getWsUrl();
 
 
 function main() {

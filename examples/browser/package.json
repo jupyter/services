@@ -3,8 +3,7 @@
   "name": "browser-example",
   "dependencies": {
     "es6-promise": "^3.2.1",
-    "jupyter-js-services": "file:../..",
-    "jupyter-js-utils": "^0.4.0"
+    "jupyter-js-services": "file:../.."
   },
   "scripts": {
     "build": "tsc && webpack",
