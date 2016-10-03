@@ -314,8 +314,7 @@ class TerminalTester extends RequestSocketTester {
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this.onRequest = (request) => {
-      let model = JSON.parse(request.requestBody) as TerminalSession.IModel;
-      let name = model.name || String(++this._count);
+      let name = String(++this._count);
       this.respond(200, { name });
     };
   }
@@ -332,7 +331,12 @@ class TerminalTester extends RequestSocketTester {
     sock.on('message', (msg: any) => {
       let onMessage = this._onMessage;
       if (onMessage) {
-        onMessage(JSON.parse(msg) as TerminalSession.IMessage);
+        let data = JSON.parse(msg) as any[];
+        let termMsg: TerminalSession.IMessage = {
+          type: data[0] as TerminalSession.MessageType,
+          content: data.slice(1)
+        };
+        onMessage(termMsg);
       }
     });
   }

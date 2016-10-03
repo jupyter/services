@@ -8,7 +8,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  TerminalSession, TerminalManager
+  TerminalSession, TerminalManager, ITerminalSession
 } from '../../../lib/terminal';
 
 import {
@@ -19,26 +19,32 @@ import {
 describe('terminals', () => {
 
   let tester: TerminalTester;
+  let session: ITerminalSession;
 
   beforeEach(() => {
     tester = new TerminalTester();
   });
 
   afterEach(() => {
+    if (session) {
+      session.dispose();
+    }
     tester.dispose();
   });
 
   describe('TerminalSession.open()', () => {
 
     it('should create a terminal session', (done) => {
-      TerminalSession.open().then(session => {
+      TerminalSession.open().then(s => {
+        session = s;
         expect(session.name).to.be('1');
         done();
       }).catch(done);
     });
 
     it('should give back an existing session', (done) => {
-      TerminalSession.open({ name: 'foo' }).then(session => {
+      TerminalSession.open({ name: 'foo' }).then(s => {
+        session = s;
         return TerminalSession.open({ name: 'foo' }).then(newSession => {
           expect(newSession).to.be(session);
           done();
@@ -75,7 +81,8 @@ describe('terminals', () => {
         tester.onRequest = () => {
           tester.respond(200, { name: '1' });
         };
-        manager.create().then(session => {
+        manager.create().then(s => {
+          session = s;
           expect(session.name).to.be('1');
           done();
         }).catch(done);
@@ -90,7 +97,8 @@ describe('terminals', () => {
         tester.onRequest = () => {
           tester.respond(204, {});
         };
-        manager.create({ name: 'foo' }).then(session => {
+        manager.create({ name: 'foo' }).then(s => {
+          session = s;
           return manager.shutdown('foo');
         }).then(() => {
           done();
@@ -137,20 +145,23 @@ describe('terminals', () => {
 
   describe('ITerminalSession', () => {
 
+    beforeEach((done) => {
+      TerminalSession.open().then(s => {
+        session = s;
+        done();
+      });
+    });
+
     describe('#messageReceived', () => {
 
       it('should be emitted when a message is received', (done) => {
-        tester.onConnect(ws => {
-          ws.send(JSON.stringify(['stdout', 'foo bar']));
+        session.messageReceived.connect((sender, msg) => {
+          expect(sender).to.be(session);
+          expect(msg.type).to.be('stdout');
+          expect(msg.content).to.eql(['foo bar']);
+          done();
         });
-        TerminalSession.open().then(session => {
-          session.messageReceived.connect((sender, msg) => {
-            expect(sender).to.be(session);
-            expect(msg.type).to.be('stdout');
-            expect(msg.content).to.eql(['foo bar']);
-            done();
-          });
-        }).catch(done);
+        tester.sendRaw(JSON.stringify(['stdout', 'foo bar']));
       });
 
     });
@@ -158,58 +169,45 @@ describe('terminals', () => {
     describe('#name', () => {
 
       it('should be the name of the session', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
+        session.dispose();
+        TerminalSession.open({ name: 'foo' }).then(s => {
+          session = s;
           expect(session.name).to.be('foo');
           done();
         }).catch(done);
       });
 
-      it('should be read-only', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(() => { session.name = ''; }).to.throwError();
-          done();
-        }).catch(done);
+      it('should be read-only', () => {
+        expect(() => { session.name = ''; }).to.throwError();
       });
 
     });
 
     describe('#isDisposed', () => {
 
-      it('should test whether the object is disposed', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(session.isDisposed).to.be(false);
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should test whether the object is disposed', () => {
+        expect(session.isDisposed).to.be(false);
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
-      it('should be read-only', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          expect(() => { session.isDisposed = false; }).to.throwError();
-          done();
-        }).catch(done);
+      it('should be read-only', () => {
+        expect(() => { session.isDisposed = false; }).to.throwError();
       });
 
     });
 
     describe('#dispose()', () => {
 
-      it('should dispose of the resources used by the session', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should dispose of the resources used by the session', () => {
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
-      it('should be safe to call more than once', (done) => {
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          session.dispose();
-          session.dispose();
-          expect(session.isDisposed).to.be(true);
-          done();
-        }).catch(done);
+      it('should be safe to call more than once', () => {
+        session.dispose();
+        session.dispose();
+        expect(session.isDisposed).to.be(true);
       });
 
     });
@@ -217,17 +215,11 @@ describe('terminals', () => {
     describe('#send()', () => {
 
       it('should send a message to the socket', (done) => {
-        tester.onConnect(ws => {
-          ws.send(JSON.stringify(['stdout', 'foo bar']));
-          ws.on('message', msg => {
-            let data = JSON.parse(msg) as any[];
-            expect(data).to.eql(['stdin', 1, 2]);
-            done();
-          });
+        tester.onMessage(msg => {
+          expect(msg.type).to.be('stdin');
+          done();
         });
-        TerminalSession.open().then(session => {
-          session.send({ type: 'stdin', content: [1, 2] });
-        }).catch(done);
+        session.send({ type: 'stdin', content: [1, 2] });
       });
 
     });
@@ -238,9 +230,7 @@ describe('terminals', () => {
         tester.onRequest = () => {
           tester.respond(204, {});
         };
-        TerminalSession.open({ name: 'foo' }).then(session => {
-          return session.shutdown();
-        }).then(done, done);
+        session.shutdown().then(done, done);
       });
 
     });
