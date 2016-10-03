@@ -43,12 +43,16 @@ let createMsg = (channel: KernelMessage.Channel, parentHeader: JSONObject): Kern
 describe('kernel', () => {
 
   let tester: KernelTester;
+  let kernel: IKernel;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     tester = new KernelTester();
   });
 
   afterEach(() => {
+    if (kernel) {
+      kernel.dispose();
+    }
     tester.dispose();
   });
 
@@ -121,7 +125,8 @@ describe('kernel', () => {
   describe('Kernel.startNew()', () => {
 
     it('should create an IKernel object', (done) => {
-      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(k => {
+        kernel = k;
         expect(kernel.status).to.be('unknown');
         done();
       });
@@ -129,7 +134,8 @@ describe('kernel', () => {
 
     it('should accept ajax options', (done) => {
       let kernelPromise = Kernel.startNew(AJAX_KERNEL_OPTIONS);
-      kernelPromise.then(kernel => {
+      kernelPromise.then(k => {
+        kernel = k;
         expect(kernel.status).to.be('unknown');
         done();
       });
@@ -137,7 +143,8 @@ describe('kernel', () => {
 
     it('should still start if the kernel dies', (done) => {
       tester.initialStatus = 'dead';
-      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(k => {
+        kernel = k;
         kernel.statusChanged.connect((sender, state) => {
           if (state === 'dead') {
             done();
@@ -185,12 +192,12 @@ describe('kernel', () => {
       tester.onRequest = () => {
         tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       };
-      Kernel.startNew(KERNEL_OPTIONS).then(kernel => {
+      Kernel.startNew(KERNEL_OPTIONS).then(k => {
+        kernel = k;
         expect(kernel.status).to.be('unknown');
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'reconnecting') {
             done();
-            kernel.dispose();
             return;
           }
           if (kernel.status === 'starting') {
@@ -227,10 +234,12 @@ describe('kernel', () => {
       tester.onRequest = () => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       };
-      Kernel.connectTo(id, KERNEL_OPTIONS).then(kernel => {
+      Kernel.connectTo(id, KERNEL_OPTIONS).then(k => {
+        kernel = k;
         Kernel.connectTo(id).then(newKernel => {
           expect(newKernel.name).to.be(kernel.name);
           expect(newKernel.id).to.be(kernel.id);
+          newKernel.dispose();
           done();
         });
       });
@@ -241,7 +250,8 @@ describe('kernel', () => {
       tester.onRequest = () => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       };
-      Kernel.connectTo(id, KERNEL_OPTIONS).then(kernel => {
+      Kernel.connectTo(id, KERNEL_OPTIONS).then(k => {
+        kernel = k;
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
@@ -253,7 +263,8 @@ describe('kernel', () => {
       tester.onRequest = () => {
         tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
       };
-      Kernel.connectTo(id, AJAX_KERNEL_OPTIONS).then(kernel => {
+      Kernel.connectTo(id, AJAX_KERNEL_OPTIONS).then(k => {
+        kernel = k;
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
@@ -284,8 +295,6 @@ describe('kernel', () => {
 
   describe('IKernel', () => {
 
-    let kernel: IKernel;
-
     beforeEach((done) => {
       Kernel.startNew().then(k => {
         kernel = k;
@@ -298,7 +307,6 @@ describe('kernel', () => {
       it('should be a signal following the Kernel status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'busy') {
-            kernel.dispose();
             done();
           }
         });
@@ -311,7 +319,6 @@ describe('kernel', () => {
       it('should be emitted for an iopub message', (done) => {
         kernel.iopubMessage.connect((k, msg) => {
           expect(msg.header.msg_type).to.be('status');
-          kernel.dispose();
           done();
         });
         let msg = KernelMessage.createMessage({
@@ -327,7 +334,6 @@ describe('kernel', () => {
       it('should be emitted regardless of the sender', (done) => {
         kernel.iopubMessage.connect((k, msg) => {
           expect(msg.header.msg_type).to.be('status');
-          kernel.dispose();
           done();
         });
         let msg = KernelMessage.createMessage({
@@ -442,7 +448,6 @@ describe('kernel', () => {
       it('should get an idle status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'idle') {
-            kernel.dispose();
             done();
           }
         });
@@ -452,7 +457,6 @@ describe('kernel', () => {
       it('should get a restarting status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'restarting') {
-            kernel.dispose();
             done();
           }
         });
@@ -462,7 +466,6 @@ describe('kernel', () => {
       it('should get a busy status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'busy') {
-            kernel.dispose();
             done();
           }
         });
@@ -472,7 +475,6 @@ describe('kernel', () => {
       it('should get a reconnecting status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'reconnecting') {
-            kernel.dispose();
             done();
           }
         });
@@ -482,7 +484,6 @@ describe('kernel', () => {
       it('should get a dead status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'dead') {
-            kernel.dispose();
             done();
           }
         });
@@ -492,7 +493,6 @@ describe('kernel', () => {
       it('should handle an invalid status', (done) => {
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'idle') {
-            kernel.dispose();
             done();
           }
         });
@@ -518,7 +518,7 @@ describe('kernel', () => {
 
     context('#spec', () => {
 
-      it('should be null by default', (done) => {
+      it('should be null by default', () => {
         expect(kernel.spec).to.be(null);
       });
 
@@ -1304,8 +1304,6 @@ describe('kernel', () => {
   });
 
   describe('IFuture', () => {
-
-    let kernel: IKernel;
 
     beforeEach((done) => {
       Kernel.startNew().then(k => {
