@@ -12,7 +12,8 @@ KARMA_PORT = 9876
 
 def start_notebook():
     nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
-                  '--debug', '--NotebookApp.allow_origin="*"']
+                  '--debug', '--NotebookApp.allow_origin="*"',
+                  '--NotebookApp.contents_manager_class="mockcontents.MockContentsManager"']
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
