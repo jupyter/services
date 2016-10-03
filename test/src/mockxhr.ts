@@ -155,6 +155,13 @@ class MockXMLHttpRequest {
   }
 
   /**
+   * Get the body request data.
+   */
+  get requestBody(): any {
+    return this._data;
+  }
+
+  /**
    * Initialize a request.
    */
   open(method: string, url: string, async?: boolean, user?: string, password?:string): void {
