@@ -3,10 +3,6 @@
 
 import encoding = require('text-encoding');
 
-import {
-  useFakeXMLHttpRequest
-} from 'sinon';
-
 import * as WebSocket
   from  'ws';
 
@@ -25,6 +21,10 @@ import {
 import {
   deserialize, serialize
 } from '../../lib/kernel/serialize';
+
+import {
+  MockXMLHttpRequest
+} from './mockxhr';
 
 
 // stub for node global
@@ -128,44 +128,36 @@ interface IFakeRequest {
 }
 
 
-const xhr = useFakeXMLHttpRequest();
-
 
 export
 class RequestHandler {
   /**
    * Create a new RequestHandler.
    */
-  constructor(onRequest?: (request: IFakeRequest) => void) {
+  constructor(onRequest?: (request: MockXMLHttpRequest) => void) {
     if (typeof window === 'undefined') {
+      global.XMLHttpRequest = MockXMLHttpRequest;
       global.TextEncoder = encoding.TextEncoder;
       global.TextDecoder = encoding.TextDecoder;
+    } else {
+      (window as any).XMLHttpRequest = MockXMLHttpRequest;
     }
-    this._onRequest = onRequest;
-    xhr.onCreate = value => {
-      this._requests.push(value);
-      let handler = this.onRequest;
-      if (handler) {
-        handler(value);
-      }
-    };
+    MockXMLHttpRequest.requests = [];
+    this.onRequest = onRequest;
   }
 
-  set onRequest(cb: (request: IFakeRequest) => void) {
-    this._onRequest = cb;
+  set onRequest(cb: (request: MockXMLHttpRequest) => void) {
+    MockXMLHttpRequest.onRequest = cb;
   }
 
   /**
    * Respond to the latest Ajax request.
    */
-  respond(status: number, body: any, headers: any = {}): void {
-    let len = this._requests.length;
-    let request = this._requests[len - 1];
-    request.respond(status, headers, JSON.stringify(body));
+  respond(statusCode: number, data: any, header?: any): void {
+    let len = MockXMLHttpRequest.requests.length;
+    let request = MockXMLHttpRequest.requests[len - 1];
+    request.respond(statusCode, data, header);
   }
-
-  private _requests: IFakeRequest[] = [];
-  private _onRequest: (request: IFakeRequest) => void = null;
 }
 
 
