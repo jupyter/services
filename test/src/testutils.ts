@@ -4,8 +4,6 @@
 
 import expect = require('expect.js');
 
-import requirejs = require('requirejs');
-
 import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
@@ -22,7 +20,7 @@ import {
 
 
 declare var global: any;
-global.requirejs = requirejs;
+global.requirejs = require('requirejs');
 
 
 describe('jupyter-js-utils', () => {
