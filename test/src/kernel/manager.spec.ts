@@ -12,7 +12,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  KernelManager, Kernel
+  KernelManager, Kernel, IKernel
 } from '../../../lib/kernel';
 
 import {
@@ -31,6 +31,20 @@ PYTHON3_SPEC.spec.display_name = 'python3';
 
 
 describe('kernel/manager', () => {
+
+  let tester: KernelTester;
+  let kernel: IKernel;
+
+  beforeEach(() => {
+    tester = new KernelTester();
+  });
+
+  afterEach(() => {
+    if (kernel) {
+      kernel.dispose();
+    }
+    tester.dispose();
+  });
 
   describe('KernelManager', () => {
 
@@ -73,9 +87,9 @@ describe('kernel/manager', () => {
           expect(deepEqual(args, data)).to.be(true);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         manager.listRunning();
       });
 
@@ -89,10 +103,10 @@ describe('kernel/manager', () => {
           'python': PYTHON_SPEC,
           'python3': PYTHON3_SPEC
         };
-        let handler = new RequestHandler(() => {
-          handler.respond(200, { 'default': 'python',
+        tester.onRequest = () => {
+          tester.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
-        });
+        };
         manager.getSpecs().then(specs => {
           let names = Object.keys(specs.kernelspecs);
           expect(names[0]).to.be('python');
@@ -111,9 +125,9 @@ describe('kernel/manager', () => {
           { id: uuid(), name: 'test' },
           { id: uuid(), name: 'test2' }
         ];
-        let handler = new RequestHandler(() => {
-          handler.respond(200, data);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
         manager.listRunning().then(response => {
           expect(response[0]).to.eql(data[0]);
           expect(response[1]).to.eql(data[1]);
@@ -127,14 +141,14 @@ describe('kernel/manager', () => {
 
       it('should start a new kernel', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
-        let tester = new KernelTester(() => {
+        tester.onRequest = () => {
           tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
-        });
-        manager.startNew().then(kernel => {
+        };
+        manager.startNew().then(k => {
+          kernel = k;
           expect(kernel.status).to.be('unknown');
           kernel.statusChanged.connect(() => {
             if (kernel.status === 'starting') {
-              kernel.dispose();
               done();
             }
           });
@@ -149,10 +163,11 @@ describe('kernel/manager', () => {
       it('should find an existing kernel by id', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         let id = uuid();
-        let tester = new KernelTester(() => {
+        tester.onRequest = () => {
           tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
-        });
-        manager.startNew().then(kernel => {
+        };
+        manager.startNew().then(k => {
+          kernel = k;
           manager.findById(id).then(newKernel => {
             expect(newKernel.name).to.be(kernel.name);
             expect(newKernel.id).to.be(kernel.id);
@@ -168,14 +183,16 @@ describe('kernel/manager', () => {
       it('should connect to an existing kernel', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         let id = uuid();
-        let tester = new KernelTester(() => {
+        tester.onRequest = () => {
           tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
-        });
-        manager.startNew().then(kernel => {
+        };
+        manager.startNew().then(k => {
+          kernel = k;
           manager.connectTo(id).then(newKernel => {
             expect(newKernel.name).to.be(kernel.name);
             expect(newKernel.id).to.be(kernel.id);
             expect(newKernel).to.not.be(kernel);
+            newKernel.dispose();
             done();
           });
         });
@@ -187,9 +204,9 @@ describe('kernel/manager', () => {
 
       it('should shut down a kernel by id', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
-        let handler = new RequestHandler(() => {
-          handler.respond(204, { });
-        });
+        tester.onRequest = () => {
+          tester.respond(204, { });
+        };
         manager.shutdown('foo').then(done, done);
       });
 

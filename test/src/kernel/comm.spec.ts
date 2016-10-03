@@ -22,7 +22,6 @@ describe('jupyter.services - Comm', () => {
 
   beforeEach((done) => {
     tester = new KernelTester();
-    debugger;
     Kernel.startNew().then(k => {
       kernel = k;
       done();
@@ -30,6 +29,9 @@ describe('jupyter.services - Comm', () => {
   });
 
   afterEach(() => {
+    if (kernel) {
+      kernel.dispose();
+    }
     tester.dispose();
   });
 
