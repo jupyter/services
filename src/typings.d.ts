@@ -1,6 +1,5 @@
 
 /// <reference path="../typings/path-posix/path-posix.d.ts"/>
-/// <reference path="../typings/url/url.d.ts"/>
 /// <reference path="../typings/url-join/url-join.d.ts"/>
 
 /*
