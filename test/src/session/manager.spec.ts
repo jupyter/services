@@ -16,7 +16,7 @@ import {
 } from '../../../lib/mockkernel';
 
 import {
-  SessionManager, Session
+  SessionManager, Session, ISession
 } from '../../../lib/session';
 
 import {
@@ -51,6 +51,20 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
 
 
 describe('session', () => {
+
+  let tester: KernelTester;
+  let session: ISession;
+
+  beforeEach(() => {
+    tester = new KernelTester();
+  });
+
+  afterEach(() => {
+    if (session) {
+      session.dispose();
+    }
+    tester.dispose();
+  });
 
   describe('SessionManager', () => {
 
@@ -120,7 +134,6 @@ describe('session', () => {
     describe('#startNew()', () => {
 
       it('should start a session', (done) => {
-        let tester = new KernelTester();
         let model = createSessionModel();
         let manager = new SessionManager(createSessionOptions(model));
         tester.onRequest = (request) => {
@@ -131,9 +144,9 @@ describe('session', () => {
                                     id: model.kernel.id });
           }
         };
-        manager.startNew({ path: 'test.ipynb'}).then(session => {
+        manager.startNew({ path: 'test.ipynb'}).then(s => {
+          session = s;
           expect(session.id).to.be(model.id);
-          session.dispose();
           done();
         });
       });
@@ -143,7 +156,6 @@ describe('session', () => {
     describe('#findByPath()', () => {
 
       it('should find an existing session by path', (done) => {
-        let tester = new KernelTester();
         let model = createSessionModel();
         let manager = new SessionManager(createSessionOptions(model));
         tester.onRequest = (request) => {
@@ -155,10 +167,10 @@ describe('session', () => {
           }
         };
         manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
+        ).then(s => {
+          session = s;
           manager.findByPath(session.path).then(newModel => {
             expect(newModel.id).to.be(session.id);
-            session.dispose();
             done();
           });
         });
@@ -170,7 +182,6 @@ describe('session', () => {
     describe('#findById()', () => {
 
       it('should find an existing session by id', (done) => {
-        let tester = new KernelTester();
         let model = createSessionModel();
         let manager = new SessionManager(createSessionOptions(model));
         tester.onRequest = (request) => {
@@ -182,10 +193,10 @@ describe('session', () => {
           }
         };
         manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
+        ).then(s => {
+          session = s;
           manager.findById(session.id).then(newModel => {
             expect(newModel.id).to.be(session.id);
-            session.dispose();
             done();
           });
         });
@@ -196,7 +207,6 @@ describe('session', () => {
     describe('#connectTo()', () => {
 
       it('should connect to a running session', (done) => {
-        let tester = new KernelTester();
         let model = createSessionModel();
         let manager = new SessionManager(createSessionOptions(model));
         tester.onRequest = (request) => {
@@ -208,13 +218,14 @@ describe('session', () => {
           }
         };
         manager.startNew({ path: 'test.ipynb' }
-        ).then(session => {
+        ).then(s => {
+          session = s;
           manager.connectTo(session.id).then(newSession => {
             expect(newSession.id).to.be(session.id);
             expect(newSession.kernel.id).to.be(session.kernel.id);
             expect(newSession).to.not.be(session);
             expect(newSession.kernel).to.not.be(session.kernel);
-            session.dispose();
+            newSession.dispose();
             done();
           });
         });

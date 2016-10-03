@@ -64,12 +64,16 @@ function startNewSession(tester?: KernelTester): Promise<ISession> {
 describe('session', () => {
 
   let tester: KernelTester;
+  let session: ISession;
 
   beforeEach(() => {
     tester = new KernelTester();
   });
 
   afterEach(() => {
+    if (session) {
+      session.dispose();
+    }
     tester.dispose();
   });
 
@@ -137,7 +141,8 @@ describe('session', () => {
 
     it('should update an existing session', (done) => {
       let newKernel = { name: 'fizz', id: 'buzz' };
-      startNewSession(tester).then(session => {
+      startNewSession(tester).then(s => {
+        session = s;
         tester.onRequest = request => {
           tester.respond(200, [ {
             id: session.model.id,
@@ -148,10 +153,11 @@ describe('session', () => {
             tester.respond(200, newKernel);
           };
         };
-        session.kernelChanged.connect((s, kernel) => {
+        session.kernelChanged.connect((value, kernel) => {
           expect(kernel.name).to.be(newKernel.name);
           expect(kernel.id).to.be(newKernel.id);
-          expect(s.path).to.be('foo/bar.ipynb');
+          expect(value.path).to.be('foo/bar.ipynb');
+          value.dispose();
           done();
         });
         Session.listRunning();
@@ -173,9 +179,9 @@ describe('session', () => {
         }
       };
       let options = createSessionOptions(sessionModel);
-      Session.startNew(options).then(session => {
+      Session.startNew(options).then(s => {
+        session = s;
         expect(session.id).to.be(sessionModel.id);
-        session.dispose();
         done();
       });
     });
@@ -194,9 +200,9 @@ describe('session', () => {
           }
         };
         let options = createSessionOptions(sessionModel);
-        Session.startNew(options).then(session => {
+        Session.startNew(options).then(s => {
+          session = s;
           expect(session.id).to.be(sessionModel.id);
-          session.dispose();
           done();
         });
       });
@@ -214,9 +220,9 @@ describe('session', () => {
       };
       let options = createSessionOptions(sessionModel);
       options.ajaxSettings = ajaxSettings;
-      Session.startNew(options).then(session => {
+      Session.startNew(options).then(s => {
+        session = s;
         expect(session.id).to.be(sessionModel.id);
-        session.dispose();
         done();
       });
     });
@@ -233,8 +239,8 @@ describe('session', () => {
       tester.initialStatus = 'dead';
       let sessionModel = createSessionModel();
       let options = createSessionOptions(sessionModel);
-      Session.startNew(options).then(session => {
-        session.dispose();
+      Session.startNew(options).then(s => {
+        session = s;
         done();
       });
     });
@@ -325,13 +331,14 @@ describe('session', () => {
   describe('Session.connectTo()', () => {
 
     it('should connect to a running session', (done) => {
-      startNewSession(tester).then(session => {
+      startNewSession(tester).then(s => {
+        session = s;
         Session.connectTo(session.id).then((newSession) => {
           expect(newSession.id).to.be(session.id);
           expect(newSession.kernel.id).to.be(session.kernel.id);
           expect(newSession).to.not.be(session);
           expect(newSession.kernel).to.not.be(session.kernel);
-          session.dispose();
+          newSession.dispose();
           done();
         });
       });
@@ -348,9 +355,9 @@ describe('session', () => {
         }
       };
       let options = createSessionOptions(sessionModel);
-      Session.connectTo(sessionModel.id, options).then(session => {
+      Session.connectTo(sessionModel.id, options).then(s => {
+        session = s;
         expect(session.id).to.be(sessionModel.id);
-        session.dispose();
         done();
       });
     });
@@ -367,9 +374,9 @@ describe('session', () => {
       };
       let options = createSessionOptions(sessionModel);
       options.ajaxSettings = ajaxSettings;
-      Session.connectTo(sessionModel.id, options).then(session => {
+      Session.connectTo(sessionModel.id, options).then(s => {
+        session = s;
         expect(session.id).to.be(sessionModel.id);
-        session.dispose();
         done();
       });
     });
@@ -401,11 +408,10 @@ describe('session', () => {
 
   describe('ISession', () => {
 
-    let session: ISession;
 
     beforeEach((done) => {
       startNewSession(tester).then(s => {
-        session = session;
+        session = s;
         done();
       }).catch(done);
     });
@@ -431,6 +437,7 @@ describe('session', () => {
 
       it('should emit when the kernel changes', (done) => {
         let model = createSessionModel();
+        model.id = session.id;
         let name = model.kernel.name;
         let id = model.kernel.id;
         tester.onRequest = request => {
@@ -503,6 +510,7 @@ describe('session', () => {
 
       it('should be emitted when the session path changes', (done) => {
         let model = createSessionModel();
+        model.id = session.id;
         tester.onRequest = () => {
           tester.respond(200, model);
         };
@@ -605,8 +613,8 @@ describe('session', () => {
     context('#rename()', () => {
 
       it('should rename the session', (done) => {
-        let model = createSessionModel();
-        let path = model.notebook.path;
+        let model = session.model;
+        let path = model.notebook.path = 'foo.ipynb';
         tester.onRequest = () => {
           tester.respond(200, model);
         };
@@ -654,6 +662,7 @@ describe('session', () => {
       it('should create a new kernel with the new name', (done) => {
         let previous = session.kernel;
         let model = createSessionModel();
+        model.id = session.id;
         let name = model.kernel.name;
         tester.onRequest = request => {
           if (request.method === 'PATCH') {
@@ -672,6 +681,7 @@ describe('session', () => {
       it('should accept the id of the new kernel', (done) => {
         let previous = session.kernel;
         let model = createSessionModel();
+        model.id = session.id;
         let id = model.kernel.id;
         let name = model.kernel.name;
         tester.onRequest = request => {
@@ -691,6 +701,7 @@ describe('session', () => {
 
       it('should work when there is no current kernel', (done) => {
         let model = createSessionModel();
+        model.id = session.id;
         session.kernel.dispose();
         let name = model.kernel.name;
         tester.onRequest = request => {
@@ -708,7 +719,8 @@ describe('session', () => {
       });
 
       it('should update the session path if it has changed', (done) => {
-        let model = createSessionModel();
+        let model = session.model;
+        model.notebook.path = 'foo.ipynb';
         session.kernel.dispose();
         let name = model.kernel.name;
         let id = model.kernel.id;
