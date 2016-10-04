@@ -119,11 +119,6 @@ describe('mockterminals', () => {
         expect(session.name).to.be('foo');
       });
 
-      it('should be read-only', () => {
-        let session = new MockTerminalSession('foo');
-        expect(() => { session.name = ''; }).to.throwError();
-      });
-
     });
 
     describe('#isDisposed', () => {
@@ -133,11 +128,6 @@ describe('mockterminals', () => {
         expect(session.isDisposed).to.be(false);
         session.dispose();
         expect(session.isDisposed).to.be(true);
-      });
-
-      it('should be read-only', () => {
-        let session = new MockTerminalSession('foo');
-        expect(() => { session.isDisposed = false; }).to.throwError();
       });
 
     });
