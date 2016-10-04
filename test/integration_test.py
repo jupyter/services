@@ -1,17 +1,28 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
+import argparse
 import subprocess
 import sys
-import argparse
+import os
 import re
+import shutil
 import threading
+import tempfile
+
+
+# Set up the file structure
+root_dir = tempfile.mkdtemp(prefix='mock_contents')
+os.mkdir(os.path.join(root_dir, 'src'))
+with open(os.path.join(root_dir, 'src', 'temp.txt'), 'w') as fid:
+    fid.write('hello')
+
 
 KARMA_PORT = 9876
 
 
 def start_notebook():
-    nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
+    nb_command = [sys.executable, '-m', 'notebook', root_dir, '--no-browser',
                   '--debug', '--NotebookApp.allow_origin="*"']
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
@@ -73,4 +84,5 @@ if __name__ == '__main__':
     finally:
         nb_server.kill()
 
+    shutil.rmtree(root_dir, True)
     sys.exit(resp)
