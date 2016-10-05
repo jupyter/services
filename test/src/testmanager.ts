@@ -96,20 +96,12 @@ describe('manager', () => {
         expect(deepEqual(manager.kernelspecs, KERNELSPECS)).to.be(true);
       });
 
-      it('should be read-only', () => {
-        expect(() => { manager.kernelspecs = null; }).to.throwError();
-      });
-
     });
 
     describe('#kernels', () => {
 
       it('should be the kernel manager instance', () => {
         expect(manager.kernels).to.be.a(KernelManager);
-      });
-
-      it('should be read-only', () => {
-        expect(() => { manager.kernels = null; }).to.throwError();
       });
 
     });
@@ -120,10 +112,6 @@ describe('manager', () => {
         expect(manager.sessions).to.be.a(SessionManager);
       });
 
-      it('should be read-only', () => {
-        expect(() => { manager.sessions = null; }).to.throwError();
-      });
-
     });
 
     describe('#contents', () => {
@@ -132,20 +120,12 @@ describe('manager', () => {
         expect(manager.contents).to.be.a(ContentsManager);
       });
 
-      it('should be read-only', () => {
-        expect(() => { manager.contents = null; }).to.throwError();
-      });
-
     });
 
     describe('#terminals', () => {
 
       it('should be the terminal manager instance', () => {
         expect(manager.terminals).to.be.a(TerminalManager);
-      });
-
-      it('should be read-only', () => {
-        expect(() => { manager.terminals = null; }).to.throwError();
       });
 
     });

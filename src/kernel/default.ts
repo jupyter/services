@@ -94,9 +94,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * The id of the server-side kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get id(): string {
     return this._id;
@@ -104,9 +101,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * The name of the server-side kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get name(): string {
     return this._name;
@@ -114,9 +108,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * Get the model associated with the kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get model(): Kernel.IModel {
     return { name: this.name, id: this.id };
@@ -124,9 +115,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * The client username.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
    get username(): string {
      return this._username;
@@ -134,9 +122,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * The client unique id.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get clientId(): string {
     return this._clientId;
@@ -144,9 +129,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * The current status of the kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get status(): Kernel.Status {
     return this._status;
@@ -156,7 +138,6 @@ class DefaultKernel implements IKernel {
    * The cached info for the kernel.
    *
    * #### Notes
-   * This is a read-only property.
    * If `null`, call [[kernelInfo]] to get the value,
    * which will populate this value.
    */
@@ -168,7 +149,6 @@ class DefaultKernel implements IKernel {
    * The cached specs for the kernel.
    *
    * #### Notes
-   * This is a read-only property.
    * If `null`, call [[Kernel.getSpecs]] to get the value,
    * which will populate this value.
    */
@@ -191,9 +171,6 @@ class DefaultKernel implements IKernel {
 
   /**
    * Test whether the kernel has been disposed.
-   *
-   * #### Notes
-   * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
     return this._futures === null;

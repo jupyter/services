@@ -63,27 +63,18 @@ interface ISession extends IDisposable {
 
   /**
    * Unique id of the session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  id: string;
+  readonly id: string;
 
   /**
    * The path associated with the session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  path: string;
+  readonly path: string;
 
   /**
    * The model associated with the session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  model: Session.IModel;
+  readonly model: Session.IModel;
 
   /**
    * The kernel.
@@ -93,15 +84,15 @@ interface ISession extends IDisposable {
    * Use the [statusChanged] and [unhandledMessage] signals on the session
    * instead of the ones on the kernel.
    */
-  kernel: IKernel;
+  readonly kernel: IKernel;
 
   /**
    * The current status of the session.
    *
    * #### Notes
-   * This is a read-only property, and is a delegate to the kernel status.
+   * This is a delegate to the kernel status.
    */
-  status: Kernel.Status;
+  readonly status: Kernel.Status;
 
   /**
    * Optional default settings for ajax requests, if applicable.
@@ -363,11 +354,11 @@ namespace Session {
     /**
      * The unique identifier for the session client.
      */
-    id: string;
-    notebook?: {
+    readonly id: string;
+    readonly notebook?: {
       [ key: string ]: string;
       path: string;
     };
-    kernel?: Kernel.IModel;
+    readonly kernel?: Kernel.IModel;
   }
 }

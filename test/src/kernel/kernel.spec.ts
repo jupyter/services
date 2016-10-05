@@ -399,47 +399,42 @@ describe('kernel', () => {
 
     context('#id', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof kernel.id).to.be('string');
-        expect(() => { kernel.id = '1'; }).to.throwError();
       });
 
     });
 
     context('#name', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof kernel.name).to.be('string');
-        expect(() => { kernel.name = '1'; }).to.throwError();
       });
 
     });
 
     context('#model', () => {
 
-      it('should be a read only IModel', () => {
+      it('should be an IModel', () => {
         let model = kernel.model;
         expect(typeof model.name).to.be('string');
         expect(typeof model.id).to.be('string');
-        expect(() => { kernel.model = null; }).to.throwError();
       });
 
     });
 
     context('#username', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof kernel.username).to.be('string');
-        expect(() => { kernel.username = '1'; }).to.throwError();
       });
 
     });
 
     context('#clientId', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof kernel.clientId).to.be('string');
-        expect(() => { kernel.clientId = '1'; }).to.throwError();
       });
     });
 
@@ -1312,10 +1307,9 @@ describe('kernel', () => {
       }).catch(done);
     });
 
-    it('should have a read-only msg attribute', () => {
+    it('should have a msg attribute', () => {
       let future = kernel.execute({ code: 'hello' });
       expect(typeof future.msg.header.msg_id).to.be('string');
-      expect(() => { future.msg = null; }).to.throwError();
     });
 
     describe('Message hooks', () => {

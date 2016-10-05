@@ -23,9 +23,9 @@ import {
 /**
  * Create a unique session id.
  */
-function createSessionModel(): Session.IModel {
+function createSessionModel(id?: string): Session.IModel {
   return {
-    id: uuid(),
+    id: id || uuid(),
     notebook: { path: uuid() },
     kernel: { id: uuid(), name: uuid() }
   };
@@ -189,8 +189,13 @@ describe('session', () => {
     it('should be able connect to an existing kernel', (done) => {
       let sessionModel = createSessionModel();
       Kernel.startNew().then(kernel => {
-        sessionModel.kernel.id = kernel.id;
-        sessionModel.kernel.name = kernel.name;
+        sessionModel = {
+          id: uuid(),
+          kernel: kernel.model,
+          notebook: {
+            path: uuid()
+          }
+        };
         tester.onRequest = request => {
           if (request.method === 'POST') {
             tester.respond(201, sessionModel);
@@ -436,8 +441,7 @@ describe('session', () => {
     context('#kernelChanged', () => {
 
       it('should emit when the kernel changes', (done) => {
-        let model = createSessionModel();
-        model.id = session.id;
+        let model = createSessionModel(session.id);
         let name = model.kernel.name;
         let id = model.kernel.id;
         tester.onRequest = request => {
@@ -509,8 +513,7 @@ describe('session', () => {
     context('#pathChanged', () => {
 
       it('should be emitted when the session path changes', (done) => {
-        let model = createSessionModel();
-        model.id = session.id;
+        let model = createSessionModel(session.id);
         tester.onRequest = () => {
           tester.respond(200, model);
         };
@@ -525,47 +528,42 @@ describe('session', () => {
 
     context('#id', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof session.id).to.be('string');
-        expect(() => { session.id = '1'; }).to.throwError();
       });
     });
 
     context('#path', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         expect(typeof session.path).to.be('string');
-        expect(() => { session.path = ''; }).to.throwError();
       });
     });
 
-    context('#path', () => {
+    context('#model', () => {
 
-      it('should be a read only IModel', () => {
+      it('should be an IModel', () => {
         let model = session.model;
         expect(typeof model.id).to.be('string');
         expect(typeof model.notebook.path).to.be('string');
         expect(typeof model.kernel.name).to.be('string');
         expect(typeof model.kernel.id).to.be('string');
-        expect(() => { session.model = null; }).to.throwError();
       });
 
     });
 
     context('#kernel', () => {
 
-      it('should be a read only IKernel object', () => {
+      it('should be an IKernel object', () => {
         expect(typeof session.kernel.id).to.be('string');
-        expect(() => { session.kernel = null; }).to.throwError();
       });
 
     });
 
     context('#kernel', () => {
 
-      it('should be a read only delegate to the kernel status', () => {
+      it('should be a delegate to the kernel status', () => {
         expect(session.status).to.be(session.kernel.status);
-        expect(() => { session.status = 'idle'; }).to.throwError();
       });
     });
 
@@ -661,8 +659,7 @@ describe('session', () => {
 
       it('should create a new kernel with the new name', (done) => {
         let previous = session.kernel;
-        let model = createSessionModel();
-        model.id = session.id;
+        let model = createSessionModel(session.id);
         let name = model.kernel.name;
         tester.onRequest = request => {
           if (request.method === 'PATCH') {
@@ -680,8 +677,7 @@ describe('session', () => {
 
       it('should accept the id of the new kernel', (done) => {
         let previous = session.kernel;
-        let model = createSessionModel();
-        model.id = session.id;
+        let model = createSessionModel(session.id);
         let id = model.kernel.id;
         let name = model.kernel.name;
         tester.onRequest = request => {
@@ -700,8 +696,7 @@ describe('session', () => {
       });
 
       it('should work when there is no current kernel', (done) => {
-        let model = createSessionModel();
-        model.id = session.id;
+        let model = createSessionModel(session.id);
         session.kernel.dispose();
         let name = model.kernel.name;
         tester.onRequest = request => {

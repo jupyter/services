@@ -177,10 +177,6 @@ describe('terminals', () => {
         }).catch(done);
       });
 
-      it('should be read-only', () => {
-        expect(() => { session.name = ''; }).to.throwError();
-      });
-
     });
 
     describe('#isDisposed', () => {
@@ -189,10 +185,6 @@ describe('terminals', () => {
         expect(session.isDisposed).to.be(false);
         session.dispose();
         expect(session.isDisposed).to.be(true);
-      });
-
-      it('should be read-only', () => {
-        expect(() => { session.isDisposed = false; }).to.throwError();
       });
 
     });

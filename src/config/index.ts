@@ -26,11 +26,8 @@ export
 interface IConfigSection {
   /**
    * The data for this section.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  data: JSONObject;
+  readonly data: JSONObject;
 
   /**
    * Modify the stored config values.
@@ -119,9 +116,6 @@ class DefaultConfigSection implements IConfigSection {
 
   /**
    * Get the data for this section.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get data(): JSONObject {
     return this._data;

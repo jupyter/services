@@ -39,19 +39,8 @@ interface ITerminalSession extends IDisposable {
 
   /**
    * Get the name of the terminal session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  name: string;
-
-  /**
-   * Get the websocket url used by the terminal session.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  url: string;
+  readonly name: string;
 
   /**
    * Send a message to the terminal session.
@@ -119,7 +108,7 @@ namespace TerminalSession {
     /**
      * The name of the terminal session.
      */
-    name: string;
+    readonly name: string;
   }
 
   /**
@@ -130,12 +119,12 @@ namespace TerminalSession {
     /**
      * The type of the message.
      */
-    type: MessageType;
+    readonly type: MessageType;
 
     /**
      * The content of the message.
      */
-    content?: JSONPrimitive[];
+    readonly content?: JSONPrimitive[];
   }
 
   /**
@@ -201,9 +190,6 @@ class TerminalManager implements TerminalSession.IManager {
 
   /**
    * Test whether the terminal manager is disposed.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get isDisposed(): boolean {
     return this._isDisposed;
@@ -332,9 +318,6 @@ class DefaultTerminalSession implements ITerminalSession {
 
   /**
    * Get the name of the terminal session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get name(): string {
     return this._name;
@@ -342,9 +325,6 @@ class DefaultTerminalSession implements ITerminalSession {
 
   /**
    * Get the websocket url used by the terminal session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get url(): string {
     return this._url;
@@ -352,9 +332,6 @@ class DefaultTerminalSession implements ITerminalSession {
 
   /**
    * Test whether the session is disposed.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get isDisposed(): boolean {
     return this._isDisposed;

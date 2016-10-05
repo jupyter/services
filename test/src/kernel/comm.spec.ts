@@ -201,20 +201,18 @@ describe('jupyter.services - Comm', () => {
 
     context('#commId', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         let comm = kernel.connectToComm('test');
         expect(typeof comm.commId).to.be('string');
-        expect(() => { comm.commId = ''; }).to.throwError();
       });
 
     });
 
     context('#targetName', () => {
 
-      it('should be a read only string', () => {
+      it('should be a string', () => {
         let comm = kernel.connectToComm('test');
         expect(comm.targetName).to.be('test');
-        expect(() => { comm.targetName = ''; }).to.throwError();
       });
 
     });

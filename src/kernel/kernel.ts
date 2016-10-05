@@ -55,71 +55,51 @@ interface IKernel extends IDisposable {
 
   /**
    * The id of the server-side kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  id: string;
+  readonly id: string;
 
   /**
    * The name of the server-side kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  name: string;
+  readonly name: string;
 
   /**
    * The model associated with the kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  model: Kernel.IModel;
+  readonly model: Kernel.IModel;
 
   /**
    * The client username.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  username: string;
+  readonly username: string;
 
   /**
    * The client unique id.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  clientId: string;
+  readonly clientId: string;
 
   /**
    * The current status of the kernel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  status: Kernel.Status;
+  readonly status: Kernel.Status;
 
   /**
    * The cached info for the kernel.
    *
    * #### Notes
-   * This is a read-only property.
    * If `null`, call [[kernelInfo]] to get the value,
    * which will populate this value.
    */
-  info: KernelMessage.IInfoReply;
+  readonly info: KernelMessage.IInfoReply;
 
   /**
    * The cached spec for the kernel.
    *
    * #### Notes
-   * This is a read-only property.
    * If `null`, call [[getKernelSpecs]] to get the value,
    * which will populate this value.
    */
-  spec: Kernel.ISpec;
+  readonly spec: Kernel.ISpec;
 
   /**
    * Send a shell message to the kernel.
@@ -541,15 +521,12 @@ namespace Kernel {
     /**
      * The original outgoing message.
      */
-    msg: KernelMessage.IShellMessage;
+    readonly msg: KernelMessage.IShellMessage;
 
     /**
-     * Test whether the future is done.
-     *
-     * #### Notes
-     * This is a read-only property.
+     * Whether the future is done.
      */
-    isDone: boolean;
+    readonly isDone: boolean;
 
     /**
      * The reply handler for the kernel future.
@@ -604,19 +581,13 @@ namespace Kernel {
   interface IComm extends IDisposable {
     /**
      * The unique id for the comm channel.
-     *
-     * #### Notes
-     * This is a read-only property.
      */
-    commId: string;
+    readonly commId: string;
 
     /**
      * The target name for the comm channel.
-     *
-     * #### Notes
-     * This is a read-only property.
      */
-    targetName: string;
+    readonly targetName: string;
 
     /**
      * Callback for a comm close event.
@@ -677,12 +648,12 @@ namespace Kernel {
     /**
      * Unique identifier of the kernel server session.
      */
-    id?: string;
+    readonly id?: string;
 
     /**
      * The name of the kernel.
      */
-    name?: string;
+    readonly name?: string;
   }
 
   /**
@@ -690,8 +661,8 @@ namespace Kernel {
    */
   export
   interface ISpecHelpLink extends JSONObject {
-    text: string;
-    url: string;
+    readonly text: string;
+    readonly url: string;
   }
 
   /**
@@ -702,12 +673,12 @@ namespace Kernel {
    */
   export
   interface ISpec extends JSONObject {
-    language: string;
-    argv: string[];
-    display_name: string;
-    env: JSONObject;
-    codemirror_mode?: string;
-    help_links?: ISpecHelpLink[];
+    readonly language: string;
+    readonly argv: string[];
+    readonly display_name: string;
+    readonly env: JSONObject;
+    readonly codemirror_mode?: string;
+    readonly help_links?: ISpecHelpLink[];
   }
 
   /**
@@ -718,9 +689,9 @@ namespace Kernel {
    */
   export
   interface ISpecModel extends JSONObject {
-    name: string;
-    spec: ISpec;
-    resources: { [key: string]: string; };
+    readonly name: string;
+    readonly spec: ISpec;
+    readonly resources: { [key: string]: string; };
   }
 
   /**
@@ -732,6 +703,6 @@ namespace Kernel {
   export
   interface ISpecModels extends JSONObject {
     default: string;
-    kernelspecs: { [key: string]: ISpecModel };
+    readonly kernelspecs: { [key: string]: ISpecModel };
   }
 }
