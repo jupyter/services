@@ -21,10 +21,6 @@ import {
 } from '../../lib/kernel';
 
 import {
-  KERNELSPECS
-} from '../../lib/mockkernel';
-
-import {
   SessionManager
 } from '../../lib/session';
 
@@ -33,7 +29,7 @@ import {
 } from '../../lib/terminal';
 
 import {
-  RequestHandler
+  RequestHandler, KERNELSPECS
 } from './utils';
 
 

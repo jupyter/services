@@ -113,6 +113,34 @@ const DEFAULT_FILE: Contents.IModel = {
 
 
 export
+const KERNELSPECS: Kernel.ISpecModels = {
+  default: 'python',
+  kernelspecs: {
+    python: {
+      name: 'python',
+      spec: {
+        language: 'python',
+        argv: [],
+        display_name: 'Python',
+        env: {}
+      },
+      resources: {}
+    },
+    shell: {
+      name: 'shell',
+      spec: {
+        language: 'shell',
+        argv: [],
+        display_name: 'Shell',
+        env: {}
+      },
+      resources: {}
+    }
+  }
+};
+
+
+export
 interface IFakeRequest {
   url: string;
   method: string;
