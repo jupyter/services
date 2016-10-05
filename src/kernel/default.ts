@@ -871,7 +871,7 @@ class DefaultKernel implements IKernel {
     if (!promise) {
       let comm = this._comms.get(content.comm_id);
       if (!comm) {
-        console.error('Comm not found for comm id ' + content.comm_id);
+        // We do have a registered comm for this comm id, ignore.
         return;
       } else {
         let onMsg = comm.onMsg;
