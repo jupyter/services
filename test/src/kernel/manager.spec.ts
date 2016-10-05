@@ -16,11 +16,7 @@ import {
 } from '../../../lib/kernel';
 
 import {
-  KERNELSPECS
-} from '../../../lib/mockkernel';
-
-import {
-  RequestHandler, KernelTester, KERNEL_OPTIONS, PYTHON_SPEC
+  RequestHandler, KernelTester, KERNEL_OPTIONS, PYTHON_SPEC, KERNELSPECS
 } from '../utils';
 
 

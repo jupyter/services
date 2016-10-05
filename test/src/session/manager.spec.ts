@@ -12,15 +12,11 @@ import {
 } from '../../../lib/utils';
 
 import {
-  KERNELSPECS
-} from '../../../lib/mockkernel';
-
-import {
   SessionManager, Session, ISession
 } from '../../../lib/session';
 
 import {
-  RequestHandler, KernelTester
+  RequestHandler, KernelTester, KERNELSPECS
 } from '../utils';
 
 
