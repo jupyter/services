@@ -293,9 +293,6 @@ namespace Private {
 
     /**
      * Test whether the HookList has been disposed.
-     *
-     * #### Notes
-     * This is a read-only property which is always safe to access.
      */
     get isDisposed(): boolean {
       return (this._hooks === null);

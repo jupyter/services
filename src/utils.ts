@@ -206,22 +206,22 @@ interface IAjaxSuccess {
   /**
    * The `onload` event.
    */
-  event: ProgressEvent;
+  readonly event: ProgressEvent;
 
   /**
    * The XHR object.
    */
-  xhr: XMLHttpRequest;
+  readonly xhr: XMLHttpRequest;
 
   /**
    * The ajax settings associated with the request.
    */
-  ajaxSettings: IAjaxSettings;
+  readonly ajaxSettings: IAjaxSettings;
 
   /**
    * The data returned by the ajax call.
    */
-  data: any;
+  readonly data: any;
 }
 
 
@@ -233,22 +233,22 @@ interface IAjaxError {
   /**
    * The event triggering the error.
    */
-  event: Event;
+  readonly event: Event;
 
   /**
    * The XHR object.
    */
-  xhr: XMLHttpRequest;
+  readonly xhr: XMLHttpRequest;
 
   /**
    * The ajax settings associated with the request.
    */
-  ajaxSettings: IAjaxSettings;
+  readonly ajaxSettings: IAjaxSettings;
 
   /**
    * The error message, if `onerror`.
    */
-  throwError?: string;
+  readonly throwError?: string;
 }
 
 

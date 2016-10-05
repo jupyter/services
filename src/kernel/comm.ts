@@ -35,9 +35,6 @@ class CommHandler extends DisposableDelegate implements Kernel.IComm {
 
   /**
    * The unique id for the comm channel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get commId(): string {
     return this._id;
@@ -45,9 +42,6 @@ class CommHandler extends DisposableDelegate implements Kernel.IComm {
 
   /**
    * The target name for the comm channel.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get targetName(): string {
     return this._target;
@@ -95,9 +89,6 @@ class CommHandler extends DisposableDelegate implements Kernel.IComm {
 
   /**
    * Test whether the comm has been disposed.
-   *
-   * #### Notes
-   * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
     return (this._kernel === null);

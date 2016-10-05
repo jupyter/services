@@ -83,9 +83,6 @@ class DefaultSession implements ISession {
 
   /**
    * Get the session id.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get id(): string {
     return this._id;
@@ -105,9 +102,6 @@ class DefaultSession implements ISession {
 
   /**
    * Get the session path.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get path(): string {
     return this._path;
@@ -115,9 +109,6 @@ class DefaultSession implements ISession {
 
   /**
    * Get the model associated with the session.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get model(): Session.IModel {
     return {
@@ -133,7 +124,7 @@ class DefaultSession implements ISession {
    * The current status of the session.
    *
    * #### Notes
-   * This is a read-only property, and is a delegate to the kernel status.
+   * This is a delegate to the kernel status.
    */
   get status(): Kernel.Status {
     return this._kernel ? this._kernel.status : 'dead';
@@ -155,9 +146,6 @@ class DefaultSession implements ISession {
 
   /**
    * Test whether the session has been disposed.
-   *
-   * #### Notes
-   * This is a read-only property which is always safe to access.
    */
   get isDisposed(): boolean {
     return this._options === null;

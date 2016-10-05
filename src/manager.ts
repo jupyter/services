@@ -45,43 +45,28 @@ interface IServiceManager extends IDisposable {
 
   /**
    * The kernel specs for the manager.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  kernelspecs: Kernel.ISpecModels;
+  readonly kernelspecs: Kernel.ISpecModels;
 
   /**
    * The kernel manager for the manager.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  kernels: Kernel.IManager;
+  readonly kernels: Kernel.IManager;
 
   /**
    * The session manager for the manager.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  sessions: Session.IManager;
+  readonly sessions: Session.IManager;
 
   /**
    * The contents manager for the manager.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  contents: Contents.IManager;
+  readonly contents: Contents.IManager;
 
   /**
    * The terminals manager for the manager.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
-  terminals: TerminalSession.IManager;
+  readonly terminals: TerminalSession.IManager;
 }
 
 
@@ -166,9 +151,6 @@ class ServiceManager implements IServiceManager {
 
   /**
    * Test whether the terminal manager is disposed.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get isDisposed(): boolean {
     return this._isDisposed;
@@ -194,9 +176,6 @@ class ServiceManager implements IServiceManager {
 
   /**
    * Get kernel manager instance.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get kernels(): KernelManager {
     return this._kernelManager;
@@ -204,9 +183,6 @@ class ServiceManager implements IServiceManager {
 
   /**
    * Get the session manager instance.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get sessions(): SessionManager {
     return this._sessionManager;
@@ -214,9 +190,6 @@ class ServiceManager implements IServiceManager {
 
   /**
    * Get the contents manager instance.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get contents(): ContentsManager {
     return this._contentsManager;
@@ -224,9 +197,6 @@ class ServiceManager implements IServiceManager {
 
   /**
    * Get the terminal manager instance.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get terminals(): TerminalManager {
     return this._terminalManager;
