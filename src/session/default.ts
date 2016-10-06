@@ -44,6 +44,8 @@ class DefaultSession implements ISession {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
+    this._name = options.name || '';
+    this._type = options.type || 'notebook';
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
     Private.runningSessions[this._uuid] = this;
@@ -108,15 +110,29 @@ class DefaultSession implements ISession {
   }
 
   /**
+   * Get the session type.
+   */
+  get type(): string {
+    return this._type;
+  }
+
+  /**
+   * Get the session name.
+   */
+  get name(): string {
+    return this._name;
+  }
+
+  /**
    * Get the model associated with the session.
    */
   get model(): Session.IModel {
     return {
       id: this.id,
       kernel: this.kernel.model,
-      notebook: {
-        path: this.path
-      }
+      path: this.path,
+      type: this.type,
+      name: this.name
     };
   }
 
@@ -171,10 +187,10 @@ class DefaultSession implements ISession {
     if (this._updating) {
       return Promise.resolve(void 0);
     }
-    if (this._path !== model.notebook.path) {
-      this.pathChanged.emit(model.notebook.path);
+    if (this._path !== model.path) {
+      this.pathChanged.emit(model.path);
     }
-    this._path = model.notebook.path;
+    this._path = model.path;
     if (model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
@@ -211,13 +227,45 @@ class DefaultSession implements ISession {
    * This uses the Jupyter REST API, and the response is validated.
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  rename(path: string): Promise<void> {
+  setPath(path: string): Promise<void> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    let data = JSON.stringify({
-      notebook: { path }
-    });
+    let data = JSON.stringify({ path });
+    return this._patch(data).then(() => { return void 0; });
+  }
+
+  /**
+   * Update the session name.
+   *
+   * @param name - The new session name.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  setName(name: string): Promise<void> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
+    }
+    let data = JSON.stringify({ name });
+    return this._patch(data).then(() => { return void 0; });
+  }
+
+  /**
+   * Update the session type.
+   *
+   * @param type - The new session type.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  setType(type: string): Promise<void> {
+    if (this.isDisposed) {
+      return Promise.reject(new Error('Session is disposed'));
+    }
+    let data = JSON.stringify({ type });
     return this._patch(data).then(() => { return void 0; });
   }
 
@@ -323,13 +371,13 @@ class DefaultSession implements ISession {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as Session.IModel;
+      let model = success.data as Session.IModel;
       try {
-        validate.validateModel(data);
+        validate.validateModel(model);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return Private.updateByModel(data);
+      return Private.updateByModel(model);
     }, error => {
       this._updating = false;
       return Private.onSessionError(error);
@@ -344,6 +392,8 @@ class DefaultSession implements ISession {
   private _baseUrl = '';
   private _options: Session.IOptions = null;
   private _updating = false;
+  private _name = '';
+  private _type = '';
 }
 
 
@@ -475,7 +525,9 @@ namespace Private {
       if (session.id === id) {
         let model: Session.IModel = {
           id,
-          notebook: { path: session.path },
+          path: session.path,
+          type: session.type,
+          name: session.name,
           kernel: { name: session.kernel.name, id: session.kernel.id }
         };
         return Promise.resolve(model);
@@ -498,7 +550,9 @@ namespace Private {
       if (session.path === path) {
         let model: Session.IModel = {
           id: session.id,
-          notebook: { path: session.path },
+          path: session.path,
+          name: session.name,
+          type: session.type,
           kernel: { name: session.kernel.name, id: session.kernel.id }
         };
         return Promise.resolve(model);
@@ -506,7 +560,7 @@ namespace Private {
     }
     return listRunning(options).then(models => {
       for (let model of models) {
-        if (model.notebook.path === path) {
+        if (model.path === path) {
           return model;
         }
       }
@@ -601,7 +655,7 @@ namespace Private {
   function createSession(model: Session.IModel, options: Session.IOptions): Promise<DefaultSession> {
     options.kernelName = model.kernel.name;
     options.kernelId = model.kernel.id;
-    options.path = model.notebook.path;
+    options.path = model.path;
     return createKernel(options).then(kernel => {
       return new DefaultSession(options, model.id, kernel);
     }).catch(error => {
