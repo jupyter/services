@@ -140,7 +140,7 @@ describe('jupyter.services - Integration', () => {
       let session2: ISession;
       Session.startNew(options).then(value => {
         session = value;
-        return session.rename('Untitled2.ipynb');
+        return session.setPath('Untitled2.ipynb');
       }).then(() => {
         expect(session.path).to.be('Untitled2.ipynb');
         // should grab the same session object
@@ -206,6 +206,38 @@ describe('jupyter.services - Integration', () => {
       }).then(newKernel => {
         expect(newKernel.id).to.not.be(id);
         return session.shutdown();
+      }).then(done, done);
+    });
+
+    it('should handle a session name', (done) => {
+      // Get info about the available kernels and connect to one.
+      let options: Session.IOptions = {
+        path: 'Untitled1.ipynb',
+        name: 'foo'
+      };
+      let session: ISession;
+      Session.startNew(options).then(value => {
+        session = value;
+        expect(session.name).to.be('foo');
+        return session.setName('bar');
+      }).then(() => {
+        expect(session.name).to.be('bar');
+      }).then(done, done);
+    });
+
+    it('should handle a session type', (done) => {
+      // Get info about the available kernels and connect to one.
+      let options: Session.IOptions = {
+        path: 'Untitled1.ipynb',
+        type: 'foo'
+      };
+      let session: ISession;
+      Session.startNew(options).then(value => {
+        session = value;
+        expect(session.type).to.be('foo');
+        return session.setType('bar');
+      }).then(() => {
+        expect(session.type).to.be('bar');
       }).then(done, done);
     });
 
