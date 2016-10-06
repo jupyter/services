@@ -608,7 +608,9 @@ namespace Private {
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let model = {
       kernel: { name: options.kernelName, id: options.kernelId },
-      notebook: { path: options.path }
+      path: options.path,
+      name: options.name || '',
+      type: options.type || 'notebook'
     };
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
     ajaxSettings.method = 'POST';
