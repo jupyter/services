@@ -79,9 +79,9 @@ class DefaultSession implements ISession {
   unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
 
   /**
-   * A signal emitted when the session path changes.
+   * A signal emitted when the session model changes.
    */
-  pathChanged: ISignal<ISession, string>;
+  modelChanged: ISignal<ISession, Session.IModel>;
 
   /**
    * Get the session id.
@@ -187,12 +187,13 @@ class DefaultSession implements ISession {
     if (this._updating) {
       return Promise.resolve(void 0);
     }
-    if (this._path !== model.path) {
-      this.pathChanged.emit(model.path);
-    }
     this._path = model.path;
     this._name = model.name;
     this._type = model.type;
+    if (this._path !== model.path || this._name !== model.name ||
+       this._type !== model.type || model.kernel.id || this._kernel.id) {
+      this.modelChanged.emit(model);
+    }
     if (model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
@@ -405,7 +406,7 @@ defineSignal(DefaultSession.prototype, 'kernelChanged');
 defineSignal(DefaultSession.prototype, 'statusChanged');
 defineSignal(DefaultSession.prototype, 'iopubMessage');
 defineSignal(DefaultSession.prototype, 'unhandledMessage');
-defineSignal(DefaultSession.prototype, 'pathChanged');
+defineSignal(DefaultSession.prototype, 'modelChanged');
 
 
 /**

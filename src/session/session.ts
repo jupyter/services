@@ -47,9 +47,9 @@ interface ISession extends IDisposable {
   statusChanged: ISignal<ISession, Kernel.Status>;
 
   /**
-   * A signal emitted when the session path changes.
+   * A signal emitted when the session model changes.
    */
-  pathChanged: ISignal<ISession, string>;
+  modelChanged: ISignal<ISession, Session.IModel>;
 
   /**
    * A signal emitted for iopub kernel messages.
