@@ -191,6 +191,8 @@ class DefaultSession implements ISession {
       this.pathChanged.emit(model.path);
     }
     this._path = model.path;
+    this._name = model.name;
+    this._type = model.type;
     if (model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
