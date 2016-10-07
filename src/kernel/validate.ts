@@ -81,7 +81,6 @@ function validateMessage(msg: KernelMessage.IMessage) : void {
   validateProperty(msg, 'metadata', 'object');
   validateProperty(msg, 'content', 'object');
   validateProperty(msg, 'channel', 'string');
-  validateProperty(msg, 'buffers', 'array');
   validateHeader(msg.header);
   if (Object.keys(msg.parent_header).length > 0) {
     validateHeader(msg.parent_header as KernelMessage.IHeader);
