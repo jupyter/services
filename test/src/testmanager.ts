@@ -13,7 +13,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  IServiceManager, createServiceManager
+  IServiceManager, ServiceManager
 } from '../../lib/manager';
 
 import {
@@ -35,13 +35,13 @@ import {
 
 describe('manager', () => {
 
-  describe('createServiceManager()', () => {
+  describe('ServiceManager.create()', () => {
 
     it('should accept no arguments', (done) => {
       let handler = new RequestHandler(() => {
         handler.respond(200, KERNELSPECS);
       });
-      createServiceManager().then(manager => {
+      ServiceManager.create().then(manager => {
         expect(manager.kernels).to.be.a(KernelManager);
         done();
       }).catch(done);
@@ -52,7 +52,7 @@ describe('manager', () => {
         baseUrl: 'foo',
         kernelspecs: KERNELSPECS
       };
-      createServiceManager(options).then(manager => {
+      ServiceManager.create(options).then(manager => {
         expect(manager.kernels).to.be.a(KernelManager);
         done();
       }).catch(done);
@@ -68,7 +68,7 @@ describe('manager', () => {
       let handler = new RequestHandler(() => {
         handler.respond(200, KERNELSPECS);
       });
-      createServiceManager().then(value => {
+      ServiceManager.create().then(value => {
         manager = value;
         done();
       });
