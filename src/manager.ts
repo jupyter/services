@@ -71,10 +71,34 @@ interface IServiceManager extends IDisposable {
 
 
 /**
- * The namespace for `IServiceManager` statics.
+ * The namespace for `ServiceManager` statics.
  */
 export
-namespace IServiceManager {
+namespace ServiceManager {
+  /**
+   * Create a new service manager.
+   *
+   * @param options - The service manager creation options.
+   *
+   * @returns A promise that resolves with a service manager.
+   */
+  export
+  function create(options: IOptions = {}): Promise<IServiceManager> {
+    options.baseUrl = options.baseUrl || getBaseUrl();
+    options.ajaxSettings = options.ajaxSettings || {};
+    if (options.kernelspecs) {
+      return Promise.resolve(new DefaultServiceManager(options));
+    }
+    let kernelOptions: Kernel.IOptions = {
+      baseUrl: options.baseUrl,
+      ajaxSettings: options.ajaxSettings
+    };
+    return Kernel.getSpecs(kernelOptions).then(specs => {
+      options.kernelspecs = specs;
+      return new DefaultServiceManager(options);
+    });
+  }
+
   /**
    * The options used to create a service manager.
    */
@@ -97,40 +121,15 @@ namespace IServiceManager {
   }
 }
 
-/**
- * Create a new service manager.
- *
- * @param options - The service manager creation options.
- *
- * @returns A promise that resolves with a service manager.
- */
-export
-function createServiceManager(options: IServiceManager.IOptions = {}): Promise<IServiceManager> {
-  options.baseUrl = options.baseUrl || getBaseUrl();
-  options.ajaxSettings = options.ajaxSettings || {};
-  if (options.kernelspecs) {
-    return Promise.resolve(new ServiceManager(options));
-  }
-  let kernelOptions: Kernel.IOptions = {
-    baseUrl: options.baseUrl,
-    ajaxSettings: options.ajaxSettings
-  };
-  return Kernel.getSpecs(kernelOptions).then(specs => {
-    options.kernelspecs = specs;
-    return new ServiceManager(options);
-  });
-}
-
 
 /**
  * An implementation of a services manager.
  */
-export
-class ServiceManager implements IServiceManager {
+class DefaultServiceManager implements IServiceManager {
   /**
    * Construct a new services provider.
    */
-  constructor(options: IServiceManager.IOptions) {
+  constructor(options: ServiceManager.IOptions) {
     let subOptions: JSONObject = {
       baseUrl: options.baseUrl,
       ajaxSettings: options.ajaxSettings
@@ -147,7 +146,7 @@ class ServiceManager implements IServiceManager {
   /**
    * A signal emitted when the specs change on the service manager.
    */
-  specsChanged: ISignal<ServiceManager, Kernel.ISpecModels>;
+  specsChanged: ISignal<this, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -220,4 +219,4 @@ class ServiceManager implements IServiceManager {
 
 
 // Define the signals for the `ServiceManager` class.
-defineSignal(ServiceManager.prototype, 'specsChanged');
+defineSignal(DefaultServiceManager.prototype, 'specsChanged');
