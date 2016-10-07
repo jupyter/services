@@ -59,7 +59,7 @@ namespace Contents {
     /**
      * The type of file.
      */
-    type?: FileType;
+    type?: ContentType;
 
     /**
      * Whether the requester has permission to edit the file.
@@ -102,7 +102,7 @@ namespace Contents {
    * A contents file type.
    */
   export
-  type FileType = 'notebook' | 'file' | 'directory';
+  type ContentType = 'notebook' | 'file' | 'directory';
 
 
   /**
@@ -119,7 +119,7 @@ namespace Contents {
     /**
      * The override file type for the request.
      */
-    type?: FileType;
+    type?: ContentType;
 
     /**
      * The override file format for the request.
@@ -155,7 +155,7 @@ namespace Contents {
     /**
      * The file type.
      */
-    type?: FileType;
+    type?: ContentType;
   }
 
   /**
