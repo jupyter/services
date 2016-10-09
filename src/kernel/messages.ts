@@ -51,7 +51,7 @@ namespace KernelMessage {
   /**
    * Kernel message header content.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#general-message-format).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#general-message-format).
    *
    * **See also:** [[IMessage]]
    */
@@ -67,7 +67,7 @@ namespace KernelMessage {
   /**
    * Kernel message specification.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#general-message-format).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#general-message-format).
    */
   export
   interface IMessage {
@@ -112,7 +112,7 @@ namespace KernelMessage {
   /**
    * A `'stream'` message on the `'iopub'` channel.
    *
-   * See [Streams](http://jupyter-client.readthedocs.org/en/latest/messaging.html#streams-stdout-stderr-etc).
+   * See [Streams](https://jupyter-client.readthedocs.io/en/latest/messaging.html#streams-stdout-stderr-etc).
    */
   export
   interface IStreamMsg extends IIOPubMessage {
@@ -134,7 +134,7 @@ namespace KernelMessage {
   /**
    * A `'display_data'` message on the `'iopub'` channel.
    *
-   * See [Display data](http://jupyter-client.readthedocs.org/en/latest/messaging.html#display-data).
+   * See [Display data](https://jupyter-client.readthedocs.io/en/latest/messaging.html#display-data).
    */
   export
   interface IDisplayDataMsg extends IIOPubMessage {
@@ -157,7 +157,7 @@ namespace KernelMessage {
   /**
    * An `'execute_input'` message on the `'iopub'` channel.
    *
-   * See [Code inputs](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-inputs).
+   * See [Code inputs](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-inputs).
    */
   export
   interface IExecuteInputMsg extends IIOPubMessage {
@@ -179,7 +179,7 @@ namespace KernelMessage {
   /**
    * An `'execute_result'` message on the `'iopub'` channel.
    *
-   * See [Execution results](http://jupyter-client.readthedocs.org/en/latest/messaging.html#id4).
+   * See [Execution results](https://jupyter-client.readthedocs.io/en/latest/messaging.html#id4).
    */
   export
   interface IExecuteResultMsg extends IIOPubMessage {
@@ -202,7 +202,7 @@ namespace KernelMessage {
   /**
    * A `'error'` message on the `'iopub'` channel.
    *
-   * See [Execution errors](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execution-errors).
+   * See [Execution errors](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-errors).
    */
   export
   interface IErrorMsg extends IIOPubMessage {
@@ -226,7 +226,7 @@ namespace KernelMessage {
   /**
    * A `'status'` message on the `'iopub'` channel.
    *
-   * See [Kernel status](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-status).
+   * See [Kernel status](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-status).
    */
   export
   interface IStatusMsg extends IIOPubMessage {
@@ -247,7 +247,7 @@ namespace KernelMessage {
   /**
    * A `'clear_output'` message on the `'iopub'` channel.
    *
-   * See [Clear output](http://jupyter-client.readthedocs.org/en/latest/messaging.html#clear-output).
+   * See [Clear output](https://jupyter-client.readthedocs.io/en/latest/messaging.html#clear-output).
    */
   export
   interface IClearOutputMsg extends IIOPubMessage {
@@ -268,7 +268,7 @@ namespace KernelMessage {
   /**
    * A `'comm_open'` message on the `'iopub'` channel.
    *
-   * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm open](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
   export
   interface ICommOpenMsg extends IIOPubMessage {
@@ -279,7 +279,7 @@ namespace KernelMessage {
    * The content of a `'comm_open'` message.  The message can
    * be received on the `'iopub'` channel or send on the `'shell'` channel.
    *
-   * See [Comm open](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm open](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
   export
   interface ICommOpen extends JSONObject {
@@ -301,7 +301,7 @@ namespace KernelMessage {
   /**
    * A `'comm_close'` message on the `'iopub'` channel.
    *
-   * See [Comm close](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm close](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
   export
   interface ICommCloseMsg extends IIOPubMessage {
@@ -312,7 +312,7 @@ namespace KernelMessage {
    * The content of a `'comm_close'` method.  The message can
    * be received on the `'iopub'` channel or send on the `'shell'` channel.
    *
-   * See [Comm close](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm close](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
    export
    interface ICommClose extends JSONObject {
@@ -332,7 +332,7 @@ namespace KernelMessage {
   /**
    * A `'comm_msg'` message on the `'iopub'` channel.
    *
-   * See [Comm msg](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm msg](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
   export
   interface ICommMsgMsg extends IIOPubMessage {
@@ -343,7 +343,7 @@ namespace KernelMessage {
    * The content of a `'comm_msg'` message.  The message can
    * be received on the `'iopub'` channel or send on the `'shell'` channel.
    *
-   * See [Comm msg](http://jupyter-client.readthedocs.org/en/latest/messaging.html#opening-a-comm).
+   * See [Comm msg](https://jupyter-client.readthedocs.io/en/latest/messaging.html#opening-a-comm).
    */
   export
   interface ICommMsg extends JSONObject {
@@ -363,7 +363,7 @@ namespace KernelMessage {
   /**
    * A `'kernel_info_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    */
   export
   interface IInfoReplyMsg extends IShellMessage {
@@ -373,7 +373,7 @@ namespace KernelMessage {
   /**
    * The kernel info content.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    */
   export
   interface IInfoReply extends JSONObject {
@@ -389,7 +389,7 @@ namespace KernelMessage {
   /**
    * The kernel language information specification.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    */
   export
   interface ILanguageInfo {
@@ -406,7 +406,7 @@ namespace KernelMessage {
   /**
    * The content of a  `'complete_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion).
    *
    * **See also:** [[ICompleteReply]], [[IKernel.complete]]
    */
@@ -420,7 +420,7 @@ namespace KernelMessage {
   /**
    * A `'complete_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion).
    *
    * **See also:** [[ICompleteRequest]], [[IKernel.complete]]
    */
@@ -439,7 +439,7 @@ namespace KernelMessage {
   /**
    * The content of an `'inspect_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection).
    *
    * **See also:** [[IInspectReply]], [[[IKernel.inspect]]]
    */
@@ -454,7 +454,7 @@ namespace KernelMessage {
   /**
    * A `'inspect_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection).
    *
    * **See also:** [[IInspectRequest]], [[IKernel.inspect]]
    */
@@ -472,7 +472,7 @@ namespace KernelMessage {
   /**
    * The content of a `'history_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#history).
    *
    * **See also:** [[IHistoryReply]], [[[IKernel.history]]]
    */
@@ -493,7 +493,7 @@ namespace KernelMessage {
   /**
    * A `'history_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#history).
    *
    * **See also:** [[IHistoryRequest]], [[IKernel.history]]
    */
@@ -514,7 +514,7 @@ namespace KernelMessage {
   /**
    * The content of an `'is_complete_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness).
    *
    * **See also:** [[IIsCompleteReply]], [[IKernel.isComplete]]
    */
@@ -527,7 +527,7 @@ namespace KernelMessage {
   /**
    * An `'is_complete_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness).
    *
    * **See also:** [[IIsCompleteRequest]], [[IKernel.isComplete]]
    */
@@ -543,7 +543,7 @@ namespace KernelMessage {
   /**
    * The content of an `'execute_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute).
    *
    * **See also:** [[IExecuteReply]], [[IKernel.execute]]
    */
@@ -555,7 +555,7 @@ namespace KernelMessage {
   /**
    * The options used to configure an execute request.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute).
    */
   export
   interface IExecuteOptions extends JSONObject {
@@ -596,7 +596,7 @@ namespace KernelMessage {
   /**
    * An `'execute_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    *
    * **See also:** [[IExecuteRequest]], [[IKernel.execute]]
    */
@@ -608,7 +608,7 @@ namespace KernelMessage {
   /**
    * The content of an `execute-reply` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
   interface IExecuteReply extends JSONObject {
@@ -619,7 +619,7 @@ namespace KernelMessage {
   /**
    * The `'execute_reply'` contents for an `'ok'` status.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
   interface IExecuteOkReply extends IExecuteReply {
@@ -640,7 +640,7 @@ namespace KernelMessage {
   /**
    * The `'execute_reply'` contents for an `'error'` status.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execution-results).
    */
   export
   interface IExecuteErrorReply extends IExecuteReply {
@@ -663,7 +663,7 @@ namespace KernelMessage {
   /**
    * An `'input_request'` message on the `'stdin'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
   export
   interface IInputRequestMsg extends IStdinMessage {
@@ -698,7 +698,7 @@ namespace KernelMessage {
   /**
    * The content of an `'input_reply'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    *
    * **See also:** [[IKernel.input_reply]]
    */
@@ -710,7 +710,7 @@ namespace KernelMessage {
   /**
    * The content of a `'comm_info_request'` message.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#comm-info).
    *
    * **See also:** [[ICommInfoReply]], [[IKernel.commInfo]]
    */
@@ -723,7 +723,7 @@ namespace KernelMessage {
   /**
    * A `'comm_info_reply'` message on the `'stream'` channel.
    *
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#comm-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#comm-info).
    *
    * **See also:** [[ICommInfoRequest]], [[IKernel.commInfo]]
    */
