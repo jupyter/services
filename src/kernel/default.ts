@@ -338,7 +338,7 @@ class DefaultKernel implements IKernel {
    * Send a `kernel_info_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#kernel-info).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    *
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
@@ -361,7 +361,7 @@ class DefaultKernel implements IKernel {
    * Send a `complete_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#completion).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion).
    *
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
@@ -381,7 +381,7 @@ class DefaultKernel implements IKernel {
    * Send an `inspect_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#introspection).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection).
    *
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
@@ -401,7 +401,7 @@ class DefaultKernel implements IKernel {
    * Send a `history_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#history).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#history).
    *
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
@@ -421,7 +421,7 @@ class DefaultKernel implements IKernel {
    * Send an `execute_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#execute).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute).
    *
    * Future `onReply` is called with the `execute_reply` content when the
    * shell reply is received and validated. The future will resolve when
@@ -455,7 +455,7 @@ class DefaultKernel implements IKernel {
    * Send an `is_complete_request` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#code-completeness).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness).
    *
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
@@ -493,7 +493,7 @@ class DefaultKernel implements IKernel {
    * Send an `input_reply` message.
    *
    * #### Notes
-   * See [Messaging in Jupyter](http://jupyter-client.readthedocs.org/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
+   * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
    */
   sendInputReply(content: KernelMessage.IInputReply): void {
     if (this.status === 'dead') {
