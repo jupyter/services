@@ -805,6 +805,21 @@ describe('kernel', () => {
           }
         });
       });
+
+      it('should dispose of all kernel instances', (done) => {
+        let kernel2: IKernel;
+        Kernel.connectTo(kernel.id).then(k => {
+          kernel2 = k;
+          tester.onRequest = () => {
+            tester.respond(204, { });
+          };
+          return kernel.shutdown();
+        }).then(() => {
+          expect(kernel2.isDisposed).to.be(true);
+          done();
+        }).catch(done);
+      });
+
     });
 
     context('#kernelInfo()', () => {

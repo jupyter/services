@@ -196,6 +196,7 @@ class DefaultSession implements ISession {
     if (this._kernel) {
       this._kernel.dispose();
     }
+    this.sessionDied.emit(void 0);
     this._options = null;
     delete Private.runningSessions[this._uuid];
     this._kernel = null;
@@ -254,12 +255,7 @@ class DefaultSession implements ISession {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
-    return Private.shutdownSession(this.id, this._baseUrl, this.ajaxSettings)
-    .then(() => {
-      this._kernel.dispose();
-      this._kernel = null;
-      this.sessionDied.emit(void 0);
-    });
+    return Private.shutdownSession(this.id, this._baseUrl, this.ajaxSettings);
   }
 
   /**
@@ -688,6 +684,12 @@ namespace Private {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
+      }
+      for (let uuid in runningSessions) {
+        let session = runningSessions[uuid];
+        if (session.id === id) {
+          session.dispose();
+        }
       }
     }, err => {
       if (err.xhr.status === 410) {

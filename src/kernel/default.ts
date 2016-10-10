@@ -328,10 +328,7 @@ class DefaultKernel implements IKernel {
       return Promise.reject(new Error('Kernel is dead'));
     }
     this._clearState();
-    return Private.shutdownKernel(this.id, this._baseUrl, this.ajaxSettings)
-    .then(() => {
-      this.dispose();
-    });
+    return Private.shutdownKernel(this.id, this._baseUrl, this.ajaxSettings);
   }
 
   /**
@@ -1228,6 +1225,12 @@ namespace Private {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
+      }
+      for (let uuid in runningKernels) {
+        let kernel = runningKernels[uuid];
+        if (kernel.id === id) {
+          kernel.dispose();
+        }
       }
     }, onKernelError);
   }
