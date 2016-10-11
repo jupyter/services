@@ -796,7 +796,23 @@ describe('session', () => {
         session.dispose();
         expectFailure(session.shutdown(), done, 'Session is disposed');
       });
+
+      it('should dispose of all session instances', (done) => {
+        let session2: ISession;
+        Session.connectTo(session.id).then(s => {
+          session2 = s;
+          tester.onRequest = () => {
+            tester.respond(204, { });
+          };
+          return session.shutdown();
+        }).then(() => {
+          expect(session2.isDisposed).to.be(true);
+          done();
+        }).catch(done);
+      });
+
     });
+
   });
 
 });
