@@ -10,7 +10,7 @@ import 'es6-promise';
 
 import {
   Session, utils
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 
 const BASE_URL = utils.getBaseUrl();

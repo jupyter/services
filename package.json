@@ -1,5 +1,5 @@
 {
-  "name": "jupyter-js-services",
+  "name": "@jupyterlab/services",
   "version": "0.21.1",
   "description": "Client APIs for the Jupyter services REST APIs",
   "main": "lib/index.js",
@@ -65,7 +65,7 @@
   "author": "Project Jupyter",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/jupyter/jupyter-js-services/issues"
+    "url": "https://github.com/jupyterlab/services/issues"
   },
-  "homepage": "https://github.com/jupyter/jupyter-js-services"
+  "homepage": "https://github.com/jupyterlab/services"
 }
