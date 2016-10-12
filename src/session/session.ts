@@ -47,9 +47,9 @@ interface ISession extends IDisposable {
   statusChanged: ISignal<ISession, Kernel.Status>;
 
   /**
-   * A signal emitted when the session path changes.
+   * A signal emitted when the session model changes.
    */
-  pathChanged: ISignal<ISession, string>;
+  modelChanged: ISignal<ISession, Session.IModel>;
 
   /**
    * A signal emitted for iopub kernel messages.
@@ -70,6 +70,16 @@ interface ISession extends IDisposable {
    * The path associated with the session.
    */
   readonly path: string;
+
+  /**
+   * The name associated with the session.
+   */
+  readonly name: string;
+
+  /**
+   * The type of session (e.g. "notebook").
+   */
+  readonly type: string;
 
   /**
    * The model associated with the session.
@@ -100,7 +110,7 @@ interface ISession extends IDisposable {
   ajaxSettings?: IAjaxSettings;
 
   /**
-   * Change the session path.
+   * Update the session path.
    *
    * @param path - The new session path.
    *
@@ -108,7 +118,29 @@ interface ISession extends IDisposable {
    * This uses the Jupyter REST API, and the response is validated.
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
-  rename(path: string): Promise<void>;
+  setPath(path: string): Promise<void>;
+
+  /**
+   * Update the session name.
+   *
+   * @param name - The new session name.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  setName(name: string): Promise<void>;
+
+  /**
+   * Update the session type.
+   *
+   * @param type - The new session type.
+   *
+   * #### Notes
+   * This uses the Jupyter REST API, and the response is validated.
+   * The promise is fulfilled on a valid response and rejected otherwise.
+   */
+  setType(type: string): Promise<void>;
 
   /**
    * Change the kernel.
@@ -249,6 +281,16 @@ namespace Session {
     path?: string;
 
     /**
+     * The name to the session.
+     */
+    name?: string;
+
+    /**
+     * The type of the session.
+     */
+    type?: string;
+
+    /**
      * The type of kernel (e.g. python3).
      */
     kernelName?: string;
@@ -355,10 +397,9 @@ namespace Session {
      * The unique identifier for the session client.
      */
     readonly id: string;
-    readonly notebook?: {
-      [ key: string ]: string;
-      path: string;
-    };
+    readonly path: string;
+    readonly name?: string;
+    readonly type?: string;
     readonly kernel?: Kernel.IModel;
   }
 }
