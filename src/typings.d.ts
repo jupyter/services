@@ -1,6 +1,7 @@
 
 /// <reference path="../typings/path-posix/path-posix.d.ts"/>
 /// <reference path="../typings/url-join/url-join.d.ts"/>
+/// <reference path="../typings/url/url.d.ts"/>
 
 /*
  * TODO: remove the below typings after typedoc understands the lib compiler option
