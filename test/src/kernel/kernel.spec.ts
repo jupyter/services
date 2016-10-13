@@ -298,8 +298,6 @@ describe('kernel', () => {
     beforeEach((done) => {
       Kernel.startNew().then(k => {
         kernel = k;
-        return kernel.kernelInfo();
-      }).then(() => {
         done();
       }).catch(done);
     });
@@ -499,6 +497,10 @@ describe('kernel', () => {
     });
 
     context('#info', () => {
+
+      it('should be null by default', () => {
+        expect(kernel.info).to.be(null);
+      });
 
       it('should be set after calling kernelInfo', (done) => {
         return kernel.kernelInfo().then(() => {
@@ -758,13 +760,13 @@ describe('kernel', () => {
       it('should reconnect the websocket', (done) => {
         kernel.reconnect().then(() => {
           done();
-        }).catch(done);
+        });
       });
 
       it("should emit a `'reconnecting'` status", (done) => {
         kernel.reconnect().then(() => {
           done();
-        }).catch(done);
+        });
         expect(kernel.status).to.be('reconnecting');
       });
 
@@ -1692,4 +1694,3 @@ describe('kernel', () => {
   });
 
 });
-
