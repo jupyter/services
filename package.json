@@ -5,8 +5,6 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "@types/minimist": "^1.1.29",
-    "@types/node": "^6.0.42",
     "minimist": "^1.2.0",
     "path-posix": "^1.0.0",
     "phosphor": "^0.5.0",
@@ -15,6 +13,7 @@
   },
   "devDependencies": {
     "@types/expect.js": "^0.3.29",
+    "@types/minimist": "^1.1.29",
     "@types/mocha": "^2.2.32",
     "@types/text-encoding": "0.0.30",
     "@types/ws": "0.0.33",

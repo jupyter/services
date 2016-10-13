@@ -63,6 +63,27 @@ function uuid(): string {
 }
 
 
+
+/**
+ * The interface for a url.
+ */
+export
+interface IUrl {
+  href?: string;
+  protocol?: string;
+  auth?: string;
+  hostname?: string;
+  port?: string;
+  host?: string;
+  pathname?: string;
+  search?: string;
+  query?: string | any;
+  slashes?: boolean;
+  hash?: string;
+  path?: string;
+}
+
+
 /**
  * Parse a url into a URL object.
  *
@@ -82,7 +103,7 @@ function uuid(): string {
  * @returns A URL object.
  */
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): url.Url {
+function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrl {
   return url.parse(urlStr, parseQueryString, slashesDenoteHost);
 }
 
