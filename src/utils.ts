@@ -64,6 +64,29 @@ function uuid(): string {
 
 
 /**
+ * A URL object.
+ *
+ * This interface is from the npm package URL object interface. We
+ * include it here so that downstream libraries do not have to include
+ * the `url` typing files.
+ */
+export interface UrlObject {
+    href?: string;
+    protocol?: string;
+    auth?: string;
+    hostname?: string;
+    port?: string;
+    host?: string;
+    pathname?: string;
+    search?: string;
+    query?: string | any;
+    slashes?: boolean;
+    hash?: string;
+    path?: string;
+}
+
+
+/**
  * Parse a url into a URL object.
  *
  * @param urlString - The URL string to parse.
@@ -81,8 +104,9 @@ function uuid(): string {
  *
  * @returns A URL object.
  */
+
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): url.Url {
+function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): UrlObject {
   return url.parse(urlStr, parseQueryString, slashesDenoteHost);
 }
 
