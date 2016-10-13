@@ -894,9 +894,6 @@ class DefaultKernel implements IKernel {
       future.onReply = (reply: KernelMessage.IMessage) => {
         resolve(reply);
       };
-      this._connectionPromise.promise.catch(err => {
-        reject(err);
-      });
     });
   }
 
