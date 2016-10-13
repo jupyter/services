@@ -175,10 +175,13 @@ class DefaultSession implements ISession {
       this.pathChanged.emit(model.notebook.path);
     }
     this._path = model.notebook.path;
+    console.log('****update', this._kernel.id, model.kernel.id);
     if (model.kernel.id !== this._kernel.id) {
+      console.log('****hi hi');
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
       return Kernel.connectTo(model.kernel.id, options).then(kernel => {
+        console.log('***connected');
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
       });

@@ -410,13 +410,13 @@ describe('session', () => {
 
   });
 
-
   describe('ISession', () => {
-
 
     beforeEach((done) => {
       startNewSession(tester).then(s => {
         session = s;
+        return s.kernel.kernelInfo();
+      }).then(() => {
         done();
       }).catch(done);
     });
@@ -454,7 +454,9 @@ describe('session', () => {
         session.changeKernel({ name });
         session.kernelChanged.connect((s, kernel) => {
           expect(kernel.name).to.be(name);
-          done();
+          kernel.kernelInfo().then(() => {
+            done();
+          }).catch(done);
         });
       });
 
@@ -473,6 +475,7 @@ describe('session', () => {
         };
         tester.sendStatus('busy');
       });
+
     });
 
     context('#iopubMessage', () => {
@@ -671,6 +674,8 @@ describe('session', () => {
         session.changeKernel({ name }).then(kernel => {
           expect(kernel.name).to.be(name);
           expect(session.kernel).to.not.be(previous);
+          return kernel.kernelInfo();
+        }).then(() => {
           done();
         }).catch(done);
       });
@@ -691,6 +696,8 @@ describe('session', () => {
           expect(kernel.name).to.be(name);
           expect(kernel.id).to.be(id);
           expect(session.kernel).to.not.be(previous);
+          return kernel.kernelInfo();
+        }).then(() => {
           done();
         }).catch(done);
       });
@@ -699,39 +706,41 @@ describe('session', () => {
         let model = createSessionModel(session.id);
         session.kernel.dispose();
         let name = model.kernel.name;
+        let id = (model.kernel as any).id = uuid();
         tester.onRequest = request => {
           if (request.method === 'PATCH') {
             tester.respond(200, model);
           } else {
-            tester.respond(200, { name, id: model.kernel.id });
+            tester.respond(200, { name, id });
           }
         };
         session.changeKernel({ name }).then(kernel => {
           expect(kernel.name).to.be(name);
-          session.dispose();
+          return kernel.kernelInfo();
+        }).then(() => {
           done();
-        });
+        }).catch(done);
       });
 
       it('should update the session path if it has changed', (done) => {
         let model = session.model;
         model.notebook.path = 'foo.ipynb';
-        session.kernel.dispose();
+        let id = (model.kernel as any).id = uuid();
         let name = model.kernel.name;
-        let id = model.kernel.id;
         tester.onRequest = request => {
           if (request.method === 'PATCH') {
             tester.respond(200, model);
           } else {
-            tester.respond(200, { name, id});
+            tester.respond(200, { name, id });
           }
         };
         session.changeKernel({ name }).then(kernel => {
           expect(kernel.name).to.be(name);
           expect(session.path).to.be(model.notebook.path);
-          session.dispose();
+          return kernel.kernelInfo();
+        }).then(() => {
           done();
-        });
+        }).catch(done);
       });
 
     });
