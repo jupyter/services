@@ -175,7 +175,7 @@ class DefaultSession implements ISession {
       this.pathChanged.emit(model.notebook.path);
     }
     this._path = model.notebook.path;
-    if (model.kernel.id !== this._kernel.id) {
+    if (this._kernel.isDisposed || model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
       return Kernel.connectTo(model.kernel.id, options).then(kernel => {

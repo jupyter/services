@@ -758,16 +758,26 @@ describe('kernel', () => {
     describe('#reconnect()', () => {
 
       it('should reconnect the websocket', (done) => {
-        kernel.reconnect().then(() => {
+        kernel.kernelInfo().then(() => {
+          return kernel.reconnect();
+        }).then(() => {
           done();
-        });
+        }).catch(done);
       });
 
       it("should emit a `'reconnecting'` status", (done) => {
-        kernel.reconnect().then(() => {
+        let called = false;
+        kernel.kernelInfo().then(() => {
+          return kernel.reconnect();
+        }).then(() => {
+          expect(called).to.be(true);
           done();
+        }).catch(done);
+        kernel.statusChanged.connect(() => {
+          if (kernel.status === 'reconnecting') {
+            called = true;
+          }
         });
-        expect(kernel.status).to.be('reconnecting');
       });
 
     });
