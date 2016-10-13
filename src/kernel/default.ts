@@ -349,7 +349,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options);
-    return this._handleShellMessage(this, msg).then(reply => {
+    return Private.handleShellMessage(this, msg).then(reply => {
       this._info = reply.content as KernelMessage.IInfoReply;
       return reply;
     });
@@ -372,7 +372,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options, content);
-    return this._handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -392,7 +392,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options, content);
-    return this._handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -412,7 +412,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options, content);
-    return this._handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -466,7 +466,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options, content);
-    return this._handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -484,7 +484,7 @@ class DefaultKernel implements IKernel {
       session: this._clientId
     };
     let msg = KernelMessage.createShellMessage(options, content);
-    return this._handleShellMessage(this, msg);
+    return Private.handleShellMessage(this, msg);
   }
 
   /**
@@ -878,23 +878,6 @@ class DefaultKernel implements IKernel {
   private _unregisterComm(commId: string) {
     this._comms.delete(commId);
     this._commPromises.delete(commId);
-  }
-
-  /**
-   * Send a kernel message to the kernel and resolve the reply message.
-   */
-  private _handleShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
-    let future: Kernel.IFuture;
-    try {
-      future = kernel.sendShellMessage(msg, true);
-    } catch (e) {
-      return Promise.reject(e);
-    }
-    return new Promise<any>((resolve, reject) => {
-      future.onReply = (reply: KernelMessage.IMessage) => {
-        resolve(reply);
-      };
-    });
   }
 
   private _id = '';
@@ -1336,5 +1319,23 @@ namespace Private {
     let msg = `API request failed: ${text}`;
     console.error(msg);
     return Promise.reject(error);
+  }
+
+  /**
+   * Send a kernel message to the kernel and resolve the reply message.
+   */
+  export
+  function handleShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
+    let future: Kernel.IFuture;
+    try {
+      future = kernel.sendShellMessage(msg, true);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+    return new Promise<any>((resolve, reject) => {
+      future.onReply = (reply: KernelMessage.IMessage) => {
+        resolve(reply);
+      };
+    });
   }
 }
