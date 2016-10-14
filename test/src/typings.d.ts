@@ -9,7 +9,6 @@
  */
 /// <reference path="../../node_modules/@types/expect.js/index.d.ts"/>
 /// <reference path="../../node_modules/@types/mocha/index.d.ts"/>
-/// <reference path="../../node_modules/@types/node/index.d.ts"/>
 /// <reference path="../../node_modules/@types/text-encoding/index.d.ts"/>
 /// <reference path="../../node_modules/@types/ws/index.d.ts"/>
 /// <reference path="../../node_modules/typescript/lib/lib.es2015.promise.d.ts"/>
