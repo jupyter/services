@@ -1,9 +1,9 @@
-Jupyter JS Services
+JupyterLab Services
 ===================
 
 Javascript client for the Jupyter services REST APIs
 
-[API Docs](http://jupyter.github.io/jupyter-js-services/)
+[API Docs](http://jupyterlab.github.io/services/)
 
 [REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml)
 
@@ -19,7 +19,7 @@ Package Install
 - [python](https://www.continuum.io/downloads)
 
 ```bash
-npm install --save jupyter-js-services
+npm install --save @jupyterlab/services
 conda install notebook  # notebook 4.2+ required
 ```
 
@@ -33,8 +33,8 @@ Source Build
 - [python](https://www.continuum.io/downloads)
 
 ```bash
-git clone https://github.com/jupyter/jupyter-js-services.git
-cd jupyter-js-services
+git clone https://github.com/jupyterlab/services.git
+cd services
 npm install
 npm run build
 conda install notebook  # notebook 4.2+ required
@@ -146,7 +146,7 @@ A translator such as Babel can be used to convert from ES6 -> ES5.
 ```typescript
 import {
   KernelMessage, Kernel
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 // The base url of the notebook server.
 const BASE_URL = 'http://localhost:8000';
@@ -218,7 +218,7 @@ Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 ```typescript
 import {
   Session
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 // The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
@@ -274,7 +274,7 @@ Session.startNew(options).then(session => {
 ```typescript
 import {
   Kernel
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 // The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
@@ -329,7 +329,7 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 ```typescript
 import {
   ContentsManager
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 // The base url of the Jupyter server.
 let baseUrl = 'http://localhost:8000';
@@ -387,7 +387,7 @@ contents.listCheckpoints('/foo/bar.txt').then((models) => {
 ```typescript
 import {
   ConfigWithDefaults, ConfigSection
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 // The base url of the Jupyter server.
 let baseUrl = 'http://localhost:8000';
@@ -410,7 +410,7 @@ ConfigSection.create({ name: 'notebook', baseUrl }).then(section => {
 ```typescript
 import {
   TerminalSession
-} from 'jupyter-js-services';
+} from '@jupyterlab/services';
 
 
 // Create a named terminal session and send some data.
