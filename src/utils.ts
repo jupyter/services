@@ -68,9 +68,11 @@ function uuid(): string {
  *
  * This interface is from the npm package URL object interface. We
  * include it here so that downstream libraries do not have to include
- * the `url` typing files.
+ * the `url` typing files, since the npm `url` package is not in the
+ * @types system.
  */
-export interface UrlObject {
+
+export interface IUrl {
     href?: string;
     protocol?: string;
     auth?: string;
@@ -106,7 +108,7 @@ export interface UrlObject {
  */
 
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): UrlObject {
+function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrl {
   return url.parse(urlStr, parseQueryString, slashesDenoteHost);
 }
 
