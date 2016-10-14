@@ -197,6 +197,7 @@ class DefaultKernel implements IKernel {
     if (this.isDisposed) {
       return;
     }
+    clearSignalData(this);
     this._status = 'dead';
     if (this._ws !== null) {
       this._ws.close();
@@ -211,9 +212,7 @@ class DefaultKernel implements IKernel {
     this._futures = null;
     this._commPromises = null;
     this._comms = null;
-    this._status = 'dead';
     this._targetRegistry = null;
-    clearSignalData(this);
     delete Private.runningKernels[this._clientId];
   }
 
@@ -296,14 +295,16 @@ class DefaultKernel implements IKernel {
    * Used when the websocket connection to the kernel is lost.
    */
   reconnect(): Promise<void> {
+    this._isReady = false;
     if (this._ws !== null) {
       // Clear the websocket event handlers and the socket itself.
+      this._ws.onopen = null;
       this._ws.onclose = null;
       this._ws.onerror = null;
+      this._ws.onmessage = null;
       this._ws.close();
       this._ws = null;
     }
-    this._isReady = false;
     this._updateStatus('reconnecting');
     this._createSocket();
     return this._connectionPromise.promise;
@@ -641,6 +642,8 @@ class DefaultKernel implements IKernel {
     // Get the kernel info, signaling that the kernel is ready.
     this.kernelInfo().then(() => {
       this._connectionPromise.resolve(void 0);
+    }).catch(err => {
+      this._connectionPromise.reject(err);
     });
     this._isReady = false;
   }
@@ -712,6 +715,7 @@ class DefaultKernel implements IKernel {
       this._reconnectAttempt += 1;
     } else {
       this._updateStatus('dead');
+      this._connectionPromise.reject(new Error('Could not establish connection'));
     }
   }
 
@@ -1023,7 +1027,7 @@ namespace Private {
       }
     }
     return getKernelModel(id, options).catch(() => {
-      return typedThrow<Kernel.IModel>(`No running kernel with id: ${id}`);
+      throw new Error(`No running kernel with id: ${id}`);
     });
   }
 
@@ -1141,7 +1145,7 @@ namespace Private {
     return getKernelModel(id, options).then(model => {
       return new DefaultKernel(options, id);
     }).catch(() => {
-      return typedThrow<IKernel>(`No running kernel with id: ${id}`);
+      throw new Error(`No running kernel with id: ${id}`);
     });
   }
 
@@ -1333,13 +1337,5 @@ namespace Private {
         resolve(reply);
       };
     });
-  }
-
-  /**
-   * Throw a typed error.
-   */
-  export
-  function typedThrow<T>(msg: string): T {
-    throw new Error(msg);
   }
 }
