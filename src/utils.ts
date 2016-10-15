@@ -16,10 +16,6 @@ import * as urljoin
   from 'url-join';
 
 
-// Stub for requirejs
-declare var requirejs: any;
-
-
 /**
  * Copy the contents of one object to another, recursively.
  *
