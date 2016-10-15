@@ -3,6 +3,8 @@
     "experimentalDecorators": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
+    "lib": ["dom", "es5", "es2015.promise", "es2015.collection"],
+    "types": ["mocha"],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",
