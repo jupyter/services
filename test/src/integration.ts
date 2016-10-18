@@ -346,7 +346,7 @@ describe('jupyter.services - Integration', () => {
         return manager.listRunning();
       }).then(running => {
         let item = running.next();
-        expect(item).to.be(1);
+        expect(running.next()).to.be(void 0);
         return manager.shutdown(item.name);
       }).then(() => {
         return manager.listRunning();
