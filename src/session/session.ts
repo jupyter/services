@@ -10,6 +10,10 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
@@ -301,7 +305,7 @@ namespace Session {
     /**
      * A signal emitted when the running sessions change.
      */
-    runningChanged: ISignal<IManager, IIterator<IModel>>;
+    runningChanged: ISignal<IManager, ISequence<IModel>>;
 
     /**
      * Get the available kernel specs.

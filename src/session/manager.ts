@@ -10,6 +10,14 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
@@ -47,7 +55,7 @@ class SessionManager implements Session.IManager {
   /**
    * A signal emitted when the running sessions change.
    */
-  runningChanged: ISignal<SessionManager, IIterator<Session.IModel>>;
+  runningChanged: ISignal<SessionManager, ISequence<Session.IModel>>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -93,7 +101,7 @@ class SessionManager implements Session.IManager {
       let running = toArray(it);
       if (!deepEqual(running, this._running)) {
         this._running = running;
-        this.runningChanged.emit(iter(running));
+        this.runningChanged.emit(new Vector(running));
       }
       return iter(running);
     });
