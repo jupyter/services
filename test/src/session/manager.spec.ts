@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -97,7 +101,7 @@ describe('session', () => {
         let sessionModels = [createSessionModel(), createSessionModel()];
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, sessionModels)).to.be(true);
+          expect(deepEqual(toArray(args), sessionModels)).to.be(true);
           done();
         });
         let handler = new RequestHandler(() => {
@@ -117,9 +121,10 @@ describe('session', () => {
         handler.onRequest = () => {
           handler.respond(200, sessionModels);
         };
-        manager.listRunning().then((response: Session.IModel[]) => {
-          expect(response[0]).to.eql(sessionModels[0]);
-          expect(response[1]).to.eql(sessionModels[1]);
+        manager.listRunning().then(response => {
+          let running = toArray(response);
+          expect(running[0]).to.eql(sessionModels[0]);
+          expect(running[1]).to.eql(sessionModels[1]);
           done();
         });
 

@@ -79,7 +79,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Kernel.listRunning();
       }).then(kernels => {
-        if (!kernels.length) {
+        if (!kernels.next()) {
           throw Error('Should be one at least one running kernel');
         }
         return kernel.shutdown();
@@ -156,7 +156,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Session.listRunning();
       }).then(sessions => {
-        if (!sessions.length) {
+        if (!sessions.next()) {
           throw Error('Should be one at least one running session');
         }
         return session.shutdown();
@@ -317,7 +317,7 @@ describe('jupyter.services - Integration', () => {
         checkpoint = value;
         return contents.listCheckpoints('baz.txt');
       }).then(checkpoints => {
-        expect(checkpoints[0]).to.eql(checkpoint);
+        expect(checkpoints.next()).to.eql(checkpoint);
         return contents.restoreCheckpoint('baz.txt', checkpoint.id);
       }).then(() => {
         return contents.deleteCheckpoint('baz.txt', checkpoint.id);
@@ -345,12 +345,13 @@ describe('jupyter.services - Integration', () => {
       manager.create().then(session => {
         return manager.listRunning();
       }).then(running => {
-        expect(running.length).to.be(1);
-        return manager.shutdown(running[0].name);
+        let item = running.next();
+        expect(running.next()).to.be(void 0);
+        return manager.shutdown(item.name);
       }).then(() => {
         return manager.listRunning();
       }).then(running => {
-        expect(running.length).to.be(0);
+        expect(running.next()).to.be(void 0);
         done();
       }).catch(done);
     });

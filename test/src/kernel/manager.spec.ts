@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -80,7 +84,7 @@ describe('kernel/manager', () => {
         ];
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, data)).to.be(true);
+          expect(deepEqual(toArray(args), data)).to.be(true);
           done();
         });
         tester.onRequest = () => {
@@ -125,8 +129,9 @@ describe('kernel/manager', () => {
           tester.respond(200, data);
         };
         manager.listRunning().then(response => {
-          expect(response[0]).to.eql(data[0]);
-          expect(response[1]).to.eql(data[1]);
+          let running = toArray(response);
+          expect(running[0]).to.eql(data[0]);
+          expect(running[1]).to.eql(data[1]);
           done();
         });
       });

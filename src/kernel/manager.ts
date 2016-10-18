@@ -2,8 +2,20 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  iter, toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -34,12 +46,12 @@ class KernelManager implements Kernel.IManager {
   /**
    * A signal emitted when the specs change.
    */
-  specsChanged: ISignal<Kernel.IManager, Kernel.ISpecModels>;
+  specsChanged: ISignal<this, Kernel.ISpecModels>;
 
   /**
    * A signal emitted when the running kernels change.
    */
-  runningChanged: ISignal<Kernel.IManager, Kernel.IModel[]>;
+  runningChanged: ISignal<this, ISequence<Kernel.IModel>>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -81,13 +93,14 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  listRunning(options?: Kernel.IOptions): Promise<Kernel.IModel[]> {
-    return Kernel.listRunning(this._getOptions(options)).then(running => {
+  listRunning(options?: Kernel.IOptions): Promise<ISequence<Kernel.IModel>> {
+    return Kernel.listRunning(this._getOptions(options)).then(it => {
+      let running = toArray(it);
       if (!deepEqual(running, this._running)) {
-        this._running = running.slice();
-        this.runningChanged.emit(running);
+        this._running = running;
+        this.runningChanged.emit(new Vector(this._running));
       }
-      return running;
+      return iter(running);
     });
   }
 

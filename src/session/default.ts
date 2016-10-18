@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter, toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
@@ -361,7 +365,7 @@ namespace DefaultSession {
    * List the running sessions.
    */
   export
-  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+  function listRunning(options?: Session.IOptions): Promise<IIterator<Session.IModel>> {
     return Private.listRunning(options);
   }
 
@@ -421,7 +425,7 @@ namespace Private {
    * List the running sessions.
    */
   export
-  function listRunning(options: Session.IOptions = {}): Promise<Session.IModel[]> {
+  function listRunning(options: Session.IOptions = {}): Promise<IIterator<Session.IModel>> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -501,7 +505,7 @@ namespace Private {
       }
     }
     return listRunning(options).then(models => {
-      for (let model of models) {
+      for (let model of toArray(models)) {
         if (model.notebook.path === path) {
           return model;
         }
@@ -636,7 +640,7 @@ namespace Private {
    * Update the running sessions based on new data from the server.
    */
   export
-  function updateRunningSessions(sessions: Session.IModel[]): Promise<Session.IModel[]> {
+  function updateRunningSessions(sessions: Session.IModel[]): Promise<IIterator<Session.IModel>> {
     let promises: Promise<void>[] = [];
     for (let uuid in runningSessions) {
       let session = runningSessions[uuid];
@@ -653,7 +657,7 @@ namespace Private {
         session.sessionDied.emit(void 0);
       }
     }
-    return Promise.all(promises).then(() => { return sessions; });
+    return Promise.all(promises).then(() => { return iter(sessions); });
   }
 
   /**

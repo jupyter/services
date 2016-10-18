@@ -4,8 +4,16 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
 
 import {
   TerminalSession, TerminalManager, ITerminalSession
@@ -114,7 +122,7 @@ describe('terminals', () => {
         let manager = new TerminalManager();
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, data)).to.be(true);
+          expect(deepEqual(toArray(args), data)).to.be(true);
           done();
         });
         tester.onRequest = () => {
@@ -134,7 +142,7 @@ describe('terminals', () => {
         };
         let manager = new TerminalManager();
         manager.listRunning().then(models => {
-          expect(deepEqual(data, models)).to.be(true);
+          expect(deepEqual(data, toArray(models))).to.be(true);
           done();
         }).catch(done);
       });
@@ -158,7 +166,7 @@ describe('terminals', () => {
         session.messageReceived.connect((sender, msg) => {
           expect(sender).to.be(session);
           expect(msg.type).to.be('stdout');
-          expect(msg.content).to.eql(['foo bar']);
+          expect(toArray(msg.content)).to.eql(['foo bar']);
           done();
         });
         tester.sendRaw(JSON.stringify(['stdout', 'foo bar']));
@@ -211,7 +219,7 @@ describe('terminals', () => {
           expect(msg.type).to.be('stdin');
           done();
         });
-        session.send({ type: 'stdin', content: [1, 2] });
+        session.send({ type: 'stdin', content: new Vector([1, 2]) });
       });
 
     });

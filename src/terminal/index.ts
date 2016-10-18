@@ -2,8 +2,20 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter, toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONPrimitive, JSONObject, deepEqual
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
 
 import {
   IDisposable
@@ -115,7 +127,7 @@ namespace TerminalSession {
    * A message from the terminal session.
    */
   export
-  interface IMessage extends JSONObject {
+  interface IMessage {
     /**
      * The type of the message.
      */
@@ -124,7 +136,7 @@ namespace TerminalSession {
     /**
      * The content of the message.
      */
-    readonly content?: JSONPrimitive[];
+    readonly content?: ISequence<JSONPrimitive>;
   }
 
   /**
@@ -141,7 +153,7 @@ namespace TerminalSession {
     /**
      * A signal emitted when the running terminals change.
      */
-    runningChanged: ISignal<IManager, IModel[]>;
+    runningChanged: ISignal<IManager, ISequence<IModel>>;
 
     /**
      * Create a new terminal session or connect to an existing session.
@@ -164,7 +176,7 @@ namespace TerminalSession {
     /**
      * Get the list of models for the terminals running on the server.
      */
-    listRunning(): Promise<IModel[]>;
+    listRunning(): Promise<IIterator<IModel>>;
   }
 }
 
@@ -186,7 +198,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<TerminalManager, TerminalSession.IModel[]>;
+  runningChanged: ISignal<this, ISequence<TerminalSession.IModel>>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -237,7 +249,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Get the list of models for the terminals running on the server.
    */
-  listRunning(): Promise<TerminalSession.IModel[]> {
+  listRunning(): Promise<IIterator<TerminalSession.IModel>> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'GET';
@@ -252,10 +264,10 @@ class TerminalManager implements TerminalSession.IManager {
         return utils.makeAjaxError(success, 'Invalid terminal data');
       }
       if (!deepEqual(data, this._running)) {
-        this._running = data.slice();
-        this.runningChanged.emit(data);
+        this._running = data;
+        this.runningChanged.emit(new Vector(data));
       }
-      return data;
+      return iter(data);
     });
   }
 
@@ -314,7 +326,7 @@ class DefaultTerminalSession implements ITerminalSession {
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<ITerminalSession, TerminalSession.IMessage>;
+  messageReceived: ISignal<this, TerminalSession.IMessage>;
 
   /**
    * Get the name of the terminal session.
@@ -359,7 +371,7 @@ class DefaultTerminalSession implements ITerminalSession {
    */
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
-    msg.push(...message.content);
+    msg.push(...toArray(message.content));
     this._ws.send(JSON.stringify(msg));
   }
 
@@ -419,10 +431,10 @@ class DefaultTerminalSession implements ITerminalSession {
     this._ws = new WebSocket(this._url);
 
     this._ws.onmessage = (event: MessageEvent) => {
-      let data = JSON.parse(event.data);
+      let data = JSON.parse(event.data) as JSONPrimitive[];
       this.messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
-        content: data.slice(1)
+        content: new Vector(data.slice(1))
       });
     };
 
