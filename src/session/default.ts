@@ -2,8 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter, toArray
+  IIterator, iter
 } from 'phosphor/lib/algorithm/iteration';
+
+import {
+  find
+} from 'phosphor/lib/algorithm/searching';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -505,10 +509,11 @@ namespace Private {
       }
     }
     return listRunning(options).then(models => {
-      for (let model of toArray(models)) {
-        if (model.notebook.path === path) {
-          return model;
-        }
+      let model = find(models, value => {
+        return value.notebook.path === path;
+      });
+      if (model) {
+        return model;
       }
       let msg = `No running session for path: ${path}`;
       return typedThrow<Session.IModel>(msg);
