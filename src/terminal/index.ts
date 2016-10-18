@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
+  IIterator, iter, toArray
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
@@ -127,7 +127,7 @@ namespace TerminalSession {
    * A message from the terminal session.
    */
   export
-  interface IMessage extends JSONObject {
+  interface IMessage {
     /**
      * The type of the message.
      */
@@ -136,7 +136,7 @@ namespace TerminalSession {
     /**
      * The content of the message.
      */
-    readonly content?: JSONPrimitive[];
+    readonly content?: ISequence<JSONPrimitive>;
   }
 
   /**
@@ -371,7 +371,7 @@ class DefaultTerminalSession implements ITerminalSession {
    */
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
-    msg.push(...message.content);
+    msg.push(...toArray(message.content));
     this._ws.send(JSON.stringify(msg));
   }
 
@@ -431,10 +431,10 @@ class DefaultTerminalSession implements ITerminalSession {
     this._ws = new WebSocket(this._url);
 
     this._ws.onmessage = (event: MessageEvent) => {
-      let data = JSON.parse(event.data);
+      let data = JSON.parse(event.data) as JSONPrimitive[];
       this.messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
-        content: data.slice(1)
+        content: new Vector(data.slice(1))
       });
     };
 

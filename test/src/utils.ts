@@ -3,6 +3,14 @@
 
 import encoding = require('text-encoding');
 
+import {
+  JSONPrimitive
+} from 'phosphor/lib/algorithm/json';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
+
 import * as WebSocket
   from  'ws';
 
@@ -11,7 +19,7 @@ import {
 } from 'ws';
 
 import {
-  Contents, IKernel, Kernel, KernelMessage, ITerminalSession, TerminalSession
+  Contents, Kernel, KernelMessage, TerminalSession
 } from '../../lib';
 
 import {
@@ -359,10 +367,10 @@ class TerminalTester extends RequestSocketTester {
     sock.on('message', (msg: any) => {
       let onMessage = this._onMessage;
       if (onMessage) {
-        let data = JSON.parse(msg) as any[];
+        let data = JSON.parse(msg) as JSONPrimitive[];
         let termMsg: TerminalSession.IMessage = {
           type: data[0] as TerminalSession.MessageType,
-          content: data.slice(1)
+          content: new Vector(data.slice(1))
         };
         onMessage(termMsg);
       }
