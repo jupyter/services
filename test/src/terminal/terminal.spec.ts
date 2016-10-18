@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -114,7 +118,7 @@ describe('terminals', () => {
         let manager = new TerminalManager();
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, data)).to.be(true);
+          expect(deepEqual(toArray(args), data)).to.be(true);
           done();
         });
         tester.onRequest = () => {
@@ -134,7 +138,7 @@ describe('terminals', () => {
         };
         let manager = new TerminalManager();
         manager.listRunning().then(models => {
-          expect(deepEqual(data, models)).to.be(true);
+          expect(deepEqual(data, toArray(models))).to.be(true);
           done();
         }).catch(done);
       });
