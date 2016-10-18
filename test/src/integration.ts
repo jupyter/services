@@ -317,7 +317,7 @@ describe('jupyter.services - Integration', () => {
         checkpoint = value;
         return contents.listCheckpoints('baz.txt');
       }).then(checkpoints => {
-        expect(checkpoints[0]).to.eql(checkpoint);
+        expect(checkpoints.next()).to.eql(checkpoint);
         return contents.restoreCheckpoint('baz.txt', checkpoint.id);
       }).then(() => {
         return contents.deleteCheckpoint('baz.txt', checkpoint.id);

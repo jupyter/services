@@ -5,6 +5,10 @@ import * as posix
  from 'path-posix';
 
 import {
+  IIterator, iter
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -46,7 +50,7 @@ namespace Contents {
      * #### Notes
      *  Equivalent to the last part of the `path` field.
      */
-    name?: string;
+    readonly name?: string;
 
     /**
      * The full file path.
@@ -54,27 +58,27 @@ namespace Contents {
      * #### Notes
      * It will *not* start with `/`, and it will be `/`-delimited.
      */
-    path?: string;
+    readonly path?: string;
 
     /**
      * The type of file.
      */
-    type?: ContentType;
+    readonly type?: ContentType;
 
     /**
      * Whether the requester has permission to edit the file.
      */
-    writable?: boolean;
+    readonly writable?: boolean;
 
     /**
      * File creation timestamp.
      */
-    created?: string;
+    readonly created?: string;
 
     /**
      * Last modified timestamp.
      */
-    last_modified?: string;
+    readonly last_modified?: string;
 
     /**
      * Specify the mime-type of file contents.
@@ -82,12 +86,12 @@ namespace Contents {
      * #### Notes
      * Only non-`null` when `content` is present and `type` is `"file"`.
      */
-    mimetype?: string;
+    readonly mimetype?: string;
 
     /**
      * The optional file content.
      */
-    content?: any;
+    readonly content?: any;
 
     /**
      * The format of the file `content`.
@@ -95,7 +99,7 @@ namespace Contents {
      * #### Notes
      * Only relevant for type: 'file'
      */
-    format?: FileFormat;
+    readonly format?: FileFormat;
   }
 
   /**
@@ -166,12 +170,12 @@ namespace Contents {
     /**
      * The unique identifier for the checkpoint.
      */
-    id: string;
+    readonly id: string;
 
     /**
      * Last modified timestamp.
      */
-    last_modified: string;
+    readonly last_modified: string;
   }
 
   /**
@@ -270,7 +274,7 @@ namespace Contents {
      * @returns A promise which resolves with a list of checkpoint models for
      *    the file.
      */
-    listCheckpoints(path: string): Promise<ICheckpointModel[]>;
+    listCheckpoints(path: string): Promise<IIterator<ICheckpointModel>>;
 
     /**
      * Restore a file to a known checkpoint state.
@@ -610,7 +614,7 @@ class ContentsManager implements Contents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
+  listCheckpoints(path: string): Promise<IIterator<Contents.ICheckpointModel>> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -631,7 +635,7 @@ class ContentsManager implements Contents.IManager {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return success.data;
+      return iter(success.data);
     });
   }
 
