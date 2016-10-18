@@ -156,7 +156,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Session.listRunning();
       }).then(sessions => {
-        if (!sessions.length) {
+        if (!sessions.next()) {
           throw Error('Should be one at least one running session');
         }
         return session.shutdown();

@@ -92,7 +92,7 @@ class KernelManager implements Kernel.IManager {
         this._running = running;
         this.runningChanged.emit(iter(running));
       }
-      return running;
+      return iter(running);
     });
   }
 

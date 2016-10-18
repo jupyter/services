@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -148,7 +152,7 @@ namespace Session {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+  function listRunning(options?: Session.IOptions): Promise<IIterator<Session.IModel>> {
     return DefaultSession.listRunning(options);
   }
 
@@ -297,7 +301,7 @@ namespace Session {
     /**
      * A signal emitted when the running sessions change.
      */
-    runningChanged: ISignal<IManager, IModel[]>;
+    runningChanged: ISignal<IManager, IIterator<IModel>>;
 
     /**
      * Get the available kernel specs.
@@ -315,7 +319,7 @@ namespace Session {
      * This will emit a [[runningChanged]] signal if the value
      * has changed since the last fetch.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    listRunning(options?: IOptions): Promise<IIterator<IModel>>;
 
     /**
      * Start a new session.

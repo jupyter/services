@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter, toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -43,7 +47,7 @@ class SessionManager implements Session.IManager {
   /**
    * A signal emitted when the running sessions change.
    */
-  runningChanged: ISignal<SessionManager, Session.IModel[]>;
+  runningChanged: ISignal<SessionManager, IIterator<Session.IModel>>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -84,13 +88,14 @@ class SessionManager implements Session.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
-    return Session.listRunning(this._getOptions(options)).then(running => {
+  listRunning(options?: Session.IOptions): Promise<IIterator<Session.IModel>> {
+    return Session.listRunning(this._getOptions(options)).then(it => {
+      let running = toArray(it);
       if (!deepEqual(running, this._running)) {
-        this._running = running.slice();
-        this.runningChanged.emit(running);
+        this._running = running;
+        this.runningChanged.emit(iter(running));
       }
-      return running;
+      return iter(running);
     });
   }
 

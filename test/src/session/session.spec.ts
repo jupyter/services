@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   uuid, IAjaxError
 } from '../../../lib/utils';
 
@@ -85,9 +89,10 @@ describe('session', () => {
         tester.respond(200, sessionModels);
       };
       let list = Session.listRunning({ baseUrl: 'http://localhost:8888' });
-      list.then((response: Session.IModel[]) => {
-        expect(response[0]).to.eql(sessionModels[0]);
-        expect(response[1]).to.eql(sessionModels[1]);
+      list.then(response => {
+        let running = toArray(response);
+        expect(running[0]).to.eql(sessionModels[0]);
+        expect(running[1]).to.eql(sessionModels[1]);
         done();
       });
     });
@@ -98,9 +103,10 @@ describe('session', () => {
         tester.respond(200, sessionModels);
       };
       let list = Session.listRunning({ ajaxSettings: ajaxSettings });
-      list.then((response: Session.IModel[]) => {
-        expect(response[0]).to.eql(sessionModels[0]);
-        expect(response[1]).to.eql(sessionModels[1]);
+      list.then(response => {
+        let running = toArray(response);
+        expect(running[0]).to.eql(sessionModels[0]);
+        expect(running[1]).to.eql(sessionModels[1]);
         done();
       });
     });
