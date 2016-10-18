@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
 
@@ -364,7 +368,7 @@ namespace Kernel {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<IIterator<Kernel.IModel>> {
     return DefaultKernel.listRunning(options);
   }
 
@@ -464,7 +468,7 @@ namespace Kernel {
     /**
      * A signal emitted when the running kernels change.
      */
-    runningChanged: ISignal<IManager, IModel[]>;
+    runningChanged: ISignal<IManager, IIterator<IModel>>;
 
     /**
      * Get the available kernel specs.
@@ -482,7 +486,7 @@ namespace Kernel {
      * This will emit a [[runningChanged]] signal if the value
      * has changed since the last fetch.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    listRunning(options?: IOptions): Promise<IIterator<IModel>>;
 
     /**
      * Start a new kernel.

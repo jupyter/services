@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -951,7 +955,7 @@ namespace DefaultKernel {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<IIterator<Kernel.IModel>> {
     return Private.listRunning(options);
   }
 
@@ -1068,7 +1072,7 @@ namespace Private {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<IIterator<Kernel.IModel>> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -1090,7 +1094,7 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return success.data as Kernel.IModel[];
+      return iter(success.data);
     }, onKernelError);
   }
 

@@ -79,7 +79,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Kernel.listRunning();
       }).then(kernels => {
-        if (!kernels.length) {
+        if (!kernels.next()) {
           throw Error('Should be one at least one running kernel');
         }
         return kernel.shutdown();

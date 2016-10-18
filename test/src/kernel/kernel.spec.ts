@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -70,8 +74,9 @@ describe('kernel', () => {
         baseUrl: 'http://localhost:8888',
       };
       Kernel.listRunning(options).then(response => {
-        expect(response[0]).to.eql(data[0]);
-        expect(response[1]).to.eql(data[1]);
+        let running = toArray(response);
+        expect(running[0]).to.eql(data[0]);
+        expect(running[1]).to.eql(data[1]);
         done();
       });
     });
@@ -88,9 +93,10 @@ describe('kernel', () => {
         baseUrl: 'http://localhost:8888',
         ajaxSettings: ajaxSettings
       };
-      Kernel.listRunning(options).then((response: Kernel.IModel[]) => {
-        expect(response[0]).to.eql(data[0]);
-        expect(response[1]).to.eql(data[1]);
+      Kernel.listRunning(options).then(response => {
+        let running = toArray(response);
+        expect(running[0]).to.eql(data[0]);
+        expect(running[1]).to.eql(data[1]);
         done();
       });
     });
