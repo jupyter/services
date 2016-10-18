@@ -2,12 +2,20 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter, toArray
+  iter, toArray
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -43,7 +51,7 @@ class KernelManager implements Kernel.IManager {
   /**
    * A signal emitted when the running kernels change.
    */
-  runningChanged: ISignal<this, IIterator<Kernel.IModel>>;
+  runningChanged: ISignal<this, ISequence<Kernel.IModel>>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -85,12 +93,12 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  listRunning(options?: Kernel.IOptions): Promise<IIterator<Kernel.IModel>> {
+  listRunning(options?: Kernel.IOptions): Promise<ISequence<Kernel.IModel>> {
     return Kernel.listRunning(this._getOptions(options)).then(it => {
       let running = toArray(it);
       if (!deepEqual(running, this._running)) {
         this._running = running;
-        this.runningChanged.emit(iter(running));
+        this.runningChanged.emit(new Vector(this._running));
       }
       return iter(running);
     });

@@ -2,12 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
+  IIterator
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
 
 import {
   IDisposable
@@ -468,7 +472,7 @@ namespace Kernel {
     /**
      * A signal emitted when the running kernels change.
      */
-    runningChanged: ISignal<IManager, IIterator<IModel>>;
+    runningChanged: ISignal<IManager, ISequence<IModel>>;
 
     /**
      * Get the available kernel specs.
