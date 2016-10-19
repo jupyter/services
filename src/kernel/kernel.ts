@@ -6,10 +6,6 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
@@ -367,7 +363,7 @@ namespace Kernel {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<ISequence<Kernel.IModel>> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
     return DefaultKernel.listRunning(options);
   }
 
@@ -467,7 +463,7 @@ namespace Kernel {
     /**
      * A signal emitted when the running kernels change.
      */
-    runningChanged: ISignal<IManager, ISequence<IModel>>;
+    runningChanged: ISignal<IManager, IModel[]>;
 
     /**
      * Get the available kernel specs.
@@ -485,7 +481,7 @@ namespace Kernel {
      * This will emit a [[runningChanged]] signal if the value
      * has changed since the last fetch.
      */
-    listRunning(options?: IOptions): Promise<ISequence<IModel>>;
+    listRunning(options?: IOptions): Promise<IModel[]>;
 
     /**
      * Start a new kernel.

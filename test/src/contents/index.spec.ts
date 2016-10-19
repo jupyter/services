@@ -543,8 +543,8 @@ describe('contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints('/foo/bar.txt');
-      checkpoints.then(it => {
-        expect(it.next().last_modified).to.be(DEFAULT_CP.last_modified);
+      checkpoints.then(models => {
+        expect(models[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });
@@ -555,8 +555,8 @@ describe('contents', () => {
         handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
       });
       let checkpoints = contents.listCheckpoints('/foo/bar.txt');
-      checkpoints.then(it => {
-        expect(it.next().last_modified).to.be(DEFAULT_CP.last_modified);
+      checkpoints.then(models => {
+        expect(models[0].last_modified).to.be(DEFAULT_CP.last_modified);
         done();
       });
     });

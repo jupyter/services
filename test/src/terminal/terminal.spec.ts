@@ -12,10 +12,6 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  Vector
-} from 'phosphor/lib/collections/vector';
-
-import {
   TerminalSession, TerminalManager
 } from '../../../lib/terminal';
 
@@ -219,7 +215,7 @@ describe('terminals', () => {
           expect(msg.type).to.be('stdin');
           done();
         });
-        session.send({ type: 'stdin', content: new Vector([1, 2]) });
+        session.send({ type: 'stdin', content: [1, 2] });
       });
 
     });

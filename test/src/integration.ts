@@ -317,7 +317,7 @@ describe('jupyter.services - Integration', () => {
         checkpoint = value;
         return contents.listCheckpoints('baz.txt');
       }).then(checkpoints => {
-        expect(checkpoints.next()).to.eql(checkpoint);
+        expect(checkpoints[0]).to.eql(checkpoint);
         return contents.restoreCheckpoint('baz.txt', checkpoint.id);
       }).then(() => {
         return contents.deleteCheckpoint('baz.txt', checkpoint.id);
@@ -346,7 +346,7 @@ describe('jupyter.services - Integration', () => {
         return manager.listRunning();
       }).then(running => {
         expect(running.length).to.be(1);
-        return manager.shutdown(running.at(0).name);
+        return manager.shutdown(running[0].name);
       }).then(() => {
         return manager.listRunning();
       }).then(running => {

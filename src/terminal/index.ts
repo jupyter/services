@@ -2,16 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  toArray
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
   JSONPrimitive, JSONObject, deepEqual
 } from 'phosphor/lib/algorithm/json';
-
-import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
 
 import {
   Vector
@@ -136,7 +128,7 @@ namespace TerminalSession {
     /**
      * The content of the message.
      */
-    readonly content?: ISequence<JSONPrimitive>;
+    readonly content?: JSONPrimitive[];
   }
 
   /**
@@ -153,7 +145,7 @@ namespace TerminalSession {
     /**
      * A signal emitted when the running terminals change.
      */
-    runningChanged: ISignal<IManager, ISequence<IModel>>;
+    runningChanged: ISignal<IManager, IModel[]>;
 
     /**
      * Create a new terminal session or connect to an existing session.
@@ -176,7 +168,7 @@ namespace TerminalSession {
     /**
      * Get the list of models for the terminals running on the server.
      */
-    listRunning(): Promise<ISequence<IModel>>;
+    listRunning(): Promise<IModel[]>;
   }
 }
 
@@ -198,7 +190,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<this, ISequence<TerminalSession.IModel>>;
+  runningChanged: ISignal<this, TerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -249,7 +241,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Get the list of models for the terminals running on the server.
    */
-  listRunning(): Promise<ISequence<TerminalSession.IModel>> {
+  listRunning(): Promise<TerminalSession.IModel[]> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'GET';
@@ -263,12 +255,11 @@ class TerminalManager implements TerminalSession.IManager {
       if (!Array.isArray(data)) {
         return utils.makeAjaxError(success, 'Invalid terminal data');
       }
-      let value = new Vector(data);
       if (!deepEqual(data, this._running)) {
         this._running = data;
-        this.runningChanged.emit(value);
+        this.runningChanged.emit(data);
       }
-      return value;
+      return data;
     });
   }
 
@@ -372,7 +363,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
-    msg.push(...toArray(message.content));
+    msg.push(...message.content);
     this._ws.send(JSON.stringify(msg));
   }
 
@@ -435,7 +426,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       let data = JSON.parse(event.data) as JSONPrimitive[];
       this.messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
-        content: new Vector(data.slice(1))
+        content: data.slice(1)
       });
     };
 

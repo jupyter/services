@@ -14,10 +14,6 @@ import {
 } from 'phosphor/lib/algorithm/searching';
 
 import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
   Vector
 } from 'phosphor/lib/collections/vector';
 
@@ -967,7 +963,7 @@ namespace DefaultKernel {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<ISequence<Kernel.IModel>> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
     return Private.listRunning(options);
   }
 
@@ -1082,7 +1078,7 @@ namespace Private {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<ISequence<Kernel.IModel>> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -1104,7 +1100,7 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return new Vector(success.data);
+      return success.data;
     }, onKernelError);
   }
 

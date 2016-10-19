@@ -10,10 +10,6 @@ import {
 } from 'phosphor/lib/algorithm/searching';
 
 import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
   Vector
 } from 'phosphor/lib/collections/vector';
 
@@ -377,7 +373,7 @@ namespace DefaultSession {
    * List the running sessions.
    */
   export
-  function listRunning(options?: Session.IOptions): Promise<ISequence<Session.IModel>> {
+  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
     return Private.listRunning(options);
   }
 
@@ -437,7 +433,7 @@ namespace Private {
    * List the running sessions.
    */
   export
-  function listRunning(options: Session.IOptions = {}): Promise<ISequence<Session.IModel>> {
+  function listRunning(options: Session.IOptions = {}): Promise<Session.IModel[]> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -460,7 +456,7 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return updateRunningSessions(new Vector(data));
+      return updateRunningSessions(data);
     }, Private.onSessionError);
   }
 
@@ -639,7 +635,7 @@ namespace Private {
    * Update the running sessions based on new data from the server.
    */
   export
-  function updateRunningSessions(sessions: ISequence<Session.IModel>): Promise<ISequence<Session.IModel>> {
+  function updateRunningSessions(sessions: Session.IModel[]): Promise<Session.IModel[]> {
     let promises: Promise<void>[] = [];
 
     each(runningSessions, session => {

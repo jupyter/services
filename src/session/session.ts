@@ -6,10 +6,6 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
   IDisposable
 } from 'phosphor/lib/core/disposable';
 
@@ -151,7 +147,7 @@ namespace Session {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options?: Session.IOptions): Promise<ISequence<Session.IModel>> {
+  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
     return DefaultSession.listRunning(options);
   }
 
@@ -300,7 +296,7 @@ namespace Session {
     /**
      * A signal emitted when the running sessions change.
      */
-    runningChanged: ISignal<IManager, ISequence<IModel>>;
+    runningChanged: ISignal<IManager, IModel[]>;
 
     /**
      * Get the available kernel specs.
@@ -318,7 +314,7 @@ namespace Session {
      * This will emit a [[runningChanged]] signal if the value
      * has changed since the last fetch.
      */
-    listRunning(options?: IOptions): Promise<ISequence<IModel>>;
+    listRunning(options?: IOptions): Promise<IModel[]>;
 
     /**
      * Start a new session.
