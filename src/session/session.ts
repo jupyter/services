@@ -118,7 +118,7 @@ namespace Session {
     /**
      * Change the kernel.
      *
-     * @params options - The name or id of the new kernel.
+     * @param options - The name or id of the new kernel.
      *
      * #### Notes
      * This shuts down the existing kernel and creates a new kernel,

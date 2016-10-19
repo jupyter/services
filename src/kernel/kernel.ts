@@ -118,13 +118,13 @@ namespace Kernel {
      * is not given or is `false`, the future is disposed when an idle status
      * message is received.
      *
-     * If `disposeOnDone` is given and `false`, the Future will not be disposed
+     * If `disposeOnDone` is given and `false`, the future will not be disposed
      * of when the future is done, instead relying on the caller to dispose of it.
      * This allows for the handling of out-of-order output from ill-behaved kernels.
      *
      * All replies are validated as valid kernel messages.
      *
-     * If the kernel status is `Dead`, this will throw an error.
+     * If the kernel status is `'dead'`, this will throw an error.
      */
     sendShellMessage(msg: KernelMessage.IShellMessage, expectReply?: boolean, disposeOnDone?: boolean): Kernel.IFuture;
 
@@ -138,7 +138,7 @@ namespace Kernel {
      *
      * It is assumed that the API call does not mutate the kernel id or name.
      *
-     * The promise will be rejected if the kernel status is `Dead` or if the
+     * The promise will be rejected if the kernel status is `'dead'` or if the
      * request fails or the response is invalid.
      */
     interrupt(): Promise<void>;
@@ -155,7 +155,7 @@ namespace Kernel {
      *
      * It is assumed that the API call does not mutate the kernel id or name.
      *
-     * The promise will be rejected if the kernel status is `Dead` or if the
+     * The promise will be rejected if the kernel status is `'dead'` or if the
      * request fails or the response is invalid.
      */
     restart(): Promise<void>;
@@ -178,7 +178,7 @@ namespace Kernel {
      * On a valid response, closes the websocket and disposes of the kernel
      * object, and fulfills the promise.
      *
-     * The promise will be rejected if the kernel status is `Dead` or if the
+     * The promise will be rejected if the kernel status is `'dead'` or if the
      * request fails or the response is invalid.
      */
     shutdown(): Promise<void>;
