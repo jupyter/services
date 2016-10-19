@@ -7,10 +7,6 @@ import {
   JSONPrimitive
 } from 'phosphor/lib/algorithm/json';
 
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
-
 import * as WebSocket
   from  'ws';
 
@@ -370,7 +366,7 @@ class TerminalTester extends RequestSocketTester {
         let data = JSON.parse(msg) as JSONPrimitive[];
         let termMsg: TerminalSession.IMessage = {
           type: data[0] as TerminalSession.MessageType,
-          content: new Vector(data.slice(1))
+          content: data.slice(1)
         };
         onMessage(termMsg);
       }

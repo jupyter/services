@@ -13,7 +13,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  IServiceManager, ServiceManager
+  ServiceManager
 } from '../../lib/manager';
 
 import {
@@ -62,7 +62,7 @@ describe('manager', () => {
 
   describe('SessionManager', () => {
 
-    let manager: IServiceManager;
+    let manager: ServiceManager.IManager;
 
     beforeEach((done) => {
       let handler = new RequestHandler(() => {

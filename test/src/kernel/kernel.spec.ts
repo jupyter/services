@@ -16,7 +16,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  IKernel, KernelManager, Kernel, KernelMessage
+  KernelManager, Kernel, KernelMessage
 } from '../../../lib/kernel';
 
 import {
@@ -47,7 +47,7 @@ let createMsg = (channel: KernelMessage.Channel, parentHeader: JSONObject): Kern
 describe('kernel', () => {
 
   let tester: KernelTester;
-  let kernel: IKernel;
+  let kernel: Kernel.IKernel;
 
   beforeEach(() => {
     tester = new KernelTester();
@@ -130,7 +130,7 @@ describe('kernel', () => {
 
   describe('Kernel.startNew()', () => {
 
-    it('should create an IKernel object', (done) => {
+    it('should create an Kernel.IKernel object', (done) => {
       Kernel.startNew(KERNEL_OPTIONS).then(k => {
         kernel = k;
         expect(kernel.status).to.be('unknown');
@@ -299,7 +299,7 @@ describe('kernel', () => {
 
   });
 
-  describe('IKernel', () => {
+  describe('Kernel.IKernel', () => {
 
     beforeEach((done) => {
       Kernel.startNew().then(k => {
@@ -823,7 +823,7 @@ describe('kernel', () => {
       });
 
       it('should dispose of all kernel instances', (done) => {
-        let kernel2: IKernel;
+        let kernel2: Kernel.IKernel;
         Kernel.connectTo(kernel.id).then(k => {
           kernel2 = k;
           tester.onRequest = () => {

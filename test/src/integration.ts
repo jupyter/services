@@ -15,8 +15,8 @@ import {
 } from 'xmlhttprequest';
 
 import {
-  ConfigWithDefaults, ContentsManager, KernelMessage, Contents, IKernel,
-  ISession, TerminalManager, Session, Kernel,
+  ConfigWithDefaults, ContentsManager, KernelMessage, Contents,
+  TerminalManager, Session, Kernel,
   TerminalSession, ConfigSection
 } from '../../lib';
 
@@ -41,7 +41,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should interrupt and restart', (done) => {
-      let kernel: IKernel;
+      let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         return kernel.interrupt();
@@ -53,7 +53,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should get info', (done) => {
-      let kernel: IKernel;
+      let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         return kernel.kernelInfo();
@@ -63,8 +63,8 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should connect to existing kernel and list running kernels', (done) => {
-      let kernel: IKernel;
-      let kernel2: IKernel;
+      let kernel: Kernel.IKernel;
+      let kernel2: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         // should grab the same kernel object
@@ -79,7 +79,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Kernel.listRunning();
       }).then(kernels => {
-        if (!kernels.next()) {
+        if (!kernels.length) {
           throw Error('Should be one at least one running kernel');
         }
         return kernel.shutdown();
@@ -87,7 +87,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should trigger a reconnect', (done) => {
-      let kernel: IKernel;
+      let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         return kernel.reconnect();
@@ -97,7 +97,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should handle other kernel messages', (done) => {
-      let kernel: IKernel;
+      let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         return kernel.complete({ code: 'impor', cursor_pos: 4 });
@@ -136,8 +136,8 @@ describe('jupyter.services - Integration', () => {
 
     it('should start, connect to existing session and list running sessions', (done) => {
       let options: Session.IOptions = { path: 'Untitled1.ipynb' };
-      let session: ISession;
-      let session2: ISession;
+      let session: Session.ISession;
+      let session2: Session.ISession;
       Session.startNew(options).then(value => {
         session = value;
         return session.rename('Untitled2.ipynb');
@@ -156,7 +156,7 @@ describe('jupyter.services - Integration', () => {
         }
         return Session.listRunning();
       }).then(sessions => {
-        if (!sessions.next()) {
+        if (!sessions.length) {
           throw Error('Should be one at least one running session');
         }
         return session.shutdown();
@@ -164,7 +164,7 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should connect to an existing kernel', (done) => {
-      let kernel: IKernel;
+      let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: Session.IOptions = {
@@ -179,8 +179,8 @@ describe('jupyter.services - Integration', () => {
     });
 
     it('should be able to switch to an existing kernel by id', (done) => {
-      let kernel: IKernel;
-      let session: ISession;
+      let kernel: Kernel.IKernel;
+      let session: Session.ISession;
       Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: Session.IOptions = { path: 'Untitled1.ipynb' };
@@ -198,7 +198,7 @@ describe('jupyter.services - Integration', () => {
       // Get info about the available kernels and connect to one.
       let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let id: string;
-      let session: ISession;
+      let session: Session.ISession;
       Session.startNew(options).then(value => {
         session = value;
         id = session.kernel.id;
@@ -317,7 +317,7 @@ describe('jupyter.services - Integration', () => {
         checkpoint = value;
         return contents.listCheckpoints('baz.txt');
       }).then(checkpoints => {
-        expect(checkpoints.next()).to.eql(checkpoint);
+        expect(checkpoints[0]).to.eql(checkpoint);
         return contents.restoreCheckpoint('baz.txt', checkpoint.id);
       }).then(() => {
         return contents.deleteCheckpoint('baz.txt', checkpoint.id);
@@ -345,13 +345,12 @@ describe('jupyter.services - Integration', () => {
       manager.create().then(session => {
         return manager.listRunning();
       }).then(running => {
-        let item = running.next();
-        expect(running.next()).to.be(void 0);
-        return manager.shutdown(item.name);
+        expect(running.length).to.be(1);
+        return manager.shutdown(running[0].name);
       }).then(() => {
         return manager.listRunning();
       }).then(running => {
-        expect(running.next()).to.be(void 0);
+        expect(running.length).to.be(0);
         done();
       }).catch(done);
     });

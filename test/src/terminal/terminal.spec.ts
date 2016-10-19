@@ -12,11 +12,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  Vector
-} from 'phosphor/lib/collections/vector';
-
-import {
-  TerminalSession, TerminalManager, ITerminalSession
+  TerminalSession, TerminalManager
 } from '../../../lib/terminal';
 
 import {
@@ -27,7 +23,7 @@ import {
 describe('terminals', () => {
 
   let tester: TerminalTester;
-  let session: ITerminalSession;
+  let session: TerminalSession.ISession;
 
   beforeEach(() => {
     tester = new TerminalTester();
@@ -151,7 +147,7 @@ describe('terminals', () => {
 
   });
 
-  describe('ITerminalSession', () => {
+  describe('TerminalSession.ISession', () => {
 
     beforeEach((done) => {
       TerminalSession.open().then(s => {
@@ -219,7 +215,7 @@ describe('terminals', () => {
           expect(msg.type).to.be('stdin');
           done();
         });
-        session.send({ type: 'stdin', content: new Vector([1, 2]) });
+        session.send({ type: 'stdin', content: [1, 2] });
       });
 
     });

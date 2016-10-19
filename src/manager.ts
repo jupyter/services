@@ -33,48 +33,48 @@ import {
   IAjaxSettings, getBaseUrl
 } from './utils';
 
-/**
- * A service manager interface.
- */
-export
-interface IServiceManager extends IDisposable {
-  /**
-   * A signal emitted when the specs change on the service manager.
-   */
-  specsChanged: ISignal<IServiceManager, Kernel.ISpecModels>;
-
-  /**
-   * The kernel specs for the manager.
-   */
-  readonly kernelspecs: Kernel.ISpecModels;
-
-  /**
-   * The kernel manager for the manager.
-   */
-  readonly kernels: Kernel.IManager;
-
-  /**
-   * The session manager for the manager.
-   */
-  readonly sessions: Session.IManager;
-
-  /**
-   * The contents manager for the manager.
-   */
-  readonly contents: Contents.IManager;
-
-  /**
-   * The terminals manager for the manager.
-   */
-  readonly terminals: TerminalSession.IManager;
-}
-
 
 /**
  * The namespace for `ServiceManager` statics.
  */
 export
 namespace ServiceManager {
+  /**
+   * A service manager interface.
+   */
+  export
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the specs change on the service manager.
+     */
+    specsChanged: ISignal<IManager, Kernel.ISpecModels>;
+
+    /**
+     * The kernel specs for the manager.
+     */
+    readonly kernelspecs: Kernel.ISpecModels;
+
+    /**
+     * The kernel manager for the manager.
+     */
+    readonly kernels: Kernel.IManager;
+
+    /**
+     * The session manager for the manager.
+     */
+    readonly sessions: Session.IManager;
+
+    /**
+     * The contents manager for the manager.
+     */
+    readonly contents: Contents.IManager;
+
+    /**
+     * The terminals manager for the manager.
+     */
+    readonly terminals: TerminalSession.IManager;
+  }
+
   /**
    * Create a new service manager.
    *
@@ -83,7 +83,7 @@ namespace ServiceManager {
    * @returns A promise that resolves with a service manager.
    */
   export
-  function create(options: IOptions = {}): Promise<IServiceManager> {
+  function create(options: IOptions = {}): Promise<IManager> {
     options.baseUrl = options.baseUrl || getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     if (options.kernelspecs) {
@@ -125,7 +125,7 @@ namespace ServiceManager {
 /**
  * An implementation of a services manager.
  */
-class DefaultServiceManager implements IServiceManager {
+class DefaultServiceManager implements ServiceManager.IManager {
   /**
    * Construct a new services provider.
    */

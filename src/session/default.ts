@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
+  each, toArray
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
@@ -10,11 +10,15 @@ import {
 } from 'phosphor/lib/algorithm/searching';
 
 import {
+  Vector
+} from 'phosphor/lib/collections/vector';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
 import {
-  IKernel, Kernel, KernelMessage
+  Kernel, KernelMessage
 } from '../kernel';
 
 import {
@@ -25,7 +29,7 @@ import * as utils
   from '../utils';
 
 import {
-  ISession, Session
+  Session
 } from './session';
 
 import * as validate
@@ -44,17 +48,17 @@ const SESSION_SERVICE_URL = 'api/sessions';
  * all other operations, the kernel object should be used.
  */
 export
-class DefaultSession implements ISession {
+class DefaultSession implements Session.ISession {
   /**
    * Construct a new session.
    */
-  constructor(options: Session.IOptions, id: string, kernel: IKernel) {
+  constructor(options: Session.IOptions, id: string, kernel: Kernel.IKernel) {
     this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
-    Private.runningSessions[this._uuid] = this;
+    Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
   }
@@ -62,32 +66,32 @@ class DefaultSession implements ISession {
   /**
    * A signal emitted when the session dies.
    */
-  sessionDied: ISignal<ISession, void>;
+  sessionDied: ISignal<Session.ISession, void>;
 
   /**
    * A signal emitted when the kernel changes.
    */
-  kernelChanged: ISignal<ISession, IKernel>;
+  kernelChanged: ISignal<Session.ISession, Kernel.IKernel>;
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<ISession, Kernel.Status>;
+  statusChanged: ISignal<Session.ISession, Kernel.Status>;
 
   /**
    * A signal emitted for a kernel messages.
    */
-  iopubMessage: ISignal<ISession, KernelMessage.IMessage>;
+  iopubMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  unhandledMessage: ISignal<ISession, KernelMessage.IMessage>;
+  unhandledMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
 
   /**
    * A signal emitted when the session path changes.
    */
-  pathChanged: ISignal<ISession, string>;
+  pathChanged: ISignal<Session.ISession, string>;
 
   /**
    * Get the session id.
@@ -104,7 +108,7 @@ class DefaultSession implements ISession {
    * Use the [statusChanged] and [unhandledMessage] signals on the session
    * instead of the ones on the kernel.
    */
-  get kernel() : IKernel {
+  get kernel() : Kernel.IKernel {
     return this._kernel;
   }
 
@@ -162,7 +166,7 @@ class DefaultSession implements ISession {
   /**
    * Clone the current session with a new clientId.
    */
-  clone(): Promise<ISession> {
+  clone(): Promise<Session.ISession> {
     let options = this._getKernelOptions();
     return Kernel.connectTo(this.kernel.id, options).then(kernel => {
       options = utils.copy(this._options);
@@ -206,7 +210,7 @@ class DefaultSession implements ISession {
     }
     this.sessionDied.emit(void 0);
     this._options = null;
-    delete Private.runningSessions[this._uuid];
+    Private.runningSessions.remove(this);
     this._kernel = null;
     clearSignalData(this);
   }
@@ -239,7 +243,7 @@ class DefaultSession implements ISession {
    * This shuts down the existing kernel and creates a new kernel,
    * keeping the existing session ID and session path.
    */
-  changeKernel(options: Kernel.IModel): Promise<IKernel> {
+  changeKernel(options: Kernel.IModel): Promise<Kernel.IKernel> {
     if (this.isDisposed) {
       return Promise.reject(new Error('Session is disposed'));
     }
@@ -269,7 +273,7 @@ class DefaultSession implements ISession {
   /**
    * Handle connections to a kernel.
    */
-  protected setupKernel(kernel: IKernel): void {
+  protected setupKernel(kernel: Kernel.IKernel): void {
     this._kernel = kernel;
     kernel.statusChanged.connect(this.onKernelStatus, this);
     kernel.unhandledMessage.connect(this.onUnhandledMessage, this);
@@ -279,21 +283,21 @@ class DefaultSession implements ISession {
   /**
    * Handle to changes in the Kernel status.
    */
-  protected onKernelStatus(sender: IKernel, state: Kernel.Status) {
+  protected onKernelStatus(sender: Kernel.IKernel, state: Kernel.Status) {
     this.statusChanged.emit(state);
   }
 
   /**
    * Handle iopub kernel messages.
    */
-  protected onIOPubMessage(sender: IKernel, msg: KernelMessage.IIOPubMessage) {
+  protected onIOPubMessage(sender: Kernel.IKernel, msg: KernelMessage.IIOPubMessage) {
     this.iopubMessage.emit(msg);
   }
 
   /**
    * Handle unhandled kernel messages.
    */
-  protected onUnhandledMessage(sender: IKernel, msg: KernelMessage.IMessage) {
+  protected onUnhandledMessage(sender: Kernel.IKernel, msg: KernelMessage.IMessage) {
     this.unhandledMessage.emit(msg);
   }
 
@@ -343,7 +347,7 @@ class DefaultSession implements ISession {
   private _id = '';
   private _path = '';
   private _ajaxSettings = '';
-  private _kernel: IKernel = null;
+  private _kernel: Kernel.IKernel = null;
   private _uuid = '';
   private _baseUrl = '';
   private _options: Session.IOptions = null;
@@ -369,7 +373,7 @@ namespace DefaultSession {
    * List the running sessions.
    */
   export
-  function listRunning(options?: Session.IOptions): Promise<IIterator<Session.IModel>> {
+  function listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
     return Private.listRunning(options);
   }
 
@@ -377,7 +381,7 @@ namespace DefaultSession {
    * Start a new session.
    */
   export
-  function startNew(options: Session.IOptions): Promise<ISession> {
+  function startNew(options: Session.IOptions): Promise<Session.ISession> {
     return Private.startNew(options);
   }
 
@@ -401,7 +405,7 @@ namespace DefaultSession {
    * Connect to a running session.
    */
   export
-  function connectTo(id: string, options?: Session.IOptions): Promise<ISession> {
+  function connectTo(id: string, options?: Session.IOptions): Promise<Session.ISession> {
     return Private.connectTo(id, options);
   }
 
@@ -423,13 +427,13 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions: { [key: string]: DefaultSession; } = Object.create(null);
+  const runningSessions = new Vector<DefaultSession>();
 
   /**
    * List the running sessions.
    */
   export
-  function listRunning(options: Session.IOptions = {}): Promise<IIterator<Session.IModel>> {
+  function listRunning(options: Session.IOptions = {}): Promise<Session.IModel[]> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -441,17 +445,18 @@ namespace Private {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
+      let data = success.data as Session.IModel[];
       if (!Array.isArray(success.data)) {
         return utils.makeAjaxError(success, 'Invalid Session list');
       }
-      for (let i = 0; i < success.data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         try {
-          validate.validateModel(success.data[i]);
+          validate.validateModel(data[i]);
         } catch (err) {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return updateRunningSessions(success.data);
+      return updateRunningSessions(data);
     }, Private.onSessionError);
   }
 
@@ -459,7 +464,7 @@ namespace Private {
    * Start a new session.
    */
   export
-  function startNew(options: Session.IOptions): Promise<ISession> {
+  function startNew(options: Session.IOptions): Promise<Session.ISession> {
     if (options.path === void 0) {
       return Promise.reject(new Error('Must specify a path'));
     }
@@ -473,18 +478,11 @@ namespace Private {
    */
   export
   function findById(id: string, options: Session.IOptions = {}): Promise<Session.IModel> {
-    let sessions = runningSessions;
-    for (let clientId in sessions) {
-      let session = sessions[clientId];
-      if (session.id === id) {
-        let model: Session.IModel = {
-          id,
-          notebook: { path: session.path },
-          kernel: { name: session.kernel.name, id: session.kernel.id }
-        };
-        return Promise.resolve(model);
-      }
+    let session = find(runningSessions, value => value.id === id);
+    if (session) {
+      return Promise.resolve(session.model);
     }
+
     return getSessionModel(id, options).catch(() => {
       let msg = `No running session for id: ${id}`;
       return typedThrow<Session.IModel>(msg);
@@ -496,18 +494,11 @@ namespace Private {
    */
   export
   function findByPath(path: string, options: Session.IOptions = {}): Promise<Session.IModel> {
-    let sessions = runningSessions;
-    for (let clientId in sessions) {
-      let session = sessions[clientId];
-      if (session.path === path) {
-        let model: Session.IModel = {
-          id: session.id,
-          notebook: { path: session.path },
-          kernel: { name: session.kernel.name, id: session.kernel.id }
-        };
-        return Promise.resolve(model);
-      }
+    let session = find(runningSessions, value => value.path === path);
+    if (session) {
+      return Promise.resolve(session.model);
     }
+
     return listRunning(options).then(models => {
       let model = find(models, value => {
         return value.notebook.path === path;
@@ -524,18 +515,17 @@ namespace Private {
    * Connect to a running session.
    */
   export
-  function connectTo(id: string, options: Session.IOptions = {}): Promise<ISession> {
-    for (let clientId in runningSessions) {
-      let session = runningSessions[clientId];
-      if (session.id === id) {
-        return session.clone();
-      }
+  function connectTo(id: string, options: Session.IOptions = {}): Promise<Session.ISession> {
+    let session = find(runningSessions, value => value.id === id);
+    if (session) {
+      return Promise.resolve(session.clone());
     }
+
     return getSessionModel(id, options).then(model => {
       return createSession(model, options);
     }).catch(() => {
       let msg = `No running session with id: ${id}`;
-      return typedThrow<ISession>(msg);
+      return typedThrow<Session.ISession>(msg);
     });
   }
 
@@ -585,7 +575,7 @@ namespace Private {
   /**
    * Create a Promise for a kernel object given a session model and options.
    */
-  function createKernel(options: Session.IOptions): Promise<IKernel> {
+  function createKernel(options: Session.IOptions): Promise<Kernel.IKernel> {
     let kernelOptions: Kernel.IOptions = {
       name: options.kernelName,
       baseUrl: options.baseUrl || utils.getBaseUrl(),
@@ -645,24 +635,22 @@ namespace Private {
    * Update the running sessions based on new data from the server.
    */
   export
-  function updateRunningSessions(sessions: Session.IModel[]): Promise<IIterator<Session.IModel>> {
+  function updateRunningSessions(sessions: Session.IModel[]): Promise<Session.IModel[]> {
     let promises: Promise<void>[] = [];
-    for (let uuid in runningSessions) {
-      let session = runningSessions[uuid];
-      let updated = false;
-      for (let sId of sessions) {
+
+    each(runningSessions, session => {
+      let updated = find(sessions, sId => {
         if (session.id === sId.id) {
           promises.push(session.update(sId));
-          updated = true;
-          break;
+          return true;
         }
-      }
+      });
       // If session is no longer running on disk, emit dead signal.
       if (!updated && session.status !== 'dead') {
         session.sessionDied.emit(void 0);
       }
-    }
-    return Promise.all(promises).then(() => { return iter(sessions); });
+    });
+    return Promise.all(promises).then(() => { return sessions; });
   }
 
   /**
@@ -671,12 +659,11 @@ namespace Private {
   export
   function updateByModel(model: Session.IModel): Promise<Session.IModel> {
     let promises: Promise<void>[] = [];
-    for (let uuid in runningSessions) {
-      let session = runningSessions[uuid];
+    each(runningSessions, session => {
       if (session.id === model.id) {
         promises.push(session.update(model));
       }
-    }
+    });
     return Promise.all(promises).then(() => { return model; });
   }
 
@@ -694,12 +681,11 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      for (let uuid in runningSessions) {
-        let session = runningSessions[uuid];
+      each(toArray(runningSessions), session => {
         if (session.id === id) {
           session.dispose();
         }
-      }
+      });
     }, err => {
       if (err.xhr.status === 410) {
         err.throwError = 'The kernel was deleted but the session was not';

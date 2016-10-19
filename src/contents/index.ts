@@ -5,10 +5,6 @@ import * as posix
  from 'path-posix';
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -274,7 +270,7 @@ namespace Contents {
      * @returns A promise which resolves with a list of checkpoint models for
      *    the file.
      */
-    listCheckpoints(path: string): Promise<IIterator<ICheckpointModel>>;
+    listCheckpoints(path: string): Promise<ICheckpointModel[]>;
 
     /**
      * Restore a file to a known checkpoint state.
@@ -614,7 +610,7 @@ class ContentsManager implements Contents.IManager {
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/contents) and validates the response model.
    */
-  listCheckpoints(path: string): Promise<IIterator<Contents.ICheckpointModel>> {
+  listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
@@ -635,7 +631,7 @@ class ContentsManager implements Contents.IManager {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return iter(success.data);
+      return success.data;
     });
   }
 

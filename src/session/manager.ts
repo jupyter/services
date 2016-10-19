@@ -2,20 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter, toArray
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
-
-import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -29,7 +17,7 @@ import * as utils
   from '../utils';
 
 import {
-  ISession, Session
+  Session
 } from './session';
 
 
@@ -55,7 +43,7 @@ class SessionManager implements Session.IManager {
   /**
    * A signal emitted when the running sessions change.
    */
-  runningChanged: ISignal<SessionManager, ISequence<Session.IModel>>;
+  runningChanged: ISignal<SessionManager, Session.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -96,14 +84,13 @@ class SessionManager implements Session.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  listRunning(options?: Session.IOptions): Promise<IIterator<Session.IModel>> {
-    return Session.listRunning(this._getOptions(options)).then(it => {
-      let running = toArray(it);
+  listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+    return Session.listRunning(this._getOptions(options)).then(running => {
       if (!deepEqual(running, this._running)) {
-        this._running = running;
-        this.runningChanged.emit(new Vector(running));
+        this._running = running.slice();
+        this.runningChanged.emit(running);
       }
-      return iter(running);
+      return running;
     });
   }
 
@@ -117,7 +104,7 @@ class SessionManager implements Session.IManager {
    * This will emit [[runningChanged]] if the running kernels list
    * changes.
    */
-  startNew(options: Session.IOptions): Promise<ISession> {
+  startNew(options: Session.IOptions): Promise<Session.ISession> {
     return Session.startNew(this._getOptions(options));
   }
 
@@ -138,7 +125,7 @@ class SessionManager implements Session.IManager {
   /*
    * Connect to a running session.  See also [[connectToSession]].
    */
-  connectTo(id: string, options?: Session.IOptions): Promise<ISession> {
+  connectTo(id: string, options?: Session.IOptions): Promise<Session.ISession> {
     return Session.connectTo(id, this._getOptions(options));
   }
 

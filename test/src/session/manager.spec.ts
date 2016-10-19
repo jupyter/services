@@ -16,7 +16,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  SessionManager, Session, ISession
+  SessionManager, Session
 } from '../../../lib/session';
 
 import {
@@ -53,7 +53,7 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
 describe('session', () => {
 
   let tester: KernelTester;
-  let session: ISession;
+  let session: Session.ISession;
 
   beforeEach(() => {
     tester = new KernelTester();

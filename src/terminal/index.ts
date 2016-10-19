@@ -2,16 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter, toArray
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
   JSONPrimitive, JSONObject, deepEqual
 } from 'phosphor/lib/algorithm/json';
-
-import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
 
 import {
   Vector
@@ -39,38 +31,38 @@ import * as utils
 const TERMINAL_SERVICE_URL = 'api/terminals';
 
 
-/**
- * An interface for a terminal session.
- */
-export
-interface ITerminalSession extends IDisposable {
-  /**
-   * A signal emitted when a message is received from the server.
-   */
-  messageReceived: ISignal<ITerminalSession, TerminalSession.IMessage>;
-
-  /**
-   * Get the name of the terminal session.
-   */
-  readonly name: string;
-
-  /**
-   * Send a message to the terminal session.
-   */
-  send(message: TerminalSession.IMessage): void;
-
-  /**
-   * Shut down the terminal session.
-   */
-  shutdown(): Promise<void>;
-}
-
 
 /**
- * The namespace for ITerminalSession statics.
+ * The namespace for TerminalSession.ISession statics.
  */
 export
 namespace TerminalSession {
+  /**
+   * An interface for a terminal session.
+   */
+  export
+  interface ISession extends IDisposable {
+    /**
+     * A signal emitted when a message is received from the server.
+     */
+    messageReceived: ISignal<ISession, TerminalSession.IMessage>;
+
+    /**
+     * Get the name of the terminal session.
+     */
+    readonly name: string;
+
+    /**
+     * Send a message to the terminal session.
+     */
+    send(message: TerminalSession.IMessage): void;
+
+    /**
+     * Shut down the terminal session.
+     */
+    shutdown(): Promise<void>;
+  }
+
   /**
    * Create a terminal session or connect to an existing session.
    *
@@ -79,7 +71,7 @@ namespace TerminalSession {
    * instance will be returned.
    */
   export
-  function open(options: TerminalSession.IOptions = {}): Promise<ITerminalSession> {
+  function open(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     if (options.name && options.name in Private.running) {
       return Private.running[options.name];
     }
@@ -136,7 +128,7 @@ namespace TerminalSession {
     /**
      * The content of the message.
      */
-    readonly content?: ISequence<JSONPrimitive>;
+    readonly content?: JSONPrimitive[];
   }
 
   /**
@@ -153,7 +145,7 @@ namespace TerminalSession {
     /**
      * A signal emitted when the running terminals change.
      */
-    runningChanged: ISignal<IManager, ISequence<IModel>>;
+    runningChanged: ISignal<IManager, IModel[]>;
 
     /**
      * Create a new terminal session or connect to an existing session.
@@ -162,7 +154,7 @@ namespace TerminalSession {
      * This will emit [[runningChanged]] if the running terminals list
      * changes.
      */
-    create(options?: TerminalSession.IOptions): Promise<ITerminalSession>;
+    create(options?: TerminalSession.IOptions): Promise<TerminalSession.ISession>;
 
     /**
      * Shut down a terminal session by name.
@@ -176,7 +168,7 @@ namespace TerminalSession {
     /**
      * Get the list of models for the terminals running on the server.
      */
-    listRunning(): Promise<IIterator<IModel>>;
+    listRunning(): Promise<IModel[]>;
   }
 }
 
@@ -198,7 +190,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<this, ISequence<TerminalSession.IModel>>;
+  runningChanged: ISignal<this, TerminalSession.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -222,7 +214,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Create a new terminal session or connect to an existing session.
    */
-  create(options: TerminalSession.IOptions = {}): Promise<ITerminalSession> {
+  create(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     options.baseUrl = options.baseUrl || this._baseUrl;
     options.wsUrl = options.wsUrl || this._wsUrl;
     options.ajaxSettings = (
@@ -249,7 +241,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Get the list of models for the terminals running on the server.
    */
-  listRunning(): Promise<IIterator<TerminalSession.IModel>> {
+  listRunning(): Promise<TerminalSession.IModel[]> {
     let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(this._ajaxSettings || {});
     ajaxSettings.method = 'GET';
@@ -265,9 +257,9 @@ class TerminalManager implements TerminalSession.IManager {
       }
       if (!deepEqual(data, this._running)) {
         this._running = data;
-        this.runningChanged.emit(new Vector(data));
+        this.runningChanged.emit(data);
       }
-      return iter(data);
+      return data;
     });
   }
 
@@ -311,7 +303,7 @@ namespace TerminalManager {
 /**
  * An implementation of a terminal interface.
  */
-class DefaultTerminalSession implements ITerminalSession {
+class DefaultTerminalSession implements TerminalSession.ISession {
   /**
    * Construct a new terminal session.
    */
@@ -320,7 +312,7 @@ class DefaultTerminalSession implements ITerminalSession {
     this._ajaxSettings = options.ajaxSettings || {};
     this._name = options.name;
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._promise = new utils.PromiseDelegate<ITerminalSession>();
+    this._promise = new utils.PromiseDelegate<TerminalSession.ISession>();
   }
 
   /**
@@ -371,7 +363,7 @@ class DefaultTerminalSession implements ITerminalSession {
    */
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
-    msg.push(...toArray(message.content));
+    msg.push(...message.content);
     this._ws.send(JSON.stringify(msg));
   }
 
@@ -394,7 +386,7 @@ class DefaultTerminalSession implements ITerminalSession {
   /**
    * Connect to the terminal session.
    */
-  connect(): Promise<ITerminalSession> {
+  connect(): Promise<TerminalSession.ISession> {
     if (this._name) {
       return this._initializeSocket();
     }
@@ -424,7 +416,7 @@ class DefaultTerminalSession implements ITerminalSession {
   /**
    * Connect to the websocket.
    */
-  private _initializeSocket(): Promise<ITerminalSession> {
+  private _initializeSocket(): Promise<TerminalSession.ISession> {
     let name = this._name;
     Private.running[name] = this._promise.promise;
     this._url = `${this._wsUrl}terminals/websocket/${name}`;
@@ -434,7 +426,7 @@ class DefaultTerminalSession implements ITerminalSession {
       let data = JSON.parse(event.data) as JSONPrimitive[];
       this.messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
-        content: new Vector(data.slice(1))
+        content: data.slice(1)
       });
     };
 
@@ -452,7 +444,7 @@ class DefaultTerminalSession implements ITerminalSession {
   private _ajaxSettings: utils.IAjaxSettings = null;
   private _ws: WebSocket = null;
   private _isDisposed = false;
-  private _promise: utils.PromiseDelegate<ITerminalSession> = null;
+  private _promise: utils.PromiseDelegate<TerminalSession.ISession> = null;
 }
 
 
@@ -472,5 +464,5 @@ namespace Private {
    * A mapping of running terminals by name.
    */
   export
-  var running: { [key: string]: Promise<ITerminalSession> } = Object.create(null);
+  var running: { [key: string]: Promise<TerminalSession.ISession> } = Object.create(null);
 }

@@ -16,7 +16,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  KernelManager, Kernel, IKernel
+  KernelManager, Kernel
 } from '../../../lib/kernel';
 
 import {
@@ -33,7 +33,7 @@ PYTHON3_SPEC.spec.display_name = 'python3';
 describe('kernel/manager', () => {
 
   let tester: KernelTester;
-  let kernel: IKernel;
+  let kernel: Kernel.IKernel;
 
   beforeEach(() => {
     tester = new KernelTester();

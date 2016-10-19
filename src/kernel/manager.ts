@@ -2,20 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  iter, toArray
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
-
-import {
-  ISequence
-} from 'phosphor/lib/algorithm/sequence';
-
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
 
 import {
   ISignal, clearSignalData, defineSignal
@@ -25,7 +13,7 @@ import * as utils
   from '../utils';
 
 import {
-  IKernel, Kernel
+  Kernel
 } from './kernel';
 
 
@@ -51,7 +39,7 @@ class KernelManager implements Kernel.IManager {
   /**
    * A signal emitted when the running kernels change.
    */
-  runningChanged: ISignal<this, ISequence<Kernel.IModel>>;
+  runningChanged: ISignal<this, Kernel.IModel[]>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -93,14 +81,13 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  listRunning(options?: Kernel.IOptions): Promise<ISequence<Kernel.IModel>> {
-    return Kernel.listRunning(this._getOptions(options)).then(it => {
-      let running = toArray(it);
+  listRunning(options?: Kernel.IOptions): Promise<Kernel.IModel[]> {
+    return Kernel.listRunning(this._getOptions(options)).then(running => {
       if (!deepEqual(running, this._running)) {
-        this._running = running;
-        this.runningChanged.emit(new Vector(this._running));
+        this._running = running.slice();
+        this.runningChanged.emit(running);
       }
-      return iter(running);
+      return running;
     });
   }
 
@@ -113,7 +100,7 @@ class KernelManager implements Kernel.IManager {
    * This will emit [[runningChanged]] if the running kernels list
    * changes.
    */
-  startNew(options?: Kernel.IOptions): Promise<IKernel> {
+  startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     return Kernel.startNew(this._getOptions(options));
   }
 
@@ -131,7 +118,7 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  connectTo(id: string, options?: Kernel.IOptions): Promise<IKernel> {
+  connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     return Kernel.connectTo(id, this._getOptions(options));
   }
 

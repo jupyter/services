@@ -7,7 +7,7 @@ import * as utils
   from '../../../lib/utils';
 
 import {
-  IKernel, KernelMessage, Kernel
+  KernelMessage, Kernel
 } from '../../../lib/kernel';
 
 import {
@@ -18,7 +18,7 @@ import {
 describe('jupyter.services - Comm', () => {
 
   let tester: KernelTester;
-  let kernel: IKernel;
+  let kernel: Kernel.IKernel;
 
   beforeEach((done) => {
     tester = new KernelTester();
@@ -398,7 +398,7 @@ describe('jupyter.services - Comm', () => {
 });
 
 
-function sendCommMessage(tester: KernelTester, kernel: IKernel, msgType: string, content: any) {
+function sendCommMessage(tester: KernelTester, kernel: Kernel.IKernel, msgType: string, content: any) {
   let options: KernelMessage.IOptions = {
     msgType: msgType,
     channel: 'iopub',

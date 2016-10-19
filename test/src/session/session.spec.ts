@@ -16,7 +16,7 @@ import {
 } from '../../../lib/kernel';
 
 import {
-  ISession, Session
+  Session
 } from '../../../lib/session';
 
 import {
@@ -50,7 +50,7 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
 }
 
 
-function startNewSession(tester?: KernelTester): Promise<ISession> {
+function startNewSession(tester?: KernelTester): Promise<Session.ISession> {
   tester = tester || new KernelTester();
   let sessionModel = createSessionModel();
   tester.onRequest = request => {
@@ -68,7 +68,7 @@ function startNewSession(tester?: KernelTester): Promise<ISession> {
 describe('session', () => {
 
   let tester: KernelTester;
-  let session: ISession;
+  let session: Session.ISession;
 
   beforeEach(() => {
     tester = new KernelTester();
@@ -417,7 +417,7 @@ describe('session', () => {
   });
 
 
-  describe('ISession', () => {
+  describe('Session.ISession', () => {
 
 
     beforeEach((done) => {
@@ -806,7 +806,7 @@ describe('session', () => {
       });
 
       it('should dispose of all session instances', (done) => {
-        let session2: ISession;
+        let session2: Session.ISession;
         Session.connectTo(session.id).then(s => {
           session2 = s;
           tester.onRequest = () => {
