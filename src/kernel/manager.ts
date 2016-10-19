@@ -25,7 +25,7 @@ import * as utils
   from '../utils';
 
 import {
-  IKernel, Kernel
+  Kernel
 } from './kernel';
 
 
@@ -94,13 +94,13 @@ class KernelManager implements Kernel.IManager {
    * @param options - Overrides for the default options.
    */
   listRunning(options?: Kernel.IOptions): Promise<ISequence<Kernel.IModel>> {
-    return Kernel.listRunning(this._getOptions(options)).then(it => {
-      let running = toArray(it);
-      if (!deepEqual(running, this._running)) {
-        this._running = running;
-        this.runningChanged.emit(new Vector(this._running));
+    return Kernel.listRunning(this._getOptions(options)).then(running => {
+      let value = toArray(running);
+      if (!deepEqual(value, this._running)) {
+        this._running = value;
+        this.runningChanged.emit(running);
       }
-      return iter(running);
+      return running;
     });
   }
 
@@ -113,7 +113,7 @@ class KernelManager implements Kernel.IManager {
    * This will emit [[runningChanged]] if the running kernels list
    * changes.
    */
-  startNew(options?: Kernel.IOptions): Promise<IKernel> {
+  startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     return Kernel.startNew(this._getOptions(options));
   }
 
@@ -131,7 +131,7 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - Overrides for the default options.
    */
-  connectTo(id: string, options?: Kernel.IOptions): Promise<IKernel> {
+  connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     return Kernel.connectTo(id, this._getOptions(options));
   }
 

@@ -10,7 +10,7 @@ import {
 } from 'phosphor/lib/core/disposable';
 
 import {
-  IKernel, Kernel
+  Kernel
 } from './kernel';
 
 import {
@@ -26,7 +26,7 @@ class CommHandler extends DisposableDelegate implements Kernel.IComm {
   /**
    * Construct a new comm channel.
    */
-  constructor(target: string, id: string, kernel: IKernel, disposeCb: () => void) {
+  constructor(target: string, id: string, kernel: Kernel.IKernel, disposeCb: () => void) {
     super(disposeCb);
     this._id = id;
     this._target = target;
@@ -199,7 +199,7 @@ class CommHandler extends DisposableDelegate implements Kernel.IComm {
 
   private _target = '';
   private _id = '';
-  private _kernel: IKernel = null;
+  private _kernel: Kernel.IKernel = null;
   private _onClose: (msg: KernelMessage.ICommCloseMsg) => void = null;
   private _onMsg: (msg: KernelMessage.ICommMsgMsg) => void = null;
 }

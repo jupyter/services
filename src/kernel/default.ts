@@ -2,12 +2,24 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
+  each, toArray
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  find
+} from 'phosphor/lib/algorithm/searching';
+
+import {
+  ISequence
+} from 'phosphor/lib/algorithm/sequence';
+
+import {
+  Vector
+} from 'phosphor/lib/collections/vector';
 
 import {
   DisposableDelegate, IDisposable
@@ -22,7 +34,7 @@ import {
 } from './comm';
 
 import {
-  IKernel, Kernel
+  Kernel
 } from './kernel';
 
 import {
@@ -62,7 +74,7 @@ const KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
  * Implementation of the Kernel object
  */
 export
-class DefaultKernel implements IKernel {
+class DefaultKernel implements Kernel.IKernel {
   /**
    * Construct a kernel object.
    */
@@ -78,23 +90,23 @@ class DefaultKernel implements IKernel {
     this._commPromises = new Map<string, Promise<Kernel.IComm>>();
     this._comms = new Map<string, Kernel.IComm>();
     this._createSocket();
-    Private.runningKernels[this._clientId] = this;
+    Private.runningKernels.pushBack(this);
   }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<IKernel, Kernel.Status>;
+  statusChanged: ISignal<Kernel.IKernel, Kernel.Status>;
 
   /**
    * A signal emitted for iopub kernel messages.
    */
-  iopubMessage: ISignal<IKernel, KernelMessage.IIOPubMessage>;
+  iopubMessage: ISignal<Kernel.IKernel, KernelMessage.IIOPubMessage>;
 
   /**
    * A signal emitted for unhandled kernel message.
    */
-  unhandledMessage: ISignal<IKernel, KernelMessage.IMessage>;
+  unhandledMessage: ISignal<Kernel.IKernel, KernelMessage.IMessage>;
 
   /**
    * The id of the server-side kernel.
@@ -183,7 +195,7 @@ class DefaultKernel implements IKernel {
   /**
    * Clone the current kernel with a new clientId.
    */
-  clone(): IKernel {
+  clone(): Kernel.IKernel {
     let options: Kernel.IOptions = {
       baseUrl: this._baseUrl,
       wsUrl: this._wsUrl,
@@ -217,7 +229,7 @@ class DefaultKernel implements IKernel {
     this._commPromises = null;
     this._comms = null;
     this._targetRegistry = null;
-    delete Private.runningKernels[this._clientId];
+    Private.runningKernels.remove(this);
   }
 
   /**
@@ -955,7 +967,7 @@ namespace DefaultKernel {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<IIterator<Kernel.IModel>> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<ISequence<Kernel.IModel>> {
     return Private.listRunning(options);
   }
 
@@ -972,7 +984,7 @@ namespace DefaultKernel {
    * when the kernel is started by the server, otherwise the promise is rejected.
    */
   export
-  function startNew(options?: Kernel.IOptions): Promise<IKernel> {
+  function startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     options = options || {};
     return Private.startNew(options);
   }
@@ -993,7 +1005,7 @@ namespace DefaultKernel {
    * the promise is rejected.
    */
   export
-  function connectTo(id: string, options?: Kernel.IOptions): Promise<IKernel> {
+  function connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     return Private.connectTo(id, options);
   }
 
@@ -1015,20 +1027,18 @@ namespace Private {
    * A module private store for running kernels.
    */
   export
-  const runningKernels: { [key: string]: DefaultKernel; } = Object.create(null);
+  const runningKernels = new Vector<DefaultKernel>();
 
   /**
    * Find a kernel by id.
    */
   export
   function findById(id: string, options?: Kernel.IOptions): Promise<Kernel.IModel> {
-    let kernels = runningKernels;
-    for (let clientId in kernels) {
-      let kernel = kernels[clientId];
-      if (kernel.id === id) {
-        let result: Kernel.IModel = { id: kernel.id, name: kernel.name };
-        return Promise.resolve(result);
-      }
+    let kernel = find(runningKernels, value => {
+      return (value.id === id);
+    });
+    if (kernel) {
+      return Promise.resolve(kernel.model);
     }
     return getKernelModel(id, options).catch(() => {
       throw new Error(`No running kernel with id: ${id}`);
@@ -1072,7 +1082,7 @@ namespace Private {
    * The promise is fulfilled on a valid response and rejected otherwise.
    */
   export
-  function listRunning(options: Kernel.IOptions = {}): Promise<IIterator<Kernel.IModel>> {
+  function listRunning(options: Kernel.IOptions = {}): Promise<ISequence<Kernel.IModel>> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
@@ -1094,7 +1104,7 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return iter(success.data);
+      return new Vector(success.data);
     }, onKernelError);
   }
 
@@ -1102,7 +1112,7 @@ namespace Private {
    * Start a new kernel.
    */
   export
-  function startNew(options?: Kernel.IOptions): Promise<IKernel> {
+  function startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
@@ -1139,13 +1149,14 @@ namespace Private {
    * the promise is rejected.
    */
   export
-  function connectTo(id: string, options?: Kernel.IOptions): Promise<IKernel> {
-    for (let clientId in runningKernels) {
-      let kernel = runningKernels[clientId];
-      if (kernel.id === id) {
-        return Promise.resolve(kernel.clone());
-      }
+  function connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
+    let kernel = find(runningKernels, value => {
+      return value.id === id;
+    });
+    if (kernel) {
+      return Promise.resolve(kernel.clone());
     }
+
     return getKernelModel(id, options).then(model => {
       return new DefaultKernel(options, id);
     }).catch(() => {
@@ -1167,7 +1178,7 @@ namespace Private {
    * Restart a kernel.
    */
   export
-  function restartKernel(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
+  function restartKernel(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     if (kernel.status === 'dead') {
       return Promise.reject(new Error('Kernel is dead'));
     }
@@ -1197,7 +1208,7 @@ namespace Private {
    * Interrupt a kernel.
    */
   export
-  function interruptKernel(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
+  function interruptKernel(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<void> {
     if (kernel.status === 'dead') {
       return Promise.reject(new Error('Kernel is dead'));
     }
@@ -1234,12 +1245,11 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      for (let uuid in runningKernels) {
-        let kernel = runningKernels[uuid];
+      each(toArray(runningKernels), kernel => {
         if (kernel.id === id) {
           kernel.dispose();
         }
-      }
+      });
     }, onKernelError);
   }
 
@@ -1247,7 +1257,7 @@ namespace Private {
    * Get the kernelspec for a kernel.
    */
   export
-  function getSpec(kernel: IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpec> {
+  function getSpec(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpec> {
     let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL,
                                 encodeURIComponent(kernel.name));
     ajaxSettings = ajaxSettings || { };
@@ -1300,7 +1310,7 @@ namespace Private {
    * Log the current kernel status.
    */
   export
-  function logKernelStatus(kernel: IKernel): void {
+  function logKernelStatus(kernel: Kernel.IKernel): void {
     switch (kernel.status) {
     case 'idle':
     case 'busy':
@@ -1329,7 +1339,7 @@ namespace Private {
    * Send a kernel message to the kernel and resolve the reply message.
    */
   export
-  function handleShellMessage(kernel: IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
+  function handleShellMessage(kernel: Kernel.IKernel, msg: KernelMessage.IShellMessage): Promise<KernelMessage.IShellMessage> {
     let future: Kernel.IFuture;
     try {
       future = kernel.sendShellMessage(msg, true);
