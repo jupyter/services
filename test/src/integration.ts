@@ -345,13 +345,12 @@ describe('jupyter.services - Integration', () => {
       manager.create().then(session => {
         return manager.listRunning();
       }).then(running => {
-        let item = running.at(0);
         expect(running.length).to.be(1);
-        return manager.shutdown(item.name);
+        return manager.shutdown(running.at(0).name);
       }).then(() => {
         return manager.listRunning();
       }).then(running => {
-        expect(running.length).to.be(1);
+        expect(running.length).to.be(0);
         done();
       }).catch(done);
     });
