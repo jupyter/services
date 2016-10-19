@@ -16,7 +16,7 @@ import {
 } from 'phosphor/lib/collections/vector';
 
 import {
-  TerminalSession, TerminalManager, ITerminalSession
+  TerminalSession, TerminalManager
 } from '../../../lib/terminal';
 
 import {
@@ -27,7 +27,7 @@ import {
 describe('terminals', () => {
 
   let tester: TerminalTester;
-  let session: ITerminalSession;
+  let session: TerminalSession.ISession;
 
   beforeEach(() => {
     tester = new TerminalTester();
@@ -151,7 +151,7 @@ describe('terminals', () => {
 
   });
 
-  describe('ITerminalSession', () => {
+  describe('TerminalSession.ISession', () => {
 
     beforeEach((done) => {
       TerminalSession.open().then(s => {
