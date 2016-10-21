@@ -5,6 +5,10 @@ import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
 
+import {
+  nbformat
+} from '../nbformat';
+
 import * as utils
  from '../utils';
 
@@ -392,14 +396,9 @@ namespace KernelMessage {
    * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    */
   export
-  interface ILanguageInfo {
+  interface ILanguageInfo extends nbformat.ILanguageInfoMetadata {
     [ key: string ]: JSONValue;
-    name: string;
     version: string;
-    mimetype: string;
-    file_extension: string;
-    pygments_lexer?: string;
-    codemirror_mode?: string | JSONObject;
     nbconverter_exporter?: string;
   }
 
