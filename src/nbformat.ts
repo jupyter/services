@@ -84,8 +84,7 @@ namespace nbformat {
   }
 
   /**
-   * Media attachments (e.g. inline images), stored as mimebundle keyed
-   * by filename.
+   * Media attachments (e.g. inline images).
    */
   export
   interface IAttachments {
