@@ -11,7 +11,7 @@ import {
 
 
 /**
- * A namespace for the notebook format.
+ * A namespace for nbformat interfaces.
  */
 export
 namespace nbformat {
@@ -25,7 +25,7 @@ namespace nbformat {
    * The minor version of the notebook format.
    */
   export
-  const MINOR_VERSION = 0;
+  const MINOR_VERSION = 1;
 
   /**
    * The kernelspec metadata.
@@ -48,17 +48,15 @@ namespace nbformat {
     pygments_lexer?: string;
   }
 
-
   /**
    * The default metadata for the notebook.
    */
   export
   interface INotebookMetadata extends JSONObject {
-    kernelspec: IKernelspecMetadata;
-    language_info: ILanguageInfoMetadata;
-    orig_nbformat: number;
+    kernelspec?: IKernelspecMetadata;
+    language_info?: ILanguageInfoMetadata;
+    orig_nbformat?: number;
   }
-
 
   /**
    * The notebook content.
@@ -71,27 +69,40 @@ namespace nbformat {
     cells: ICell[];
   }
 
-
   /**
-   * A type alias for a multiline string.
-   *
-   * #### Notes
-   * On disk, this could be a string[] too.
+   * A multiline string.
    */
   export
-  type multilineString = string | string[];
+  type MultilineString = string | string[];
 
-
-  /* tslint:disable */
   /**
    * A mime-type keyed dictionary of data.
    */
   export
-  interface MimeBundle extends JSONObject {
-    [key: string]: multilineString | JSONObject;
+  interface IIMimeBundle extends JSONObject {
+    [key: string]: MultilineString | JSONObject;
   }
-  /* tslint:enable */
 
+  /**
+   * Media attachments (e.g. inline images), stored as mimebundle keyed
+   * by filename.
+   */
+  export
+  interface IAttachments {
+    [key: string]: IIMimeBundle;
+  }
+
+  /**
+   * The code cell's prompt number. Will be null if the cell has not been run.
+   */
+  export
+  type ExecutionCount = number | null.
+
+  /**
+   * Cell output metadata.
+   */
+  export
+  type OutputMetadata = JSONObject;
 
   /**
    * Validate a mime type/value pair.
@@ -103,7 +114,7 @@ namespace nbformat {
    * @returns Whether the type/value pair are valid.
    */
   export
-  function validateMimeValue(type: string, value: multilineString | JSONObject): boolean {
+  function validateMimeValue(type: string, value: MultilineString | JSONObject): boolean {
     // Check if "application/json" or "application/foo+json"
     const jsonTest = /^application\/(.*?)+\+json$/;
     const isJSONType = type === 'application/json' || jsonTest.test(type);
@@ -141,13 +152,11 @@ namespace nbformat {
     return isObject(value);
   }
 
-
   /**
    * A type which describes the type of cell.
    */
   export
   type CellType = 'code' | 'markdown' | 'raw';
-
 
   /**
    * Cell-level metadata.
@@ -176,7 +185,6 @@ namespace nbformat {
     tags?: string[];
   }
 
-
   /**
    * The base cell interface.
    */
@@ -190,14 +198,13 @@ namespace nbformat {
     /**
      * Contents of the cell, represented as an array of lines.
      */
-    source: multilineString;
+    source: MultilineString;
 
     /**
      * Cell-level metadata.
      */
     metadata: ICellMetadata;
   }
-
 
   /**
    * Metadata for the raw cell.
@@ -208,8 +215,12 @@ namespace nbformat {
      * Raw cell metadata format for nbconvert.
      */
     format?: string;
-  }
 
+    /**
+     * Media attachments (e.g. inline images).
+     */
+    attachments?: IAttachments;
+  }
 
   /**
    * A raw cell.
@@ -227,7 +238,6 @@ namespace nbformat {
     metadata: IRawCellMetadata;
   }
 
-
   /**
    * A markdown cell.
    */
@@ -238,7 +248,6 @@ namespace nbformat {
      */
     cell_type: 'markdown';
   }
-
 
   /**
    * Metadata for a code cell.
@@ -254,8 +263,12 @@ namespace nbformat {
      * Whether the cell's output is scrolled, unscrolled, or autoscrolled.
      */
     scrolled?: boolean | 'auto';
-  }
 
+    /**
+     * Media attachments (e.g. inline images).
+     */
+    attachments?: IAttachments;
+  }
 
   /**
    * A code cell.
@@ -280,9 +293,8 @@ namespace nbformat {
     /**
      * The code cell's prompt number. Will be null if the cell has not been run.
      */
-    execution_count: number;
+    execution_count: ExecutionCount;
   }
-
 
   /**
    * A cell union type.
@@ -297,13 +309,11 @@ namespace nbformat {
   export
   type ICellMetadata = IBaseCellMetadata | IRawCellMetadata | ICodeCellMetadata;
 
-
   /**
    * The valid output types.
    */
   export
   type OutputType = 'execute_result' | 'display_data' | 'stream' | 'error';
-
 
   /**
    * The base output type.
@@ -315,7 +325,6 @@ namespace nbformat {
      */
     output_type: OutputType;
   }
-
 
   /**
    * Result of executing a code cell.
@@ -330,19 +339,18 @@ namespace nbformat {
     /**
      * A result's prompt number.
      */
-    execution_count: number;
+    execution_count: ExecutionCount;
 
     /**
      * A mime-type keyed dictionary of data.
      */
-    data: MimeBundle;
+    data: IMimeBundle;
 
     /**
      * Cell output metadata.
      */
-    metadata: JSONObject;
+    metadata: OutputMetadata;
   }
-
 
   /**
    * Data displayed as a result of code cell execution.
@@ -357,14 +365,13 @@ namespace nbformat {
     /**
      * A mime-type keyed dictionary of data.
      */
-    data: MimeBundle;
+    data: IMimeBundle;
 
     /**
      * Cell output metadata.
      */
-    metadata: JSONObject;
+    metadata: OutputMetadata;
   }
-
 
   /**
    * Stream output from a code cell.
@@ -384,9 +391,8 @@ namespace nbformat {
     /**
      * The stream's text output.
      */
-    text: multilineString;
+    text: MultilineString;
   }
-
 
   /**
    * Output of an error that occurred during code cell execution.
@@ -413,7 +419,6 @@ namespace nbformat {
      */
     traceback: string[];
   }
-
 
   /**
    * An output union type.
