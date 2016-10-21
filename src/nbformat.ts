@@ -79,7 +79,7 @@ namespace nbformat {
    * A mime-type keyed dictionary of data.
    */
   export
-  interface IIMimeBundle extends JSONObject {
+  interface IMimeBundle extends JSONObject {
     [key: string]: MultilineString | JSONObject;
   }
 
@@ -96,7 +96,7 @@ namespace nbformat {
    * The code cell's prompt number. Will be null if the cell has not been run.
    */
   export
-  type ExecutionCount = number | null.
+  type ExecutionCount = number | null;
 
   /**
    * Cell output metadata.
