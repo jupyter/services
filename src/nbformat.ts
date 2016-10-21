@@ -88,7 +88,7 @@ namespace nbformat {
    */
   export
   interface IAttachments {
-    [key: string]: IIMimeBundle;
+    [key: string]: IMimeBundle;
   }
 
   /**
