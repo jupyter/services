@@ -83,7 +83,8 @@ describe('session', () => {
         let manager = new SessionManager();
         manager.specsChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(true);
+          expect(deepEqual(args, KERNELSPECS)).to.be(false);
+          expect(args.default).to.be(KERNELSPECS.default);
           done();
         });
         let handler = new RequestHandler(() => {

@@ -104,7 +104,7 @@ namespace Kernel {
      * If `null`, call [[getKernelSpecs]] to get the value,
      * which will populate this value.
      */
-    readonly spec: Kernel.ISpec;
+    readonly spec: Kernel.ISpecModel;
 
     /**
      * Send a shell message to the kernel.
@@ -318,7 +318,7 @@ namespace Kernel {
     /**
      * Get the kernel spec associated with the kernel.
      */
-    getSpec(): Promise<Kernel.ISpec>;
+    getSpec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Optional default settings for ajax requests, if applicable.
@@ -656,52 +656,60 @@ namespace Kernel {
   }
 
   /**
-   * Kernel Spec help link interface.
-   */
-  export
-  interface ISpecHelpLink extends JSONObject {
-    readonly text: string;
-    readonly url: string;
-  }
-
-  /**
    * Kernel Spec interface.
    *
    * #### Notes
    * See [Kernel specs](https://jupyter-client.readthedocs.io/en/latest/kernels.html#kernelspecs).
    */
   export
-  interface ISpec extends JSONObject {
-    readonly language: string;
-    readonly argv: string[];
-    readonly display_name: string;
-    readonly env: JSONObject;
-    readonly codemirror_mode?: string;
-    readonly help_links?: ISpecHelpLink[];
-  }
-
-  /**
-   * KernelSpec model provided by the server for a specific kernel.
-   *
-   * #### Notes
-   * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
-   */
-  export
   interface ISpecModel extends JSONObject {
+    /**
+     * The name of the kernel spec.
+     */
     readonly name: string;
-    readonly spec: ISpec;
+
+    /**
+     * The name of the language of the kernel.
+     */
+    readonly language: string;
+
+    /**
+     * A list of command line arguments used to start the kernel.
+     */
+    readonly argv: string[];
+
+    /**
+     * The kernel’s name as it should be displayed in the UI.
+     */
+    readonly display_name: string;
+
+    /**
+     * A dictionary of environment variables to set for the kernel.
+     */
+    readonly env?: JSONObject;
+
+    /**
+     * A mapping of resource file name to download path.
+     */
     readonly resources: { [key: string]: string; };
   }
 
   /**
-   * KernelSpec model provided by the server for all kernels.
+   * The available kernelSpec models.
    *
    * #### Notes
    * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernelspecs).
    */
   export
   interface ISpecModels extends JSONObject {
+    /**
+     * The name of the default kernel spec.
+     */
     default: string;
+
+    /**
+     * A mapping of kernel spec name to spec.
+     */
     readonly kernelspecs: { [key: string]: ISpecModel };
   }
 }

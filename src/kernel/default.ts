@@ -164,7 +164,7 @@ class DefaultKernel implements Kernel.IKernel {
    * If `null`, call [[Kernel.getSpecs]] to get the value,
    * which will populate this value.
    */
-  get spec(): Kernel.ISpec {
+  get spec(): Kernel.ISpecModel {
     return this._spec;
   }
 
@@ -607,7 +607,7 @@ class DefaultKernel implements Kernel.IKernel {
    * #### Notes
    * This value is cached and only fetched the first time it is requested.
    */
-  getSpec(): Promise<Kernel.ISpec> {
+  getSpec(): Promise<Kernel.ISpecModel> {
     return Private.getSpec(this, this._baseUrl, this.ajaxSettings)
     .then(specs => {
       this._spec = specs;
@@ -908,7 +908,7 @@ class DefaultKernel implements Kernel.IKernel {
   private _commPromises: Map<string, Promise<Kernel.IComm>> = null;
   private _comms: Map<string, Kernel.IComm> = null;
   private _targetRegistry: { [key: string]: (comm: Kernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
-  private _spec: Kernel.ISpec = null;
+  private _spec: Kernel.ISpecModel = null;
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
@@ -1059,13 +1059,11 @@ namespace Private {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as Kernel.ISpecModels;
       try {
-        validate.validateSpecModels(data);
+        return validate.validateSpecModels(success.data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return data;
     });
   }
 
@@ -1253,7 +1251,7 @@ namespace Private {
    * Get the kernelspec for a kernel.
    */
   export
-  function getSpec(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpec> {
+  function getSpec(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpecModel> {
     let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL,
                                 encodeURIComponent(kernel.name));
     ajaxSettings = ajaxSettings || { };
@@ -1264,13 +1262,11 @@ namespace Private {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as Kernel.ISpecModel;
       try {
-        validate.validateSpecModel(data);
+        return validate.validateSpecModel(success.data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return data.spec;
     }, onKernelError);
   }
 

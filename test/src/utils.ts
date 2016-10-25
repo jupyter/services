@@ -88,15 +88,13 @@ const AJAX_KERNEL_OPTIONS: Kernel.IOptions = {
 
 
 export
-const PYTHON_SPEC: Kernel.ISpecModel = {
+const PYTHON_SPEC: any = {
   name: 'Python',
   spec: {
     language: 'python',
     argv: [],
     display_name: 'python',
-    codemirror_mode: 'python',
     env: {},
-    help_links: [ { text: 're', url: 'reUrl' }]
   },
   resources: { foo: 'bar' },
 };
@@ -117,19 +115,10 @@ const DEFAULT_FILE: Contents.IModel = {
 
 
 export
-const KERNELSPECS: Kernel.ISpecModels = {
+const KERNELSPECS: any = {
   default: 'python',
   kernelspecs: {
-    python: {
-      name: 'python',
-      spec: {
-        language: 'python',
-        argv: [],
-        display_name: 'Python',
-        env: {}
-      },
-      resources: {}
-    },
+    python: PYTHON_SPEC,
     shell: {
       name: 'shell',
       spec: {

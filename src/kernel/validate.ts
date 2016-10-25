@@ -120,47 +120,60 @@ function validateModel(model: Kernel.IModel) : void {
 
 
 /**
- * Validate a `Kernel.ISpecModel` object.
+ * Validate a server kernelspec model to a client side model.
  */
 export
-function validateSpecModel(info: Kernel.ISpecModel): void {
-  validateProperty(info, 'name', 'string');
-  validateProperty(info, 'spec', 'object');
-  validateProperty(info, 'resources', 'object');
-  let spec = info.spec;
+function validateSpecModel(data: any): Kernel.ISpecModel {
+  let spec = data.spec;
+  if (!spec) {
+    throw new Error('Invalid kernel spec');
+  }
+  validateProperty(data, 'name', 'string');
+  validateProperty(data, 'resources', 'object');
   validateProperty(spec, 'language', 'string');
   validateProperty(spec, 'display_name', 'string');
   validateProperty(spec, 'argv', 'array');
+  return {
+    name: data.name,
+    resources: data.resources,
+    language: spec.language,
+    display_name: spec.display_name,
+    argv: spec.argv
+  };
 }
-
 
 /**
  * Validate a `Kernel.ISpecModels` object.
  */
 export
-function validateSpecModels(data: Kernel.ISpecModels): void {
+function validateSpecModels(data: any): Kernel.ISpecModels {
   if (!data.hasOwnProperty('kernelspecs')) {
     throw new Error('No kernelspecs found');
   }
   let keys = Object.keys(data.kernelspecs);
+  let kernelspecs: { [key: string]: Kernel.ISpecModel } = Object.create(null);
+  let defaultSpec = data.default;
+
   for (let i = 0; i < keys.length; i++) {
     let ks = data.kernelspecs[keys[i]];
     try {
-      validateSpecModel(ks);
+      kernelspecs[keys[i]] = validateSpecModel(ks);
     } catch (err) {
       // Remove the errant kernel spec.
       console.warn(`Removing errant kernel spec: ${keys[i]}`);
-      delete data.kernelspecs[keys[i]];
     }
   }
-  keys = Object.keys(data.kernelspecs);
+  keys = Object.keys(kernelspecs);
   if (!keys.length) {
     throw new Error('No valid kernelspecs found');
   }
-  if (!data.hasOwnProperty('default') ||
-      typeof data.default !== 'string' ||
-      !data.kernelspecs.hasOwnProperty(data.default)) {
-    data.default = keys[0];
+  if (!defaultSpec || typeof defaultSpec !== 'string' ||
+      !(defaultSpec in kernelspecs)) {
+    defaultSpec = keys[0];
     console.warn(`Default kernel not found, using '${keys[0]}'`);
   }
+  return {
+    default: defaultSpec,
+    kernelspecs,
+  };
 }
