@@ -5,6 +5,10 @@ import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
 
+import {
+  nbformat
+} from '../nbformat';
+
 import * as utils
  from '../utils';
 
@@ -117,7 +121,6 @@ namespace KernelMessage {
   export
   interface IStreamMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
       name: 'stdout' | 'stderr';
       text: string;
     };
@@ -139,10 +142,8 @@ namespace KernelMessage {
   export
   interface IDisplayDataMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
-      source: string;
-      data: { [key: string]: string };
-      metadata: JSONObject;
+      data: nbformat.IMimeBundle,
+      metadata: nbformat.OutputMetadata;
     };
   }
 
@@ -162,9 +163,8 @@ namespace KernelMessage {
   export
   interface IExecuteInputMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
       code: string;
-      execution_count: number;
+      execution_count: nbformat.ExecutionCount;
     };
   }
 
@@ -184,10 +184,9 @@ namespace KernelMessage {
   export
   interface IExecuteResultMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
-      execution_count: number;
-      data: { [key: string]: string };
-      metadata: JSONObject;
+      execution_count: nbformat.ExecutionCount;
+      data: nbformat.IMimeBundle,
+      metadata: nbformat.OutputMetadata;
     };
   }
 
@@ -207,8 +206,6 @@ namespace KernelMessage {
   export
   interface IErrorMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
-      execution_count: number;
       ename: string;
       evalue: string;
       traceback: string[];
@@ -231,7 +228,6 @@ namespace KernelMessage {
   export
   interface IStatusMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
       execution_state: Kernel.Status;
     };
   }
@@ -252,7 +248,6 @@ namespace KernelMessage {
   export
   interface IClearOutputMsg extends IIOPubMessage {
     content: {
-      [ key: string ]: JSONValue;
       wait: boolean;
     };
   }
@@ -283,7 +278,6 @@ namespace KernelMessage {
    */
   export
   interface ICommOpen extends JSONObject {
-    [ key: string ]: JSONValue;
     comm_id: string;
     target_name: string;
     data: JSONValue;
@@ -316,7 +310,6 @@ namespace KernelMessage {
    */
    export
    interface ICommClose extends JSONObject {
-      [ key: string ]: JSONValue;
       comm_id: string;
       data: JSONValue;
    }
@@ -347,7 +340,6 @@ namespace KernelMessage {
    */
   export
   interface ICommMsg extends JSONObject {
-    [ key: string ]: JSONValue;
     comm_id: string;
     data: JSONValue;
   }
@@ -377,7 +369,6 @@ namespace KernelMessage {
    */
   export
   interface IInfoReply extends JSONObject {
-    [ key: string ]: JSONValue;
     protocol_version: string;
     implementation: string;
     implementation_version: string;
@@ -392,14 +383,8 @@ namespace KernelMessage {
    * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
    */
   export
-  interface ILanguageInfo {
-    [ key: string ]: JSONValue;
-    name: string;
+  interface ILanguageInfo extends nbformat.ILanguageInfoMetadata {
     version: string;
-    mimetype: string;
-    file_extension: string;
-    pygments_lexer?: string;
-    codemirror_mode?: string | JSONObject;
     nbconverter_exporter?: string;
   }
 
@@ -412,7 +397,6 @@ namespace KernelMessage {
    */
   export
   interface ICompleteRequest extends JSONObject {
-    [ key: string ]: JSONValue;
     code: string;
     cursor_pos: number;
   }
@@ -427,7 +411,6 @@ namespace KernelMessage {
   export
   interface ICompleteReplyMsg extends IShellMessage {
     content: {
-      [ key: string ]: JSONValue;
       matches: string[];
       cursor_start: number;
       cursor_end: number;
@@ -445,10 +428,9 @@ namespace KernelMessage {
    */
   export
   interface IInspectRequest extends JSONObject {
-    [ key: string ]: JSONValue;
     code: string;
     cursor_pos: number;
-    detail_level: number;
+    detail_level: 0 | 1;
   }
 
   /**
@@ -461,8 +443,7 @@ namespace KernelMessage {
   export
   interface IInspectReplyMsg extends IShellMessage {
     content: {
-      [ key: string ]: JSONValue;
-      status: string;
+      status: 'ok' | 'error';
       found: boolean;
       data: JSONObject;
       metadata: JSONObject;
@@ -478,7 +459,6 @@ namespace KernelMessage {
    */
   export
   interface IHistoryRequest extends JSONObject {
-    [ key: string ]: JSONValue;
     output: boolean;
     raw: boolean;
     hist_access_type: HistAccess;
@@ -500,7 +480,6 @@ namespace KernelMessage {
   export
   interface IHistoryReplyMsg extends IShellMessage {
     content: {
-      [ key: string ]: JSONValue;
       history: JSONValue[];
     };
   }
@@ -520,7 +499,6 @@ namespace KernelMessage {
    */
   export
   interface IIsCompleteRequest extends JSONObject {
-    [ key: string ]: JSONValue;
     code: string;
   }
 
@@ -534,7 +512,6 @@ namespace KernelMessage {
   export
   interface IIsCompleteReplyMsg extends IShellMessage {
     content: {
-      [ key: string ]: JSONValue;
       status: string;
       indent: string;
     };
@@ -559,8 +536,6 @@ namespace KernelMessage {
    */
   export
   interface IExecuteOptions extends JSONObject {
-    [ key: string ]: JSONValue;
-
     /**
      * Whether to execute the code as quietly as possible.
      * The default is `false`.
@@ -613,7 +588,7 @@ namespace KernelMessage {
   export
   interface IExecuteReply extends JSONObject {
     status: 'ok' | 'error' | 'abort';
-    execution_count: number;
+    execution_count: nbformat.ExecutionCount;
   }
 
   /**
@@ -716,7 +691,6 @@ namespace KernelMessage {
    */
   export
   interface ICommInfoRequest extends JSONObject {
-    [ key: string ]: JSONValue;
     target?: string;
   }
 
@@ -730,7 +704,6 @@ namespace KernelMessage {
   export
   interface ICommInfoReplyMsg extends IShellMessage {
     content: {
-      [ key: string ]: JSONValue;
       /**
        * Mapping of comm ids to target names.
        */
@@ -745,7 +718,6 @@ namespace KernelMessage {
    */
   export
   interface IOptions {
-    [ key: string ]: JSONValue;
     msgType: string;
     channel: Channel;
     session: string;
