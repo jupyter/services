@@ -30,7 +30,7 @@ import {
 
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
 PYTHON3_SPEC.name = 'Python3';
-PYTHON3_SPEC.spec.display_name = 'python3';
+PYTHON3_SPEC.display_name = 'python3';
 
 let createMsg = (channel: KernelMessage.Channel, parentHeader: JSONObject): KernelMessage.IMessage => {
   return {
@@ -1592,7 +1592,7 @@ describe('kernel', () => {
         expect(names[0]).to.be('python');
         expect(names[1]).to.be('python3');
         done();
-      });
+      }).catch(done);
     });
 
     it('should accept ajax options', (done) => {
@@ -1609,7 +1609,7 @@ describe('kernel', () => {
         expect(names[0]).to.be('python');
         expect(names[1]).to.be('python3');
         done();
-      });
+      }).catch(done);
     });
 
     it('should handle a missing default parameter', (done) => {

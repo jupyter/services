@@ -27,7 +27,7 @@ import {
 
 let PYTHON3_SPEC = JSON.parse(JSON.stringify(PYTHON_SPEC));
 PYTHON3_SPEC.name = 'Python3';
-PYTHON3_SPEC.spec.display_name = 'python3';
+PYTHON3_SPEC.display_name = 'python3';
 
 
 describe('kernel/manager', () => {
@@ -63,7 +63,8 @@ describe('kernel/manager', () => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         manager.specsChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(true);
+          expect(deepEqual(args, KERNELSPECS)).to.be(false);
+          expect(args.default).to.be(KERNELSPECS.default);
           done();
         });
         let handler = new RequestHandler(() => {
