@@ -672,7 +672,7 @@ class DefaultKernel implements Kernel.IKernel {
     try {
       validate.validateMessage(msg);
     } catch (error) {
-      console.error(error.message);
+      console.error(`Invalid message: ${error.message}`);
       return;
     }
     if (msg.parent_header) {
