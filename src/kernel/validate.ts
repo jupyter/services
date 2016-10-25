@@ -82,9 +82,6 @@ function validateMessage(msg: KernelMessage.IMessage) : void {
   validateProperty(msg, 'content', 'object');
   validateProperty(msg, 'channel', 'string');
   validateHeader(msg.header);
-  if (Object.keys(msg.parent_header).length > 0) {
-    validateHeader(msg.parent_header as KernelMessage.IHeader);
-  }
   if (msg.channel === 'iopub') {
     validateIOPubContent(msg as KernelMessage.IIOPubMessage);
   }
