@@ -39,8 +39,13 @@ describe('manager', () => {
 
     let manager: ServiceManager.IManager;
 
-    beforeEach(() => {
+    beforeEach((done) => {
+      let handler = new RequestHandler(() => {
+        handler.respond(200, KERNELSPECS);
+        done();
+      });
       manager = new ServiceManager();
+      expect(manager.kernelspecs).to.be(null);
     });
 
     afterEach(() => {
@@ -53,20 +58,30 @@ describe('manager', () => {
         expect(manager).to.be.a(ServiceManager);
       });
 
+      it('should trigger a kernel spec update', (done) => {
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager = new ServiceManager();
+        manager.specsChanged.connect(() => {
+          done();
+        });
+      });
+
     });
 
     describe('#specsChanged', () => {
 
       it('should be emitted when the specs change', (done) => {
-        manager.specsChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(true);
-          done();
-        });
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.kernels.getSpecs();
+        manager = new ServiceManager();
+        manager.specsChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(args.default).to.be(KERNELSPECS.default);
+          done();
+        });
       });
 
     });
@@ -74,7 +89,7 @@ describe('manager', () => {
     describe('#kernelspecs', () => {
 
       it('should be the kernel specs used by the manager', () => {
-        expect(deepEqual(manager.kernelspecs, KERNELSPECS)).to.be(true);
+        expect(manager.kernelspecs.default).to.be(KERNELSPECS.default);
       });
 
     });
