@@ -680,7 +680,7 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      each(runningSessions, session => {
+      each(toArray(runningSessions), session => {
         if (session.id === id) {
           session.terminated.emit(void 0);
           session.dispose();
