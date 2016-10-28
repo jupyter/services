@@ -49,6 +49,49 @@ describe('contents', () => {
 
   });
 
+  describe('#fileChanged', () => {
+
+    it('should be emitted when a file changes', (done) => {
+      let contents = new ContentsManager();
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.fileChanged.connect((sender, args) => {
+        expect(sender).to.be(contents);
+        expect(args.type).to.be('new');
+        expect(args.oldValue).to.be(null);
+        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+      contents.newUntitled().catch(done);
+    });
+
+  });
+
+  describe('#isDisposed', () => {
+
+    it('should test whether the manager is disposed', () => {
+      let contents = new ContentsManager();
+      expect(contents.isDisposed).to.be(false);
+      contents.dispose();
+      expect(contents.isDisposed).to.be(true);
+    });
+
+  });
+
+  describe('#dispose()', () => {
+
+    it('should dispose of the resources used by the manager', () => {
+      let contents = new ContentsManager();
+      expect(contents.isDisposed).to.be(false);
+      contents.dispose();
+      expect(contents.isDisposed).to.be(true);
+      contents.dispose();
+      expect(contents.isDisposed).to.be(true);
+    });
+
+  });
+
   describe('#get()', () => {
 
     it('should get a file', (done) => {
@@ -239,6 +282,10 @@ describe('contents', () => {
       });
     });
 
+    it('should emit the fileChanged signal', () => {
+
+    });
+
     it('should accept ajax options', (done) => {
       let contents = new ContentsManager({ ajaxSettings });
       let handler = new RequestHandler(() => {
@@ -294,6 +341,20 @@ describe('contents', () => {
       });
     });
 
+    it('should emit the fileChanged signal', (done) => {
+      let contents = new ContentsManager();
+      let path = '/foo/bar.txt';
+      let handler = new RequestHandler(() => {
+        handler.respond(204, { path });
+      });
+      contents.fileChanged.connect((sender, args) => {
+        expect(args.type).to.be('delete');
+        expect(args.oldValue.path).to.be(path);
+        done();
+      });
+      contents.delete(path).catch(done);
+    });
+
     it('should accept ajax options', (done) => {
       let contents = new ContentsManager({ ajaxSettings });
       let handler = new RequestHandler(() => {
@@ -345,6 +406,20 @@ describe('contents', () => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
+    });
+
+    it('should emit the fileChanged signal', (done) => {
+      let contents = new ContentsManager();
+      let handler = new RequestHandler(() => {
+        handler.respond(200, DEFAULT_FILE);
+      });
+      contents.fileChanged.connect((sender, args) => {
+        expect(args.type).to.be('rename');
+        expect(args.oldValue.path).to.be('/foo/bar.txt');
+        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+      contents.rename('/foo/bar.txt', '/foo/baz.txt').catch(done);
     });
 
     it('should accept ajax options', (done) => {
@@ -407,6 +482,20 @@ describe('contents', () => {
       });
     });
 
+    it('should emit the fileChanged signal', (done) => {
+      let contents = new ContentsManager();
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.fileChanged.connect((sender, args) => {
+        expect(args.type).to.be('save');
+        expect(args.oldValue).to.be(null);
+        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+      contents.save('/foo', { type: 'file', name: 'test' }).catch(done);
+    });
+
     it('should accept ajax options', (done) => {
       let contents = new ContentsManager({ ajaxSettings });
       let handler = new RequestHandler(() => {
@@ -452,6 +541,20 @@ describe('contents', () => {
         expect(model.created).to.be(DEFAULT_FILE.created);
         done();
       });
+    });
+
+    it('should emit the fileChanged signal', (done) => {
+      let contents = new ContentsManager();
+      let handler = new RequestHandler(() => {
+        handler.respond(201, DEFAULT_FILE);
+      });
+      contents.fileChanged.connect((sender, args) => {
+        expect(args.type).to.be('new');
+        expect(args.oldValue).to.be(null);
+        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
+        done();
+      });
+      contents.copy('/foo/bar.txt', '/baz').catch(done);
     });
 
     it('should accept ajax options', (done) => {

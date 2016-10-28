@@ -8,6 +8,14 @@ import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
+import {
+  IDisposable
+} from 'phosphor/lib/core/disposable';
+
+import {
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
+
 import * as utils
   from '../utils';
 
@@ -175,10 +183,36 @@ namespace Contents {
   }
 
   /**
+   * The change args for a file change.
+   */
+  export
+  interface IChangedArgs {
+    /**
+     * The type of change.
+     */
+    type: 'new' | 'delete' | 'rename' | 'save';
+
+    /**
+     * The new contents.
+     */
+    oldValue: IModel | null;
+
+    /**
+     * The old contents.
+     */
+    newValue: IModel | null;
+  }
+
+  /**
    * The interface for a contents manager.
    */
   export
-  interface IManager {
+  interface IManager extends IDisposable {
+    /**
+     * A signal emitted when a file operation takes place.
+     */
+    fileChanged: ISignal<IManager, IChangedArgs>;
+
     /**
      * Get a file or directory.
      *
@@ -321,6 +355,29 @@ class ContentsManager implements Contents.IManager {
   }
 
   /**
+   * A signal emitted when a file operation takes place.
+   */
+  fileChanged: ISignal<this, Contents.IChangedArgs>;
+
+  /**
+   * Test whether the manager has been disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources held by the manager.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    clearSignalData(this);
+  }
+
+  /**
    * Get a copy of the default ajax settings for the contents manager.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -417,12 +474,18 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 201) {
         return utils.makeAjaxError(success);
       }
+      let data = success.data as Contents.IModel;
       try {
-        validate.validateContentsModel(success.data);
+        validate.validateContentsModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return success.data;
+      this.fileChanged.emit({
+        type: 'new',
+        oldValue: null,
+        newValue: data
+      });
+      return data;
     });
   }
 
@@ -446,6 +509,11 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
+      this.fileChanged.emit({
+        type: 'delete',
+        oldValue: { path },
+        newValue: null
+      });
     }, error => {
         // Translate certain errors to more specific ones.
         // TODO: update IPEP27 to specify errors more precisely, so
@@ -486,12 +554,18 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
+      let data = success.data as Contents.IModel;
       try {
-        validate.validateContentsModel(success.data);
+        validate.validateContentsModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return success.data;
+      this.fileChanged.emit({
+        type: 'rename',
+        oldValue: { path },
+        newValue: data
+      });
+      return data;
     });
   }
 
@@ -500,7 +574,7 @@ class ContentsManager implements Contents.IManager {
    *
    * @param path - The desired file path.
    *
-   * @param options - Optional overrrides to the model.
+   * @param options - Optional overrides to the model.
    *
    * @returns A promise which resolves with the file content model when the
    *   file is saved.
@@ -524,12 +598,18 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
         return utils.makeAjaxError(success);
       }
+      let data = success.data as Contents.IModel;
       try {
-        validate.validateContentsModel(success.data);
+        validate.validateContentsModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return success.data;
+      this.fileChanged.emit({
+        type: 'save',
+        oldValue: null,
+        newValue: data
+      });
+      return data;
     });
   }
 
@@ -560,12 +640,18 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 201) {
         return utils.makeAjaxError(success);
       }
+      let data = success.data as Contents.IModel;
       try {
-        validate.validateContentsModel(success.data);
+        validate.validateContentsModel(data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return success.data;
+      this.fileChanged.emit({
+        type: 'new',
+        oldValue: null,
+        newValue: data
+      });
+      return data;
     });
   }
 
@@ -696,8 +782,13 @@ class ContentsManager implements Contents.IManager {
   }
 
   private _baseUrl = '';
+  private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;
 }
+
+
+// Define the signals for the `ContentsManager` class.
+defineSignal(ContentsManager.prototype, 'fileChanged');
 
 
 /**
