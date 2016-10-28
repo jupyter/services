@@ -55,6 +55,60 @@ describe('kernel/manager', () => {
         expect(manager instanceof KernelManager).to.be(true);
       });
 
+      it('should trigger an update of running sessions', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let data: Kernel.IModel[] = [
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
+        ];
+        manager.runningChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(toArray(args), data)).to.be(true);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+      });
+
+    });
+
+    describe('#specs', () => {
+
+      it('should get the kernel specs', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        expect(manager.specs).to.be(null);
+        manager.specsChanged.connect(() => {
+          expect(manager.specs.default).to.be(KERNELSPECS.default);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.getSpecs();
+      });
+
+    });
+
+    describe('#running()', () => {
+
+      it('should get the running sessions', (done) => {
+        let manager = new KernelManager(KERNEL_OPTIONS);
+        let data: Kernel.IModel[] = [
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
+        ];
+        manager.runningChanged.connect((sender, args) => {
+          let test = deepEqual(toArray(args), toArray(manager.running()));
+          expect(test).to.be(true);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        manager.listRunning();
+      });
+
     });
 
     describe('#specsChanged', () => {

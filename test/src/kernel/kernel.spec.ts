@@ -308,6 +308,22 @@ describe('kernel', () => {
       }).catch(done);
     });
 
+    context('#terminated', () => {
+
+      it('should be emitted when the kernel is shut down', (done) => {
+        kernel.terminated.connect((sender, args) => {
+          expect(sender).to.be(kernel);
+          expect(args).to.be(void 0);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(204, { });
+        };
+        kernel.shutdown();
+      });
+
+    });
+
     context('#statusChanged', () => {
 
       it('should be a signal following the Kernel status', (done) => {
@@ -318,6 +334,7 @@ describe('kernel', () => {
         });
         tester.sendStatus('busy');
       });
+
     });
 
     context('#iopubMessage', () => {
