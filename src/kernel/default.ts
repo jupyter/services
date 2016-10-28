@@ -90,6 +90,11 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
+   * A signal emitted when the kernel is shut down.
+   */
+  terminated: ISignal<Kernel.IKernel, void>;
+
+  /**
    * A signal emitted when the kernel status changes.
    */
   statusChanged: ISignal<Kernel.IKernel, Kernel.Status>;
@@ -916,6 +921,7 @@ class DefaultKernel implements Kernel.IKernel {
 
 
 // Define the signals for the `DefaultKernel` class.
+defineSignal(DefaultKernel.prototype, 'terminated');
 defineSignal(DefaultKernel.prototype, 'statusChanged');
 defineSignal(DefaultKernel.prototype, 'iopubMessage');
 defineSignal(DefaultKernel.prototype, 'unhandledMessage');
@@ -1098,8 +1104,27 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return success.data;
+      return updateRunningKernels(success.data);
     }, onKernelError);
+  }
+
+  /**
+   * Update the running kernels based on new data from the server.
+   */
+  export
+  function updateRunningKernels(kernels: Kernel.IModel[]): Kernel.IModel[] {
+    each(runningKernels, kernel => {
+      let updated = find(kernels, model => {
+        if (kernel.id === model.id) {
+          return true;
+        }
+      });
+      // If kernel is no longer running on disk, emit dead signal.
+      if (!updated && kernel.status !== 'dead') {
+        kernel.terminated.emit(void 0);
+      }
+    });
+    return kernels;
   }
 
   /**
@@ -1241,6 +1266,7 @@ namespace Private {
       }
       each(toArray(runningKernels), kernel => {
         if (kernel.id === id) {
+          kernel.terminated.emit(void 0);
           kernel.dispose();
         }
       });

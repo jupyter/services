@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -33,6 +37,7 @@ class SessionManager implements Session.IManager {
    */
   constructor(options?: Session.IOptions) {
     this._options = utils.copy(options || {});
+    this._scheduleUpdate();
   }
 
   /**
@@ -60,8 +65,26 @@ class SessionManager implements Session.IManager {
       return;
     }
     this._isDisposed = true;
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
     clearSignalData(this);
     this._running = [];
+  }
+
+  /**
+   * Get the most recent specs from the server.
+   */
+  get specs(): Kernel.ISpecModels | null {
+    return this._specs;
+  }
+
+  /**
+   * Create an iterator over the most recent running sessions.
+   *
+   * @returns A new iterator over the running sessions.
+   */
+  running(): IIterator<Session.IModel> {
+    return iter(this._running);
   }
 
   /**
@@ -90,6 +113,11 @@ class SessionManager implements Session.IManager {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
+      clearTimeout(this._updateTimer);
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = setTimeout(() => {
+        this.listRunning();
+      }, 10000);
       return running;
     });
   }
@@ -99,13 +127,13 @@ class SessionManager implements Session.IManager {
    *
    * @param options - Overrides for the default options, must include a
    *   `'path'`.
-   *
-   * #### Notes
-   * This will emit [[runningChanged]] if the running kernels list
-   * changes.
    */
   startNew(options: Session.IOptions): Promise<Session.ISession> {
-    return Session.startNew(this._getOptions(options));
+    return Session.startNew(this._getOptions(options)).then(session => {
+      this._scheduleUpdate();
+      session.terminated.connect(() => { this._scheduleUpdate(); });
+      return session;
+    });
   }
 
   /**
@@ -126,18 +154,19 @@ class SessionManager implements Session.IManager {
    * Connect to a running session.  See also [[connectToSession]].
    */
   connectTo(id: string, options?: Session.IOptions): Promise<Session.ISession> {
-    return Session.connectTo(id, this._getOptions(options));
+    return Session.connectTo(id, this._getOptions(options)).then(session => {
+      session.terminated.connect(() => { this._scheduleUpdate(); });
+      return session;
+    });
   }
 
   /**
    * Shut down a session by id.
-   *
-   * #### Notes
-   * This will emit [[runningChanged]] if the running kernels list
-   * changes.
    */
   shutdown(id: string, options?: Session.IOptions): Promise<void> {
-    return Session.shutdown(id, this._getOptions(options));
+    return Session.shutdown(id, this._getOptions(options)).then(() => {
+      this._scheduleUpdate();
+    });
   }
 
   /**
@@ -152,10 +181,24 @@ class SessionManager implements Session.IManager {
     return options;
   }
 
+  /**
+   * Schedule an update of the running sessions.
+   */
+  private _scheduleUpdate(): void {
+    if (this._updateTimer !== -1) {
+      return;
+    }
+    this._updateTimer = setTimeout(() => {
+      this.listRunning();
+    }, 100);
+  }
+
   private _options: Session.IOptions = null;
   private _isDisposed = false;
   private _running: Session.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;
+  private _updateTimer = -1;
+  private _refreshTimer = -1;
 }
 
 // Define the signals for the `SessionManager` class.

@@ -431,10 +431,10 @@ describe('session', () => {
       session.dispose();
     });
 
-    context('#sessionDied', () => {
+    context('#terminated', () => {
 
       it('should emit when the session is shut down', (done) => {
-        session.sessionDied.connect(() => {
+        session.terminated.connect(() => {
           done();
         });
         tester.onRequest = () => {
@@ -753,12 +753,12 @@ describe('session', () => {
         session.shutdown().then(done, done);
       });
 
-      it('should emit a sessionDied signal', (done) => {
+      it('should emit a terminated signal', (done) => {
         tester.onRequest = () => {
           tester.respond(204, { });
         };
         session.shutdown();
-        session.sessionDied.connect(() => {
+        session.terminated.connect(() => {
           done();
         });
       });

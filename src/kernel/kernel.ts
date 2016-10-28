@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
 
@@ -43,6 +47,11 @@ namespace Kernel {
    */
   export
   interface IKernel extends IDisposable {
+    /**
+     * A signal emitted when the kernel is shut down.
+     */
+    terminated: ISignal<IKernel, void>;
+
     /**
      * A signal emitted when the kernel status changes.
      */
@@ -180,6 +189,9 @@ namespace Kernel {
      *
      * The promise will be rejected if the kernel status is `'dead'` or if the
      * request fails or the response is invalid.
+     *
+     * If the server call is successful, the [[terminated]] signal will be
+     * emitted.
      */
     shutdown(): Promise<void>;
 
@@ -452,6 +464,11 @@ namespace Kernel {
 
   /**
    * Object which manages kernel instances.
+   *
+   * #### Notes
+   * The manager is responsible for keeping the list of running kernels
+   * up to date as kernels are started or shut down, and emitting
+   * the [[runningChanged]] signal when the list changes.
    */
   export
   interface IManager extends IDisposable {
@@ -464,6 +481,18 @@ namespace Kernel {
      * A signal emitted when the running kernels change.
      */
     runningChanged: ISignal<IManager, IModel[]>;
+
+    /**
+     * Get the most recent specs from the server.
+     */
+    readonly specs: ISpecModels | null;
+
+    /**
+     * Create an iterator over the most recent running kernels.
+     *
+     * @returns A new iterator over the running kernels.
+     */
+    running(): IIterator<IModel>;
 
     /**
      * Get the available kernel specs.

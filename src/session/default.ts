@@ -64,9 +64,9 @@ class DefaultSession implements Session.ISession {
   }
 
   /**
-   * A signal emitted when the session dies.
+   * A signal emitted when the session is shut down.
    */
-  sessionDied: ISignal<Session.ISession, void>;
+  terminated: ISignal<Session.ISession, void>;
 
   /**
    * A signal emitted when the kernel changes.
@@ -205,11 +205,10 @@ class DefaultSession implements Session.ISession {
     if (this.isDisposed) {
       return;
     }
+    this._options = null;
     if (this._kernel) {
       this._kernel.dispose();
     }
-    this.sessionDied.emit(void 0);
-    this._options = null;
     Private.runningSessions.remove(this);
     this._kernel = null;
     clearSignalData(this);
@@ -356,7 +355,7 @@ class DefaultSession implements Session.ISession {
 
 
 // Define the signals for the `Session` class.
-defineSignal(DefaultSession.prototype, 'sessionDied');
+defineSignal(DefaultSession.prototype, 'terminated');
 defineSignal(DefaultSession.prototype, 'kernelChanged');
 defineSignal(DefaultSession.prototype, 'statusChanged');
 defineSignal(DefaultSession.prototype, 'iopubMessage');
@@ -647,7 +646,7 @@ namespace Private {
       });
       // If session is no longer running on disk, emit dead signal.
       if (!updated && session.status !== 'dead') {
-        session.sessionDied.emit(void 0);
+        session.terminated.emit(void 0);
       }
     });
     return Promise.all(promises).then(() => { return sessions; });
@@ -681,8 +680,9 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      each(toArray(runningSessions), session => {
+      each(runningSessions, session => {
         if (session.id === id) {
+          session.terminated.emit(void 0);
           session.dispose();
         }
       });

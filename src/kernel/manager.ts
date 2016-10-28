@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator, iter
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -29,6 +33,7 @@ class KernelManager implements Kernel.IManager {
    */
   constructor(options?: Kernel.IOptions) {
     this._options = utils.copy(options || {});
+    this._scheduleUpdate();
   }
 
   /**
@@ -56,9 +61,27 @@ class KernelManager implements Kernel.IManager {
       return;
     }
     this._isDisposed = true;
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
     clearSignalData(this);
-    this._spec = null;
+    this._specs = null;
     this._running = [];
+  }
+
+  /**
+   * Get the most recent specs from the server.
+   */
+  get specs(): Kernel.ISpecModels {
+    return this._specs;
+  }
+
+  /**
+   * Create an iterator over the most recent running kernels.
+   *
+   * @returns A new iterator over the running kernels.
+   */
+  running(): IIterator<Kernel.IModel> {
+    return iter(this._running);
   }
 
   /**
@@ -68,8 +91,8 @@ class KernelManager implements Kernel.IManager {
    */
   getSpecs(options?: Kernel.IOptions): Promise<Kernel.ISpecModels> {
     return Kernel.getSpecs(this._getOptions(options)).then(specs => {
-      if (!deepEqual(specs, this._spec)) {
-        this._spec = specs;
+      if (!deepEqual(specs, this._specs)) {
+        this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -87,6 +110,11 @@ class KernelManager implements Kernel.IManager {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
+      clearTimeout(this._updateTimer);
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = setTimeout(() => {
+        this.listRunning();
+      }, 10000);
       return running;
     });
   }
@@ -101,7 +129,13 @@ class KernelManager implements Kernel.IManager {
    * changes.
    */
   startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.startNew(this._getOptions(options));
+    return Kernel.startNew(this._getOptions(options)).then(kernel => {
+      this._scheduleUpdate();
+      kernel.terminated.connect(() => {
+          this._scheduleUpdate();
+      });
+      return kernel;
+    });
   }
 
   /**
@@ -119,7 +153,12 @@ class KernelManager implements Kernel.IManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.connectTo(id, this._getOptions(options));
+    return Kernel.connectTo(id, this._getOptions(options)).then(kernel => {
+      kernel.terminated.connect(() => {
+          this._scheduleUpdate();
+      });
+      return kernel;
+    });
   }
 
   /**
@@ -132,7 +171,9 @@ class KernelManager implements Kernel.IManager {
    * changes.
    */
   shutdown(id: string, options?: Kernel.IOptions): Promise<void> {
-    return Kernel.shutdown(id, this._getOptions(options));
+    return Kernel.shutdown(id, this._getOptions(options)).then(() => {
+      this._scheduleUpdate();
+    });
   }
 
   /**
@@ -147,10 +188,24 @@ class KernelManager implements Kernel.IManager {
     return options;
   }
 
+  /**
+   * Schedule an update of the running kernels.
+   */
+  private _scheduleUpdate(): void {
+    if (this._updateTimer !== -1) {
+      return;
+    }
+    this._updateTimer = setTimeout(() => {
+      this.listRunning();
+    }, 100);
+  }
+
   private _options: Kernel.IOptions = null;
   private _running: Kernel.IModel[] = [];
-  private _spec: Kernel.ISpecModels = null;
+  private _specs: Kernel.ISpecModels = null;
   private _isDisposed = false;
+  private _updateTimer = -1;
+  private _refreshTimer = -1;
 }
 
 

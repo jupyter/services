@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -39,7 +43,7 @@ namespace Session {
     /**
      * A signal emitted when the session is shut down.
      */
-    sessionDied: ISignal<ISession, void>;
+    terminated: ISignal<ISession, void>;
 
     /**
      * A signal emitted when the kernel changes.
@@ -285,6 +289,11 @@ namespace Session {
 
   /**
    * Object which manages session instances.
+   *
+   * #### Notes
+   * The manager is responsible for keeping the list of running sessions
+   * up to date as sessions are started or shut down, and emitting
+   * the [[runningChanged]] signal when the list changes.
    */
   export
   interface IManager extends IDisposable {
@@ -297,6 +306,18 @@ namespace Session {
      * A signal emitted when the running sessions change.
      */
     runningChanged: ISignal<IManager, IModel[]>;
+
+    /**
+     * Get the most recent specs from the server.
+     */
+    readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * Create an iterator over the most recent running sessions.
+     *
+     * @returns A new iterator over the running sessions.
+     */
+    running(): IIterator<IModel>;
 
     /**
      * Get the available kernel specs.

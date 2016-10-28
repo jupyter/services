@@ -35,43 +35,24 @@ import {
 
 describe('manager', () => {
 
-  describe('ServiceManager.create()', () => {
-
-    it('should accept no arguments', (done) => {
-      let handler = new RequestHandler(() => {
-        handler.respond(200, KERNELSPECS);
-      });
-      ServiceManager.create().then(manager => {
-        expect(manager.kernels).to.be.a(KernelManager);
-        done();
-      }).catch(done);
-    });
-
-    it('should accept arguments', (done) => {
-      let options = {
-        baseUrl: 'foo',
-        kernelspecs: KERNELSPECS
-      };
-      ServiceManager.create(options).then(manager => {
-        expect(manager.kernels).to.be.a(KernelManager);
-        done();
-      }).catch(done);
-    });
-
-  });
-
   describe('SessionManager', () => {
 
     let manager: ServiceManager.IManager;
 
-    beforeEach((done) => {
-      let handler = new RequestHandler(() => {
-        handler.respond(200, KERNELSPECS);
+    beforeEach(() => {
+      manager = new ServiceManager();
+    });
+
+    afterEach(() => {
+      manager.dispose();
+    });
+
+    describe('#constructor()', () => {
+
+      it('should create a new session manager', () => {
+        expect(manager).to.be.a(ServiceManager);
       });
-      ServiceManager.create().then(value => {
-        manager = value;
-        done();
-      });
+
     });
 
     describe('#specsChanged', () => {

@@ -2,12 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  JSONPrimitive, JSONObject, deepEqual
-} from 'phosphor/lib/algorithm/json';
+  IIterator, each, iter, map, toArray
+} from 'phosphor/lib/algorithm/iteration';
 
 import {
-  Vector
-} from 'phosphor/lib/collections/vector';
+  JSONPrimitive, JSONObject, deepEqual
+} from 'phosphor/lib/algorithm/json';
 
 import {
   IDisposable
@@ -42,6 +42,11 @@ namespace TerminalSession {
    */
   export
   interface ISession extends IDisposable {
+    /**
+     * A signal emitted when the session is shut down.
+     */
+    terminated: ISignal<ISession, void>;
+
     /**
      * A signal emitted when a message is received from the server.
      */
@@ -139,6 +144,11 @@ namespace TerminalSession {
 
   /**
    * The interface for a terminal manager.
+   *
+   * #### Notes
+   * The manager is responsible for keeping the list of running sessions
+   * up to date as sessions are created or shut down, and emitting
+   * the [[runningChanged]] signal when the list changes.
    */
   export
   interface IManager extends IDisposable {
@@ -146,6 +156,13 @@ namespace TerminalSession {
      * A signal emitted when the running terminals change.
      */
     runningChanged: ISignal<IManager, IModel[]>;
+
+    /**
+     * Create an iterator over the most recent running terminals.
+     *
+     * @returns A new iterator over the running terminals.
+     */
+    running(): IIterator<IModel>;
 
     /**
      * Create a new terminal session or connect to an existing session.
@@ -185,6 +202,7 @@ class TerminalManager implements TerminalSession.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = utils.copy(options.ajaxSettings || {});
+    this._scheduleUpdate();
   }
 
   /**
@@ -207,8 +225,19 @@ class TerminalManager implements TerminalSession.IManager {
       return;
     }
     this._isDisposed = true;
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
     clearSignalData(this);
     this._running = [];
+  }
+
+  /**
+   * Create an iterator over the most recent running terminals.
+   *
+   * @returns A new iterator over the running terminals.
+   */
+  running(): IIterator<TerminalSession.IModel> {
+    return iter(this._running);
   }
 
   /**
@@ -220,7 +249,13 @@ class TerminalManager implements TerminalSession.IManager {
     options.ajaxSettings = (
       options.ajaxSettings || utils.copy(this._ajaxSettings)
     );
-    return TerminalSession.open(options);
+    return TerminalSession.open(options).then(session => {
+      this._scheduleUpdate();
+      session.terminated.connect(() => {
+        this._scheduleUpdate();
+      });
+      return session;
+    });
   }
 
   /**
@@ -234,6 +269,13 @@ class TerminalManager implements TerminalSession.IManager {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
+      }
+      this._scheduleUpdate();
+      if (name in Private.running) {
+        Private.running[name].then(session => {
+          session.terminated.emit(void 0);
+          session.dispose();
+        });
       }
     });
   }
@@ -257,10 +299,36 @@ class TerminalManager implements TerminalSession.IManager {
       }
       if (!deepEqual(data, this._running)) {
         this._running = data;
+        let names = toArray(map(data, item => item.name));
+        each(Object.keys(Private.running), name => {
+          if (names.indexOf(name) !== -1) {
+            Private.running[name].then(session => {
+              session.terminated.emit(void 0);
+              session.dispose();
+            });
+          }
+        });
         this.runningChanged.emit(data);
       }
+      clearTimeout(this._updateTimer);
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = setTimeout(() => {
+        this.listRunning();
+      }, 10000);
       return data;
     });
+  }
+
+  /**
+   * Schedule an update of the running sessions.
+   */
+  private _scheduleUpdate(): void {
+    if (this._updateTimer !== -1) {
+      return;
+    }
+    this._updateTimer = setTimeout(() => {
+      this.listRunning();
+    }, 100);
   }
 
   private _baseUrl = '';
@@ -268,6 +336,8 @@ class TerminalManager implements TerminalSession.IManager {
   private _ajaxSettings: utils.IAjaxSettings = null;
   private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
+  private _updateTimer = -1;
+  private _refreshTimer = -1;
 }
 
 
@@ -314,6 +384,11 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._promise = new utils.PromiseDelegate<TerminalSession.ISession>();
   }
+
+  /**
+   * A signal emitted when the session is shut down.
+   */
+  terminated: ISignal<this, void>;
 
   /**
    * A signal emitted when a message is received from the server.
@@ -379,6 +454,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
+      this.terminated.emit(void 0);
       this.dispose();
     });
   }
@@ -453,6 +529,7 @@ defineSignal(TerminalManager.prototype, 'runningChanged');
 
 
 // Define the signals for the `DefaultTerminalSession` class.
+defineSignal(DefaultTerminalSession.prototype, 'terminated');
 defineSignal(DefaultTerminalSession.prototype, 'messageReceived');
 
 
