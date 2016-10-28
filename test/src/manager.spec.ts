@@ -9,10 +9,6 @@ import {
 } from '../../lib/contents';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
-
-import {
   ServiceManager
 } from '../../lib/manager';
 

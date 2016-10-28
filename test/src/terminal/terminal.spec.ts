@@ -65,6 +65,7 @@ describe('terminals', () => {
       it('should accept no options', () => {
         let manager = new TerminalManager();
         expect(manager).to.be.a(TerminalManager);
+        manager.dispose();
       });
 
       it('should accept options', () => {
@@ -74,6 +75,37 @@ describe('terminals', () => {
           ajaxSettings: {}
         });
         expect(manager).to.be.a(TerminalManager);
+        manager.dispose();
+      });
+
+      it('should trigger a running changed signal', (done) => {
+        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        let manager = new TerminalManager();
+        manager.runningChanged.connect(() => {
+          manager.dispose();
+          done();
+        });
+      });
+
+    });
+
+    describe('#running()', () => {
+
+      it('should give an iterator over the list of running models', (done) => {
+        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        let manager = new TerminalManager();
+        expect(manager.running().next()).to.be(void 0);
+        manager.runningChanged.connect(() => {
+          expect(toArray(manager.running())).to.eql(data);
+          manager.dispose();
+          done();
+        });
       });
 
     });
@@ -154,6 +186,26 @@ describe('terminals', () => {
         session = s;
         done();
       });
+    });
+
+    afterEach(() => {
+      session.dispose();
+    });
+
+    describe('#terminated', () => {
+
+      it('should be emitted when the session is shut down', (done) => {
+        session.terminated.connect((sender, args) => {
+          expect(sender).to.be(session);
+          expect(args).to.be(void 0);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
+        session.shutdown();
+      });
+
     });
 
     describe('#messageReceived', () => {
