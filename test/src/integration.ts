@@ -63,22 +63,6 @@ describe('jupyter.services - Integration', () => {
       }).then(done, done);
     });
 
-    it('should get the spec for the kernel', (done) => {
-      let kernel: Kernel.IKernel;
-      let name = '';
-      Kernel.getSpecs().then((specs) => {
-        name = specs.default;
-        return Kernel.startNew();
-      }).then(value => {
-        kernel = value;
-        return kernel.getSpec();
-      }).then(spec => {
-        expect(spec.name).to.be(name);
-        expect(kernel.spec.name).to.be(name);
-        return kernel.shutdown();
-      }).then(done, done);
-    });
-
     it('should connect to existing kernel and list running kernels', (done) => {
       let kernel: Kernel.IKernel;
       let kernel2: Kernel.IKernel;

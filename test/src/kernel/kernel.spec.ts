@@ -534,23 +534,6 @@ describe('kernel', () => {
 
     });
 
-    context('#spec', () => {
-
-      it('should be null by default', () => {
-        expect(kernel.spec).to.be(null);
-      });
-
-      it('should be set after calling getKernelSpec', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
-        };
-        return kernel.getSpec().then(() => {
-          expect(kernel.spec.language).to.be('python');
-        }).then(done, done);
-      });
-
-    });
-
     context('#isDisposed', () => {
 
       it('should be true after we dispose of the kernel', () => {
@@ -1103,20 +1086,6 @@ describe('kernel', () => {
             });
           };
 
-        });
-      });
-
-    });
-
-    describe('#getKernelSpec()', () => {
-
-      it('should load the kernelspec', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
-        };
-        kernel.getSpec().then(spec => {
-          expect(spec.language).to.be('python');
-          done();
         });
       });
 

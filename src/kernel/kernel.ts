@@ -107,15 +107,6 @@ namespace Kernel {
     readonly info: KernelMessage.IInfoReply;
 
     /**
-     * The cached spec for the kernel.
-     *
-     * #### Notes
-     * If `null`, call [[getKernelSpecs]] to get the value,
-     * which will populate this value.
-     */
-    readonly spec: Kernel.ISpecModel;
-
-    /**
      * Send a shell message to the kernel.
      *
      * #### Notes
@@ -326,11 +317,6 @@ namespace Kernel {
      * See also [[IFuture.registerMessageHook]].
      */
     registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
-
-    /**
-     * Get the kernel spec associated with the kernel.
-     */
-    getSpec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Optional default settings for ajax requests, if applicable.

@@ -163,17 +163,6 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * The cached specs for the kernel.
-   *
-   * #### Notes
-   * If `null`, call [[Kernel.getSpecs]] to get the value,
-   * which will populate this value.
-   */
-  get spec(): Kernel.ISpecModel {
-    return this._spec;
-  }
-
-  /**
    * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -607,20 +596,6 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * Get the kernel spec associated with the kernel.
-   *
-   * #### Notes
-   * This value is cached and only fetched the first time it is requested.
-   */
-  getSpec(): Promise<Kernel.ISpecModel> {
-    return Private.getSpec(this, this._baseUrl, this.ajaxSettings)
-    .then(specs => {
-      this._spec = specs;
-      return specs;
-    });
-  }
-
-  /**
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket(): void {
@@ -913,7 +888,6 @@ class DefaultKernel implements Kernel.IKernel {
   private _commPromises: Map<string, Promise<Kernel.IComm>> = null;
   private _comms: Map<string, Kernel.IComm> = null;
   private _targetRegistry: { [key: string]: (comm: Kernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
-  private _spec: Kernel.ISpecModel = null;
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
@@ -1270,29 +1244,6 @@ namespace Private {
           kernel.dispose();
         }
       });
-    }, onKernelError);
-  }
-
-  /**
-   * Get the kernelspec for a kernel.
-   */
-  export
-  function getSpec(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpecModel> {
-    let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL,
-                                encodeURIComponent(kernel.name));
-    ajaxSettings = ajaxSettings || { };
-    ajaxSettings.dataType = 'json';
-    ajaxSettings.cache = false;
-
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
-      }
-      try {
-        return validate.validateSpecModel(success.data);
-      } catch (err) {
-        return utils.makeAjaxError(success, err.message);
-      }
     }, onKernelError);
   }
 
