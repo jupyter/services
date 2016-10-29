@@ -152,17 +152,6 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * The cached info for the kernel.
-   *
-   * #### Notes
-   * If `null`, call [[kernelInfo]] to get the value,
-   * which will populate this value.
-   */
-  get info(): KernelMessage.IInfoReply {
-    return this._info;
-  }
-
-  /**
    * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -180,6 +169,35 @@ class DefaultKernel implements Kernel.IKernel {
    */
   get isDisposed(): boolean {
     return this._futures === null;
+  }
+
+  /**
+   * A promise that resolves with a cached kernel info.
+   */
+  info(): Promise<KernelMessage.IInfoReply> {
+    if (this._info) {
+      return Promise.resolve(this._info);
+    }
+    return this._connectionPromise.promise.then(() => {
+      return this._info;
+    });
+  }
+
+  /**
+   * A promise that resolves with a cached kernel spec.
+   */
+  spec(): Promise<Kernel.ISpecModel> {
+    let specs = Private.specs[this._baseUrl];
+    if (specs) {
+      return Promise.resolve(specs[this._name]);
+    }
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Private.getSpecs(options).then(value => {
+      return value[this._name];
+    });
   }
 
   /**
@@ -1006,6 +1024,12 @@ namespace Private {
   const runningKernels = new Vector<DefaultKernel>();
 
   /**
+   * A module private store of kernel specs by base url.
+   */
+  export
+  const specs: { [key: string]: Kernel.ISpecModels } = Object.create(null);
+
+  /**
    * Find a kernel by id.
    */
   export
@@ -1040,7 +1064,9 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       try {
-        return validate.validateSpecModels(success.data);
+        let data = validate.validateSpecModels(success.data);
+        specs[baseUrl] = data;
+        return data;
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }

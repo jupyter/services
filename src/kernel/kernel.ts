@@ -98,13 +98,34 @@ namespace Kernel {
     readonly status: Kernel.Status;
 
     /**
-     * The cached info for the kernel.
+     * The base url of the kernel.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The url to access websockets, if different from baseUrl.
+     */
+    wsUrl?: string;
+
+    /**
+     * A promise that resolves with a cached kernel info.
      *
      * #### Notes
-     * If `null`, call [[kernelInfo]] to get the value,
-     * which will populate this value.
+     * This value is cached when a kernel connection is made.
+     * This can be used to wait for a kernel connection before taking
+     * further action on the kernel.  It can also be used to get the kernel
+     * info without generating an extra kernel message.
      */
-    readonly info: KernelMessage.IInfoReply;
+    info(): Promise<KernelMessage.IInfoReply>;
+
+    /**
+     * A promise that resolves with a cached kernel spec.
+     *
+     * #### Notes
+     * It will use the cached kernel spec models for this base url or
+     * fetch them from the server.
+     */
+    spec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Send a shell message to the kernel.
