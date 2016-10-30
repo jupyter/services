@@ -93,6 +93,11 @@ namespace Kernel {
     readonly clientId: string;
 
     /**
+     * The base url of the kernel.
+     */
+    readonly baseUrl: string;
+
+    /**
      * The Ajax settings used for server requests.
      */
     ajaxSettings: IAjaxSettings;
@@ -460,7 +465,7 @@ namespace Kernel {
   }
 
   /**
-   * Object which manages kernel instances.
+   * Object which manages kernel instances for a given base url.
    *
    * #### Notes
    * The manager is responsible for maintaining the state of running
@@ -479,6 +484,21 @@ namespace Kernel {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
+     * The base url of the manager.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The base ws url of the manager.
+     */
+    readonly wsUrl: string;
+
+    /**
+     * The default ajax settings for the manager.
+     */
+    ajaxSettings?: IAjaxSettings;
+
+    /**
      * Get the kernel specs.
      *
      * #### Notes
@@ -495,34 +515,62 @@ namespace Kernel {
     running(): IIterator<IModel>;
 
     /**
-     * Force an update of the available kernel specs.
+     * Trigger an update of the available kernel specs.
      */
-    updateSpecs(options?: IOptions): void;
+    updateSpecs(): void;
 
     /**
      * Trigger a refresh of the running kernels.
      */
-    refresh(options?: IOptions): void;
+    refresh(): void;
 
     /**
      * Start a new kernel.
+     *
+     * @param options - The kernel options to use.
+     *
+     * @returns A promise that resolves with the kernel instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager.  The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     startNew(options?: IOptions): Promise<IKernel>;
 
     /**
      * Find a kernel by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves with the kernel's model.
      */
-    findById(id: string, options?: IOptions): Promise<IModel>;
+    findById(id: string): Promise<IModel>;
 
     /**
      * Connect to an existing kernel.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @param options - The kernel options to use.
+     *
+     * @returns A promise that resolves with the new kernel instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager. The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     connectTo(id: string, options?: IOptions): Promise<IKernel>;
 
     /**
      * Shut down a kernel by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves when the operation is complete.
      */
-    shutdown(id: string, options?: IOptions): Promise<void>;
+    shutdown(id: string): Promise<void>;
   }
 
   /**

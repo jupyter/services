@@ -81,6 +81,11 @@ namespace Session {
     readonly path: string;
 
     /**
+     * The base url of the session.
+     */
+    readonly baseUrl: string;
+
+    /**
      * The model associated with the session.
      */
     readonly model: Session.IModel;
@@ -307,6 +312,21 @@ namespace Session {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
+     * The base url of the manager.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The base ws url of the manager.
+     */
+    readonly wsUrl: string;
+
+    /**
+     * The default ajax settings for the manager.
+     */
+    ajaxSettings?: IAjaxSettings;
+
+    /**
      * Get the most recent specs from the server.
      *
      * #### Notes
@@ -323,43 +343,71 @@ namespace Session {
     running(): IIterator<IModel>;
 
     /**
-     * Get the available kernel specs.
-     *
-     * #### Notes
-     * This will emit a [[specsChange]] signal if the value
-     * has changed since the last fetch.
+     * Trigger an update of the available kernel specs.
      */
-    updateSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
+    updateSpecs(): void;
 
     /**
      * Trigger a refresh of the running sessions.
      */
-    refresh(options?: IOptions): void;
+    refresh(): void;
 
     /**
      * Start a new session.
+     *
+     * @param options - The session options to use.
+     *
+     * @returns A promise that resolves with the session instance.
+     *
+     * #### Notes
+     * The baseUrl and wsUrl of the options will be forced
+     * to the ones used by the manager. The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     startNew(options: IOptions): Promise<ISession>;
 
     /**
      * Find a session by id.
+     *
+     * @param id - The id of the target session.
+     *
+     * @returns A promise that resolves with the session's model.
      */
-    findById(id: string, options?: IOptions): Promise<IModel>;
+    findById(id: string): Promise<IModel>;
 
     /**
      * Find a session by path.
+     *
+     * @param path - The path of the target session.
+     *
+     * @returns A promise that resolves with the session's model.
      */
-    findByPath(path: string, options?: IOptions): Promise<IModel>;
+    findByPath(path: string): Promise<IModel>;
 
     /**
      * Connect to a running session.
+     *
+     * @param id - The id of the target session.
+     *
+     * @param options - The session options to use.
+     *
+     * @returns A promise that resolves with the new session instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager.  The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     connectTo(id: string, options?: IOptions): Promise<ISession>;
 
     /**
      * Shut down a session by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves when the operation is complete.
      */
-    shutdown(id: string, options?: IOptions): Promise<void>;
+    shutdown(id: string): Promise<void>;
   }
 
   /**
