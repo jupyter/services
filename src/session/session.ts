@@ -291,9 +291,8 @@ namespace Session {
    * Object which manages session instances.
    *
    * #### Notes
-   * The manager is responsible for keeping the list of running sessions
-   * up to date as sessions are started or shut down, and emitting
-   * the [[runningChanged]] signal when the list changes.
+   * The manager is responsible for maintaining the state of running
+   * sessions and the initial fetch of kernel specs.
    */
   export
   interface IManager extends IDisposable {
@@ -309,11 +308,15 @@ namespace Session {
 
     /**
      * Get the most recent specs from the server.
+     *
+     * #### Notes
+     * This will be `null` until the specs are fetched from
+     * the server.
      */
     readonly specs: Kernel.ISpecModels | null;
 
     /**
-     * Create an iterator over the most recent running sessions.
+     * Create an iterator over the known running sessions.
      *
      * @returns A new iterator over the running sessions.
      */
@@ -326,16 +329,12 @@ namespace Session {
      * This will emit a [[specsChange]] signal if the value
      * has changed since the last fetch.
      */
-    getSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
+    updateSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
 
-    /*
-     * Get the running sessions.
-     *
-     * #### Notes
-     * This will emit a [[runningChanged]] signal if the value
-     * has changed since the last fetch.
+    /**
+     * Trigger a refresh of the running sessions.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    refresh(options?: IOptions): void;
 
     /**
      * Start a new session.

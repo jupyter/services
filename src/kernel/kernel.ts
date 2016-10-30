@@ -93,19 +93,14 @@ namespace Kernel {
     readonly clientId: string;
 
     /**
+     * The Ajax settings used for server requests.
+     */
+    ajaxSettings: IAjaxSettings;
+
+    /**
      * The current status of the kernel.
      */
     readonly status: Kernel.Status;
-
-    /**
-     * The base url of the kernel.
-     */
-    readonly baseUrl: string;
-
-    /**
-     * The url to access websockets, if different from baseUrl.
-     */
-    wsUrl?: string;
 
     /**
      * A promise that resolves with a cached kernel info.
@@ -338,11 +333,6 @@ namespace Kernel {
      * See also [[IFuture.registerMessageHook]].
      */
     registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
-
-    /**
-     * Optional default settings for ajax requests, if applicable.
-     */
-    ajaxSettings?: IAjaxSettings;
   }
 
   /**
@@ -473,9 +463,8 @@ namespace Kernel {
    * Object which manages kernel instances.
    *
    * #### Notes
-   * The manager is responsible for keeping the list of running kernels
-   * up to date as kernels are started or shut down, and emitting
-   * the [[runningChanged]] signal when the list changes.
+   * The manager is responsible for maintaining the state of running
+   * kernels and the initial fetch of kernel specs.
    */
   export
   interface IManager extends IDisposable {
@@ -490,34 +479,30 @@ namespace Kernel {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
-     * Get the most recent specs from the server.
+     * Get the kernel specs.
+     *
+     * #### Notes
+     * This will be `null` until the specs are fetched from
+     * the server.
      */
     readonly specs: ISpecModels | null;
 
     /**
-     * Create an iterator over the most recent running kernels.
+     * Create an iterator over the known running kernels.
      *
      * @returns A new iterator over the running kernels.
      */
     running(): IIterator<IModel>;
 
     /**
-     * Get the available kernel specs.
-     *
-     * #### Notes
-     * This will emit a [[specsChanged]] signal if the value
-     * has changed since the last fetch.
+     * Force an update of the available kernel specs.
      */
-    getSpecs(options?: IOptions): Promise<ISpecModels>;
+    updateSpecs(options?: IOptions): void;
 
     /**
-     * Get a list of running kernels.
-     *
-     * #### Notes
-     * This will emit a [[runningChanged]] signal if the value
-     * has changed since the last fetch.
+     * Trigger a refresh of the running kernels.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    refresh(options?: IOptions): void;
 
     /**
      * Start a new kernel.

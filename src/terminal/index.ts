@@ -58,6 +58,21 @@ namespace TerminalSession {
     readonly name: string;
 
     /**
+     * The model associated with the session.
+     */
+    readonly model: TerminalSession.IModel;
+
+    /**
+     * The base url of the server.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The Ajax settings used for server requests.
+     */
+    ajaxSettings: utils.IAjaxSettings;
+
+    /**
      * Send a message to the terminal session.
      */
     send(message: TerminalSession.IMessage): void;
@@ -146,9 +161,8 @@ namespace TerminalSession {
    * The interface for a terminal manager.
    *
    * #### Notes
-   * The manager is responsible for keeping the list of running sessions
-   * up to date as sessions are created or shut down, and emitting
-   * the [[runningChanged]] signal when the list changes.
+   * The manager is responsible for maintaining the state of running
+   * terminal sessions.
    */
   export
   interface IManager extends IDisposable {
@@ -158,7 +172,7 @@ namespace TerminalSession {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
-     * Create an iterator over the most recent running terminals.
+     * Create an iterator over the known running terminals.
      *
      * @returns A new iterator over the running terminals.
      */
@@ -180,12 +194,12 @@ namespace TerminalSession {
      * This will emit [[runningChanged]] if the running terminals list
      * changes.
      */
-    shutdown(name: string): Promise<void>;
+    shutdown(name: string, options?: TerminalSession.IOptions): Promise<void>;
 
     /**
-     * Get the list of models for the terminals running on the server.
+     * Force a refresh of the running terminals.
      */
-    listRunning(): Promise<IModel[]>;
+    refresh(options?: TerminalSession.IOptions): void;
   }
 }
 

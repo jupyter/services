@@ -10,16 +10,8 @@ import {
 } from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
-
-import {
   Contents, ContentsManager
 } from './contents';
-
-import {
-  KernelManager, Kernel
-} from './kernel';
 
 import {
   Session, SessionManager
@@ -46,19 +38,10 @@ class ServiceManager implements ServiceManager.IManager {
     options = options || {};
     options.baseUrl = options.baseUrl || getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
-    this._kernelManager = new KernelManager(options);
-    this._kernelManager.getSpecs();
     this._sessionManager = new SessionManager(options);
     this._contentsManager = new ContentsManager(options);
     this._terminalManager = new TerminalManager(options);
-    this._kernelManager.specsChanged.connect(this._onSpecsChanged, this);
-    this._sessionManager.specsChanged.connect(this._onSpecsChanged, this);
   }
-
-  /**
-   * A signal emitted when the specs change on the service manager.
-   */
-  specsChanged: ISignal<this, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
@@ -75,25 +58,9 @@ class ServiceManager implements ServiceManager.IManager {
       return;
     }
     this._isDisposed = true;
-    this._kernelManager.dispose();
     this._sessionManager.dispose();
     this._contentsManager.dispose();
     this._sessionManager.dispose();
-    clearSignalData(this);
-  }
-
-  /**
-   * Get kernel specs.
-   */
-  get kernelspecs(): Kernel.ISpecModels | null {
-    return this._kernelspecs;
-  }
-
-  /**
-   * Get kernel manager instance.
-   */
-  get kernels(): KernelManager {
-    return this._kernelManager;
   }
 
   /**
@@ -117,19 +84,9 @@ class ServiceManager implements ServiceManager.IManager {
     return this._terminalManager;
   }
 
-  /**
-   * Handle a change in kernel specs.
-   */
-  private _onSpecsChanged(sender: any, args: Kernel.ISpecModels): void {
-    this._kernelspecs = args;
-    this.specsChanged.emit(args);
-  }
-
-  private _kernelManager: KernelManager = null;
   private _sessionManager: SessionManager = null;
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
-  private _kernelspecs: Kernel.ISpecModels = null;
   private _isDisposed = false;
 }
 
@@ -145,21 +102,6 @@ namespace ServiceManager {
   export
   interface IManager extends IDisposable {
     /**
-     * A signal emitted when the specs change on the service manager.
-     */
-    specsChanged: ISignal<IManager, Kernel.ISpecModels>;
-
-    /**
-     * The kernel specs for the manager.
-     */
-    readonly kernelspecs: Kernel.ISpecModels;
-
-    /**
-     * The kernel manager for the manager.
-     */
-    readonly kernels: Kernel.IManager;
-
-    /**
      * The session manager for the manager.
      */
     readonly sessions: Session.IManager;
@@ -174,6 +116,7 @@ namespace ServiceManager {
      */
     readonly terminals: TerminalSession.IManager;
   }
+
   /**
    * The options used to create a service manager.
    */
@@ -190,7 +133,3 @@ namespace ServiceManager {
     ajaxSettings?: IAjaxSettings;
   }
 }
-
-
-// Define the signals for the `ServiceManager` class.
-defineSignal(ServiceManager.prototype, 'specsChanged');
