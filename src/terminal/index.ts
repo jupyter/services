@@ -92,8 +92,12 @@ namespace TerminalSession {
    */
   export
   function open(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    if (options.name && options.name in Private.running) {
-      return Private.running[options.name];
+    options.baseUrl = options.baseUrl || utils.getBaseUrl();
+    if (options.name) {
+      let url = Private.getTermUrl(options.baseUrl, options.name);
+      if (url in Private.running) {
+        return Private.running[url];
+      }
     }
     return new DefaultTerminalSession(options).connect();
   }
@@ -196,16 +200,11 @@ namespace TerminalSession {
     /**
      * Create a new terminal session or connect to an existing session.
      *
-     * @param options - The terminal session options to use.
+     * @param name - The terminal session name to connect to.
      *
      * @returns A promise that resolves with the terminal instance.
-     *
-     * #### Notes
-     * If options are given, the baseUrl and wsUrl will be forced
-     * to the ones used by the manager.  The ajaxSettings of the manager
-     * will be used unless overridden.
      */
-    create(options?: TerminalSession.IOptions): Promise<TerminalSession.ISession>;
+    open(name?: string): Promise<TerminalSession.ISession>;
 
     /**
      * Shut down a terminal session by name.
@@ -231,7 +230,8 @@ class TerminalManager implements TerminalSession.IManager {
   constructor(options: TerminalManager.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._ajaxSettings = utils.copy(options.ajaxSettings || {});
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
     this._scheduleUpdate();
   }
 
@@ -245,6 +245,34 @@ class TerminalManager implements TerminalSession.IManager {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  /**
+   * The base url of the manager.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
+   * The base ws url of the manager.
+   */
+  get wsUrl(): string {
+    return this._wsUrl;
+  }
+
+  /**
+   * The default ajax settings for the manager.
+   */
+  get ajaxSettings(): IAjaxSettings {
+    return JSON.parse(this._ajaxSettings);
+  }
+
+  /**
+   * Set the default ajax settings for the manager.
+   */
+  set ajaxSettings(value: IAjaxSettings) {
+    this._ajaxSettings = JSON.stringify(value);
   }
 
   /**
@@ -273,10 +301,13 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Create a new terminal session or connect to an existing session.
    */
-  create(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    options.baseUrl = options.baseUrl || this._baseUrl;
-    options.wsUrl = options.wsUrl || this._wsUrl;
-    options.ajaxSettings = this.ajaxSettings;
+  open(name?: string): Promise<TerminalSession.ISession> {
+    let options = {
+      name,
+      baseUrl: this._baseUrl,
+      wsUrl: this._wsUrl,
+      ajaxSettings: this.ajaxSettings
+    };
     return TerminalSession.open(options).then(session => {
       this._scheduleUpdate();
       session.terminated.connect(() => {
@@ -289,10 +320,9 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Shut down a terminal session by name.
    */
-  shutdown(name: string, options: TerminalSession.IOptions = {}): Promise<void> {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL, name);
-    let ajaxSettings = (utils.copy(options.ajaxSettings) as IAjaxSettings) ||
-                        this.ajaxSettings);
+  shutdown(name: string): Promise<void> {
+    let url = Private.getTermUrl(this._baseUrl, name);
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -300,8 +330,8 @@ class TerminalManager implements TerminalSession.IManager {
         return utils.makeAjaxError(success);
       }
       this._scheduleUpdate();
-      if (name in Private.running) {
-        Private.running[name].then(session => {
+      if (url in Private.running) {
+        Private.running[url].then(session => {
           session.terminated.emit(void 0);
           session.dispose();
         });
@@ -312,12 +342,14 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Force a refresh of the running terminals.
    */
-  refresh(options: TerminalSession.IOptions = {}): void {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
-    let ajaxSettings = (utils.copy(options.ajaxSettings) as IAjaxSettings) ||
-                        this.ajaxSettings);
+  refresh(): Promise<void> {
+    let url = Private.getBaseUrl(this._baseUrl);
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
+
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
@@ -329,10 +361,12 @@ class TerminalManager implements TerminalSession.IManager {
       }
       if (!deepEqual(data, this._running)) {
         this._running = data;
-        let names = toArray(map(data, item => item.name));
-        each(Object.keys(Private.running), name => {
-          if (names.indexOf(name) !== -1) {
-            Private.running[name].then(session => {
+        let urls = toArray(map(data, item => {
+          return utils.urlPathJoin(url, item.name);
+        }));
+        each(Object.keys(Private.running), runningUrl => {
+          if (urls.indexOf(runningUrl) !== -1) {
+            Private.running[runningUrl].then(session => {
               session.terminated.emit(void 0);
               session.dispose();
             });
@@ -340,12 +374,13 @@ class TerminalManager implements TerminalSession.IManager {
         });
         this.runningChanged.emit(data);
       }
-      clearTimeout(this._updateTimer);
-      clearTimeout(this._refreshTimer);
+      // Throttle the next request.
+      if (this._updateTimer !== -1) {
+        this._scheduleUpdate();
+      }
       this._refreshTimer = setTimeout(() => {
         this.refresh();
       }, 10000);
-      return data;
     });
   }
 
@@ -363,7 +398,7 @@ class TerminalManager implements TerminalSession.IManager {
 
   private _baseUrl = '';
   private _wsUrl = '';
-  private _ajaxSettings: utils.IAjaxSettings = null;
+  private _ajaxSettings = '';
   private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
   private _updateTimer = -1;
@@ -409,7 +444,8 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   constructor(options: TerminalSession.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    this.ajaxSettings = options.ajaxSettings || {};
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
     this._name = options.name;
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._promise = new utils.PromiseDelegate<TerminalSession.ISession>();
@@ -437,6 +473,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   get model(): TerminalSession.IModel {
     return { name: this._name };
+  }
+
+  /**
+   * The base url of the terminal.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
   }
 
   /**
@@ -490,7 +533,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Shut down the terminal session.
    */
   shutdown(): Promise<void> {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL, this._name);
+    let url = Private.getTermUrl(this._baseUrl, this._name);
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
 
@@ -520,8 +563,8 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Get a name for the terminal from the server.
    */
   private _getName(): Promise<string> {
-    let url = utils.urlPathJoin(this._baseUrl, TERMINAL_SERVICE_URL);
-    let ajaxSettings = this._ajaxSettings;
+    let url = Private.getBaseUrl(this._baseUrl);
+    let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
 
@@ -539,8 +582,8 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _initializeSocket(): Promise<TerminalSession.ISession> {
     let name = this._name;
     Private.running[name] = this._promise.promise;
-    this._url = `${this._wsUrl}terminals/websocket/${name}`;
-    this._ws = new WebSocket(this._url);
+    let wsUrl = utils.urlPathJoin(this._wsUrl, `terminals/websocket/${name}`);
+    this._ws = new WebSocket(wsUrl);
 
     this._ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data) as JSONPrimitive[];
@@ -560,7 +603,6 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _name: string;
   private _baseUrl: string;
   private _wsUrl: string;
-  private _url: string;
   private _ajaxSettings = '';
   private _ws: WebSocket = null;
   private _isDisposed = false;
@@ -582,8 +624,24 @@ defineSignal(DefaultTerminalSession.prototype, 'messageReceived');
  */
 namespace Private {
   /**
-   * A mapping of running terminals by name.
+   * A mapping of running terminals by url.
    */
   export
   var running: { [key: string]: Promise<TerminalSession.ISession> } = Object.create(null);
+
+  /**
+   * Get the url for a terminal.
+   */
+  export
+  function getTermUrl(baseUrl: string, name: string): string {
+    return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL, name);
+  }
+
+  /**
+   * Get the base url.
+   */
+  export
+  function getBaseUrl(baseUrl): string {
+    return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL);
+  }
 }
