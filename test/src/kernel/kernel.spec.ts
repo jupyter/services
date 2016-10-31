@@ -23,7 +23,7 @@ import {
   ajaxSettings, doLater, expectFailure, expectAjaxError,
   KernelTester,
   KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
-  PYTHON_SPEC
+  PYTHON_SPEC, KERNELSPECS
 } from '../utils';
 
 
@@ -534,7 +534,7 @@ describe('kernel', () => {
 
       it('should be set after calling getSpec', (done) => {
         tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
+          tester.respond(200, KERNELSPECS);
         };
         return kernel.spec().then(spec => {
           expect(spec.language).to.be('python');

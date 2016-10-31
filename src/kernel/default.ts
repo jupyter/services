@@ -204,7 +204,7 @@ class DefaultKernel implements Kernel.IKernel {
       ajaxSettings: this.ajaxSettings
     };
     return Private.getSpecs(options).then(value => {
-      return value[this._name];
+      return value.kernelspecs[this._name];
     });
   }
 
