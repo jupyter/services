@@ -12,7 +12,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  TerminalSession, TerminalManager
+  TerminalSession
 } from '../../../lib/terminal';
 
 import {
@@ -98,127 +98,7 @@ describe('terminals', () => {
 
   });
 
-  describe('TerminalManager', () => {
-
-    describe('#constructor()', () => {
-
-      it('should accept no options', () => {
-        let manager = new TerminalManager();
-        expect(manager).to.be.a(TerminalManager);
-        manager.dispose();
-      });
-
-      it('should accept options', () => {
-        let manager = new TerminalManager({
-          baseUrl: 'foo',
-          wsUrl: 'bar',
-          ajaxSettings: {}
-        });
-        expect(manager).to.be.a(TerminalManager);
-        manager.dispose();
-      });
-
-      it('should trigger a running changed signal', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        let manager = new TerminalManager();
-        manager.runningChanged.connect(() => {
-          manager.dispose();
-          done();
-        });
-      });
-
-    });
-
-    describe('#running()', () => {
-
-      it('should give an iterator over the list of running models', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        let manager = new TerminalManager();
-        expect(manager.running().next()).to.be(void 0);
-        manager.runningChanged.connect(() => {
-          expect(toArray(manager.running())).to.eql(data);
-          manager.dispose();
-          done();
-        });
-      });
-
-    });
-
-    describe('#startNew()', () => {
-
-      it('should startNew a new terminal session', (done) => {
-        let manager = new TerminalManager();
-        tester.onRequest = () => {
-          tester.respond(200, { name: '1' });
-        };
-        manager.startNew().then(s => {
-          session = s;
-          expect(session.name).to.be('1');
-          done();
-        }).catch(done);
-      });
-
-    });
-
-    describe('#shutdown()', () => {
-
-      it('should shut down a terminal session by name', (done) => {
-        let manager = new TerminalManager();
-        manager.startNew().then(s => {
-          tester.onRequest = () => {
-            tester.respond(204, {});
-          };
-          session = s;
-          return manager.shutdown(s.name);
-        }).then(() => {
-          done();
-        }).catch(done);
-      });
-
-    });
-
-    describe('#runningChanged', () => {
-
-      it('should be emitted when the running terminals changed', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        let manager = new TerminalManager();
-        manager.runningChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), data)).to.be(true);
-          done();
-        });
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-      });
-
-    });
-
-    describe('#refreshRunning()', () => {
-
-      it('should list the running session models', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        let manager = new TerminalManager();
-        manager.refreshRunning().then(models => {
-          expect(deepEqual(data, toArray(models))).to.be(true);
-          done();
-        }).catch(done);
-      });
-
-    });
-
-  });
-
-  describe('TerminalSession.ISession', () => {
+  describe('.ISession', () => {
 
     beforeEach((done) => {
       TerminalSession.startNew().then(s => {
