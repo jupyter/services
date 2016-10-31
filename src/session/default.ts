@@ -361,7 +361,7 @@ class DefaultSession implements Session.ISession {
 }
 
 
-// Define the signals for the `Session` class.
+// Define the signals for the `DefaultSession` class.
 defineSignal(DefaultSession.prototype, 'terminated');
 defineSignal(DefaultSession.prototype, 'kernelChanged');
 defineSignal(DefaultSession.prototype, 'statusChanged');

@@ -148,6 +148,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     }
     if (this._name) {
       this._promise = this._initializeSocket();
+      return this._promise;
     }
     this._promise = this._getName().then(value => {
       this._name = value;
