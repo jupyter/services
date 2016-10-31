@@ -35,7 +35,7 @@ class KernelManager implements Kernel.IManager {
    *
    * @param options - The default options for kernel.
    */
-  constructor(options?: Kernel.IOptions) {
+  constructor(options: Kernel.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     options.ajaxSettings = options.ajaxSettings || {};
