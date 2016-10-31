@@ -53,11 +53,11 @@ class DefaultSession implements Session.ISession {
    * Construct a new session.
    */
   constructor(options: Session.IOptions, id: string, kernel: Kernel.IKernel) {
-    this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);

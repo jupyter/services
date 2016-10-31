@@ -41,8 +41,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   constructor(name: string, options: TerminalSession.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    options.ajaxSettings = options.ajaxSettings || {};
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
   }
 

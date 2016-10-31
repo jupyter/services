@@ -38,8 +38,7 @@ class KernelManager implements Kernel.IManager {
   constructor(options: Kernel.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    options.ajaxSettings = options.ajaxSettings || {};
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     this._scheduleUpdate();
   }
 

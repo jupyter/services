@@ -79,8 +79,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._id = id;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    options.ajaxSettings = options.ajaxSettings || {};
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
@@ -229,7 +228,6 @@ class DefaultKernel implements Kernel.IKernel {
     if (this.isDisposed) {
       return;
     }
-
     this._status = 'dead';
     if (this._ws !== null) {
       this._ws.close();
@@ -246,6 +244,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._comms = null;
     this._targetRegistry = null;
     Private.runningKernels.remove(this);
+    clearSignalData(this);
   }
 
   /**
