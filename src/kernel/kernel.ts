@@ -521,8 +521,14 @@ namespace Kernel {
 
     /**
      * Trigger a refresh of the running kernels.
+     *
+     * @returns A promise that resolves when the refresh is complete.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
      */
-    refresh(): void;
+    refresh(): Promise<void>;
 
     /**
      * Start a new kernel.

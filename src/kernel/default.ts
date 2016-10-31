@@ -153,6 +153,13 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
+   * The base url of the kernel.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
    * Get a copy of the default ajax settings for the kernel.
    */
   get ajaxSettings(): IAjaxSettings {
