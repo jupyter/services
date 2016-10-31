@@ -12,7 +12,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  uuid
+  uuid, getBaseUrl
 } from '../../../lib/utils';
 
 import {
@@ -452,6 +452,14 @@ describe('kernel', () => {
 
       it('should be a string', () => {
         expect(typeof kernel.username).to.be('string');
+      });
+
+    });
+
+    context('#baseUrl', () => {
+
+      it('should be the base url of the server', () => {
+        expect(kernel.baseUrl).to.be(getBaseUrl());
       });
 
     });

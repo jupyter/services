@@ -16,6 +16,10 @@ import {
 } from '../../../lib/terminal';
 
 import {
+  getBaseUrl
+} from '../../../lib/utils';
+
+import {
   TerminalTester
 } from '../utils';
 
@@ -153,6 +157,14 @@ describe('terminals', () => {
           expect(session.name).to.be('foo');
           done();
         }).catch(done);
+      });
+
+    });
+
+    context('#baseUrl', () => {
+
+      it('should be the base url of the server', () => {
+        expect(session.baseUrl).to.be(getBaseUrl());
       });
 
     });

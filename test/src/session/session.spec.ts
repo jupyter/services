@@ -8,7 +8,7 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  uuid, IAjaxError
+  IAjaxError, getBaseUrl, uuid
 } from '../../../lib/utils';
 
 import {
@@ -43,9 +43,7 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
   sessionModel = sessionModel || createSessionModel();
   return {
     path: sessionModel.notebook.path,
-    kernelName: sessionModel.kernel.name,
-    baseUrl: 'http://localhost:8888',
-    wsUrl: 'ws://localhost:8888'
+    kernelName: sessionModel.kernel.name
   };
 }
 
@@ -573,6 +571,14 @@ describe('session', () => {
       it('should be a delegate to the kernel status', () => {
         expect(session.status).to.be(session.kernel.status);
       });
+    });
+
+    context('#baseUrl', () => {
+
+      it('should be the base url of the server', () => {
+        expect(session.baseUrl).to.be(getBaseUrl());
+      });
+
     });
 
     context('#isDisposed', () => {
