@@ -150,11 +150,6 @@ namespace TerminalSession {
   export
   interface IOptions extends JSONObject {
     /**
-     * The name of the terminal session.
-     */
-    name?: string;
-
-    /**
      * The base url.
      */
     baseUrl?: string;
@@ -242,8 +237,7 @@ namespace TerminalSession {
     /**
      * Create a new terminal session.
      *
-     * @param ajaxSettings - The ajaxSettings to use, overrides manager
-     *   settings.
+     * @param options - The options used to create the session.
      *
      * @returns A promise that resolves with the terminal instance.
      *

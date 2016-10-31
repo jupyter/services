@@ -39,7 +39,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   /**
    * Construct a new terminal session.
    */
-  constructor(options: TerminalSession.IOptions = {}) {
+  constructor(name: string, options: TerminalSession.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._ajaxSettings = JSON.stringify(options.ajaxSettings);
@@ -110,7 +110,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       this._ws.close();
       this._ws = null;
     }
-    delete Private.running[this._name];
+    delete Private.running[this._url];
     this._promise = null;
     clearSignalData(this);
   }
@@ -128,11 +128,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Shut down the terminal session.
    */
   shutdown(): Promise<void> {
-    let url = Private.getTermUrl(this._baseUrl, this._name);
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'DELETE';
 
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
@@ -180,7 +179,8 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   private _initializeSocket(): Promise<TerminalSession.ISession> {
     let name = this._name;
-    Private.running[name] = this;
+    this._url = Private.getTermUrl(this._baseUrl, this._name);
+    Private.running[this._url] = this;
     let wsUrl = utils.urlPathJoin(this._wsUrl, `terminals/websocket/${name}`);
     this._ws = new WebSocket(wsUrl);
 
@@ -205,6 +205,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _name: string;
   private _baseUrl: string;
   private _wsUrl: string;
+  private _url: string;
   private _ajaxSettings = '';
   private _ws: WebSocket = null;
   private _isDisposed = false;
@@ -224,7 +225,7 @@ namespace DefaultTerminalSession {
    */
   export
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    return new DefaultTerminalSession(options).connect();
+    return new DefaultTerminalSession('', options).connect();
   }
 
   /*
@@ -255,8 +256,7 @@ namespace DefaultTerminalSession {
     if (url in Private.running) {
       return Private.running[url].connect();
     }
-    options.name = name;
-    return new DefaultTerminalSession(options).connect();
+    return new DefaultTerminalSession(name, options).connect();
   }
 
   /**
@@ -292,6 +292,7 @@ namespace DefaultTerminalSession {
           session.dispose();
         }
       });
+      return data;
     });
   }
 

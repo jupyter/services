@@ -43,15 +43,19 @@ describe('terminals', () => {
       it('should startNew a terminal session', (done) => {
         TerminalSession.startNew().then(s => {
           session = s;
-          expect(session.name).to.be('1');
+          expect(session.name).to.be.ok();
           done();
         }).catch(done);
       });
 
+    });
+
+    describe('.connectTo', () => {
+
       it('should give back an existing session', (done) => {
-        TerminalSession.startNew({ name: 'foo' }).then(s => {
+        TerminalSession.startNew().then(s => {
           session = s;
-          return TerminalSession.startNew({ name: 'foo' }).then(newSession => {
+          return TerminalSession.connectTo(s.name).then(newSession => {
             expect(newSession).to.be(session);
             done();
           });
@@ -64,12 +68,12 @@ describe('terminals', () => {
     describe('.shutdown()', () => {
 
       it('should shut down a terminal session by name', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, {});
-        };
-        TerminalSession.startNew({ name: 'foo' }).then(s => {
+        TerminalSession.startNew().then(s => {
+          tester.onRequest = () => {
+            tester.respond(204, {});
+          };
           session = s;
-          return TerminalSession.shutdown('foo');
+          return TerminalSession.shutdown(s.name);
         }).then(() => {
           done();
         }).catch(done);
@@ -166,12 +170,12 @@ describe('terminals', () => {
 
       it('should shut down a terminal session by name', (done) => {
         let manager = new TerminalManager();
-        tester.onRequest = () => {
-          tester.respond(204, {});
-        };
-        manager.startNew({ name: 'foo' }).then(s => {
+        manager.startNew().then(s => {
+          tester.onRequest = () => {
+            tester.respond(204, {});
+          };
           session = s;
-          return manager.shutdown('foo');
+          return manager.shutdown(s.name);
         }).then(() => {
           done();
         }).catch(done);
@@ -261,7 +265,10 @@ describe('terminals', () => {
 
       it('should be the name of the session', (done) => {
         session.dispose();
-        TerminalSession.startNew({ name: 'foo' }).then(s => {
+        tester.onRequest = () => {
+          tester.respond(200, { name: 'foo' });
+        };
+        TerminalSession.startNew().then(s => {
           session = s;
           expect(session.name).to.be('foo');
           done();

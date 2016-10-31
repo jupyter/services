@@ -335,6 +335,7 @@ class TerminalTester extends RequestSocketTester {
   constructor(onRequest?: (request: any) => void) {
     super(onRequest);
     this.onRequest = (request) => {
+      debugger;
       let name = String(++this._count);
       this.respond(200, { name });
     };
