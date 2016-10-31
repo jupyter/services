@@ -118,6 +118,8 @@ namespace Session {
      *
      * @param path - The new session path.
      *
+     * @returns A promise that resolves when the session has renamed.
+     *
      * #### Notes
      * This uses the Jupyter REST API, and the response is validated.
      * The promise is fulfilled on a valid response and rejected otherwise.
@@ -129,6 +131,8 @@ namespace Session {
      *
      * @param options - The name or id of the new kernel.
      *
+     * @returns A promise that resolves with the new kernel model.
+     *
      * #### Notes
      * This shuts down the existing kernel and creates a new kernel,
      * keeping the existing session ID and path.
@@ -137,6 +141,8 @@ namespace Session {
 
     /**
      * Kill the kernel and shutdown the session.
+     *
+     * @returns A promise that resolves when the session is shut down.
      *
      * #### Notes
      * This uses the Jupyter REST API, and the response is validated.
@@ -147,6 +153,10 @@ namespace Session {
 
   /**
    * List the running sessions.
+   *
+   * @param options - The options used for the request.
+   *
+   * @returns A promise that resolves with the list of session models.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
@@ -162,6 +172,10 @@ namespace Session {
 
   /**
    * Start a new session.
+   *
+   * @param options - The options used to start the session.
+   *
+   * @returns A promise that resolves with the session instance.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
@@ -184,8 +198,14 @@ namespace Session {
   /**
    * Find a session by id.
    *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session model.
+   *
    * #### Notes
-   * If the session was already started via `startNewSession`, the existing
+   * If the session was already started via `startNew`, the existing
    * Session object's information is used in the fulfillment value.
    *
    * Otherwise, if `options` are given, we attempt to find to the existing
@@ -200,6 +220,12 @@ namespace Session {
 
   /**
    * Find a session by path.
+   *
+   * @param path - The path of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session model.
    *
    * #### Notes
    * If the session was already started via `startNewSession`, the existing
@@ -221,6 +247,12 @@ namespace Session {
   /**
    * Connect to a running session.
    *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session instance.
+   *
    * #### Notes
    * If the session was already started via `startNew`, the existing
    * Session object is used as the fulfillment value.
@@ -240,6 +272,13 @@ namespace Session {
 
   /**
    * Shut down a session by id.
+   *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves when the session is shut down.
+   *
    */
   export
   function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {

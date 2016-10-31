@@ -108,7 +108,9 @@ namespace Kernel {
     readonly status: Kernel.Status;
 
     /**
-     * A promise that resolves with a cached kernel info.
+     * Get the kernel info.
+     *
+     * @returns A promise that resolves with a cached kernel info.
      *
      * #### Notes
      * This value is cached when a kernel connection is made.
@@ -119,7 +121,9 @@ namespace Kernel {
     info(): Promise<KernelMessage.IInfoReply>;
 
     /**
-     * A promise that resolves with a cached kernel spec.
+     * Get the cached kernel spec.
+     *
+     * @returns A promise that resolves with a cached kernel spec.
      *
      * #### Notes
      * It will use the cached kernel spec models for this base url or
@@ -129,6 +133,12 @@ namespace Kernel {
 
     /**
      * Send a shell message to the kernel.
+     *
+     * @param msg - The fully formed shell message to send.
+     *
+     * @param expectReply - Whether to expect a shell reply message.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
      *
      * #### Notes
      * Send a message to the kernel's shell channel, yielding a future object
@@ -152,6 +162,8 @@ namespace Kernel {
     /**
      * Interrupt a kernel.
      *
+     * @returns A promise that resolves when the kernel has interrupted.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
      *
@@ -167,12 +179,12 @@ namespace Kernel {
     /**
      * Restart a kernel.
      *
+     * @returns A promise that resolves when the kernel has restarted.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
      *
      * Any existing Future or Comm objects are cleared.
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
      *
      * It is assumed that the API call does not mutate the kernel id or name.
      *
@@ -182,19 +194,24 @@ namespace Kernel {
     restart(): Promise<void>;
 
     /**
-     * Reconnect to a disconnected kernel. This is not actually a
-     * standard HTTP request, but useful function nonetheless for
-     * reconnecting to the kernel if the connection is somehow lost.
+     * Reconnect to a disconnected kernel.
+     *
+     * @returns A promise that resolves when the kernel has reconnected.
+     *
+     * #### Notes
+     * This is not actually a  standard HTTP request, but useful function
+     * nonetheless for reconnecting to the kernel if the connection is somehow
+     * lost.
      */
     reconnect(): Promise<void>;
 
     /**
      * Shutdown a kernel.
      *
+     * @returns A promise that resolves when the kernel has shut down.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
      *
      * On a valid response, closes the websocket and disposes of the kernel
      * object, and fulfills the promise.
@@ -210,6 +227,10 @@ namespace Kernel {
     /**
      * Send a `kernel_info_request` message.
      *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
+     *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
      *
@@ -220,6 +241,10 @@ namespace Kernel {
 
     /**
      * Send a `complete_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion).
@@ -232,6 +257,10 @@ namespace Kernel {
     /**
      * Send an `inspect_request` message.
      *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
+     *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection).
      *
@@ -243,6 +272,10 @@ namespace Kernel {
     /**
      * Send a `history_request` message.
      *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
+     *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#history).
      *
@@ -253,6 +286,12 @@ namespace Kernel {
 
     /**
      * Send an `execute_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute).
@@ -267,6 +306,10 @@ namespace Kernel {
     /**
      * Send an `is_complete_request` message.
      *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
+     *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness).
      *
@@ -277,6 +320,10 @@ namespace Kernel {
 
     /**
      * Send a `comm_info_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#comm_info).
@@ -289,6 +336,8 @@ namespace Kernel {
     /**
      * Send an `input_reply` message.
      *
+     * @param content - The content of the reply.
+     *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
      */
@@ -296,6 +345,12 @@ namespace Kernel {
 
     /**
      * Connect to a comm, or create a new one.
+     *
+     * @param targetName - The name of the comm target.
+     *
+     * @param id - The comm id.
+     *
+     * @returns A comm instance.
      *
      * #### Notes
      * If a client-side comm already exists, it is returned.
@@ -686,6 +741,12 @@ namespace Kernel {
     /**
      * Open a comm with optional data and metadata.
      *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @returns A future for the generated message.
+     *
      * #### Notes
      * This sends a `comm_open` message to the server.
      */
@@ -694,6 +755,16 @@ namespace Kernel {
     /**
      * Send a `comm_msg` message to the kernel.
      *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @param buffers - Optional buffer data.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
+     *
+     * @returns A future for the generated message.
+     *
      * #### Notes
      * This is a no-op if the comm has been closed.
      */
@@ -701,6 +772,12 @@ namespace Kernel {
 
     /**
      * Close the comm.
+     *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @returns A future for the generated message.
      *
      * #### Notes
      * This will send a `comm_close` message to the kernel, and call the
