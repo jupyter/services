@@ -222,7 +222,7 @@ namespace Session {
    * Connect to a running session.
    *
    * #### Notes
-   * If the session was already started via `startNewSession`, the existing
+   * If the session was already started via `startNew`, the existing
    * Session object is used as the fulfillment value.
    *
    * Otherwise, if `options` are given, we attempt to connect to the existing
@@ -349,8 +349,14 @@ namespace Session {
 
     /**
      * Trigger a refresh of the running sessions.
+     *
+     * @returns A promise that resolves when the refresh is complete.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
      */
-    refresh(): void;
+    refresh(): Promise<void>;
 
     /**
      * Start a new session.

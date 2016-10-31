@@ -143,6 +143,13 @@ class DefaultSession implements Session.ISession {
   }
 
   /**
+   * Get the base url of the session.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
    * Get a copy of the default ajax settings for the session.
    */
   get ajaxSettings(): IAjaxSettings {

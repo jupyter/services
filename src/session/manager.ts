@@ -36,7 +36,10 @@ class SessionManager implements Session.IManager {
    * @param options - The default options for each session.
    */
   constructor(options?: Session.IOptions) {
-    this._options = utils.copy(options || {});
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
     this._scheduleUpdate();
   }
 
@@ -79,6 +82,34 @@ class SessionManager implements Session.IManager {
   }
 
   /**
+   * The base url of the manager.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
+   * The base ws url of the manager.
+   */
+  get wsUrl(): string {
+    return this._wsUrl;
+  }
+
+  /**
+   * The default ajax settings for the manager.
+   */
+  get ajaxSettings(): IAjaxSettings {
+    return JSON.parse(this._ajaxSettings);
+  }
+
+  /**
+   * Set the default ajax settings for the manager.
+   */
+  set ajaxSettings(value: IAjaxSettings) {
+    this._ajaxSettings = JSON.stringify(value);
+  }
+
+  /**
    * Create an iterator over the most recent running sessions.
    *
    * @returns A new iterator over the running sessions.
@@ -108,13 +139,19 @@ class SessionManager implements Session.IManager {
    * @param options - Overrides for the default options.
    */
   listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
+
     return Session.listRunning(this._getOptions(options)).then(running => {
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
-      clearTimeout(this._updateTimer);
-      clearTimeout(this._refreshTimer);
+      // Throttle the next request.
+      if (this._updateTimer !== -1) {
+        this._scheduleUpdate();
+      }
       this._refreshTimer = setTimeout(() => {
         this.listRunning();
       }, 10000);
