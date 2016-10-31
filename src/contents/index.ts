@@ -209,6 +209,11 @@ namespace Contents {
   export
   interface IManager extends IDisposable {
     /**
+     * The base url of the manager.
+     */
+    readonly baseUrl: string;
+
+    /**
      * A signal emitted when a file operation takes place.
      */
     fileChanged: ISignal<IManager, IChangedArgs>;
@@ -375,6 +380,13 @@ class ContentsManager implements Contents.IManager {
     }
     this._isDisposed = true;
     clearSignalData(this);
+  }
+
+  /**
+   * Get the base url of the manager.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
   }
 
   /**

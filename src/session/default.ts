@@ -337,13 +337,13 @@ class DefaultSession implements Session.ISession {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as Session.IModel;
+      let value = success.data as Session.IModel;
       try {
-        validate.validateModel(data);
+        validate.validateModel(value);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return Private.updateByModel(data);
+      return Private.updateFromServer(value);
     }, error => {
       this._updating = false;
       return Private.onSessionError(error);
@@ -574,7 +574,7 @@ namespace Private {
         return utils.makeAjaxError(success, err.message);
       }
       let data = success.data as Session.IModel;
-      return updateByModel(data);
+      return updateFromServer(data);
     }, onSessionError);
   }
 
@@ -633,7 +633,7 @@ namespace Private {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return updateByModel(data);
+      return updateFromServer(data);
     }, Private.onSessionError);
   }
 
@@ -663,7 +663,7 @@ namespace Private {
    * Update the running sessions given an updated session Id.
    */
   export
-  function updateByModel(model: Session.IModel): Promise<Session.IModel> {
+  function updateFromServer(model: Session.IModel): Promise<Session.IModel> {
     let promises: Promise<void>[] = [];
     each(runningSessions, session => {
       if (session.id === model.id) {

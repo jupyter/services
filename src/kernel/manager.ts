@@ -17,6 +17,10 @@ import * as utils
   from '../utils';
 
 import {
+  IAjaxSettings
+} from '../utils';
+
+import {
   Kernel
 } from './kernel';
 
@@ -32,7 +36,10 @@ class KernelManager implements Kernel.IManager {
    * @param options - The default options for kernel.
    */
   constructor(options?: Kernel.IOptions) {
-    this._options = utils.copy(options || {});
+    this._baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
     this._scheduleUpdate();
   }
 
@@ -69,6 +76,34 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
+   * Get the base url of the manager.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
+   * Get the ws url of the manager.
+   */
+  get wsUrl(): string {
+    return this._wsUrl;
+  }
+
+  /**
+   * The default ajax settings for the manager.
+   */
+  get ajaxSettings(): IAjaxSettings {
+    return JSON.parse(this._ajaxSettings);
+  }
+
+  /**
+   * Set the default ajax settings for the manager.
+   */
+  set ajaxSettings(value: IAjaxSettings) {
+    this._ajaxSettings = JSON.stringify(value);
+  }
+
+  /**
    * Get the most recent specs from the server.
    */
   get specs(): Kernel.ISpecModels {
@@ -85,12 +120,16 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * Get the kernel specs.  See also [[getKernelSpecs]].
+   * Force an update of the available kernel specs.
    *
-   * @param options - Overrides for the default options.
+   * @returns A promise that resolves with the kernel spec models.
+   *
+   * #### Notes
+   * This is only meant to be called by the user if the kernel specs
+   * are known to have changed on disk.
    */
-  getSpecs(options?: Kernel.IOptions): Promise<Kernel.ISpecModels> {
-    return Kernel.getSpecs(this._getOptions(options)).then(specs => {
+  updateSpecs(): Promise<Kernel.ISpecModels> {
+    return Kernel.getSpecs(this._getOptions()).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
@@ -100,20 +139,25 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * List the running kernels.  See also [[listRunningKernels]].
+   * Force a refresh of the running kernels.
    *
-   * @param options - Overrides for the default options.
+   * @returns A promise that with the list of running kernels.
+   *
+   * #### Notes
+   * This is not typically meant to be called by the user, since the
+   * manager maintains its own internal state.
    */
-  listRunning(options?: Kernel.IOptions): Promise<Kernel.IModel[]> {
-    return Kernel.listRunning(this._getOptions(options)).then(running => {
+  refreshRunning(): Promise<Kernel.IModel[]> {
+    clearTimeout(this._updateTimer);
+    clearTimeout(this._refreshTimer);
+
+    return Kernel.listRunning(this._getOptions()).then(running => {
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
-      clearTimeout(this._updateTimer);
-      clearTimeout(this._refreshTimer);
       this._refreshTimer = setTimeout(() => {
-        this.listRunning();
+        this.refreshRunning();
       }, 10000);
       return running;
     });
@@ -179,12 +223,10 @@ class KernelManager implements Kernel.IManager {
   /**
    * Get optionally overidden options.
    */
-  private _getOptions(options: Kernel.IOptions): Kernel.IOptions {
-    if (options) {
-      options = utils.extend(utils.copy(this._options), options);
-    } else {
-      options = this._options;
-    }
+  private _getOptions(options: Kernel.IOptions = {}): Kernel.IOptions {
+    options.baseUrl = this._baseUrl;
+    options.wsUrl = this._wsUrl;
+    options.ajaxSettings = options.ajaxSettings || this.ajaxSettings;
     return options;
   }
 
@@ -196,11 +238,13 @@ class KernelManager implements Kernel.IManager {
       return;
     }
     this._updateTimer = setTimeout(() => {
-      this.listRunning();
+      this.refreshRunning();
     }, 100);
   }
 
-  private _options: Kernel.IOptions = null;
+  private _baseUrl = '';
+  private _wsUrl = '';
+  private _ajaxSettings = '';
   private _running: Kernel.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;
   private _isDisposed = false;

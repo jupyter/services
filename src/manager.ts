@@ -22,7 +22,7 @@ import {
 } from './terminal';
 
 import {
-  IAjaxSettings, getBaseUrl
+  IAjaxSettings, getBaseUrl, getWsUrl
 } from './utils';
 
 
@@ -36,6 +36,7 @@ class ServiceManager implements ServiceManager.IManager {
    */
   constructor(options?: ServiceManager.IOptions) {
     options = options || {};
+    options.wsUrl = options.wsUrl || getWsUrl();
     options.baseUrl = options.baseUrl || getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._sessionManager = new SessionManager(options);
@@ -48,6 +49,13 @@ class ServiceManager implements ServiceManager.IManager {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  /**
+   * Get the base url of the server.
+   */
+  get baseUrl(): string {
+    return this._sessionManager.baseUrl;
   }
 
   /**
@@ -102,6 +110,11 @@ namespace ServiceManager {
   export
   interface IManager extends IDisposable {
     /**
+     * The base url of the manager.
+     */
+    readonly baseUrl: string;
+
+    /**
      * The session manager for the manager.
      */
     readonly sessions: Session.IManager;
@@ -126,6 +139,11 @@ namespace ServiceManager {
      * The base url of the server.
      */
     baseUrl?: string;
+
+    /**
+     * The base ws url of the server.
+     */
+    wsUrl?: string;
 
     /**
      * The ajax settings for the manager.

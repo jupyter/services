@@ -159,7 +159,7 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * Force a refresh of the running terminals.
    */
-  refreshRunning(): Promise<void> {
+  refreshRunning(): Promise<TerminalSession.IModel[]> {
     clearTimeout(this._updateTimer);
     clearTimeout(this._refreshTimer);
     return TerminalSession.listRunning(this._getOptions()).then(data => {
@@ -174,6 +174,7 @@ class TerminalManager implements TerminalSession.IManager {
       this._refreshTimer = setTimeout(() => {
         this.refreshRunning();
       }, 10000);
+      return data;
     });
   }
 

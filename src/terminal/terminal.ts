@@ -30,7 +30,7 @@ import {
 
 
 /**
- * The namespace for TerminalSession.ISession statics.
+ * The namespace for ISession statics.
  */
 export
 namespace TerminalSession {
@@ -252,7 +252,7 @@ namespace TerminalSession {
      * to the ones used by the manager. The ajaxSettings of the manager
      * will be used unless overridden.
      */
-    startNew(options?: TerminalSession.IOptions): Promise<TerminalSession.ISession>;
+    startNew(options?: IOptions): Promise<ISession>;
 
     /*
      * Connect to a running session.
@@ -269,7 +269,7 @@ namespace TerminalSession {
      * to the ones used by the manager. The ajaxSettings of the manager
      * will be used unless overridden.
      */
-    connectTo(name: string, options?: TerminalSession.IOptions): Promise<TerminalSession.ISession>;
+    connectTo(name: string, options?: IOptions): Promise<ISession>;
 
     /**
      * Shut down a terminal session by name.
@@ -281,14 +281,14 @@ namespace TerminalSession {
     shutdown(name: string): Promise<void>;
 
     /**
-     * Force a refresh of the running terminals.
+     * Force a refresh of the running terminal sessions.
      *
-     * @returns A promise that resolves when the refresh is complete.
+     * @returns A promise that resolves with the list of running sessions.
      *
      * #### Notes
      * This is not typically meant to be called by the user, since the
      * manager maintains its own internal state.
      */
-    refreshRunning(): Promise<void>;
+    refreshRunning(): Promise<IModel[]>;
   }
 }

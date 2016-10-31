@@ -21,6 +21,10 @@ import * as utils
   from '../utils';
 
 import {
+  IAjaxSettings
+} from '../utils';
+
+import {
   Session
 } from './session';
 
@@ -119,12 +123,20 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Get the available kernel specs. See also [[Kernel.getSpecs]].
+   * Force an update of the available kernel specs.
    *
-   * @param options - Overrides for the default options.
+   * @returns A promise that resolves with the kernel spec models.
+   *
+   * #### Notes
+   * This is only meant to be called by the user if the kernel specs
+   * are known to have changed on disk.
    */
-  getSpecs(options?: Session.IOptions): Promise<Kernel.ISpecModels> {
-    return Kernel.getSpecs(this._getOptions(options)).then(specs => {
+  updateSpecs(): Promise<Kernel.ISpecModels> {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
@@ -134,16 +146,20 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * List the running sessions.  See also [[listRunningSessions]].
+   * Force a refresh of the running sessions.
    *
-   * @param options - Overrides for the default options.
+   * @returns A promise that with the list of running sessions.
+   *
+   * #### Notes
+   * This is not typically meant to be called by the user, since the
+   * manager maintains its own internal state.
    */
-  listRunning(options?: Session.IOptions): Promise<Session.IModel[]> {
+  refreshRunning(): Promise<Session.IModel[]> {
 
     clearTimeout(this._updateTimer);
     clearTimeout(this._refreshTimer);
 
-    return Session.listRunning(this._getOptions(options)).then(running => {
+    return Session.listRunning(this._getOptions({})).then(running => {
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
         this.runningChanged.emit(running);
@@ -153,7 +169,7 @@ class SessionManager implements Session.IManager {
         this._scheduleUpdate();
       }
       this._refreshTimer = setTimeout(() => {
-        this.listRunning();
+        this.refreshRunning();
       }, 10000);
       return running;
     });
@@ -210,11 +226,9 @@ class SessionManager implements Session.IManager {
    * Get optionally overidden options.
    */
   private _getOptions(options: Session.IOptions): Session.IOptions {
-    if (options) {
-      options = utils.extend(utils.copy(this._options), options);
-    } else {
-      options = this._options;
-    }
+    options.baseUrl = this._baseUrl;
+    options.wsUrl = this._wsUrl;
+    options.ajaxSettings = options.ajaxSettings || this.ajaxSettings;
     return options;
   }
 
@@ -226,11 +240,13 @@ class SessionManager implements Session.IManager {
       return;
     }
     this._updateTimer = setTimeout(() => {
-      this.listRunning();
+      this.refreshRunning();
     }, 100);
   }
 
-  private _options: Session.IOptions = null;
+  private _baseUrl = '';
+  private _wsUrl = '';
+  private _ajaxSettings = '';
   private _isDisposed = false;
   private _running: Session.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;

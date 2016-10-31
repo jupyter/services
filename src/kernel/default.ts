@@ -197,7 +197,7 @@ class DefaultKernel implements Kernel.IKernel {
   spec(): Promise<Kernel.ISpecModel> {
     let promise = Private.specs[this._baseUrl];
     if (promise) {
-      return promise().then(specs => specs[this._name]);
+      return promise.then(specs => specs[this._name]);
     }
     let options = {
       baseUrl: this._baseUrl,
@@ -1130,6 +1130,7 @@ namespace Private {
       // If kernel is no longer running on disk, emit dead signal.
       if (!updated && kernel.status !== 'dead') {
         kernel.terminated.emit(void 0);
+        kernel.dispose();
       }
     });
     return kernels;

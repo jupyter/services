@@ -343,22 +343,6 @@ namespace Session {
     running(): IIterator<IModel>;
 
     /**
-     * Trigger an update of the available kernel specs.
-     */
-    updateSpecs(): void;
-
-    /**
-     * Trigger a refresh of the running sessions.
-     *
-     * @returns A promise that resolves when the refresh is complete.
-     *
-     * #### Notes
-     * This is not typically meant to be called by the user, since the
-     * manager maintains its own internal state.
-     */
-    refresh(): Promise<void>;
-
-    /**
      * Start a new session.
      *
      * @param options - The session options to use.
@@ -414,6 +398,28 @@ namespace Session {
      * @returns A promise that resolves when the operation is complete.
      */
     shutdown(id: string): Promise<void>;
+
+    /**
+     * Force an update of the available kernel specs.
+     *
+     * @returns A promise that resolves with the kernel spec models.
+     *
+     * #### Notes
+     * This is only meant to be called by the user if the kernel specs
+     * are known to have changed on disk.
+     */
+    updateSpecs(): Promise<Kernel.ISpecModels>;
+
+    /**
+     * Force a refresh of the running sessions.
+     *
+     * @returns A promise that with the list of running sessions.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
+     */
+    refreshRunning(): Promise<IModel[]>;
   }
 
   /**

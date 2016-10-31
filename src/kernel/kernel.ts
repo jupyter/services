@@ -515,20 +515,26 @@ namespace Kernel {
     running(): IIterator<IModel>;
 
     /**
-     * Trigger an update of the available kernel specs.
+     * Force an update of the available kernel specs.
+     *
+     * @returns A promise that resolves with the kernel spec models.
+     *
+     * #### Notes
+     * This is only meant to be called by the user if the kernel specs
+     * are known to have changed on disk.
      */
-    updateSpecs(): void;
+    updateSpecs(): Promise<ISpecModels>;
 
     /**
-     * Trigger a refresh of the running kernels.
+     * Force a refresh of the running kernels.
      *
-     * @returns A promise that resolves when the refresh is complete.
+     * @returns A promise that with the list of running kernels.
      *
      * #### Notes
      * This is not typically meant to be called by the user, since the
      * manager maintains its own internal state.
      */
-    refresh(): Promise<void>;
+    refreshRunning(): Promise<IModel[]>;
 
     /**
      * Start a new kernel.
