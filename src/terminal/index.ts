@@ -84,22 +84,47 @@ namespace TerminalSession {
   }
 
   /**
-   * Create a terminal session or connect to an existing session.
+   * Start a new terminal session.
    *
-   * #### Notes
-   * If the session is already running on the client, the existing
-   * instance will be returned.
+   * @options - The session options to use.
+   *
+   * @returns A promise that resolves with the session instance.
    */
   export
-  function open(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    options.baseUrl = options.baseUrl || utils.getBaseUrl();
-    if (options.name) {
-      let url = Private.getTermUrl(options.baseUrl, options.name);
-      if (url in Private.running) {
-        return Private.running[url];
-      }
-    }
+  function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     return new DefaultTerminalSession(options).connect();
+  }
+
+  /*
+   * Connect to a running session.
+   *
+   * @param name - The name of the target session.
+   *
+   * @param options - The session options to use.
+   *
+   * @returns A promise that resolves with the new session instance.
+   *
+   * #### Notes
+   * If the session was already started via `startNew`, the existing
+   * session object is used as the fulfillment value.
+   *
+   * Otherwise, if `options` are given, we attempt to connect to the existing
+   * session.
+   * The promise is fulfilled when the session is ready on the server,
+   * otherwise the promise is rejected.
+   *
+   * If the session was not already started and no `options` are given,
+   * the promise is rejected.
+   */
+  export
+  function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
+    options.baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = Private.getTermUrl(options.baseUrl, name);
+    if (url in Private.running) {
+      return Private.running[url];
+    }
+    let session = new DefaultTerminalSession(options);
+    return session.connect(name);
   }
 
   /**
@@ -107,11 +132,6 @@ namespace TerminalSession {
    */
   export
   interface IOptions extends JSONObject {
-    /**
-     * The name of the terminal.
-     */
-    name?: string;
-
     /**
      * The base url.
      */
@@ -198,13 +218,26 @@ namespace TerminalSession {
     running(): IIterator<IModel>;
 
     /**
-     * Create a new terminal session or connect to an existing session.
+     * Create a new terminal session.
      *
-     * @param name - The terminal session name to connect to.
+     * @param ajaxSettings - The ajaxSettings to use, overrides manager
+     *   settings.
      *
      * @returns A promise that resolves with the terminal instance.
      */
-    open(name?: string): Promise<TerminalSession.ISession>;
+    startNew(ajaxSettings?: IAjaxSettings): Promise<TerminalSession.ISession>;
+
+    /*
+     * Connect to a running session.
+     *
+     * @param name - The name of the target session.
+     *
+     * @param ajaxSettings - The ajaxSettings to use, overrides manager
+     *   settings.
+     *
+     * @returns A promise that resolves with the new session instance.
+     */
+    connectTo(name: string, ajaxSettings?: IAjaxSettings): Promise<TerminalSession.ISession>;
 
     /**
      * Shut down a terminal session by name.
@@ -213,8 +246,14 @@ namespace TerminalSession {
 
     /**
      * Force a refresh of the running terminals.
+     *
+     * @returns A promise that resolves when the refresh is complete.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
      */
-    refresh(): void;
+    refresh(): Promise<void>;
   }
 }
 
@@ -299,16 +338,39 @@ class TerminalManager implements TerminalSession.IManager {
   }
 
   /**
-   * Create a new terminal session or connect to an existing session.
+   * Create a new terminal session.
+   *
+   * @param ajaxSettings - The ajaxSettings to use, overrides manager
+   *   settings.
+   *
+   * @returns A promise that resolves with the terminal instance.
    */
-  open(name?: string): Promise<TerminalSession.ISession> {
+  startNew(ajaxSettings?: IAjaxSettings): Promise<TerminalSession.ISession> {
     let options = {
-      name,
       baseUrl: this._baseUrl,
       wsUrl: this._wsUrl,
-      ajaxSettings: this.ajaxSettings
+      ajaxSettings: ajaxSettings || this.ajaxSettings
     };
-    return TerminalSession.open(options).then(session => {
+    return TerminalSession.startNew(options);
+  }
+
+  /*
+   * Connect to a running session.
+   *
+   * @param name - The name of the target session.
+   *
+   * @param ajaxSettings - The ajaxSettings to use, overrides manager
+   *   settings.
+   *
+   * @returns A promise that resolves with the new session instance.
+   */
+  connectTo(name: string, ajaxSettings: IAjaxSettings = {}): Promise<TerminalSession.ISession> {
+    let options = {
+      baseUrl: this._baseUrl,
+      wsUrl: this._wsUrl,
+      ajaxSettings: ajaxSettings || this.ajaxSettings
+    };
+    return TerminalSession.connectTo(name, options).then(session => {
       this._scheduleUpdate();
       session.terminated.connect(() => {
         this._scheduleUpdate();
@@ -446,7 +508,6 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     options.ajaxSettings = options.ajaxSettings || {};
     this._ajaxSettings = JSON.stringify(options.ajaxSettings);
-    this._name = options.name;
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._promise = new utils.PromiseDelegate<TerminalSession.ISession>();
   }
@@ -549,12 +610,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   /**
    * Connect to the terminal session.
    */
-  connect(): Promise<TerminalSession.ISession> {
+  connect(name = ''): Promise<TerminalSession.ISession> {
+    this._name = name;
     if (this._name) {
       return this._initializeSocket();
     }
-    return this._getName().then(name => {
-      this._name = name;
+    return this._getName().then(value => {
+      this._name = value;
       return this._initializeSocket();
     });
   }
@@ -641,7 +703,7 @@ namespace Private {
    * Get the base url.
    */
   export
-  function getBaseUrl(baseUrl): string {
+  function getBaseUrl(baseUrl: string): string {
     return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL);
   }
 }
