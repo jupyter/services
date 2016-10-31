@@ -57,7 +57,7 @@ describe('jupyter.services - Integration', () => {
       let content: KernelMessage.IInfoReply;
       Kernel.startNew().then(value => {
         kernel = value;
-        return kernel.kernelInfo();
+        return kernel.requestKernelInfo();
       }).then((info) => {
         content = info.content;
         return kernel.info();
@@ -105,11 +105,11 @@ describe('jupyter.services - Integration', () => {
       let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
-        return kernel.complete({ code: 'impor', cursor_pos: 4 });
+        return kernel.requestComplete({ code: 'impor', cursor_pos: 4 });
       }).then(msg => {
-        return kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 });
+        return kernel.requestInspect({ code: 'hex', cursor_pos: 2, detail_level: 0 });
       }).then(msg => {
-        return kernel.isComplete({ code: 'from numpy import (\n' });
+        return kernel.requestIsComplete({ code: 'from numpy import (\n' });
       }).then(msg => {
         let options: KernelMessage.IHistoryRequest = {
           output: true,
@@ -122,9 +122,9 @@ describe('jupyter.services - Integration', () => {
           pattern: '*',
           unique: true,
         };
-        return kernel.history(options);
+        return kernel.requestHistory(options);
       }).then(msg => {
-        let future = kernel.execute({ code: 'a = 1\n' });
+        let future = kernel.requestExecute({ code: 'a = 1\n' });
         future.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
           expect(reply.content.status).to.be('ok');
         };
@@ -245,7 +245,7 @@ describe('jupyter.services - Integration', () => {
           '       comm.close(msgs)',
           'comm.on_msg(on_msg)'
         ].join('\n');
-        kernel.execute({ code: code });
+        kernel.requestExecute({ code: code });
       }).catch(done);
     });
 

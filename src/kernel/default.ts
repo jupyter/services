@@ -373,7 +373,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
-  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
+  requestKernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'kernel_info_request',
       channel: 'shell',
@@ -396,7 +396,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
-  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
+  requestComplete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'complete_request',
       channel: 'shell',
@@ -416,7 +416,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
-  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
+  requestInspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'inspect_request',
       channel: 'shell',
@@ -436,7 +436,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
    */
-  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
+  requestHistory(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'history_request',
       channel: 'shell',
@@ -462,7 +462,7 @@ class DefaultKernel implements Kernel.IKernel {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): Kernel.IFuture {
+  requestExecute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): Kernel.IFuture {
     let options: KernelMessage.IOptions = {
       msgType: 'execute_request',
       channel: 'shell',
@@ -490,7 +490,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
-  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
+  requestIsComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'is_complete_request',
       channel: 'shell',
@@ -508,7 +508,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
-  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
+  requestCommInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'comm_info_request',
       channel: 'shell',
@@ -658,7 +658,7 @@ class DefaultKernel implements Kernel.IKernel {
     // Allow the message to get through.
     this._isReady = true;
     // Get the kernel info, signaling that the kernel is ready.
-    this.kernelInfo().then(() => {
+    this.requestKernelInfo().then(() => {
       this._connectionPromise.resolve(void 0);
     }).catch(err => {
       this._connectionPromise.reject(err);

@@ -237,7 +237,7 @@ namespace Kernel {
      * Fulfills with the `kernel_info_response` content when the shell reply is
      * received and validated.
      */
-    kernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
+    requestKernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
 
     /**
      * Send a `complete_request` message.
@@ -252,7 +252,7 @@ namespace Kernel {
      * Fulfills with the `complete_reply` content when the shell reply is
      * received and validated.
      */
-    complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
+    requestComplete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
 
     /**
      * Send an `inspect_request` message.
@@ -267,7 +267,7 @@ namespace Kernel {
      * Fulfills with the `inspect_reply` content when the shell reply is
      * received and validated.
      */
-    inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
+    requestInspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
 
     /**
      * Send a `history_request` message.
@@ -282,7 +282,7 @@ namespace Kernel {
      * Fulfills with the `history_reply` content when the shell reply is
      * received and validated.
      */
-    history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
+    requestHistory(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
 
     /**
      * Send an `execute_request` message.
@@ -301,7 +301,7 @@ namespace Kernel {
      *
      * **See also:** [[IExecuteReply]]
      */
-    execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): Kernel.IFuture;
+    requestExecute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): Kernel.IFuture;
 
     /**
      * Send an `is_complete_request` message.
@@ -316,7 +316,7 @@ namespace Kernel {
      * Fulfills with the `is_complete_response` content when the shell reply is
      * received and validated.
      */
-    isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
+    requestIsComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
 
     /**
      * Send a `comm_info_request` message.
@@ -331,7 +331,7 @@ namespace Kernel {
      * Fulfills with the `comm_info_reply` content when the shell reply is
      * received and validated.
      */
-    commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
+    requestCommInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
 
     /**
      * Send an `input_reply` message.

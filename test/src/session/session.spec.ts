@@ -475,7 +475,7 @@ describe('session', () => {
         tester.onRequest = () => {
           tester.respond(204, { });
         };
-        session.kernel.kernelInfo().then(() => {
+        session.kernel.requestKernelInfo().then(() => {
           tester.sendStatus('busy');
         }).catch(done);
       });
