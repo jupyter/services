@@ -67,6 +67,34 @@ describe('terminals', () => {
 
     });
 
+    describe('#baseUrl', () => {
+
+      it('should get the base url of the server', () => {
+        manager = new TerminalManager({ baseUrl: 'foo' });
+        expect(manager.baseUrl).to.be('foo');
+      });
+
+    });
+
+    describe('#wsUrl', () => {
+
+      it('should get the ws url of the server', () => {
+        manager = new TerminalManager({ wsUrl: 'bar' });
+        expect(manager.wsUrl).to.be('bar');
+      });
+
+    });
+
+    describe('#ajaxSettings', () => {
+
+      it('should get the ajax sessions of the server', () => {
+        let ajaxSettings = { withCredentials: true };
+        manager = new TerminalManager({ ajaxSettings });
+        expect(manager.ajaxSettings).to.eql(ajaxSettings);
+      });
+
+    });
+
     describe('#running()', () => {
 
       it('should give an iterator over the list of running models', (done) => {

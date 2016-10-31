@@ -77,6 +77,37 @@ describe('session', () => {
 
     });
 
+    describe('#baseUrl', () => {
+
+      it('should get the base url of the server', () => {
+        manager.dispose();
+        manager = new SessionManager({ baseUrl: 'foo' });
+        expect(manager.baseUrl).to.be('foo');
+      });
+
+    });
+
+    describe('#wsUrl', () => {
+
+      it('should get the ws url of the server', () => {
+        manager.dispose();
+        manager = new SessionManager({ wsUrl: 'bar' });
+        expect(manager.wsUrl).to.be('bar');
+      });
+
+    });
+
+    describe('#ajaxSettings', () => {
+
+      it('should get the ajax sessions of the server', () => {
+        manager.dispose();
+        let ajaxSettings = { withCredentials: true };
+        manager = new SessionManager({ ajaxSettings });
+        expect(manager.ajaxSettings).to.eql(ajaxSettings);
+      });
+
+    });
+
     describe('#specs', () => {
 
       it('should get the kenrnel specs', (done) => {
