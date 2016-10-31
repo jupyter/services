@@ -521,13 +521,9 @@ describe('kernel', () => {
 
     context('#info', () => {
 
-      it('should be null by default', () => {
-        expect(kernel.info).to.be(null);
-      });
-
-      it('should be set after calling kernelInfo', (done) => {
-        return kernel.kernelInfo().then(() => {
-          let name = kernel.info.language_info.name;
+      it('should get the kernel info', (done) => {
+        return kernel.info().then(info => {
+          let name = info.language_info.name;
           expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
         }).then(done, done);
       });
@@ -536,16 +532,12 @@ describe('kernel', () => {
 
     context('#spec', () => {
 
-      it('should be null by default', () => {
-        expect(kernel.spec).to.be(null);
-      });
-
       it('should be set after calling getSpec', (done) => {
         tester.onRequest = () => {
           tester.respond(200, PYTHON_SPEC);
         };
-        return kernel.getSpec().then(() => {
-          expect(kernel.spec.language).to.be('python');
+        return kernel.spec().then(spec => {
+          expect(spec.language).to.be('python');
         }).then(done, done);
       });
 
@@ -1103,20 +1095,6 @@ describe('kernel', () => {
             });
           };
 
-        });
-      });
-
-    });
-
-    describe('#getSpec()', () => {
-
-      it('should load the kernelspec', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
-        };
-        kernel.getSpec().then(spec => {
-          expect(spec.language).to.be('python');
-          done();
         });
       });
 

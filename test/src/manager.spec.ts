@@ -41,7 +41,6 @@ describe('manager', () => {
         done();
       });
       manager = new ServiceManager();
-      expect(manager.kernelspecs).to.be(null);
     });
 
     afterEach(() => {
@@ -52,48 +51,6 @@ describe('manager', () => {
 
       it('should create a new session manager', () => {
         expect(manager).to.be.a(ServiceManager);
-      });
-
-      it('should trigger a kernel spec update', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager = new ServiceManager();
-        manager.specsChanged.connect(() => {
-          done();
-        });
-      });
-
-    });
-
-    describe('#specsChanged', () => {
-
-      it('should be emitted when the specs change', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager = new ServiceManager();
-        manager.specsChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(args.default).to.be(KERNELSPECS.default);
-          done();
-        });
-      });
-
-    });
-
-    describe('#kernelspecs', () => {
-
-      it('should be the kernel specs used by the manager', () => {
-        expect(manager.kernelspecs.default).to.be(KERNELSPECS.default);
-      });
-
-    });
-
-    describe('#kernels', () => {
-
-      it('should be the kernel manager instance', () => {
-        expect(manager.kernels).to.be.a(KernelManager);
       });
 
     });

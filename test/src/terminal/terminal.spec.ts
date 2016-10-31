@@ -36,24 +36,60 @@ describe('terminals', () => {
     tester.dispose();
   });
 
-  describe('TerminalSession.open()', () => {
+  describe('TerminalSession', () => {
 
-    it('should create a terminal session', (done) => {
-      TerminalSession.open().then(s => {
-        session = s;
-        expect(session.name).to.be('1');
-        done();
-      }).catch(done);
+    describe('.startNew()', () => {
+
+      it('should startNew a terminal session', (done) => {
+        TerminalSession.startNew().then(s => {
+          session = s;
+          expect(session.name).to.be('1');
+          done();
+        }).catch(done);
+      });
+
+      it('should give back an existing session', (done) => {
+        TerminalSession.startNew({ name: 'foo' }).then(s => {
+          session = s;
+          return TerminalSession.startNew({ name: 'foo' }).then(newSession => {
+            expect(newSession).to.be(session);
+            done();
+          });
+        }).catch(done);
+      });
+
     });
 
-    it('should give back an existing session', (done) => {
-      TerminalSession.open({ name: 'foo' }).then(s => {
-        session = s;
-        return TerminalSession.open({ name: 'foo' }).then(newSession => {
-          expect(newSession).to.be(session);
+
+    describe('.shutdown()', () => {
+
+      it('should shut down a terminal session by name', (done) => {
+        tester.onRequest = () => {
+          tester.respond(204, {});
+        };
+        TerminalSession.startNew({ name: 'foo' }).then(s => {
+          session = s;
+          return TerminalSession.shutdown('foo');
+        }).then(() => {
           done();
-        });
-      }).catch(done);
+        }).catch(done);
+      });
+
+    });
+
+    describe('.listRunning()', () => {
+
+      it('should list the running session models', (done) => {
+        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        TerminalSession.listRunning().then(models => {
+          expect(deepEqual(data, toArray(models))).to.be(true);
+          done();
+        }).catch(done);
+      });
+
     });
 
   });
@@ -110,14 +146,14 @@ describe('terminals', () => {
 
     });
 
-    describe('#create()', () => {
+    describe('#startNew()', () => {
 
-      it('should create a new terminal session', (done) => {
+      it('should startNew a new terminal session', (done) => {
         let manager = new TerminalManager();
         tester.onRequest = () => {
           tester.respond(200, { name: '1' });
         };
-        manager.create().then(s => {
+        manager.startNew().then(s => {
           session = s;
           expect(session.name).to.be('1');
           done();
@@ -133,7 +169,7 @@ describe('terminals', () => {
         tester.onRequest = () => {
           tester.respond(204, {});
         };
-        manager.create({ name: 'foo' }).then(s => {
+        manager.startNew({ name: 'foo' }).then(s => {
           session = s;
           return manager.shutdown('foo');
         }).then(() => {
@@ -145,7 +181,7 @@ describe('terminals', () => {
 
     describe('#runningChanged', () => {
 
-      it('should be emitted in listRunning when the running terminals changed', (done) => {
+      it('should be emitted when the running terminals changed', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
         let manager = new TerminalManager();
         manager.runningChanged.connect((sender, args) => {
@@ -156,12 +192,11 @@ describe('terminals', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning();
       });
 
     });
 
-    describe('#listRunning()', () => {
+    describe('#refreshRunning()', () => {
 
       it('should list the running session models', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
@@ -169,7 +204,7 @@ describe('terminals', () => {
           tester.respond(200, data);
         };
         let manager = new TerminalManager();
-        manager.listRunning().then(models => {
+        manager.refreshRunning().then(models => {
           expect(deepEqual(data, toArray(models))).to.be(true);
           done();
         }).catch(done);
@@ -182,7 +217,7 @@ describe('terminals', () => {
   describe('TerminalSession.ISession', () => {
 
     beforeEach((done) => {
-      TerminalSession.open().then(s => {
+      TerminalSession.startNew().then(s => {
         session = s;
         done();
       });
@@ -226,7 +261,7 @@ describe('terminals', () => {
 
       it('should be the name of the session', (done) => {
         session.dispose();
-        TerminalSession.open({ name: 'foo' }).then(s => {
+        TerminalSession.startNew({ name: 'foo' }).then(s => {
           session = s;
           expect(session.name).to.be('foo');
           done();

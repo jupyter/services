@@ -88,7 +88,7 @@ describe('session', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.getSpecs();
+        manager.updateSpecs();
       });
 
     });
@@ -121,14 +121,14 @@ describe('session', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.getSpecs();
+        manager.updateSpecs();
       });
 
     });
 
     describe('#runningChanged', () => {
 
-      it('should be emitted in listRunning when the running sessions changed', (done) => {
+      it('should be emitted in refreshRunning when the running sessions changed', (done) => {
         let sessionModels = [createSessionModel(), createSessionModel()];
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
@@ -138,12 +138,12 @@ describe('session', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, sessionModels);
         });
-        manager.listRunning();
+        manager.refreshRunning();
       });
 
     });
 
-    describe('#listRunning()', () => {
+    describe('#refreshRunning()', () => {
 
       it('should a return list of session ids', (done) => {
         let handler = new RequestHandler();
@@ -151,7 +151,7 @@ describe('session', () => {
         handler.onRequest = () => {
           handler.respond(200, sessionModels);
         };
-        manager.listRunning().then(response => {
+        manager.refreshRunning().then(response => {
           let running = toArray(response);
           expect(running[0]).to.eql(sessionModels[0]);
           expect(running[1]).to.eql(sessionModels[1]);

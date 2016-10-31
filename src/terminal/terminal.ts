@@ -126,7 +126,7 @@ namespace TerminalSession {
    * @returns A promise that resolves with the list of running session models.
    */
   export
-  function listRunning(options: IOptions): Promise<IModel[]> {
+  function listRunning(options?: IOptions): Promise<IModel[]> {
     return DefaultTerminalSession.listRunning(options);
   }
 

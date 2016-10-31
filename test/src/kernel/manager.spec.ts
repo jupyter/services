@@ -85,7 +85,7 @@ describe('kernel/manager', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.getSpecs();
+        manager.updateSpecs();
       });
 
     });
@@ -106,7 +106,7 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning();
+        manager.refreshRunning();
       });
 
     });
@@ -124,14 +124,14 @@ describe('kernel/manager', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.getSpecs();
+        manager.updateSpecs();
       });
 
     });
 
     describe('#runningChanged', () => {
 
-      it('should be emitted in listRunning when the running kernels changed', (done) => {
+      it('should be emitted in refreshRunning when the running kernels changed', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
         let data: Kernel.IModel[] = [
           { id: uuid(), name: 'test' },
@@ -145,12 +145,12 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning();
+        manager.refreshRunning();
       });
 
     });
 
-    describe('#getSpecs()', () => {
+    describe('#updateSpecs()', () => {
 
       it('should get the list of kernel specs', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
@@ -162,7 +162,7 @@ describe('kernel/manager', () => {
           tester.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
         };
-        manager.getSpecs().then(specs => {
+        manager.updateSpecs().then(specs => {
           let names = Object.keys(specs.kernelspecs);
           expect(names[0]).to.be('python');
           expect(names[1]).to.be('python3');
@@ -172,7 +172,7 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#listRunning()', () => {
+    describe('#refreshRunning()', () => {
 
       it('should list the running kernels', (done) => {
         let manager = new KernelManager(KERNEL_OPTIONS);
@@ -183,7 +183,7 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning().then(response => {
+        manager.refreshRunning().then(response => {
           let running = toArray(response);
           expect(running[0]).to.eql(data[0]);
           expect(running[1]).to.eql(data[1]);

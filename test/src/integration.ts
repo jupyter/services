@@ -54,11 +54,15 @@ describe('jupyter.services - Integration', () => {
 
     it('should get info', (done) => {
       let kernel: Kernel.IKernel;
+      let content: KernelMessage.IInfoReply;
       Kernel.startNew().then(value => {
         kernel = value;
         return kernel.kernelInfo();
       }).then((info) => {
-        expect(deepEqual(info.content, kernel.info)).to.be(true);
+        content = info.content;
+        return kernel.info();
+      }).then(info => {
+        expect(deepEqual(content, info)).to.be(true);
         return kernel.shutdown();
       }).then(done, done);
     });
@@ -329,10 +333,10 @@ describe('jupyter.services - Integration', () => {
 
   });
 
-  describe('TerminalSession.open', () => {
+  describe('TerminalSession.startNew', () => {
 
     it('should create and shut down a terminal session', (done) => {
-      TerminalSession.open().then(session => {
+      TerminalSession.startNew().then(session => {
         return session.shutdown();
       }).then(done, done);
     });
@@ -343,13 +347,13 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
-      manager.create().then(session => {
-        return manager.listRunning();
+      manager.startNew().then(session => {
+        return manager.refreshRunning();
       }).then(running => {
         expect(running.length).to.be(1);
         return manager.shutdown(running[0].name);
       }).then(() => {
-        return manager.listRunning();
+        return manager.refreshRunning();
       }).then(running => {
         expect(running.length).to.be(0);
         done();
