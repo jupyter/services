@@ -59,7 +59,7 @@ describe('session', () => {
 
     describe('#constructor()', () => {
 
-      it('should take the options as an argument', () => {
+      it('should create a new session manager', () => {
         expect(manager instanceof SessionManager).to.be(true);
       });
 

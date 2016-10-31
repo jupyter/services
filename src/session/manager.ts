@@ -39,7 +39,7 @@ class SessionManager implements Session.IManager {
    *
    * @param options - The default options for each session.
    */
-  constructor(options?: Session.IOptions) {
+  constructor(options: Session.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     options.ajaxSettings = options.ajaxSettings || {};
@@ -225,7 +225,7 @@ class SessionManager implements Session.IManager {
   /**
    * Get optionally overidden options.
    */
-  private _getOptions(options: Session.IOptions): Session.IOptions {
+  private _getOptions(options: Session.IOptions = {}): Session.IOptions {
     options.baseUrl = this._baseUrl;
     options.wsUrl = this._wsUrl;
     options.ajaxSettings = options.ajaxSettings || this.ajaxSettings;
