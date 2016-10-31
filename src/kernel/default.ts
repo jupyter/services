@@ -75,11 +75,12 @@ class DefaultKernel implements Kernel.IKernel {
    * Construct a kernel object.
    */
   constructor(options: Kernel.IOptions, id: string) {
-    this.ajaxSettings = options.ajaxSettings || {};
     this._name = options.name;
     this._id = id;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings);
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
@@ -187,9 +188,9 @@ class DefaultKernel implements Kernel.IKernel {
    * A promise that resolves with a cached kernel spec.
    */
   spec(): Promise<Kernel.ISpecModel> {
-    let specs = Private.specs[this._baseUrl];
-    if (specs) {
-      return Promise.resolve(specs[this._name]);
+    let promise = Private.specs[this._baseUrl];
+    if (promise) {
+      return promise().then(specs => specs[this._name]);
     }
     let options = {
       baseUrl: this._baseUrl,
@@ -221,7 +222,7 @@ class DefaultKernel implements Kernel.IKernel {
     if (this.isDisposed) {
       return;
     }
-    clearSignalData(this);
+
     this._status = 'dead';
     if (this._ws !== null) {
       this._ws.close();
@@ -1027,7 +1028,7 @@ namespace Private {
    * A module private store of kernel specs by base url.
    */
   export
-  const specs: { [key: string]: Kernel.ISpecModels } = Object.create(null);
+  const specs: { [key: string]: Promise<Kernel.ISpecModels> } = Object.create(null);
 
   /**
    * Find a kernel by id.
@@ -1059,18 +1060,18 @@ namespace Private {
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
 
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+    let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
       try {
-        let data = validate.validateSpecModels(success.data);
-        specs[baseUrl] = data;
-        return data;
+        return validate.validateSpecModels(success.data);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
     });
+    Private.specs[baseUrl] = promise;
+    return promise;
   }
 
   /**
