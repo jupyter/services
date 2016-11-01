@@ -196,7 +196,7 @@ class DefaultKernel implements Kernel.IKernel {
   spec(): Promise<Kernel.ISpecModel> {
     let promise = Private.specs[this._baseUrl];
     if (promise) {
-      return promise.then(specs => specs[this._name]);
+      return promise.then(specs => specs.kernelspecs[this._name]);
     }
     let options = {
       baseUrl: this._baseUrl,
