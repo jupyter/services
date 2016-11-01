@@ -78,10 +78,18 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Get the most recent specs from the server.
+   * Get the kernel specs.
+   *
+   * @returns A promise that resolves with the most recently fetched specs.
    */
-  get specs(): Kernel.ISpecModels | null {
-    return this._specs;
+  specs(): Promise<Kernel.ISpecModels> {
+    if (this._specs) {
+      return Promise.resolve(this._specs);
+    }
+    if (this._specPromise) {
+      return this._specPromise;
+    }
+    return this.updateSpecs();
   }
 
   /**
@@ -135,13 +143,14 @@ class SessionManager implements Session.IManager {
       baseUrl: this._baseUrl,
       ajaxSettings: this.ajaxSettings
     };
-    return Kernel.getSpecs(options).then(specs => {
+    this._specPromise = Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
     });
+    return this._specPromise;
   }
 
   /**
@@ -251,6 +260,7 @@ class SessionManager implements Session.IManager {
   private _specs: Kernel.ISpecModels = null;
   private _updateTimer = -1;
   private _refreshTimer = -1;
+  private _specPromise: Promise<Kernel.ISpecModels>;
 }
 
 // Define the signals for the `SessionManager` class.

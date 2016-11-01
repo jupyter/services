@@ -366,13 +366,11 @@ namespace Session {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * Get the most recent specs from the server.
+     * Get the kernel specs.
      *
-     * #### Notes
-     * This will be `null` until the specs are fetched from
-     * the server.
+     * @returns A promise that resolves with the most recently fecthed specs.
      */
-    readonly specs: Kernel.ISpecModels | null;
+    specs(): Promise<Kernel.ISpecModels>;
 
     /**
      * Create an iterator over the known running sessions.

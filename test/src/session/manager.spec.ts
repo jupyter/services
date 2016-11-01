@@ -108,18 +108,16 @@ describe('session', () => {
 
     });
 
-    describe('#specs', () => {
+    describe('#specs()', () => {
 
-      it('should get the kenrnel specs', (done) => {
-        expect(manager.specs).to.be(null);
-        manager.specsChanged.connect(() => {
-          expect(manager.specs.default).to.be(KERNELSPECS.default);
-          done();
-        });
+      it('should get the kernel specs', (done) => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.updateSpecs();
+        manager.specs().then(specs => {
+          expect(specs.default).to.be(KERNELSPECS.default);
+          done();
+        }).catch(done);
       });
 
     });

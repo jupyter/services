@@ -102,18 +102,16 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#specs', () => {
+    describe('#specs()', () => {
 
       it('should get the kernel specs', (done) => {
-        expect(manager.specs).to.be(null);
-        manager.specsChanged.connect(() => {
-          expect(manager.specs.default).to.be(KERNELSPECS.default);
-          done();
-        });
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.updateSpecs();
+        manager.specs().then(specs => {
+          expect(specs.default).to.be(KERNELSPECS.default);
+          done();
+        }).catch(done);
       });
 
     });
