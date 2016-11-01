@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject, JSONValue
 } from 'phosphor/lib/algorithm/json';
 
@@ -44,6 +48,11 @@ namespace Kernel {
   export
   interface IKernel extends IDisposable {
     /**
+     * A signal emitted when the kernel is shut down.
+     */
+    terminated: ISignal<IKernel, void>;
+
+    /**
      * A signal emitted when the kernel status changes.
      */
     statusChanged: ISignal<IKernel, Kernel.Status>;
@@ -84,30 +93,52 @@ namespace Kernel {
     readonly clientId: string;
 
     /**
+     * The base url of the kernel.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The Ajax settings used for server requests.
+     */
+    ajaxSettings: IAjaxSettings;
+
+    /**
      * The current status of the kernel.
      */
     readonly status: Kernel.Status;
 
     /**
-     * The cached info for the kernel.
+     * Get the kernel info.
+     *
+     * @returns A promise that resolves with a cached kernel info.
      *
      * #### Notes
-     * If `null`, call [[kernelInfo]] to get the value,
-     * which will populate this value.
+     * This value is cached when a kernel connection is made.
+     * This can be used to wait for a kernel connection before taking
+     * further action on the kernel.  It can also be used to get the kernel
+     * info without generating an extra kernel message.
      */
-    readonly info: KernelMessage.IInfoReply;
+    info(): Promise<KernelMessage.IInfoReply>;
 
     /**
-     * The cached spec for the kernel.
+     * Get the cached kernel spec.
+     *
+     * @returns A promise that resolves with a cached kernel spec.
      *
      * #### Notes
-     * If `null`, call [[getKernelSpecs]] to get the value,
-     * which will populate this value.
+     * It will use the cached kernel spec models for this base url or
+     * fetch them from the server.
      */
-    readonly spec: Kernel.ISpecModel;
+    spec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Send a shell message to the kernel.
+     *
+     * @param msg - The fully formed shell message to send.
+     *
+     * @param expectReply - Whether to expect a shell reply message.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
      *
      * #### Notes
      * Send a message to the kernel's shell channel, yielding a future object
@@ -131,6 +162,8 @@ namespace Kernel {
     /**
      * Interrupt a kernel.
      *
+     * @returns A promise that resolves when the kernel has interrupted.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
      *
@@ -146,12 +179,12 @@ namespace Kernel {
     /**
      * Restart a kernel.
      *
+     * @returns A promise that resolves when the kernel has restarted.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
      *
      * Any existing Future or Comm objects are cleared.
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
      *
      * It is assumed that the API call does not mutate the kernel id or name.
      *
@@ -161,30 +194,42 @@ namespace Kernel {
     restart(): Promise<void>;
 
     /**
-     * Reconnect to a disconnected kernel. This is not actually a
-     * standard HTTP request, but useful function nonetheless for
-     * reconnecting to the kernel if the connection is somehow lost.
+     * Reconnect to a disconnected kernel.
+     *
+     * @returns A promise that resolves when the kernel has reconnected.
+     *
+     * #### Notes
+     * This is not actually a  standard HTTP request, but useful function
+     * nonetheless for reconnecting to the kernel if the connection is somehow
+     * lost.
      */
     reconnect(): Promise<void>;
 
     /**
      * Shutdown a kernel.
      *
+     * @returns A promise that resolves when the kernel has shut down.
+     *
      * #### Notes
      * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
      *
      * On a valid response, closes the websocket and disposes of the kernel
      * object, and fulfills the promise.
      *
      * The promise will be rejected if the kernel status is `'dead'` or if the
      * request fails or the response is invalid.
+     *
+     * If the server call is successful, the [[terminated]] signal will be
+     * emitted.
      */
     shutdown(): Promise<void>;
 
     /**
      * Send a `kernel_info_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info).
@@ -192,10 +237,14 @@ namespace Kernel {
      * Fulfills with the `kernel_info_response` content when the shell reply is
      * received and validated.
      */
-    kernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
+    requestKernelInfo(): Promise<KernelMessage.IInfoReplyMsg>;
 
     /**
      * Send a `complete_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion).
@@ -203,10 +252,14 @@ namespace Kernel {
      * Fulfills with the `complete_reply` content when the shell reply is
      * received and validated.
      */
-    complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
+    requestComplete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg>;
 
     /**
      * Send an `inspect_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection).
@@ -214,10 +267,14 @@ namespace Kernel {
      * Fulfills with the `inspect_reply` content when the shell reply is
      * received and validated.
      */
-    inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
+    requestInspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg>;
 
     /**
      * Send a `history_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#history).
@@ -225,10 +282,16 @@ namespace Kernel {
      * Fulfills with the `history_reply` content when the shell reply is
      * received and validated.
      */
-    history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
+    requestHistory(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg>;
 
     /**
      * Send an `execute_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute).
@@ -238,10 +301,14 @@ namespace Kernel {
      *
      * **See also:** [[IExecuteReply]]
      */
-    execute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): Kernel.IFuture;
+    requestExecute(content: KernelMessage.IExecuteRequest, disposeOnDone?: boolean): Kernel.IFuture;
 
     /**
      * Send an `is_complete_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness).
@@ -249,10 +316,14 @@ namespace Kernel {
      * Fulfills with the `is_complete_response` content when the shell reply is
      * received and validated.
      */
-    isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
+    requestIsComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg>;
 
     /**
      * Send a `comm_info_request` message.
+     *
+     * @param content - The content of the request.
+     *
+     * @returns A promise that resolves with the response message.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#comm_info).
@@ -260,10 +331,12 @@ namespace Kernel {
      * Fulfills with the `comm_info_reply` content when the shell reply is
      * received and validated.
      */
-    commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
+    requestCommInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg>;
 
     /**
      * Send an `input_reply` message.
+     *
+     * @param content - The content of the reply.
      *
      * #### Notes
      * See [Messaging in Jupyter](https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets).
@@ -272,6 +345,12 @@ namespace Kernel {
 
     /**
      * Connect to a comm, or create a new one.
+     *
+     * @param targetName - The name of the comm target.
+     *
+     * @param id - The comm id.
+     *
+     * @returns A comm instance.
      *
      * #### Notes
      * If a client-side comm already exists, it is returned.
@@ -314,16 +393,6 @@ namespace Kernel {
      * See also [[IFuture.registerMessageHook]].
      */
     registerMessageHook(msgId: string, hook: (msg: KernelMessage.IIOPubMessage) => boolean): IDisposable;
-
-    /**
-     * Get the kernel spec associated with the kernel.
-     */
-    getSpec(): Promise<Kernel.ISpecModel>;
-
-    /**
-     * Optional default settings for ajax requests, if applicable.
-     */
-    ajaxSettings?: IAjaxSettings;
   }
 
   /**
@@ -451,7 +520,11 @@ namespace Kernel {
   }
 
   /**
-   * Object which manages kernel instances.
+   * Object which manages kernel instances for a given base url.
+   *
+   * #### Notes
+   * The manager is responsible for maintaining the state of running
+   * kernels and the initial fetch of kernel specs.
    */
   export
   interface IManager extends IDisposable {
@@ -466,42 +539,105 @@ namespace Kernel {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
-     * Get the available kernel specs.
-     *
-     * #### Notes
-     * This will emit a [[specsChanged]] signal if the value
-     * has changed since the last fetch.
+     * The base url of the manager.
      */
-    getSpecs(options?: IOptions): Promise<ISpecModels>;
+    readonly baseUrl: string;
 
     /**
-     * Get a list of running kernels.
+     * The base ws url of the manager.
+     */
+    readonly wsUrl: string;
+
+    /**
+     * The default ajax settings for the manager.
+     */
+    ajaxSettings?: IAjaxSettings;
+
+    /**
+     * Get the kernel specs.
      *
      * #### Notes
-     * This will emit a [[runningChanged]] signal if the value
-     * has changed since the last fetch.
+     * This will be `null` until the specs are fetched from
+     * the server.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    readonly specs: ISpecModels | null;
+
+    /**
+     * Create an iterator over the known running kernels.
+     *
+     * @returns A new iterator over the running kernels.
+     */
+    running(): IIterator<IModel>;
+
+    /**
+     * Force an update of the available kernel specs.
+     *
+     * @returns A promise that resolves with the kernel spec models.
+     *
+     * #### Notes
+     * This is only meant to be called by the user if the kernel specs
+     * are known to have changed on disk.
+     */
+    updateSpecs(): Promise<ISpecModels>;
+
+    /**
+     * Force a refresh of the running kernels.
+     *
+     * @returns A promise that with the list of running kernels.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
+     */
+    refreshRunning(): Promise<IModel[]>;
 
     /**
      * Start a new kernel.
+     *
+     * @param options - The kernel options to use.
+     *
+     * @returns A promise that resolves with the kernel instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager.  The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     startNew(options?: IOptions): Promise<IKernel>;
 
     /**
      * Find a kernel by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves with the kernel's model.
      */
-    findById(id: string, options?: IOptions): Promise<IModel>;
+    findById(id: string): Promise<IModel>;
 
     /**
      * Connect to an existing kernel.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @param options - The kernel options to use.
+     *
+     * @returns A promise that resolves with the new kernel instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager. The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     connectTo(id: string, options?: IOptions): Promise<IKernel>;
 
     /**
      * Shut down a kernel by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves when the operation is complete.
      */
-    shutdown(id: string, options?: IOptions): Promise<void>;
+    shutdown(id: string): Promise<void>;
   }
 
   /**
@@ -605,6 +741,12 @@ namespace Kernel {
     /**
      * Open a comm with optional data and metadata.
      *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @returns A future for the generated message.
+     *
      * #### Notes
      * This sends a `comm_open` message to the server.
      */
@@ -613,6 +755,16 @@ namespace Kernel {
     /**
      * Send a `comm_msg` message to the kernel.
      *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @param buffers - Optional buffer data.
+     *
+     * @param disposeOnDone - Whether to dispose of the future when done.
+     *
+     * @returns A future for the generated message.
+     *
      * #### Notes
      * This is a no-op if the comm has been closed.
      */
@@ -620,6 +772,12 @@ namespace Kernel {
 
     /**
      * Close the comm.
+     *
+     * @param data - The data to send to the server on opening.
+     *
+     * @param metadata - Additional metatada for the message.
+     *
+     * @returns A future for the generated message.
      *
      * #### Notes
      * This will send a `comm_close` message to the kernel, and call the

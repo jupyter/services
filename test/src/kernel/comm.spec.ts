@@ -105,7 +105,7 @@ describe('jupyter.services - Comm', () => {
           };
           tester.send(msg);
         });
-        kernel.commInfo({ }).then((msg) => {
+        kernel.requestCommInfo({ }).then((msg) => {
           let comms = msg.content.comms as any;
           expect(comms['1234']).to.be('test');
           done();
@@ -123,7 +123,7 @@ describe('jupyter.services - Comm', () => {
           };
           tester.send(msg);
         });
-        kernel.commInfo({ target: 'test' }).then((msg) => {
+        kernel.requestCommInfo({ target: 'test' }).then((msg) => {
           let comms = msg.content.comms as any;
           expect(comms['1234']).to.be('test');
           done();

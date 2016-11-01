@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  IIterator
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
 
@@ -39,7 +43,7 @@ namespace Session {
     /**
      * A signal emitted when the session is shut down.
      */
-    sessionDied: ISignal<ISession, void>;
+    terminated: ISignal<ISession, void>;
 
     /**
      * A signal emitted when the kernel changes.
@@ -77,6 +81,11 @@ namespace Session {
     readonly path: string;
 
     /**
+     * The base url of the session.
+     */
+    readonly baseUrl: string;
+
+    /**
      * The model associated with the session.
      */
     readonly model: Session.IModel;
@@ -109,6 +118,8 @@ namespace Session {
      *
      * @param path - The new session path.
      *
+     * @returns A promise that resolves when the session has renamed.
+     *
      * #### Notes
      * This uses the Jupyter REST API, and the response is validated.
      * The promise is fulfilled on a valid response and rejected otherwise.
@@ -120,6 +131,8 @@ namespace Session {
      *
      * @param options - The name or id of the new kernel.
      *
+     * @returns A promise that resolves with the new kernel model.
+     *
      * #### Notes
      * This shuts down the existing kernel and creates a new kernel,
      * keeping the existing session ID and path.
@@ -128,6 +141,8 @@ namespace Session {
 
     /**
      * Kill the kernel and shutdown the session.
+     *
+     * @returns A promise that resolves when the session is shut down.
      *
      * #### Notes
      * This uses the Jupyter REST API, and the response is validated.
@@ -138,6 +153,10 @@ namespace Session {
 
   /**
    * List the running sessions.
+   *
+   * @param options - The options used for the request.
+   *
+   * @returns A promise that resolves with the list of session models.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
@@ -153,6 +172,10 @@ namespace Session {
 
   /**
    * Start a new session.
+   *
+   * @param options - The options used to start the session.
+   *
+   * @returns A promise that resolves with the session instance.
    *
    * #### Notes
    * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions), and validates the response.
@@ -175,8 +198,14 @@ namespace Session {
   /**
    * Find a session by id.
    *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session model.
+   *
    * #### Notes
-   * If the session was already started via `startNewSession`, the existing
+   * If the session was already started via `startNew`, the existing
    * Session object's information is used in the fulfillment value.
    *
    * Otherwise, if `options` are given, we attempt to find to the existing
@@ -191,6 +220,12 @@ namespace Session {
 
   /**
    * Find a session by path.
+   *
+   * @param path - The path of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session model.
    *
    * #### Notes
    * If the session was already started via `startNewSession`, the existing
@@ -212,8 +247,14 @@ namespace Session {
   /**
    * Connect to a running session.
    *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves with the session instance.
+   *
    * #### Notes
-   * If the session was already started via `startNewSession`, the existing
+   * If the session was already started via `startNew`, the existing
    * Session object is used as the fulfillment value.
    *
    * Otherwise, if `options` are given, we attempt to connect to the existing
@@ -231,6 +272,13 @@ namespace Session {
 
   /**
    * Shut down a session by id.
+   *
+   * @param id - The id of the target session.
+   *
+   * @param options - The options used to fetch the session.
+   *
+   * @returns A promise that resolves when the session is shut down.
+   *
    */
   export
   function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {
@@ -285,6 +333,10 @@ namespace Session {
 
   /**
    * Object which manages session instances.
+   *
+   * #### Notes
+   * The manager is responsible for maintaining the state of running
+   * sessions and the initial fetch of kernel specs.
    */
   export
   interface IManager extends IDisposable {
@@ -299,47 +351,114 @@ namespace Session {
     runningChanged: ISignal<IManager, IModel[]>;
 
     /**
-     * Get the available kernel specs.
-     *
-     * #### Notes
-     * This will emit a [[specsChange]] signal if the value
-     * has changed since the last fetch.
+     * The base url of the manager.
      */
-    getSpecs(options?: IOptions): Promise<Kernel.ISpecModels>;
+    readonly baseUrl: string;
 
-    /*
-     * Get the running sessions.
+    /**
+     * The base ws url of the manager.
+     */
+    readonly wsUrl: string;
+
+    /**
+     * The default ajax settings for the manager.
+     */
+    ajaxSettings?: IAjaxSettings;
+
+    /**
+     * Get the most recent specs from the server.
      *
      * #### Notes
-     * This will emit a [[runningChanged]] signal if the value
-     * has changed since the last fetch.
+     * This will be `null` until the specs are fetched from
+     * the server.
      */
-    listRunning(options?: IOptions): Promise<IModel[]>;
+    readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * Create an iterator over the known running sessions.
+     *
+     * @returns A new iterator over the running sessions.
+     */
+    running(): IIterator<IModel>;
 
     /**
      * Start a new session.
+     *
+     * @param options - The session options to use.
+     *
+     * @returns A promise that resolves with the session instance.
+     *
+     * #### Notes
+     * The baseUrl and wsUrl of the options will be forced
+     * to the ones used by the manager. The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     startNew(options: IOptions): Promise<ISession>;
 
     /**
      * Find a session by id.
+     *
+     * @param id - The id of the target session.
+     *
+     * @returns A promise that resolves with the session's model.
      */
-    findById(id: string, options?: IOptions): Promise<IModel>;
+    findById(id: string): Promise<IModel>;
 
     /**
      * Find a session by path.
+     *
+     * @param path - The path of the target session.
+     *
+     * @returns A promise that resolves with the session's model.
      */
-    findByPath(path: string, options?: IOptions): Promise<IModel>;
+    findByPath(path: string): Promise<IModel>;
 
     /**
      * Connect to a running session.
+     *
+     * @param id - The id of the target session.
+     *
+     * @param options - The session options to use.
+     *
+     * @returns A promise that resolves with the new session instance.
+     *
+     * #### Notes
+     * If options are given, the baseUrl and wsUrl will be forced
+     * to the ones used by the manager.  The ajaxSettings of the manager
+     * will be used unless overridden.
      */
     connectTo(id: string, options?: IOptions): Promise<ISession>;
 
     /**
      * Shut down a session by id.
+     *
+     * @param id - The id of the target kernel.
+     *
+     * @returns A promise that resolves when the operation is complete.
      */
-    shutdown(id: string, options?: IOptions): Promise<void>;
+    shutdown(id: string): Promise<void>;
+
+    /**
+     * Force an update of the available kernel specs.
+     *
+     * @returns A promise that resolves with the kernel spec models.
+     *
+     * #### Notes
+     * This is only meant to be called by the user if the kernel specs
+     * are known to have changed on disk.
+     */
+    updateSpecs(): Promise<Kernel.ISpecModels>;
+
+    /**
+     * Force a refresh of the running sessions.
+     *
+     * @returns A promise that with the list of running sessions.
+     *
+     * #### Notes
+     * This is not typically meant to be called by the user, since the
+     * manager maintains its own internal state.
+     */
+    refreshRunning(): Promise<IModel[]>;
   }
 
   /**

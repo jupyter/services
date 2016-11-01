@@ -41,6 +41,7 @@
     "prepublish": "npm run build && webpack",
     "test:coverage": "istanbul cover --dir test/coverage _mocha -- test/build/**/*.spec.js --foo bar",
     "test:integration": "cd test && python integration_test.py",
+    "test:devtool": "devtool node_modules/mocha/bin/_mocha -qc test/build/**/**.spec.js --foo bar",
     "test:debug": "mocha test/build/**/*.spec.js --foo bar --debug-brk",
     "test": "mocha test/build/**/*.spec.js --foo bar"
   },

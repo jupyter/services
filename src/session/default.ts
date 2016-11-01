@@ -53,20 +53,20 @@ class DefaultSession implements Session.ISession {
    * Construct a new session.
    */
   constructor(options: Session.IOptions, id: string, kernel: Kernel.IKernel) {
-    this.ajaxSettings = options.ajaxSettings || { };
     this._id = id;
     this._path = options.path;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
   }
 
   /**
-   * A signal emitted when the session dies.
+   * A signal emitted when the session is shut down.
    */
-  sessionDied: ISignal<Session.ISession, void>;
+  terminated: ISignal<Session.ISession, void>;
 
   /**
    * A signal emitted when the kernel changes.
@@ -143,6 +143,13 @@ class DefaultSession implements Session.ISession {
   }
 
   /**
+   * Get the base url of the session.
+   */
+  get baseUrl(): string {
+    return this._baseUrl;
+  }
+
+  /**
    * Get a copy of the default ajax settings for the session.
    */
   get ajaxSettings(): IAjaxSettings {
@@ -205,11 +212,10 @@ class DefaultSession implements Session.ISession {
     if (this.isDisposed) {
       return;
     }
+    this._options = null;
     if (this._kernel) {
       this._kernel.dispose();
     }
-    this.sessionDied.emit(void 0);
-    this._options = null;
     Private.runningSessions.remove(this);
     this._kernel = null;
     clearSignalData(this);
@@ -331,13 +337,13 @@ class DefaultSession implements Session.ISession {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
-      let data = success.data as Session.IModel;
+      let value = success.data as Session.IModel;
       try {
-        validate.validateModel(data);
+        validate.validateModel(value);
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return Private.updateByModel(data);
+      return Private.updateFromServer(value);
     }, error => {
       this._updating = false;
       return Private.onSessionError(error);
@@ -355,8 +361,8 @@ class DefaultSession implements Session.ISession {
 }
 
 
-// Define the signals for the `Session` class.
-defineSignal(DefaultSession.prototype, 'sessionDied');
+// Define the signals for the `DefaultSession` class.
+defineSignal(DefaultSession.prototype, 'terminated');
 defineSignal(DefaultSession.prototype, 'kernelChanged');
 defineSignal(DefaultSession.prototype, 'statusChanged');
 defineSignal(DefaultSession.prototype, 'iopubMessage');
@@ -568,7 +574,7 @@ namespace Private {
         return utils.makeAjaxError(success, err.message);
       }
       let data = success.data as Session.IModel;
-      return updateByModel(data);
+      return updateFromServer(data);
     }, onSessionError);
   }
 
@@ -627,7 +633,7 @@ namespace Private {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      return updateByModel(data);
+      return updateFromServer(data);
     }, Private.onSessionError);
   }
 
@@ -647,7 +653,7 @@ namespace Private {
       });
       // If session is no longer running on disk, emit dead signal.
       if (!updated && session.status !== 'dead') {
-        session.sessionDied.emit(void 0);
+        session.terminated.emit(void 0);
       }
     });
     return Promise.all(promises).then(() => { return sessions; });
@@ -657,7 +663,7 @@ namespace Private {
    * Update the running sessions given an updated session Id.
    */
   export
-  function updateByModel(model: Session.IModel): Promise<Session.IModel> {
+  function updateFromServer(model: Session.IModel): Promise<Session.IModel> {
     let promises: Promise<void>[] = [];
     each(runningSessions, session => {
       if (session.id === model.id) {
@@ -683,6 +689,7 @@ namespace Private {
       }
       each(toArray(runningSessions), session => {
         if (session.id === id) {
+          session.terminated.emit(void 0);
           session.dispose();
         }
       });

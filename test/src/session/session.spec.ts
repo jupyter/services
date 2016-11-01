@@ -8,7 +8,7 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  uuid, IAjaxError
+  IAjaxError, getBaseUrl, uuid
 } from '../../../lib/utils';
 
 import {
@@ -43,9 +43,7 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
   sessionModel = sessionModel || createSessionModel();
   return {
     path: sessionModel.notebook.path,
-    kernelName: sessionModel.kernel.name,
-    baseUrl: 'http://localhost:8888',
-    wsUrl: 'ws://localhost:8888'
+    kernelName: sessionModel.kernel.name
   };
 }
 
@@ -431,10 +429,10 @@ describe('session', () => {
       session.dispose();
     });
 
-    context('#sessionDied', () => {
+    context('#terminated', () => {
 
       it('should emit when the session is shut down', (done) => {
-        session.sessionDied.connect(() => {
+        session.terminated.connect(() => {
           done();
         });
         tester.onRequest = () => {
@@ -477,7 +475,7 @@ describe('session', () => {
         tester.onRequest = () => {
           tester.respond(204, { });
         };
-        session.kernel.kernelInfo().then(() => {
+        session.kernel.requestKernelInfo().then(() => {
           tester.sendStatus('busy');
         }).catch(done);
       });
@@ -573,6 +571,14 @@ describe('session', () => {
       it('should be a delegate to the kernel status', () => {
         expect(session.status).to.be(session.kernel.status);
       });
+    });
+
+    context('#baseUrl', () => {
+
+      it('should be the base url of the server', () => {
+        expect(session.baseUrl).to.be(getBaseUrl());
+      });
+
     });
 
     context('#isDisposed', () => {
@@ -753,12 +759,12 @@ describe('session', () => {
         session.shutdown().then(done, done);
       });
 
-      it('should emit a sessionDied signal', (done) => {
+      it('should emit a terminated signal', (done) => {
         tester.onRequest = () => {
           tester.respond(204, { });
         };
         session.shutdown();
-        session.sessionDied.connect(() => {
+        session.terminated.connect(() => {
           done();
         });
       });

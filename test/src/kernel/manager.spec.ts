@@ -33,16 +33,15 @@ PYTHON3_SPEC.display_name = 'python3';
 describe('kernel/manager', () => {
 
   let tester: KernelTester;
-  let kernel: Kernel.IKernel;
+  let manager: KernelManager;
 
   beforeEach(() => {
     tester = new KernelTester();
+    manager = new KernelManager();
   });
 
   afterEach(() => {
-    if (kernel) {
-      kernel.dispose();
-    }
+    manager.dispose();
     tester.dispose();
   });
 
@@ -51,34 +50,11 @@ describe('kernel/manager', () => {
     describe('#constructor()', () => {
 
       it('should take the options as an argument', () => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
+        manager = new KernelManager(KERNEL_OPTIONS);
         expect(manager instanceof KernelManager).to.be(true);
       });
 
-    });
-
-    describe('#specsChanged', () => {
-
-      it('should be emitted when the specs change', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
-        manager.specsChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(false);
-          expect(args.default).to.be(KERNELSPECS.default);
-          done();
-        });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.getSpecs();
-      });
-
-    });
-
-    describe('#runningChanged', () => {
-
-      it('should be emitted in listRunning when the running kernels changed', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
+      it('should trigger an update of running sessions', (done) => {
         let data: Kernel.IModel[] = [
           { id: uuid(), name: 'test' },
           { id: uuid(), name: 'test2' }
@@ -91,15 +67,117 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning();
       });
 
     });
 
-    describe('#getSpecs()', () => {
+    describe('#baseUrl', () => {
+
+      it('should get the base url of the server', () => {
+        manager.dispose();
+        manager = new KernelManager({ baseUrl: 'foo' });
+        expect(manager.baseUrl).to.be('foo');
+      });
+
+    });
+
+    describe('#wsUrl', () => {
+
+      it('should get the ws url of the server', () => {
+        manager.dispose();
+        manager = new KernelManager({ wsUrl: 'bar' });
+        expect(manager.wsUrl).to.be('bar');
+      });
+
+    });
+
+    describe('#ajaxSettings', () => {
+
+      it('should get the ajax sessions of the server', () => {
+        manager.dispose();
+        let ajaxSettings = { withCredentials: true };
+        manager = new KernelManager({ ajaxSettings });
+        expect(manager.ajaxSettings).to.eql(ajaxSettings);
+      });
+
+    });
+
+    describe('#specs', () => {
+
+      it('should get the kernel specs', (done) => {
+        expect(manager.specs).to.be(null);
+        manager.specsChanged.connect(() => {
+          expect(manager.specs.default).to.be(KERNELSPECS.default);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.updateSpecs();
+      });
+
+    });
+
+    describe('#running()', () => {
+
+      it('should get the running sessions', (done) => {
+        let data: Kernel.IModel[] = [
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
+        ];
+        manager.runningChanged.connect((sender, args) => {
+          let test = deepEqual(toArray(args), toArray(manager.running()));
+          expect(test).to.be(true);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        manager.refreshRunning();
+      });
+
+    });
+
+    describe('#specsChanged', () => {
+
+      it('should be emitted when the specs change', (done) => {
+        manager.specsChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(args, KERNELSPECS)).to.be(false);
+          expect(args.default).to.be(KERNELSPECS.default);
+          done();
+        });
+        let handler = new RequestHandler(() => {
+          handler.respond(200, KERNELSPECS);
+        });
+        manager.updateSpecs();
+      });
+
+    });
+
+    describe('#runningChanged', () => {
+
+      it('should be emitted in refreshRunning when the running kernels changed', (done) => {
+        let data: Kernel.IModel[] = [
+          { id: uuid(), name: 'test' },
+          { id: uuid(), name: 'test2' }
+        ];
+        manager.runningChanged.connect((sender, args) => {
+          expect(sender).to.be(manager);
+          expect(deepEqual(toArray(args), data)).to.be(true);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(200, data);
+        };
+        manager.refreshRunning();
+      });
+
+    });
+
+    describe('#updateSpecs()', () => {
 
       it('should get the list of kernel specs', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         let ids = {
           'python': PYTHON_SPEC,
           'python3': PYTHON3_SPEC
@@ -108,7 +186,7 @@ describe('kernel/manager', () => {
           tester.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
         };
-        manager.getSpecs().then(specs => {
+        manager.updateSpecs().then(specs => {
           let names = Object.keys(specs.kernelspecs);
           expect(names[0]).to.be('python');
           expect(names[1]).to.be('python3');
@@ -118,10 +196,9 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#listRunning()', () => {
+    describe('#refreshRunning()', () => {
 
       it('should list the running kernels', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         let data = [
           { id: uuid(), name: 'test' },
           { id: uuid(), name: 'test2' }
@@ -129,7 +206,7 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.listRunning().then(response => {
+        manager.refreshRunning().then(response => {
           let running = toArray(response);
           expect(running[0]).to.eql(data[0]);
           expect(running[1]).to.eql(data[1]);
@@ -142,16 +219,17 @@ describe('kernel/manager', () => {
     describe('#startNew()', () => {
 
       it('should start a new kernel', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         tester.onRequest = () => {
           tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+          tester.onRequest = () => {
+            tester.respond(204, { });
+          };
         };
-        manager.startNew().then(k => {
-          kernel = k;
+        manager.startNew().then(kernel => {
           expect(kernel.status).to.be('unknown');
           kernel.statusChanged.connect(() => {
             if (kernel.status === 'starting') {
-              done();
+              kernel.shutdown().then(done, done);
             }
           });
         });
@@ -163,19 +241,14 @@ describe('kernel/manager', () => {
     describe('#findById()', () => {
 
       it('should find an existing kernel by id', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         let id = uuid();
         tester.onRequest = () => {
-          tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
+          tester.respond(200, { id, name: KERNEL_OPTIONS.name });
         };
-        manager.startNew().then(k => {
-          kernel = k;
-          manager.findById(id).then(newKernel => {
-            expect(newKernel.name).to.be(kernel.name);
-            expect(newKernel.id).to.be(kernel.id);
-            done();
-          });
-        });
+        manager.findById(id).then(model => {
+          expect(model.name).to.be(KERNEL_OPTIONS.name);
+          expect(model.id).to.be(id);
+        }).then(done, done);
       });
 
     });
@@ -183,21 +256,18 @@ describe('kernel/manager', () => {
     describe('#connectTo()', () => {
 
       it('should connect to an existing kernel', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         let id = uuid();
         tester.onRequest = () => {
-          tester.respond(201, { id: id, name: KERNEL_OPTIONS.name });
+          tester.respond(200, { id, name: KERNEL_OPTIONS.name });
+          tester.onRequest = () => {
+            tester.respond(204, { });
+          };
         };
-        manager.startNew().then(k => {
-          kernel = k;
-          manager.connectTo(id).then(newKernel => {
-            expect(newKernel.name).to.be(kernel.name);
-            expect(newKernel.id).to.be(kernel.id);
-            expect(newKernel).to.not.be(kernel);
-            newKernel.dispose();
-            done();
-          });
-        });
+        return manager.connectTo(id).then(kernel => {
+          expect(kernel.name).to.be(kernel.name);
+          expect(kernel.id).to.be(kernel.id);
+          return kernel.shutdown();
+        }).then(done, done);
       });
 
     });
@@ -205,7 +275,6 @@ describe('kernel/manager', () => {
     describe('shutdown()', () => {
 
       it('should shut down a kernel by id', (done) => {
-        let manager = new KernelManager(KERNEL_OPTIONS);
         tester.onRequest = () => {
           tester.respond(204, { });
         };

@@ -54,27 +54,15 @@ describe('jupyter.services - Integration', () => {
 
     it('should get info', (done) => {
       let kernel: Kernel.IKernel;
+      let content: KernelMessage.IInfoReply;
       Kernel.startNew().then(value => {
         kernel = value;
-        return kernel.kernelInfo();
+        return kernel.requestKernelInfo();
       }).then((info) => {
-        expect(deepEqual(info.content, kernel.info)).to.be(true);
-        return kernel.shutdown();
-      }).then(done, done);
-    });
-
-    it('should get the spec for the kernel', (done) => {
-      let kernel: Kernel.IKernel;
-      let name = '';
-      Kernel.getSpecs().then((specs) => {
-        name = specs.default;
-        return Kernel.startNew();
-      }).then(value => {
-        kernel = value;
-        return kernel.getSpec();
-      }).then(spec => {
-        expect(spec.name).to.be(name);
-        expect(kernel.spec.name).to.be(name);
+        content = info.content;
+        return kernel.info();
+      }).then(info => {
+        expect(deepEqual(content, info)).to.be(true);
         return kernel.shutdown();
       }).then(done, done);
     });
@@ -117,11 +105,11 @@ describe('jupyter.services - Integration', () => {
       let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
-        return kernel.complete({ code: 'impor', cursor_pos: 4 });
+        return kernel.requestComplete({ code: 'impor', cursor_pos: 4 });
       }).then(msg => {
-        return kernel.inspect({ code: 'hex', cursor_pos: 2, detail_level: 0 });
+        return kernel.requestInspect({ code: 'hex', cursor_pos: 2, detail_level: 0 });
       }).then(msg => {
-        return kernel.isComplete({ code: 'from numpy import (\n' });
+        return kernel.requestIsComplete({ code: 'from numpy import (\n' });
       }).then(msg => {
         let options: KernelMessage.IHistoryRequest = {
           output: true,
@@ -134,9 +122,9 @@ describe('jupyter.services - Integration', () => {
           pattern: '*',
           unique: true,
         };
-        return kernel.history(options);
+        return kernel.requestHistory(options);
       }).then(msg => {
-        let future = kernel.execute({ code: 'a = 1\n' });
+        let future = kernel.requestExecute({ code: 'a = 1\n' });
         future.onReply = (reply: KernelMessage.IExecuteReplyMsg) => {
           expect(reply.content.status).to.be('ok');
         };
@@ -257,7 +245,7 @@ describe('jupyter.services - Integration', () => {
           '       comm.close(msgs)',
           'comm.on_msg(on_msg)'
         ].join('\n');
-        kernel.execute({ code: code });
+        kernel.requestExecute({ code: code });
       }).catch(done);
     });
 
@@ -345,10 +333,10 @@ describe('jupyter.services - Integration', () => {
 
   });
 
-  describe('TerminalSession.open', () => {
+  describe('TerminalSession.startNew', () => {
 
     it('should create and shut down a terminal session', (done) => {
-      TerminalSession.open().then(session => {
+      TerminalSession.startNew().then(session => {
         return session.shutdown();
       }).then(done, done);
     });
@@ -359,13 +347,13 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
-      manager.create().then(session => {
-        return manager.listRunning();
+      manager.startNew().then(session => {
+        return manager.refreshRunning();
       }).then(running => {
         expect(running.length).to.be(1);
         return manager.shutdown(running[0].name);
       }).then(() => {
-        return manager.listRunning();
+        return manager.refreshRunning();
       }).then(running => {
         expect(running.length).to.be(0);
         done();

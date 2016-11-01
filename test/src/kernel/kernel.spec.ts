@@ -12,7 +12,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  uuid
+  uuid, getBaseUrl
 } from '../../../lib/utils';
 
 import {
@@ -23,7 +23,7 @@ import {
   ajaxSettings, doLater, expectFailure, expectAjaxError,
   KernelTester,
   KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
-  PYTHON_SPEC
+  PYTHON_SPEC, KERNELSPECS
 } from '../utils';
 
 
@@ -304,8 +304,26 @@ describe('kernel', () => {
     beforeEach((done) => {
       Kernel.startNew().then(k => {
         kernel = k;
+        return kernel.info();
+      }).then(() => {
         done();
       }).catch(done);
+    });
+
+    context('#terminated', () => {
+
+      it('should be emitted when the kernel is shut down', (done) => {
+        kernel.terminated.connect((sender, args) => {
+          expect(sender).to.be(kernel);
+          expect(args).to.be(void 0);
+          done();
+        });
+        tester.onRequest = () => {
+          tester.respond(204, { });
+        };
+        kernel.shutdown();
+      });
+
     });
 
     context('#statusChanged', () => {
@@ -318,6 +336,7 @@ describe('kernel', () => {
         });
         tester.sendStatus('busy');
       });
+
     });
 
     context('#iopubMessage', () => {
@@ -437,6 +456,14 @@ describe('kernel', () => {
 
     });
 
+    context('#baseUrl', () => {
+
+      it('should be the base url of the server', () => {
+        expect(kernel.baseUrl).to.be(getBaseUrl());
+      });
+
+    });
+
     context('#clientId', () => {
 
       it('should be a string', () => {
@@ -504,13 +531,9 @@ describe('kernel', () => {
 
     context('#info', () => {
 
-      it('should be null by default', () => {
-        expect(kernel.info).to.be(null);
-      });
-
-      it('should be set after calling kernelInfo', (done) => {
-        return kernel.kernelInfo().then(() => {
-          let name = kernel.info.language_info.name;
+      it('should get the kernel info', (done) => {
+        return kernel.info().then(info => {
+          let name = info.language_info.name;
           expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
         }).then(done, done);
       });
@@ -519,16 +542,12 @@ describe('kernel', () => {
 
     context('#spec', () => {
 
-      it('should be null by default', () => {
-        expect(kernel.spec).to.be(null);
-      });
-
-      it('should be set after calling getKernelSpec', (done) => {
+      it('should be set after calling getSpec', (done) => {
         tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
+          tester.respond(200, KERNELSPECS);
         };
-        return kernel.getSpec().then(() => {
-          expect(kernel.spec.language).to.be('python');
+        return kernel.spec().then(spec => {
+          expect(spec.language).to.be('python');
         }).then(done, done);
       });
 
@@ -554,7 +573,7 @@ describe('kernel', () => {
     context('#dispose()', () => {
 
       it('should dispose of the resources held by the kernel', () => {
-        let future = kernel.execute({ code: 'foo' });
+        let future = kernel.requestExecute({ code: 'foo' });
         let comm = kernel.connectToComm('foo');
         expect(future.isDisposed).to.be(false);
         expect(comm.isDisposed).to.be(false);
@@ -564,7 +583,7 @@ describe('kernel', () => {
       });
 
       it('should be safe to call twice', () => {
-        let future = kernel.execute({ code: 'foo' });
+        let future = kernel.requestExecute({ code: 'foo' });
         let comm = kernel.connectToComm('foo');
         expect(future.isDisposed).to.be(false);
         expect(comm.isDisposed).to.be(false);
@@ -748,7 +767,7 @@ describe('kernel', () => {
 
       it('should dispose of existing comm and future objects', (done) => {
         let comm = kernel.connectToComm('test');
-        let future = kernel.execute({ code: 'foo' });
+        let future = kernel.requestExecute({ code: 'foo' });
         tester.onRequest = () => {
           tester.respond(200, { id: kernel.id, name: kernel.name });
         };
@@ -764,7 +783,7 @@ describe('kernel', () => {
     describe('#reconnect()', () => {
 
       it('should reconnect the websocket', (done) => {
-        kernel.kernelInfo().then(() => {
+        kernel.info().then(() => {
           return kernel.reconnect();
         }).then(() => {
           done();
@@ -773,7 +792,7 @@ describe('kernel', () => {
 
       it("should emit a `'reconnecting'` status", (done) => {
         let called = false;
-        kernel.kernelInfo().then(() => {
+        kernel.info().then(() => {
           return kernel.reconnect();
         }).then(() => {
           expect(called).to.be(true);
@@ -838,11 +857,11 @@ describe('kernel', () => {
 
     });
 
-    context('#kernelInfo()', () => {
+    context('#requestKernelInfo()', () => {
 
       it('should resolve the promise', (done) => {
         // resolved by KernelTester
-        kernel.kernelInfo().then((msg) => {
+        kernel.requestKernelInfo().then((msg) => {
           let name = msg.content.language_info.name;
           expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
           done();
@@ -850,7 +869,7 @@ describe('kernel', () => {
       });
     });
 
-    context('#complete()', () => {
+    context('#requestComplete()', () => {
 
       it('should resolve the promise', (done) => {
         let options: KernelMessage.ICompleteRequest = {
@@ -862,7 +881,7 @@ describe('kernel', () => {
           msg.parent_header = msg.header;
           tester.send(msg);
         });
-        kernel.complete(options).then(() => { done(); });
+        kernel.requestComplete(options).then(() => { done(); });
       });
 
       it('should reject the promise if the kernel is dead', (done) => {
@@ -873,14 +892,14 @@ describe('kernel', () => {
         tester.sendStatus('dead');
         kernel.statusChanged.connect(() => {
           if (kernel.status === 'dead') {
-            let promise = kernel.complete(options);
+            let promise = kernel.requestComplete(options);
             expectFailure(promise, done, 'Kernel is dead');
           }
         });
       });
     });
 
-    context('#inspect()', () => {
+    context('#requestInspect()', () => {
 
       it('should resolve the promise', (done) => {
         let options: KernelMessage.IInspectRequest = {
@@ -893,18 +912,18 @@ describe('kernel', () => {
           msg.parent_header = msg.header;
           tester.send(msg);
         });
-        kernel.inspect(options).then(() => { done(); });
+        kernel.requestInspect(options).then(() => { done(); });
       });
 
     });
 
-    context('#isComplete()', () => {
+    context('#requestIsComplete()', () => {
 
       it('should resolve the promise', (done) => {
         let options: KernelMessage.IIsCompleteRequest = {
           code: 'hello'
         };
-        let promise = kernel.isComplete(options);
+        let promise = kernel.requestIsComplete(options);
         tester.onMessage((msg) => {
           expect(msg.header.msg_type).to.be('is_complete_request');
           msg.parent_header = msg.header;
@@ -915,7 +934,7 @@ describe('kernel', () => {
 
     });
 
-    context('#history()', () => {
+    context('#requestHistory()', () => {
 
       it('should resolve the promise', (done) => {
         let options: KernelMessage.IHistoryRequest = {
@@ -929,7 +948,7 @@ describe('kernel', () => {
           pattern: '*',
           unique: true,
         };
-        let promise = kernel.history(options);
+        let promise = kernel.requestHistory(options);
         tester.onMessage((msg) => {
           expect(msg.header.msg_type).to.be('history_request');
           msg.parent_header = msg.header;
@@ -962,7 +981,7 @@ describe('kernel', () => {
       });
     });
 
-    context('#execute()', () => {
+    context('#requestExecute()', () => {
 
       it('should send and handle incoming messages', (done) => {
         let newMsg: KernelMessage.IMessage;
@@ -974,7 +993,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(content);
+        let future = kernel.requestExecute(content);
         expect(future.onDone).to.be(null);
         expect(future.onStdin).to.be(null);
         expect(future.onReply).to.be(null);
@@ -1043,7 +1062,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         expect(future.onDone).to.be(null);
         expect(future.onStdin).to.be(null);
         expect(future.onReply).to.be(null);
@@ -1091,20 +1110,6 @@ describe('kernel', () => {
 
     });
 
-    describe('#getKernelSpec()', () => {
-
-      it('should load the kernelspec', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, PYTHON_SPEC);
-        };
-        kernel.getSpec().then(spec => {
-          expect(spec.language).to.be('python');
-          done();
-        });
-      });
-
-    });
-
     context('#registerMessageHook()', () => {
 
       it('should have the most recently registered hook run first', (done) => {
@@ -1116,7 +1121,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1171,7 +1176,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1225,7 +1230,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1277,7 +1282,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1339,7 +1344,7 @@ describe('kernel', () => {
     });
 
     it('should have a msg attribute', () => {
-      let future = kernel.execute({ code: 'hello' });
+      let future = kernel.requestExecute({ code: 'hello' });
       expect(typeof future.msg.header.msg_id).to.be('string');
     });
 
@@ -1354,7 +1359,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1415,7 +1420,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1469,7 +1474,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;
@@ -1521,7 +1526,7 @@ describe('kernel', () => {
           allow_stdin: false,
           stop_on_error: false
         };
-        let future = kernel.execute(options, false);
+        let future = kernel.requestExecute(options, false);
         tester.onMessage((message) => {
           // send a reply
           let parent_header = message.header;

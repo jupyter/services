@@ -10,16 +10,8 @@ import {
 } from 'phosphor/lib/core/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
-
-import {
   Contents, ContentsManager
 } from './contents';
-
-import {
-  KernelManager, Kernel
-} from './kernel';
 
 import {
   Session, SessionManager
@@ -30,129 +22,40 @@ import {
 } from './terminal';
 
 import {
-  IAjaxSettings, getBaseUrl
+  IAjaxSettings, getBaseUrl, getWsUrl
 } from './utils';
 
 
 /**
- * The namespace for `ServiceManager` statics.
+ * A Jupyter services manager.
  */
 export
-namespace ServiceManager {
-  /**
-   * A service manager interface.
-   */
-  export
-  interface IManager extends IDisposable {
-    /**
-     * A signal emitted when the specs change on the service manager.
-     */
-    specsChanged: ISignal<IManager, Kernel.ISpecModels>;
-
-    /**
-     * The kernel specs for the manager.
-     */
-    readonly kernelspecs: Kernel.ISpecModels;
-
-    /**
-     * The kernel manager for the manager.
-     */
-    readonly kernels: Kernel.IManager;
-
-    /**
-     * The session manager for the manager.
-     */
-    readonly sessions: Session.IManager;
-
-    /**
-     * The contents manager for the manager.
-     */
-    readonly contents: Contents.IManager;
-
-    /**
-     * The terminals manager for the manager.
-     */
-    readonly terminals: TerminalSession.IManager;
-  }
-
-  /**
-   * Create a new service manager.
-   *
-   * @param options - The service manager creation options.
-   *
-   * @returns A promise that resolves with a service manager.
-   */
-  export
-  function create(options: IOptions = {}): Promise<IManager> {
-    options.baseUrl = options.baseUrl || getBaseUrl();
-    options.ajaxSettings = options.ajaxSettings || {};
-    if (options.kernelspecs) {
-      return Promise.resolve(new DefaultServiceManager(options));
-    }
-    let kernelOptions: Kernel.IOptions = {
-      baseUrl: options.baseUrl,
-      ajaxSettings: options.ajaxSettings
-    };
-    return Kernel.getSpecs(kernelOptions).then(specs => {
-      options.kernelspecs = specs;
-      return new DefaultServiceManager(options);
-    });
-  }
-
-  /**
-   * The options used to create a service manager.
-   */
-  export
-  interface IOptions {
-    /**
-     * The base url of the server.
-     */
-    baseUrl?: string;
-
-    /**
-     * The ajax settings for the manager.
-     */
-    ajaxSettings?: IAjaxSettings;
-
-    /**
-     * The kernelspecs for the manager.
-     */
-    kernelspecs?: Kernel.ISpecModels;
-  }
-}
-
-
-/**
- * An implementation of a services manager.
- */
-class DefaultServiceManager implements ServiceManager.IManager {
+class ServiceManager implements ServiceManager.IManager {
   /**
    * Construct a new services provider.
    */
-  constructor(options: ServiceManager.IOptions) {
-    let subOptions: JSONObject = {
-      baseUrl: options.baseUrl,
-      ajaxSettings: options.ajaxSettings
-    };
-    this._kernelspecs = options.kernelspecs;
-    this._kernelManager = new KernelManager(subOptions);
-    this._sessionManager = new SessionManager(subOptions);
-    this._contentsManager = new ContentsManager(subOptions);
-    this._terminalManager = new TerminalManager(subOptions);
-    this._kernelManager.specsChanged.connect(this._onSpecsChanged, this);
-    this._sessionManager.specsChanged.connect(this._onSpecsChanged, this);
+  constructor(options?: ServiceManager.IOptions) {
+    options = options || {};
+    options.wsUrl = options.wsUrl || getWsUrl();
+    options.baseUrl = options.baseUrl || getBaseUrl();
+    options.ajaxSettings = options.ajaxSettings || {};
+    this._sessionManager = new SessionManager(options);
+    this._contentsManager = new ContentsManager(options);
+    this._terminalManager = new TerminalManager(options);
   }
-
-  /**
-   * A signal emitted when the specs change on the service manager.
-   */
-  specsChanged: ISignal<this, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  /**
+   * Get the base url of the server.
+   */
+  get baseUrl(): string {
+    return this._sessionManager.baseUrl;
   }
 
   /**
@@ -163,21 +66,9 @@ class DefaultServiceManager implements ServiceManager.IManager {
       return;
     }
     this._isDisposed = true;
-    clearSignalData(this);
-  }
-
-  /**
-   * Get kernel specs.
-   */
-  get kernelspecs(): Kernel.ISpecModels {
-    return this._kernelspecs;
-  }
-
-  /**
-   * Get kernel manager instance.
-   */
-  get kernels(): KernelManager {
-    return this._kernelManager;
+    this._sessionManager.dispose();
+    this._contentsManager.dispose();
+    this._sessionManager.dispose();
   }
 
   /**
@@ -201,22 +92,62 @@ class DefaultServiceManager implements ServiceManager.IManager {
     return this._terminalManager;
   }
 
-  /**
-   * Handle a change in kernel specs.
-   */
-  private _onSpecsChanged(sender: any, args: Kernel.ISpecModels): void {
-    this._kernelspecs = args;
-    this.specsChanged.emit(args);
-  }
-
-  private _kernelManager: KernelManager = null;
   private _sessionManager: SessionManager = null;
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
-  private _kernelspecs: Kernel.ISpecModels = null;
   private _isDisposed = false;
 }
 
 
-// Define the signals for the `ServiceManager` class.
-defineSignal(DefaultServiceManager.prototype, 'specsChanged');
+/**
+ * The namespace for `ServiceManager` statics.
+ */
+export
+namespace ServiceManager {
+  /**
+   * A service manager interface.
+   */
+  export
+  interface IManager extends IDisposable {
+    /**
+     * The base url of the manager.
+     */
+    readonly baseUrl: string;
+
+    /**
+     * The session manager for the manager.
+     */
+    readonly sessions: Session.IManager;
+
+    /**
+     * The contents manager for the manager.
+     */
+    readonly contents: Contents.IManager;
+
+    /**
+     * The terminals manager for the manager.
+     */
+    readonly terminals: TerminalSession.IManager;
+  }
+
+  /**
+   * The options used to create a service manager.
+   */
+  export
+  interface IOptions extends JSONObject {
+    /**
+     * The base url of the server.
+     */
+    baseUrl?: string;
+
+    /**
+     * The base ws url of the server.
+     */
+    wsUrl?: string;
+
+    /**
+     * The ajax settings for the manager.
+     */
+    ajaxSettings?: IAjaxSettings;
+  }
+}

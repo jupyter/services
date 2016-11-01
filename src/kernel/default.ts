@@ -75,11 +75,11 @@ class DefaultKernel implements Kernel.IKernel {
    * Construct a kernel object.
    */
   constructor(options: Kernel.IOptions, id: string) {
-    this.ajaxSettings = options.ajaxSettings || {};
     this._name = options.name;
     this._id = id;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
@@ -88,6 +88,11 @@ class DefaultKernel implements Kernel.IKernel {
     this._createSocket();
     Private.runningKernels.pushBack(this);
   }
+
+  /**
+   * A signal emitted when the kernel is shut down.
+   */
+  terminated: ISignal<Kernel.IKernel, void>;
 
   /**
    * A signal emitted when the kernel status changes.
@@ -147,25 +152,10 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * The cached info for the kernel.
-   *
-   * #### Notes
-   * If `null`, call [[kernelInfo]] to get the value,
-   * which will populate this value.
+   * The base url of the kernel.
    */
-  get info(): KernelMessage.IInfoReply {
-    return this._info;
-  }
-
-  /**
-   * The cached specs for the kernel.
-   *
-   * #### Notes
-   * If `null`, call [[Kernel.getSpecs]] to get the value,
-   * which will populate this value.
-   */
-  get spec(): Kernel.ISpecModel {
-    return this._spec;
+  get baseUrl(): string {
+    return this._baseUrl;
   }
 
   /**
@@ -189,6 +179,35 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
+   * A promise that resolves with a cached kernel info.
+   */
+  info(): Promise<KernelMessage.IInfoReply> {
+    if (this._info) {
+      return Promise.resolve(this._info);
+    }
+    return this._connectionPromise.promise.then(() => {
+      return this._info;
+    });
+  }
+
+  /**
+   * A promise that resolves with a cached kernel spec.
+   */
+  spec(): Promise<Kernel.ISpecModel> {
+    let promise = Private.specs[this._baseUrl];
+    if (promise) {
+      return promise.then(specs => specs.kernelspecs[this._name]);
+    }
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Private.getSpecs(options).then(value => {
+      return value.kernelspecs[this._name];
+    });
+  }
+
+  /**
    * Clone the current kernel with a new clientId.
    */
   clone(): Kernel.IKernel {
@@ -209,7 +228,6 @@ class DefaultKernel implements Kernel.IKernel {
     if (this.isDisposed) {
       return;
     }
-    clearSignalData(this);
     this._status = 'dead';
     if (this._ws !== null) {
       this._ws.close();
@@ -226,6 +244,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._comms = null;
     this._targetRegistry = null;
     Private.runningKernels.remove(this);
+    clearSignalData(this);
   }
 
   /**
@@ -353,7 +372,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `kernel_info_response` content when the shell reply is
    * received and validated.
    */
-  kernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
+  requestKernelInfo(): Promise<KernelMessage.IInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'kernel_info_request',
       channel: 'shell',
@@ -376,7 +395,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `complete_reply` content when the shell reply is
    * received and validated.
    */
-  complete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
+  requestComplete(content: KernelMessage.ICompleteRequest): Promise<KernelMessage.ICompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'complete_request',
       channel: 'shell',
@@ -396,7 +415,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `inspect_reply` content when the shell reply is
    * received and validated.
    */
-  inspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
+  requestInspect(content: KernelMessage.IInspectRequest): Promise<KernelMessage.IInspectReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'inspect_request',
       channel: 'shell',
@@ -416,7 +435,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `history_reply` content when the shell reply is
    * received and validated.
    */
-  history(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
+  requestHistory(content: KernelMessage.IHistoryRequest): Promise<KernelMessage.IHistoryReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'history_request',
       channel: 'shell',
@@ -442,7 +461,7 @@ class DefaultKernel implements Kernel.IKernel {
    *
    * **See also:** [[IExecuteReply]]
    */
-  execute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): Kernel.IFuture {
+  requestExecute(content: KernelMessage.IExecuteRequest, disposeOnDone: boolean = true): Kernel.IFuture {
     let options: KernelMessage.IOptions = {
       msgType: 'execute_request',
       channel: 'shell',
@@ -470,7 +489,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `is_complete_response` content when the shell reply is
    * received and validated.
    */
-  isComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
+  requestIsComplete(content: KernelMessage.IIsCompleteRequest): Promise<KernelMessage.IIsCompleteReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'is_complete_request',
       channel: 'shell',
@@ -488,7 +507,7 @@ class DefaultKernel implements Kernel.IKernel {
    * Fulfills with the `comm_info_reply` content when the shell reply is
    * received and validated.
    */
-  commInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
+  requestCommInfo(content: KernelMessage.ICommInfoRequest): Promise<KernelMessage.ICommInfoReplyMsg> {
     let options: KernelMessage.IOptions = {
       msgType: 'comm_info_request',
       channel: 'shell',
@@ -602,20 +621,6 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * Get the kernel spec associated with the kernel.
-   *
-   * #### Notes
-   * This value is cached and only fetched the first time it is requested.
-   */
-  getSpec(): Promise<Kernel.ISpecModel> {
-    return Private.getSpec(this, this._baseUrl, this.ajaxSettings)
-    .then(specs => {
-      this._spec = specs;
-      return specs;
-    });
-  }
-
-  /**
    * Create the kernel websocket connection and add socket status handlers.
    */
   private _createSocket(): void {
@@ -652,7 +657,7 @@ class DefaultKernel implements Kernel.IKernel {
     // Allow the message to get through.
     this._isReady = true;
     // Get the kernel info, signaling that the kernel is ready.
-    this.kernelInfo().then(() => {
+    this.requestKernelInfo().then(() => {
       this._connectionPromise.resolve(void 0);
     }).catch(err => {
       this._connectionPromise.reject(err);
@@ -908,7 +913,6 @@ class DefaultKernel implements Kernel.IKernel {
   private _commPromises: Map<string, Promise<Kernel.IComm>> = null;
   private _comms: Map<string, Kernel.IComm> = null;
   private _targetRegistry: { [key: string]: (comm: Kernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
-  private _spec: Kernel.ISpecModel = null;
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
@@ -916,6 +920,7 @@ class DefaultKernel implements Kernel.IKernel {
 
 
 // Define the signals for the `DefaultKernel` class.
+defineSignal(DefaultKernel.prototype, 'terminated');
 defineSignal(DefaultKernel.prototype, 'statusChanged');
 defineSignal(DefaultKernel.prototype, 'iopubMessage');
 defineSignal(DefaultKernel.prototype, 'unhandledMessage');
@@ -1026,6 +1031,12 @@ namespace Private {
   const runningKernels = new Vector<DefaultKernel>();
 
   /**
+   * A module private store of kernel specs by base url.
+   */
+  export
+  const specs: { [key: string]: Promise<Kernel.ISpecModels> } = Object.create(null);
+
+  /**
    * Find a kernel by id.
    */
   export
@@ -1055,7 +1066,7 @@ namespace Private {
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
 
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+    let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
       }
@@ -1065,6 +1076,8 @@ namespace Private {
         return utils.makeAjaxError(success, err.message);
       }
     });
+    Private.specs[baseUrl] = promise;
+    return promise;
   }
 
   /**
@@ -1098,8 +1111,28 @@ namespace Private {
           return utils.makeAjaxError(success, err.message);
         }
       }
-      return success.data;
+      return updateRunningKernels(success.data);
     }, onKernelError);
+  }
+
+  /**
+   * Update the running kernels based on new data from the server.
+   */
+  export
+  function updateRunningKernels(kernels: Kernel.IModel[]): Kernel.IModel[] {
+    each(runningKernels, kernel => {
+      let updated = find(kernels, model => {
+        if (kernel.id === model.id) {
+          return true;
+        }
+      });
+      // If kernel is no longer running on disk, emit dead signal.
+      if (!updated && kernel.status !== 'dead') {
+        kernel.terminated.emit(void 0);
+        kernel.dispose();
+      }
+    });
+    return kernels;
   }
 
   /**
@@ -1241,32 +1274,10 @@ namespace Private {
       }
       each(toArray(runningKernels), kernel => {
         if (kernel.id === id) {
+          kernel.terminated.emit(void 0);
           kernel.dispose();
         }
       });
-    }, onKernelError);
-  }
-
-  /**
-   * Get the kernelspec for a kernel.
-   */
-  export
-  function getSpec(kernel: Kernel.IKernel, baseUrl: string, ajaxSettings?: IAjaxSettings): Promise<Kernel.ISpecModel> {
-    let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL,
-                                encodeURIComponent(kernel.name));
-    ajaxSettings = ajaxSettings || { };
-    ajaxSettings.dataType = 'json';
-    ajaxSettings.cache = false;
-
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
-      }
-      try {
-        return validate.validateSpecModel(success.data);
-      } catch (err) {
-        return utils.makeAjaxError(success, err.message);
-      }
     }, onKernelError);
   }
 
