@@ -132,9 +132,9 @@ class KernelManager implements Kernel.IManager {
       ajaxSettings: this.ajaxSettings
     };
     this._specPromise = Kernel.getSpecs(options).then(specs => {
+      this._specPromise = null;
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
-        this._specPromise = null;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -159,9 +159,9 @@ class KernelManager implements Kernel.IManager {
       return this._runningPromise;
     }
     let promise = Kernel.listRunning(this._getOptions()).then(running => {
+      this._runningPromise = null;
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
-        this._runningPromise = null;
         this.runningChanged.emit(running);
       }
       this._refreshTimer = setTimeout(() => {
