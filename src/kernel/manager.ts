@@ -103,18 +103,10 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * Get the kernel specs.
-   *
-   * @returns A promise that resolves with the most recently fetched specs.
+   * Get the most recently fetched kernel specs.
    */
-  specs(): Promise<Kernel.ISpecModels> {
-    if (this._specs) {
-      return Promise.resolve(this._specs);
-    }
-    if (this._specPromise) {
-      return this._specPromise;
-    }
-    return this.updateSpecs();
+  get specs(): Kernel.ISpecModels | null {
+    return this._specs;
   }
 
   /**
@@ -127,15 +119,14 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * Force an update of the available kernel specs.
+   * Fetch the specs from the server.
    *
    * @returns A promise that resolves with the kernel spec models.
-   *
-   * #### Notes
-   * This is only meant to be called by the user if the kernel specs
-   * are known to have changed on disk.
    */
-  updateSpecs(): Promise<Kernel.ISpecModels> {
+  fetchSpecs(): Promise<Kernel.ISpecModels> {
+    if (this._specPromise) {
+      return this._specPromise;
+    }
     let options = {
       baseUrl: this._baseUrl,
       ajaxSettings: this.ajaxSettings
@@ -143,6 +134,7 @@ class KernelManager implements Kernel.IManager {
     this._specPromise = Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
+        this._specPromise = null;
         this.specsChanged.emit(specs);
       }
       return specs;
@@ -163,9 +155,13 @@ class KernelManager implements Kernel.IManager {
     clearTimeout(this._updateTimer);
     clearTimeout(this._refreshTimer);
 
-    return Kernel.listRunning(this._getOptions()).then(running => {
+    if (this._runningPromise) {
+      return this._runningPromise;
+    }
+    let promise = Kernel.listRunning(this._getOptions()).then(running => {
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
+        this._runningPromise = null;
         this.runningChanged.emit(running);
       }
       this._refreshTimer = setTimeout(() => {
@@ -173,6 +169,8 @@ class KernelManager implements Kernel.IManager {
       }, 10000);
       return running;
     });
+    this._runningPromise = promise;
+    return promise;
   }
 
   /**
@@ -262,7 +260,8 @@ class KernelManager implements Kernel.IManager {
   private _isDisposed = false;
   private _updateTimer = -1;
   private _refreshTimer = -1;
-  private _specPromise: Promise<Kernel.ISpecModels>;
+  private _specPromise: Promise<Kernel.ISpecModels> = null;
+  private _runningPromise: Promise<Kernel.IModel> = null;
 }
 
 
