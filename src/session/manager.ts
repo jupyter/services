@@ -127,17 +127,22 @@ class SessionManager implements Session.IManager {
    * @returns A promise that resolves with the kernel spec models.
    */
   fetchSpecs(): Promise<Kernel.ISpecModels> {
+    if (this._specPromise) {
+      return this._specPromise;
+    }
     let options = {
       baseUrl: this._baseUrl,
       ajaxSettings: this.ajaxSettings
     };
-    return Kernel.getSpecs(options).then(specs => {
+    this._specPromise = Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
+        this._specPromise = null;
         this.specsChanged.emit(specs);
       }
       return specs;
     });
+    return this._specPromise;
   }
 
   /**
@@ -154,9 +159,13 @@ class SessionManager implements Session.IManager {
     clearTimeout(this._updateTimer);
     clearTimeout(this._refreshTimer);
 
-    return Session.listRunning(this._getOptions({})).then(running => {
+    if (this._runningPromise) {
+      return this._runningPromise;
+    }
+    let promise = Session.listRunning(this._getOptions({})).then(running => {
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
+        this._runningPromise = null;
         this.runningChanged.emit(running);
       }
       // Throttle the next request.
@@ -168,6 +177,8 @@ class SessionManager implements Session.IManager {
       }, 10000);
       return running;
     });
+    this._runningPromise = promise;
+    return promise;
   }
 
   /**
@@ -247,6 +258,8 @@ class SessionManager implements Session.IManager {
   private _specs: Kernel.ISpecModels = null;
   private _updateTimer = -1;
   private _refreshTimer = -1;
+  private _specPromise: Promise<Kernel.ISpecModels> = null;
+  private _runningPromise: Promise<Session.IModel[]> = null;
 }
 
 // Define the signals for the `SessionManager` class.
