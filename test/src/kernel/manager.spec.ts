@@ -102,16 +102,18 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#specs()', () => {
+    describe('#specs', () => {
 
       it('should get the kernel specs', (done) => {
+        expect(manager.specs).to.be(null);
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.specs().then(specs => {
-          expect(specs.default).to.be(KERNELSPECS.default);
+        manager.specsChanged.connect(() => {
+          expect(manager.specs.default).to.be(KERNELSPECS.default);
           done();
-        }).catch(done);
+        });
+        manager.fetchSpecs();
       });
 
     });
@@ -148,7 +150,7 @@ describe('kernel/manager', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.updateSpecs();
+        manager.fetchSpecs();
       });
 
     });
@@ -173,7 +175,7 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#updateSpecs()', () => {
+    describe('#fetchSpecs()', () => {
 
       it('should get the list of kernel specs', (done) => {
         let ids = {
@@ -184,7 +186,7 @@ describe('kernel/manager', () => {
           tester.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
         };
-        manager.updateSpecs().then(specs => {
+        manager.fetchSpecs().then(specs => {
           let names = Object.keys(specs.kernelspecs);
           expect(names[0]).to.be('python');
           expect(names[1]).to.be('python3');

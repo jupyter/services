@@ -78,21 +78,6 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Get the kernel specs.
-   *
-   * @returns A promise that resolves with the most recently fetched specs.
-   */
-  specs(): Promise<Kernel.ISpecModels> {
-    if (this._specs) {
-      return Promise.resolve(this._specs);
-    }
-    if (this._specPromise) {
-      return this._specPromise;
-    }
-    return this.updateSpecs();
-  }
-
-  /**
    * The base url of the manager.
    */
   get baseUrl(): string {
@@ -121,6 +106,13 @@ class SessionManager implements Session.IManager {
   }
 
   /**
+   * Get the most recently fetched kernel specs.
+   */
+  get specs(): Kernel.ISpecModels | null {
+    return this._specs;
+  }
+
+  /**
    * Create an iterator over the most recent running sessions.
    *
    * @returns A new iterator over the running sessions.
@@ -130,27 +122,22 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Force an update of the available kernel specs.
+   * Fetch the specs from the server.
    *
    * @returns A promise that resolves with the kernel spec models.
-   *
-   * #### Notes
-   * This is only meant to be called by the user if the kernel specs
-   * are known to have changed on disk.
    */
-  updateSpecs(): Promise<Kernel.ISpecModels> {
+  fetchSpecs(): Promise<Kernel.ISpecModels> {
     let options = {
       baseUrl: this._baseUrl,
       ajaxSettings: this.ajaxSettings
     };
-    this._specPromise = Kernel.getSpecs(options).then(specs => {
+    return Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
     });
-    return this._specPromise;
   }
 
   /**
@@ -260,7 +247,6 @@ class SessionManager implements Session.IManager {
   private _specs: Kernel.ISpecModels = null;
   private _updateTimer = -1;
   private _refreshTimer = -1;
-  private _specPromise: Promise<Kernel.ISpecModels>;
 }
 
 // Define the signals for the `SessionManager` class.

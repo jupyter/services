@@ -554,11 +554,9 @@ namespace Kernel {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * Get the kernel specs.
-     *
-     * @returns A promise that resolves with the most recently fecthed specs.
+     * Get the most recently fetched kernel specs.
      */
-    specs(): Promise<ISpecModels>;
+    readonly specs: Kernel.ISpecModels | null;
 
     /**
      * Create an iterator over the known running kernels.
@@ -568,15 +566,11 @@ namespace Kernel {
     running(): IIterator<IModel>;
 
     /**
-     * Force an update of the available kernel specs.
+     * Fetch the specs from the server.
      *
      * @returns A promise that resolves with the kernel spec models.
-     *
-     * #### Notes
-     * This is only meant to be called by the user if the kernel specs
-     * are known to have changed on disk.
      */
-    updateSpecs(): Promise<ISpecModels>;
+    fetchSpecs(): Promise<ISpecModels>;
 
     /**
      * Force a refresh of the running kernels.
