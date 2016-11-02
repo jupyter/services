@@ -556,11 +556,9 @@ namespace Kernel {
     /**
      * Get the kernel specs.
      *
-     * #### Notes
-     * This will be `null` until the specs are fetched from
-     * the server.
+     * @returns A promise that resolves with the most recently fecthed specs.
      */
-    readonly specs: ISpecModels | null;
+    specs(): Promise<ISpecModels>;
 
     /**
      * Create an iterator over the known running kernels.

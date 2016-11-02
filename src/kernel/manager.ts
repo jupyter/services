@@ -103,10 +103,18 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * Get the most recent specs from the server.
+   * Get the kernel specs.
+   *
+   * @returns A promise that resolves with the most recently fetched specs.
    */
-  get specs(): Kernel.ISpecModels {
-    return this._specs;
+  specs(): Promise<Kernel.ISpecModels> {
+    if (this._specs) {
+      return Promise.resolve(this._specs);
+    }
+    if (this._specPromise) {
+      return this._specPromise;
+    }
+    return this.updateSpecs();
   }
 
   /**
@@ -128,13 +136,18 @@ class KernelManager implements Kernel.IManager {
    * are known to have changed on disk.
    */
   updateSpecs(): Promise<Kernel.ISpecModels> {
-    return Kernel.getSpecs(this._getOptions()).then(specs => {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    this._specPromise = Kernel.getSpecs(options).then(specs => {
       if (!deepEqual(specs, this._specs)) {
         this._specs = specs;
         this.specsChanged.emit(specs);
       }
       return specs;
     });
+    return this._specPromise;
   }
 
   /**
@@ -249,6 +262,7 @@ class KernelManager implements Kernel.IManager {
   private _isDisposed = false;
   private _updateTimer = -1;
   private _refreshTimer = -1;
+  private _specPromise: Promise<Kernel.ISpecModels>;
 }
 
 
