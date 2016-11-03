@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject, deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -349,13 +353,14 @@ describe('jupyter.services - Integration', () => {
       let manager = new TerminalManager();
       manager.startNew().then(session => {
         return manager.refreshRunning();
-      }).then(running => {
+      }).then(() => {
+        let running = toArray(manager.running());
         expect(running.length).to.be(1);
         return manager.shutdown(running[0].name);
       }).then(() => {
         return manager.refreshRunning();
-      }).then(running => {
-        expect(running.length).to.be(0);
+      }).then(() => {
+        expect(manager.running().next).to.be(void 0);
         done();
       }).catch(done);
     });

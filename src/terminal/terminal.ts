@@ -277,12 +277,12 @@ namespace TerminalSession {
     /**
      * Force a refresh of the running terminal sessions.
      *
-     * @returns A promise that resolves with the list of running sessions.
+     * @returns A promise that with the list of running sessions.
      *
      * #### Notes
      * This is not typically meant to be called by the user, since the
      * manager maintains its own internal state.
      */
-    refreshRunning(): Promise<IModel[]>;
+    refreshRunning(): Promise<void>;
   }
 }

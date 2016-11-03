@@ -119,7 +119,6 @@ describe('session', () => {
           expect(manager.specs.default).to.be(KERNELSPECS.default);
           done();
         });
-        manager.fetchSpecs();
       });
 
     });
@@ -152,7 +151,6 @@ describe('session', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.fetchSpecs();
       });
 
     });
@@ -182,8 +180,8 @@ describe('session', () => {
         handler.onRequest = () => {
           handler.respond(200, sessionModels);
         };
-        manager.refreshRunning().then(response => {
-          let running = toArray(response);
+        manager.refreshRunning().then(() => {
+          let running = toArray(manager.running());
           expect(running[0]).to.eql(sessionModels[0]);
           expect(running[1]).to.eql(sessionModels[1]);
           done();

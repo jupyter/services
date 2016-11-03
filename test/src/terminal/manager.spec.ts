@@ -159,13 +159,14 @@ describe('terminals', () => {
 
     describe('#refreshRunning()', () => {
 
-      it('should list the running session models', (done) => {
+      it('should update the running session models', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.refreshRunning().then(models => {
-          expect(deepEqual(data, toArray(models))).to.be(true);
+        manager.refreshRunning().then(() => {
+          let running = toArray(manager.running());
+          expect(deepEqual(data, running)).to.be(true);
           done();
         }).catch(done);
       });

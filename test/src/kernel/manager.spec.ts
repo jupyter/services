@@ -113,7 +113,6 @@ describe('kernel/manager', () => {
           expect(manager.specs.default).to.be(KERNELSPECS.default);
           done();
         });
-        manager.fetchSpecs();
       });
 
     });
@@ -150,7 +149,6 @@ describe('kernel/manager', () => {
         let handler = new RequestHandler(() => {
           handler.respond(200, KERNELSPECS);
         });
-        manager.fetchSpecs();
       });
 
     });
@@ -175,9 +173,9 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#fetchSpecs()', () => {
+    describe('#refreshSpecs()', () => {
 
-      it('should get the list of kernel specs', (done) => {
+      it('should update list of kernel specs', (done) => {
         let ids = {
           'python': PYTHON_SPEC,
           'python3': PYTHON3_SPEC
@@ -186,8 +184,8 @@ describe('kernel/manager', () => {
           tester.respond(200, { 'default': 'python',
                                'kernelspecs': ids });
         };
-        manager.fetchSpecs().then(specs => {
-          let names = Object.keys(specs.kernelspecs);
+        manager.refreshSpecs().then(() => {
+          let names = Object.keys(manager.specs.kernelspecs);
           expect(names[0]).to.be('python');
           expect(names[1]).to.be('python3');
           done();
@@ -198,7 +196,7 @@ describe('kernel/manager', () => {
 
     describe('#refreshRunning()', () => {
 
-      it('should list the running kernels', (done) => {
+      it('should update the running kernels', (done) => {
         let data = [
           { id: uuid(), name: 'test' },
           { id: uuid(), name: 'test2' }
@@ -206,8 +204,8 @@ describe('kernel/manager', () => {
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.refreshRunning().then(response => {
-          let running = toArray(response);
+        manager.refreshRunning().then(() => {
+          let running = toArray(manager.running());
           expect(running[0]).to.eql(data[0]);
           expect(running[1]).to.eql(data[1]);
           done();

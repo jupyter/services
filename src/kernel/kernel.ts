@@ -529,7 +529,7 @@ namespace Kernel {
   export
   interface IManager extends IDisposable {
     /**
-     * A signal emitted when the specs change.
+     * A signal emitted when the kernel specs change.
      */
     specsChanged: ISignal<IManager, ISpecModels>;
 
@@ -554,7 +554,7 @@ namespace Kernel {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * Get the most recently fetched kernel specs.
+     * The kernel spec models.
      */
     readonly specs: Kernel.ISpecModels | null;
 
@@ -566,22 +566,26 @@ namespace Kernel {
     running(): IIterator<IModel>;
 
     /**
-     * Fetch the specs from the server.
+     * Force a refresh of the specs from the server.
      *
-     * @returns A promise that resolves with the kernel spec models.
+     * @returns A promise that resolves when the specs are fetched.
+     *
+     * #### Notes
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    fetchSpecs(): Promise<ISpecModels>;
+    refreshSpecs(): Promise<void>;
 
     /**
      * Force a refresh of the running kernels.
      *
-     * @returns A promise that with the list of running kernels.
+     * @returns A promise that resolves when the models are refreshed.
      *
      * #### Notes
-     * This is not typically meant to be called by the user, since the
-     * manager maintains its own internal state.
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    refreshRunning(): Promise<IModel[]>;
+    refreshRunning(): Promise<void>;
 
     /**
      * Start a new kernel.

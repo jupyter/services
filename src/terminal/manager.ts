@@ -37,7 +37,14 @@ class TerminalManager implements TerminalSession.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
-    this._scheduleUpdate();
+
+    // Initialize internal data.
+    this._refreshRunning();
+
+    // Set up polling.
+    this._refreshTimer = setInterval(() => {
+      this._refreshRunning();
+    }, 10000);
   }
 
   /**
@@ -88,7 +95,6 @@ class TerminalManager implements TerminalSession.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._updateTimer);
     clearTimeout(this._refreshTimer);
     clearSignalData(this);
     this._running = [];
@@ -136,44 +142,39 @@ class TerminalManager implements TerminalSession.IManager {
    * will be used unless overridden.
    */
   connectTo(name: string, options?: IAjaxSettings): Promise<TerminalSession.ISession> {
-    options = this._getOptions(options);
-    return TerminalSession.connectTo(name, options).then(session => {
-      this._scheduleUpdate();
-      session.terminated.connect(() => {
-        this._scheduleUpdate();
-      });
-      return session;
-    });
+    return TerminalSession.connectTo(name, this._getOptions(options));
   }
 
   /**
    * Shut down a terminal session by name.
    */
   shutdown(name: string): Promise<void> {
-    return TerminalSession.shutdown(name, this._getOptions()).then(() => {
-      this._scheduleUpdate();
-    });
+    return TerminalSession.shutdown(name, this._getOptions());
   }
 
   /**
-   * Force a refresh of the running terminals.
+   * Force a refresh of the running sessions.
+   *
+   * @returns A promise that with the list of running sessions.
+   *
+   * #### Notes
+   * This is not typically meant to be called by the user, since the
+   * manager maintains its own internal state.
    */
-  refreshRunning(): Promise<TerminalSession.IModel[]> {
-    clearTimeout(this._updateTimer);
-    clearTimeout(this._refreshTimer);
-    return TerminalSession.listRunning(this._getOptions()).then(data => {
-      if (!deepEqual(data, this._running)) {
-        this._running = data;
-        this.runningChanged.emit(data);
+  refreshRunning(): Promise<void> {
+    return this._refreshRunning();
+  }
+
+  /**
+   * Refresh the running sessions.
+   */
+  private _refreshRunning(): Promise<void> {
+    return TerminalSession.listRunning(this._getOptions({})).then(running => {
+      if (!deepEqual(running, this._running)) {
+        this._running = running.slice();
+        this.runningChanged.emit(running);
       }
-      // Throttle the next request.
-      if (this._updateTimer !== -1) {
-        this._scheduleUpdate();
-      }
-      this._refreshTimer = setTimeout(() => {
-        this.refreshRunning();
-      }, 10000);
-      return data;
+      return running;
     });
   }
 
@@ -187,24 +188,11 @@ class TerminalManager implements TerminalSession.IManager {
     return options;
   }
 
-  /**
-   * Schedule an update of the running sessions.
-   */
-  private _scheduleUpdate(): void {
-    if (this._updateTimer !== -1) {
-      return;
-    }
-    this._updateTimer = setTimeout(() => {
-      this.refreshRunning();
-    }, 100);
-  }
-
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings = '';
   private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
-  private _updateTimer = -1;
   private _refreshTimer = -1;
 }
 
