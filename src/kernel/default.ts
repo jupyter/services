@@ -88,7 +88,7 @@ class DefaultKernel implements Kernel.IKernel {
 
     this._readyPromise = Private.findSpecs(options).then(specs => {
       this._spec = specs.kernelspecs[this._name];
-      return this._connectionPromise;
+      return this._connectionPromise.promise;
     });
     this._createSocket();
     Private.runningKernels.pushBack(this);
