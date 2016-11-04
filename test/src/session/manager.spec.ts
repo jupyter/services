@@ -24,7 +24,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  RequestHandler, KernelTester, KERNELSPECS
+  KernelTester, KERNELSPECS
 } from '../utils';
 
 
@@ -147,9 +147,9 @@ describe('session/manager', () => {
           done();
         });
 
-        let handler = new RequestHandler(() => {
-          handler.respond(200, specs);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, specs);
+        };
         manager.refreshSpecs();
       });
 
@@ -164,9 +164,9 @@ describe('session/manager', () => {
           expect(deepEqual(toArray(args), sessionModels)).to.be(true);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, sessionModels);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, sessionModels);
+        };
         manager.refreshRunning();
       });
 
@@ -175,10 +175,9 @@ describe('session/manager', () => {
     describe('#refreshRunning()', () => {
 
       it('should refresh the list of session ids', (done) => {
-        let handler = new RequestHandler();
         let sessionModels = [createSessionModel(), createSessionModel()];
-        handler.onRequest = () => {
-          handler.respond(200, sessionModels);
+        tester.onRequest = () => {
+          tester.respond(200, sessionModels);
         };
         manager.refreshRunning().then(() => {
           let running = toArray(manager.running());
@@ -196,9 +195,9 @@ describe('session/manager', () => {
       it('should refresh the specs', (done) => {
         let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
         specs.default = 'shell';
-        let handler = new RequestHandler(() => {
-          handler.respond(200, specs);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, specs);
+        };
         manager.refreshSpecs().then(() => {
           expect(manager.specs.default).to.be(specs.default);
           done();
@@ -308,9 +307,9 @@ describe('session/manager', () => {
     describe('shutdown()', () => {
 
       it('should shut down a session by id', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(204, { });
-        });
+        tester.onRequest = () => {
+          tester.respond(204, { });
+        };
         manager.shutdown('foo').then(done, done);
       });
 

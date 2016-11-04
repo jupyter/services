@@ -228,7 +228,6 @@ class KernelManager implements Kernel.IManager {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
-      return running;
     });
   }
 

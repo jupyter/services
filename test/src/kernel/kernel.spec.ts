@@ -303,6 +303,9 @@ describe('kernel', () => {
 
     beforeEach((done) => {
       Kernel.startNew().then(k => {
+        tester.onRequest = () => {
+          tester.respond(200, KERNELSPECS);
+        };
         kernel = k;
         return kernel.ready();
       }).then(() => {
@@ -549,6 +552,14 @@ describe('kernel', () => {
         return kernel.ready().then(() => {
           expect(kernel.spec.language).to.be('python');
         }).then(done, done);
+      });
+
+    });
+
+    context('#ready()', () => {
+
+      it('should resolve when the kernel is ready', (done) => {
+        return kernel.ready().then(done, done);
       });
 
     });
