@@ -190,33 +190,6 @@ describe('session', () => {
       });
     });
 
-    it('should be able connect to an existing kernel', (done) => {
-      let sessionModel = createSessionModel();
-      Kernel.startNew().then(kernel => {
-        sessionModel = {
-          id: uuid(),
-          kernel: kernel.model,
-          notebook: {
-            path: uuid()
-          }
-        };
-        tester.onRequest = request => {
-          if (request.method === 'POST') {
-            tester.respond(201, sessionModel);
-          } else {
-            tester.respond(200, { name: sessionModel.kernel.name,
-                                    id: sessionModel.kernel.id });
-          }
-        };
-        let options = createSessionOptions(sessionModel);
-        Session.startNew(options).then(s => {
-          session = s;
-          expect(session.id).to.be(sessionModel.id);
-          done();
-        });
-      });
-    });
-
     it('should accept ajax options', (done) => {
       let sessionModel = createSessionModel();
       tester.onRequest = request => {
