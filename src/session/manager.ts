@@ -239,7 +239,6 @@ class SessionManager implements Session.IManager {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
-      return running;
     });
   }
 
