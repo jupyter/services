@@ -41,8 +41,8 @@ class KernelManager implements Kernel.IManager {
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
 
     // Initialize internal data.
-    this._refreshSpecs().then(() => {
-      this._refreshRunning();
+    this._readyPromise = this._refreshSpecs().then(() => {
+      return this._refreshRunning();
     });
 
     // Set up polling.
@@ -119,6 +119,13 @@ class KernelManager implements Kernel.IManager {
    */
   get specs(): Kernel.ISpecModels | null {
     return this._specs;
+  }
+
+  /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -243,6 +250,7 @@ class KernelManager implements Kernel.IManager {
   private _isDisposed = false;
   private _runningTimer = -1;
   private _specsTimer = -1;
+  private _readyPromise: Promise<void>;
 }
 
 

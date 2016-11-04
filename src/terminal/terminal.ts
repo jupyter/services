@@ -70,6 +70,11 @@ namespace TerminalSession {
     ajaxSettings: utils.IAjaxSettings;
 
     /**
+     * A promise that fulfills when the session is initially ready.
+     */
+    ready(): Promise<void>;
+
+    /**
      * Send a message to the terminal session.
      */
     send(message: IMessage): void;
@@ -226,6 +231,11 @@ namespace TerminalSession {
      * The default ajax settings for the manager.
      */
     ajaxSettings?: IAjaxSettings;
+
+    /**
+     * A promise that fulfills when the manager is ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Create an iterator over the known running terminals.

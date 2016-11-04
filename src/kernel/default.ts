@@ -85,6 +85,11 @@ class DefaultKernel implements Kernel.IKernel {
     this._futures = new Map<string, KernelFutureHandler>();
     this._commPromises = new Map<string, Promise<Kernel.IComm>>();
     this._comms = new Map<string, Kernel.IComm>();
+
+    this._readyPromise = Private.findSpecs(options).then(specs => {
+      this._spec = specs.kernelspecs[this._name];
+      return this._connectionPromise;
+    });
     this._createSocket();
     Private.runningKernels.pushBack(this);
   }
@@ -179,32 +184,30 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * A promise that resolves with a cached kernel info.
+   * The cached kernel info.
+   *
+   * #### Notes
+   * This value will be null until the kernel is ready.
    */
-  info(): Promise<KernelMessage.IInfoReply> {
-    if (this._info) {
-      return Promise.resolve(this._info);
-    }
-    return this._connectionPromise.promise.then(() => {
-      return this._info;
-    });
+  get info(): KernelMessage.IInfoReply | null {
+    return this._info;
   }
 
   /**
-   * A promise that resolves with a cached kernel spec.
+   * The cached kernel spec.
+   *
+   * #### Notes
+   * This value will be null until the kernel is ready.
    */
-  spec(): Promise<Kernel.ISpecModel> {
-    let promise = Private.specs[this._baseUrl];
-    if (promise) {
-      return promise.then(specs => specs.kernelspecs[this._name]);
-    }
-    let options = {
-      baseUrl: this._baseUrl,
-      ajaxSettings: this.ajaxSettings
-    };
-    return Private.getSpecs(options).then(value => {
-      return value.kernelspecs[this._name];
-    });
+  get spec(): Kernel.ISpecModel | null {
+    return this._spec;
+  }
+
+  /**
+   * A promise that is fulfilled when the kernel is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -916,6 +919,8 @@ class DefaultKernel implements Kernel.IKernel {
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
+  private _readyPromise: Promise<void>;
+  private _spec: Kernel.ISpecModel | null;
 }
 
 
@@ -1050,6 +1055,18 @@ namespace Private {
     return getKernelModel(id, options).catch(() => {
       throw new Error(`No running kernel with id: ${id}`);
     });
+  }
+
+  /**
+   * Get the cached kernel specs or fetch them.
+   */
+  export
+  function findSpecs(options: Kernel.IOptions): Promise<Kernel.ISpecModels> {
+    let promise = specs[options.baseUrl];
+    if (promise) {
+      return promise;
+    }
+    return getSpecs(options);
   }
 
   /**

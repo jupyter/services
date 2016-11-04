@@ -45,8 +45,8 @@ class SessionManager implements Session.IManager {
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
 
     // Initialize internal data.
-    this._refreshSpecs().then(() => {
-      this._refreshRunning();
+    this._readyPromise = this._refreshSpecs().then(() => {
+      return this._refreshRunning();
     });
 
     // Set up polling.
@@ -122,6 +122,13 @@ class SessionManager implements Session.IManager {
    */
   get specs(): Kernel.ISpecModels | null {
     return this._specs;
+  }
+
+  /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -244,6 +251,7 @@ class SessionManager implements Session.IManager {
   private _specs: Kernel.ISpecModels = null;
   private _runningTimer = -1;
   private _specsTimer = -1;
+  private _readyPromise: Promise<void>;
 }
 
 // Define the signals for the `SessionManager` class.

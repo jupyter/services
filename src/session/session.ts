@@ -366,9 +366,17 @@ namespace Session {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * The kernel spec models.
+     * The cached kernel specs.
+     *
+     * #### Notes
+     * This value will be null until the manager is ready.
      */
     readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * A promise that is fulfilled when the manager is ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Create an iterator over the known running sessions.

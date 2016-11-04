@@ -39,7 +39,7 @@ class TerminalManager implements TerminalSession.IManager {
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
 
     // Initialize internal data.
-    this._refreshRunning();
+    this._readyPromise = this._refreshRunning();
 
     // Set up polling.
     this._refreshTimer = setInterval(() => {
@@ -87,6 +87,7 @@ class TerminalManager implements TerminalSession.IManager {
     this._ajaxSettings = JSON.stringify(value);
   }
 
+
   /**
    * Dispose of the resources used by the manager.
    */
@@ -98,6 +99,13 @@ class TerminalManager implements TerminalSession.IManager {
     clearTimeout(this._refreshTimer);
     clearSignalData(this);
     this._running = [];
+  }
+
+  /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -194,6 +202,7 @@ class TerminalManager implements TerminalSession.IManager {
   private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
   private _refreshTimer = -1;
+  private _readyPromise: Promise<void>;
 }
 
 

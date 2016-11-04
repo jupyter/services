@@ -108,28 +108,25 @@ namespace Kernel {
     readonly status: Kernel.Status;
 
     /**
-     * Get the kernel info.
-     *
-     * @returns A promise that resolves with a cached kernel info.
+     * The cached kernel info.
      *
      * #### Notes
-     * This value is cached when a kernel connection is made.
-     * This can be used to wait for a kernel connection before taking
-     * further action on the kernel.  It can also be used to get the kernel
-     * info without generating an extra kernel message.
+     * This value will be null until the kernel is ready.
      */
-    info(): Promise<KernelMessage.IInfoReply>;
+    readonly info: KernelMessage.IInfoReply | null;
 
     /**
-     * Get the cached kernel spec.
-     *
-     * @returns A promise that resolves with a cached kernel spec.
+     * The cached kernel spec.
      *
      * #### Notes
-     * It will use the cached kernel spec models for this base url or
-     * fetch them from the server.
+     * This value will be null until the kernel is ready.
      */
-    spec(): Promise<Kernel.ISpecModel>;
+    readonly spec: Kernel.ISpecModel | null;
+
+    /**
+     * A promise that is fulfilled when the kernel is initially ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Send a shell message to the kernel.
@@ -555,8 +552,16 @@ namespace Kernel {
 
     /**
      * The kernel spec models.
+     *
+     * #### Notes
+     * The value will be null until the manager is ready.
      */
     readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * A promise that fulfills when the manager is initially ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Create an iterator over the known running kernels.

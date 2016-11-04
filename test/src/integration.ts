@@ -64,9 +64,7 @@ describe('jupyter.services - Integration', () => {
         return kernel.requestKernelInfo();
       }).then((info) => {
         content = info.content;
-        return kernel.info();
-      }).then(info => {
-        expect(deepEqual(content, info)).to.be(true);
+        expect(deepEqual(content, kernel.info)).to.be(true);
         return kernel.shutdown();
       }).then(done, done);
     });
