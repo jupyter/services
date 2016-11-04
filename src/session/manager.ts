@@ -43,7 +43,19 @@ class SessionManager implements Session.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
-    this._scheduleUpdate();
+
+    // Initialize internal data.
+    this._readyPromise = this._refreshSpecs().then(() => {
+      return this._refreshRunning();
+    });
+
+    // Set up polling.
+    this._runningTimer = setInterval(() => {
+      this._refreshRunning();
+    }, 10000);
+    this._specsTimer = setInterval(() => {
+      this._refreshSpecs();
+    }, 61000);
   }
 
   /**
@@ -71,8 +83,8 @@ class SessionManager implements Session.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._updateTimer);
-    clearTimeout(this._refreshTimer);
+    clearInterval(this._runningTimer);
+    clearInterval(this._specsTimer);
     clearSignalData(this);
     this._running = [];
   }
@@ -113,6 +125,13 @@ class SessionManager implements Session.IManager {
   }
 
   /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
+  }
+
+  /**
    * Create an iterator over the most recent running sessions.
    *
    * @returns A new iterator over the running sessions.
@@ -122,27 +141,16 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Fetch the specs from the server.
+   * Force a refresh of the specs from the server.
    *
-   * @returns A promise that resolves with the kernel spec models.
+   * @returns A promise that resolves when the specs are fetched.
+   *
+   * #### Notes
+   * This is intended to be called only in response to a user action,
+   * since the manager maintains its internal state.
    */
-  fetchSpecs(): Promise<Kernel.ISpecModels> {
-    if (this._specPromise) {
-      return this._specPromise;
-    }
-    let options = {
-      baseUrl: this._baseUrl,
-      ajaxSettings: this.ajaxSettings
-    };
-    this._specPromise = Kernel.getSpecs(options).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
-        this._specs = specs;
-        this._specPromise = null;
-        this.specsChanged.emit(specs);
-      }
-      return specs;
-    });
-    return this._specPromise;
+  refreshSpecs(): Promise<void> {
+    return this._refreshSpecs();
   }
 
   /**
@@ -154,31 +162,8 @@ class SessionManager implements Session.IManager {
    * This is not typically meant to be called by the user, since the
    * manager maintains its own internal state.
    */
-  refreshRunning(): Promise<Session.IModel[]> {
-
-    clearTimeout(this._updateTimer);
-    clearTimeout(this._refreshTimer);
-
-    if (this._runningPromise) {
-      return this._runningPromise;
-    }
-    let promise = Session.listRunning(this._getOptions({})).then(running => {
-      if (!deepEqual(running, this._running)) {
-        this._running = running.slice();
-        this._runningPromise = null;
-        this.runningChanged.emit(running);
-      }
-      // Throttle the next request.
-      if (this._updateTimer !== -1) {
-        this._scheduleUpdate();
-      }
-      this._refreshTimer = setTimeout(() => {
-        this.refreshRunning();
-      }, 10000);
-      return running;
-    });
-    this._runningPromise = promise;
-    return promise;
+  refreshRunning(): Promise<void> {
+    return this._refreshRunning();
   }
 
   /**
@@ -188,11 +173,7 @@ class SessionManager implements Session.IManager {
    *   `'path'`.
    */
   startNew(options: Session.IOptions): Promise<Session.ISession> {
-    return Session.startNew(this._getOptions(options)).then(session => {
-      this._scheduleUpdate();
-      session.terminated.connect(() => { this._scheduleUpdate(); });
-      return session;
-    });
+    return Session.startNew(this._getOptions(options));
   }
 
   /**
@@ -213,19 +194,14 @@ class SessionManager implements Session.IManager {
    * Connect to a running session.  See also [[connectToSession]].
    */
   connectTo(id: string, options?: Session.IOptions): Promise<Session.ISession> {
-    return Session.connectTo(id, this._getOptions(options)).then(session => {
-      session.terminated.connect(() => { this._scheduleUpdate(); });
-      return session;
-    });
+    return Session.connectTo(id, this._getOptions(options));
   }
 
   /**
    * Shut down a session by id.
    */
   shutdown(id: string, options?: Session.IOptions): Promise<void> {
-    return Session.shutdown(id, this._getOptions(options)).then(() => {
-      this._scheduleUpdate();
-    });
+    return Session.shutdown(id, this._getOptions(options));
   }
 
   /**
@@ -239,15 +215,31 @@ class SessionManager implements Session.IManager {
   }
 
   /**
-   * Schedule an update of the running sessions.
+   * Refresh the specs.
    */
-  private _scheduleUpdate(): void {
-    if (this._updateTimer !== -1) {
-      return;
-    }
-    this._updateTimer = setTimeout(() => {
-      this.refreshRunning();
-    }, 100);
+  private _refreshSpecs(): Promise<void> {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Kernel.getSpecs(options).then(specs => {
+      if (!deepEqual(specs, this._specs)) {
+        this._specs = specs;
+        this.specsChanged.emit(specs);
+      }
+    });
+  }
+
+  /**
+   * Refresh the running sessions.
+   */
+  private _refreshRunning(): Promise<void> {
+    return Session.listRunning(this._getOptions({})).then(running => {
+      if (!deepEqual(running, this._running)) {
+        this._running = running.slice();
+        this.runningChanged.emit(running);
+      }
+    });
   }
 
   private _baseUrl = '';
@@ -256,10 +248,9 @@ class SessionManager implements Session.IManager {
   private _isDisposed = false;
   private _running: Session.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;
-  private _updateTimer = -1;
-  private _refreshTimer = -1;
-  private _specPromise: Promise<Kernel.ISpecModels> = null;
-  private _runningPromise: Promise<Session.IModel[]> = null;
+  private _runningTimer = -1;
+  private _specsTimer = -1;
+  private _readyPromise: Promise<void>;
 }
 
 // Define the signals for the `SessionManager` class.

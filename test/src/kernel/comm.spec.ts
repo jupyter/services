@@ -24,6 +24,8 @@ describe('jupyter.services - Comm', () => {
     tester = new KernelTester();
     Kernel.startNew().then(k => {
       kernel = k;
+      return kernel.ready();
+    }).then(() => {
       done();
     }).catch(done);
   });

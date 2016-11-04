@@ -12,15 +12,19 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  uuid
-} from '../../../lib/utils';
+  Kernel
+} from '../../../lib/kernel';
 
 import {
   SessionManager, Session
 } from '../../../lib/session';
 
 import {
-  RequestHandler, KernelTester, KERNELSPECS
+  uuid, copy
+} from '../../../lib/utils';
+
+import {
+  KernelTester, KERNELSPECS
 } from '../utils';
 
 
@@ -36,15 +40,26 @@ function createSessionModel(): Session.IModel {
 }
 
 
-describe('session', () => {
+describe('session/manager', () => {
 
   let tester: KernelTester;
   let session: Session.ISession;
   let manager: SessionManager;
+  let data: Session.IModel[];
 
-  beforeEach(() => {
+  beforeEach((done) => {
+    data = [createSessionModel(), createSessionModel()];
     tester = new KernelTester();
+    tester.onRequest = () => {
+      tester.respond(200, KERNELSPECS);
+      tester.onRequest = () => {
+        tester.respond(200, data);
+      };
+    };
     manager = new SessionManager();
+    expect(manager.specs).to.be(null);
+    expect(manager.running().next()).to.be(void 0);
+    manager.ready().then(done, done);
   });
 
   afterEach(() => {
@@ -61,18 +76,6 @@ describe('session', () => {
 
       it('should create a new session manager', () => {
         expect(manager instanceof SessionManager).to.be(true);
-      });
-
-      it('should trigger an update of running sessions', (done) => {
-        let sessionModels = [createSessionModel(), createSessionModel()];
-        manager.runningChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), sessionModels)).to.be(true);
-          done();
-        });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, sessionModels);
-        });
       });
 
     });
@@ -110,32 +113,25 @@ describe('session', () => {
 
     describe('#specs', () => {
 
-      it('should get the kernel specs', (done) => {
-        expect(manager.specs).to.be(null);
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.specsChanged.connect(() => {
-          expect(manager.specs.default).to.be(KERNELSPECS.default);
-          done();
-        });
-        manager.fetchSpecs();
+      it('should be the kernel specs', () => {
+        expect(manager.specs.default).to.be(KERNELSPECS.default);
+      });
+
+    });
+
+    describe('#ready()', () => {
+
+      it('should resolve when the manager is ready', (done) => {
+        manager.ready().then(done, done);
       });
 
     });
 
     describe('#running()', () => {
 
-      it('should get the running sessions', (done) => {
-        let sessionModels = [createSessionModel(), createSessionModel()];
-        manager.runningChanged.connect(() => {
-          let test = deepEqual(toArray(manager.running()), sessionModels);
-          expect(test).to.be(true);
-          done();
-        });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, sessionModels);
-        });
+      it('should get the running sessions', () => {
+        let test = deepEqual(toArray(manager.running()), data);
+        expect(test).to.be(true);
       });
 
     });
@@ -143,16 +139,18 @@ describe('session', () => {
     describe('#specsChanged', () => {
 
       it('should be emitted when the specs change', (done) => {
+        let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
+        specs.default = 'shell';
         manager.specsChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(false);
-          expect(args.default).to.be(KERNELSPECS.default);
+          expect(args.default).to.be(specs.default);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.fetchSpecs();
+
+        tester.onRequest = () => {
+          tester.respond(200, specs);
+        };
+        manager.refreshSpecs();
       });
 
     });
@@ -166,9 +164,9 @@ describe('session', () => {
           expect(deepEqual(toArray(args), sessionModels)).to.be(true);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, sessionModels);
-        });
+        tester.onRequest = () => {
+          tester.respond(200, sessionModels);
+        };
         manager.refreshRunning();
       });
 
@@ -176,19 +174,34 @@ describe('session', () => {
 
     describe('#refreshRunning()', () => {
 
-      it('should a return list of session ids', (done) => {
-        let handler = new RequestHandler();
+      it('should refresh the list of session ids', (done) => {
         let sessionModels = [createSessionModel(), createSessionModel()];
-        handler.onRequest = () => {
-          handler.respond(200, sessionModels);
+        tester.onRequest = () => {
+          tester.respond(200, sessionModels);
         };
-        manager.refreshRunning().then(response => {
-          let running = toArray(response);
+        manager.refreshRunning().then(() => {
+          let running = toArray(manager.running());
           expect(running[0]).to.eql(sessionModels[0]);
           expect(running[1]).to.eql(sessionModels[1]);
           done();
         });
 
+      });
+
+    });
+
+    describe('#refreshSpecs()', () => {
+
+      it('should refresh the specs', (done) => {
+        let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
+        specs.default = 'shell';
+        tester.onRequest = () => {
+          tester.respond(200, specs);
+        };
+        manager.refreshSpecs().then(() => {
+          expect(manager.specs.default).to.be(specs.default);
+          done();
+        }).catch(done);
       });
 
     });
@@ -294,9 +307,9 @@ describe('session', () => {
     describe('shutdown()', () => {
 
       it('should shut down a session by id', (done) => {
-        let handler = new RequestHandler(() => {
-          handler.respond(204, { });
-        });
+        tester.onRequest = () => {
+          tester.respond(204, { });
+        };
         manager.shutdown('foo').then(done, done);
       });
 

@@ -12,7 +12,7 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
-  uuid
+  uuid, copy
 } from '../../../lib/utils';
 
 import {
@@ -20,7 +20,7 @@ import {
 } from '../../../lib/kernel';
 
 import {
-  RequestHandler, KernelTester, KERNEL_OPTIONS, PYTHON_SPEC, KERNELSPECS
+  KernelTester, KERNEL_OPTIONS, PYTHON_SPEC, KERNELSPECS
 } from '../utils';
 
 
@@ -34,10 +34,22 @@ describe('kernel/manager', () => {
 
   let tester: KernelTester;
   let manager: KernelManager;
+  let data: Kernel.IModel[];
 
-  beforeEach(() => {
+  beforeEach((done) => {
     tester = new KernelTester();
+    data = [{ id: uuid(), name: 'test' },
+            { id: uuid(), name: 'test2' }];
+    tester.onRequest = () => {
+      tester.respond(200, KERNELSPECS);
+      tester.onRequest = () => {
+        tester.respond(200, data);
+      };
+    };
     manager = new KernelManager();
+    expect(manager.specs).to.be(null);
+    expect(manager.running().next()).to.be(void 0);
+    manager.ready().then(done, done);
   });
 
   afterEach(() => {
@@ -50,23 +62,9 @@ describe('kernel/manager', () => {
     describe('#constructor()', () => {
 
       it('should take the options as an argument', () => {
+        manager.dispose();
         manager = new KernelManager(KERNEL_OPTIONS);
         expect(manager instanceof KernelManager).to.be(true);
-      });
-
-      it('should trigger an update of running sessions', (done) => {
-        let data: Kernel.IModel[] = [
-          { id: uuid(), name: 'test' },
-          { id: uuid(), name: 'test2' }
-        ];
-        manager.runningChanged.connect((sender, args) => {
-          expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), data)).to.be(true);
-          done();
-        });
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
       });
 
     });
@@ -104,36 +102,17 @@ describe('kernel/manager', () => {
 
     describe('#specs', () => {
 
-      it('should get the kernel specs', (done) => {
-        expect(manager.specs).to.be(null);
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.specsChanged.connect(() => {
-          expect(manager.specs.default).to.be(KERNELSPECS.default);
-          done();
-        });
-        manager.fetchSpecs();
+      it('should get the kernel specs', () => {
+        expect(manager.specs.default).to.be(KERNELSPECS.default);
       });
 
     });
 
     describe('#running()', () => {
 
-      it('should get the running sessions', (done) => {
-        let data: Kernel.IModel[] = [
-          { id: uuid(), name: 'test' },
-          { id: uuid(), name: 'test2' }
-        ];
-        manager.runningChanged.connect((sender, args) => {
-          let test = deepEqual(toArray(args), toArray(manager.running()));
-          expect(test).to.be(true);
-          done();
-        });
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        manager.refreshRunning();
+      it('should get the running sessions', () => {
+        let test = deepEqual(toArray(data), toArray(manager.running()));
+        expect(test).to.be(true);
       });
 
     });
@@ -141,16 +120,18 @@ describe('kernel/manager', () => {
     describe('#specsChanged', () => {
 
       it('should be emitted when the specs change', (done) => {
+        let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
+        specs.default = 'shell';
         manager.specsChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(args, KERNELSPECS)).to.be(false);
-          expect(args.default).to.be(KERNELSPECS.default);
+          expect(args.default).to.be(specs.default);
           done();
         });
-        let handler = new RequestHandler(() => {
-          handler.respond(200, KERNELSPECS);
-        });
-        manager.fetchSpecs();
+
+        tester.onRequest = () => {
+          tester.respond(200, specs);
+        };
+        manager.refreshSpecs();
       });
 
     });
@@ -158,10 +139,7 @@ describe('kernel/manager', () => {
     describe('#runningChanged', () => {
 
       it('should be emitted in refreshRunning when the running kernels changed', (done) => {
-        let data: Kernel.IModel[] = [
-          { id: uuid(), name: 'test' },
-          { id: uuid(), name: 'test2' }
-        ];
+        data = [{ id: uuid(), name: 'test' }];
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
           expect(deepEqual(toArray(args), data)).to.be(true);
@@ -175,41 +153,41 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#fetchSpecs()', () => {
+    describe('#ready()', () => {
 
-      it('should get the list of kernel specs', (done) => {
-        let ids = {
-          'python': PYTHON_SPEC,
-          'python3': PYTHON3_SPEC
-        };
+      it('should resolve when the manager is ready', (done) => {
+        manager.ready().then(done, done);
+      });
+
+    });
+
+    describe('#refreshSpecs()', () => {
+
+      it('should update list of kernel specs', (done) => {
+        let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
+        specs.default = 'shell';
         tester.onRequest = () => {
-          tester.respond(200, { 'default': 'python',
-                               'kernelspecs': ids });
+          tester.respond(200, specs);
         };
-        manager.fetchSpecs().then(specs => {
-          let names = Object.keys(specs.kernelspecs);
-          expect(names[0]).to.be('python');
-          expect(names[1]).to.be('python3');
+        manager.refreshSpecs().then(() => {
+          expect(manager.specs.default).to.be(specs.default);
           done();
-        });
+        }).catch(done);
       });
 
     });
 
     describe('#refreshRunning()', () => {
 
-      it('should list the running kernels', (done) => {
-        let data = [
-          { id: uuid(), name: 'test' },
-          { id: uuid(), name: 'test2' }
-        ];
+      it('should update the running kernels', (done) => {
+        data = [{ id: uuid(), name: 'test' }];
         tester.onRequest = () => {
           tester.respond(200, data);
         };
-        manager.refreshRunning().then(response => {
-          let running = toArray(response);
+        manager.refreshRunning().then(() => {
+          let running = toArray(manager.running());
           expect(running[0]).to.eql(data[0]);
-          expect(running[1]).to.eql(data[1]);
+          expect(running[1]).to.be(void 0);
           done();
         });
       });

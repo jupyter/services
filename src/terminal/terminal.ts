@@ -70,6 +70,11 @@ namespace TerminalSession {
     ajaxSettings: utils.IAjaxSettings;
 
     /**
+     * A promise that fulfills when the session is initially ready.
+     */
+    ready(): Promise<void>;
+
+    /**
      * Send a message to the terminal session.
      */
     send(message: IMessage): void;
@@ -228,6 +233,11 @@ namespace TerminalSession {
     ajaxSettings?: IAjaxSettings;
 
     /**
+     * A promise that fulfills when the manager is ready.
+     */
+    ready(): Promise<void>;
+
+    /**
      * Create an iterator over the known running terminals.
      *
      * @returns A new iterator over the running terminals.
@@ -277,12 +287,12 @@ namespace TerminalSession {
     /**
      * Force a refresh of the running terminal sessions.
      *
-     * @returns A promise that resolves with the list of running sessions.
+     * @returns A promise that with the list of running sessions.
      *
      * #### Notes
      * This is not typically meant to be called by the user, since the
      * manager maintains its own internal state.
      */
-    refreshRunning(): Promise<IModel[]>;
+    refreshRunning(): Promise<void>;
   }
 }

@@ -39,7 +39,19 @@ class KernelManager implements Kernel.IManager {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
-    this._scheduleUpdate();
+
+    // Initialize internal data.
+    this._readyPromise = this._refreshSpecs().then(() => {
+      return this._refreshRunning();
+    });
+
+    // Set up polling.
+    this._runningTimer = setInterval(() => {
+      this._refreshRunning();
+    }, 10000);
+    this._specsTimer = setInterval(() => {
+      this._refreshSpecs();
+    }, 61000);
   }
 
   /**
@@ -67,8 +79,8 @@ class KernelManager implements Kernel.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._updateTimer);
-    clearTimeout(this._refreshTimer);
+    clearInterval(this._runningTimer);
+    clearInterval(this._specsTimer);
     clearSignalData(this);
     this._specs = null;
     this._running = [];
@@ -110,6 +122,13 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
+  }
+
+  /**
    * Create an iterator over the most recent running kernels.
    *
    * @returns A new iterator over the running kernels.
@@ -119,77 +138,38 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
-   * Fetch the specs from the server.
+   * Force a refresh of the specs from the server.
    *
-   * @returns A promise that resolves with the kernel spec models.
+   * @returns A promise that resolves when the specs are fetched.
+   *
+   * #### Notes
+   * This is intended to be called only in response to a user action,
+   * since the manager maintains its internal state.
    */
-  fetchSpecs(): Promise<Kernel.ISpecModels> {
-    if (this._specPromise) {
-      return this._specPromise;
-    }
-    let options = {
-      baseUrl: this._baseUrl,
-      ajaxSettings: this.ajaxSettings
-    };
-    this._specPromise = Kernel.getSpecs(options).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
-        this._specs = specs;
-        this._specPromise = null;
-        this.specsChanged.emit(specs);
-      }
-      return specs;
-    });
-    return this._specPromise;
+  refreshSpecs(): Promise<void> {
+    return this._refreshSpecs();
   }
 
   /**
    * Force a refresh of the running kernels.
    *
-   * @returns A promise that with the list of running kernels.
+   * @returns A promise that with the list of running sessions.
    *
    * #### Notes
    * This is not typically meant to be called by the user, since the
    * manager maintains its own internal state.
    */
-  refreshRunning(): Promise<Kernel.IModel[]> {
-    clearTimeout(this._updateTimer);
-    clearTimeout(this._refreshTimer);
-
-    if (this._runningPromise) {
-      return this._runningPromise;
-    }
-    let promise = Kernel.listRunning(this._getOptions()).then(running => {
-      if (!deepEqual(running, this._running)) {
-        this._running = running.slice();
-        this._runningPromise = null;
-        this.runningChanged.emit(running);
-      }
-      this._refreshTimer = setTimeout(() => {
-        this.refreshRunning();
-      }, 10000);
-      return running;
-    });
-    this._runningPromise = promise;
-    return promise;
+  refreshRunning(): Promise<void> {
+    return this._refreshRunning();
   }
 
   /**
    * Start a new kernel.  See also [[startNewKernel]].
    *
    * @param options - Overrides for the default options.
-   *
-   * #### Notes
-   * This will emit [[runningChanged]] if the running kernels list
-   * changes.
    */
   startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.startNew(this._getOptions(options)).then(kernel => {
-      this._scheduleUpdate();
-      kernel.terminated.connect(() => {
-          this._scheduleUpdate();
-      });
-      return kernel;
-    });
+    return Kernel.startNew(this._getOptions(options));
   }
 
   /**
@@ -207,12 +187,7 @@ class KernelManager implements Kernel.IManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.connectTo(id, this._getOptions(options)).then(kernel => {
-      kernel.terminated.connect(() => {
-          this._scheduleUpdate();
-      });
-      return kernel;
-    });
+    return Kernel.connectTo(id, this._getOptions(options));
   }
 
   /**
@@ -225,8 +200,34 @@ class KernelManager implements Kernel.IManager {
    * changes.
    */
   shutdown(id: string, options?: Kernel.IOptions): Promise<void> {
-    return Kernel.shutdown(id, this._getOptions(options)).then(() => {
-      this._scheduleUpdate();
+    return Kernel.shutdown(id, this._getOptions(options));
+  }
+
+  /**
+   * Refresh the specs.
+   */
+  private _refreshSpecs(): Promise<void> {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Kernel.getSpecs(options).then(specs => {
+      if (!deepEqual(specs, this._specs)) {
+        this._specs = specs;
+        this.specsChanged.emit(specs);
+      }
+    });
+  }
+
+  /**
+   * Refresh the running sessions.
+   */
+  private _refreshRunning(): Promise<void> {
+    return Kernel.listRunning(this._getOptions({})).then(running => {
+      if (!deepEqual(running, this._running)) {
+        this._running = running.slice();
+        this.runningChanged.emit(running);
+      }
     });
   }
 
@@ -240,28 +241,15 @@ class KernelManager implements Kernel.IManager {
     return options;
   }
 
-  /**
-   * Schedule an update of the running kernels.
-   */
-  private _scheduleUpdate(): void {
-    if (this._updateTimer !== -1) {
-      return;
-    }
-    this._updateTimer = setTimeout(() => {
-      this.refreshRunning();
-    }, 100);
-  }
-
   private _baseUrl = '';
   private _wsUrl = '';
   private _ajaxSettings = '';
   private _running: Kernel.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;
   private _isDisposed = false;
-  private _updateTimer = -1;
-  private _refreshTimer = -1;
-  private _specPromise: Promise<Kernel.ISpecModels> = null;
-  private _runningPromise: Promise<Kernel.IModel> = null;
+  private _runningTimer = -1;
+  private _specsTimer = -1;
+  private _readyPromise: Promise<void>;
 }
 
 

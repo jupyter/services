@@ -15,7 +15,7 @@ import {
 } from 'ws';
 
 import {
-  Contents, Kernel, KernelMessage, TerminalSession
+  Contents, Kernel, KernelMessage, TerminalSession, Session
 } from '../../lib';
 
 import {
@@ -164,6 +164,20 @@ class RequestHandler {
       (window as any).XMLHttpRequest = MockXMLHttpRequest;
     }
     MockXMLHttpRequest.requests = [];
+    if (!onRequest) {
+      onRequest = request => {
+        let url = request.url;
+        if (url.indexOf('api/sessions') !== -1) {
+          this._handleSessionRequest(request);
+        } else if (url.indexOf('api/kernelspecs') !== -1) {
+          this.respond(200, KERNELSPECS);
+        } else if (url.indexOf('api/kernels') !== -1) {
+          this._handleKernelRequest(request);
+        } else if (url.indexOf('api/terminals') !== -1) {
+          this._handleTerminalRequst(request);
+        }
+      };
+    }
     this.onRequest = onRequest;
   }
 
@@ -179,6 +193,77 @@ class RequestHandler {
     let request = MockXMLHttpRequest.requests[len - 1];
     request.respond(statusCode, data, header);
   }
+
+  /**
+   * Handle kernel requests.
+   */
+  private _handleKernelRequest(request: MockXMLHttpRequest): void {
+    switch (request.method) {
+    case 'POST':
+      this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      break;
+    case 'GET':
+      this.respond(200, []);
+      break;
+    case 'DELETE':
+      this.respond(204, {});
+      break;
+    default:
+      break;
+    }
+  }
+
+  /**
+   * Handle session requests.
+   */
+  private _handleSessionRequest(request: MockXMLHttpRequest): void {
+    let session: Session.IModel = {
+      id: uuid(),
+      kernel: {
+        name: 'python',
+        id: uuid()
+      },
+      notebook: {
+        path: uuid()
+      }
+    };
+    switch (request.method) {
+    case 'PATCH':
+      this.respond(200, session);
+      break;
+    case 'GET':
+      this.respond(200, []);
+      break;
+    case 'POST':
+      this.respond(200, session);
+      break;
+    case 'DELETE':
+      this.respond(204, {});
+      break;
+    default:
+      break;
+    }
+  }
+
+  /**
+   * Handle terminal requests.
+   */
+  private _handleTerminalRequst(request: MockXMLHttpRequest): void {
+    switch (request.method) {
+    case 'POST':
+      this.respond(200, { name: uuid() });
+      break;
+    case 'GET':
+      this.respond(200, []);
+      break;
+    case 'DELETE':
+      this.respond(204, {});
+      break;
+    default:
+      break;
+    }
+  };
+
 }
 
 
@@ -256,17 +341,6 @@ class RequestSocketTester extends RequestHandler {
  */
 export
 class KernelTester extends RequestSocketTester {
-  /**
-   * Create a new kernel tester.
-   */
-  constructor(onRequest?: (request: any) => void) {
-    super(onRequest);
-    if (!onRequest) {
-      this.onRequest = () => {
-        this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
-      };
-    }
-  }
 
   get initialStatus(): string {
     return this._initialStatus;
@@ -329,16 +403,6 @@ class KernelTester extends RequestSocketTester {
  */
 export
 class TerminalTester extends RequestSocketTester {
-  /**
-   * Construct a new terminal tester.
-   */
-  constructor(onRequest?: (request: any) => void) {
-    super(onRequest);
-    this.onRequest = (request) => {
-      let name = String(++this._count);
-      this.respond(200, { name });
-    };
-  }
 
   /**
    * Register the message callback with the websocket server.
@@ -363,7 +427,6 @@ class TerminalTester extends RequestSocketTester {
   }
 
   private _onMessage: (msg: TerminalSession.IMessage) => void = null;
-  private _count = 0;
 }
 
 

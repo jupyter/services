@@ -194,6 +194,14 @@ describe('terminals', () => {
 
     });
 
+    describe('#ready()', () => {
+
+      it('should resolve when the terminal is ready', (done) => {
+        session.ready().then(done, done);
+      });
+
+    });
+
     describe('#send()', () => {
 
       it('should send a message to the socket', (done) => {
@@ -201,7 +209,9 @@ describe('terminals', () => {
           expect(msg.type).to.be('stdin');
           done();
         });
-        session.send({ type: 'stdin', content: [1, 2] });
+        session.ready().then(() => {
+          session.send({ type: 'stdin', content: [1, 2] });
+        });
       });
 
     });

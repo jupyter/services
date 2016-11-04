@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   JSONObject, deepEqual
 } from 'phosphor/lib/algorithm/json';
 
@@ -44,6 +48,8 @@ describe('jupyter.services - Integration', () => {
       let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
+        return kernel.ready();
+      }).then(() => {
         return kernel.interrupt();
       }).then(() => {
         return kernel.restart();
@@ -60,9 +66,7 @@ describe('jupyter.services - Integration', () => {
         return kernel.requestKernelInfo();
       }).then((info) => {
         content = info.content;
-        return kernel.info();
-      }).then(info => {
-        expect(deepEqual(content, info)).to.be(true);
+        expect(deepEqual(content, kernel.info)).to.be(true);
         return kernel.shutdown();
       }).then(done, done);
     });
@@ -347,15 +351,18 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
-      manager.startNew().then(session => {
+      manager.ready().then(() => {
+        return manager.startNew();
+      }).then(session => {
         return manager.refreshRunning();
-      }).then(running => {
+      }).then(() => {
+        let running = toArray(manager.running());
         expect(running.length).to.be(1);
         return manager.shutdown(running[0].name);
       }).then(() => {
         return manager.refreshRunning();
-      }).then(running => {
-        expect(running.length).to.be(0);
+      }).then(() => {
+        expect(manager.running().next()).to.be(void 0);
         done();
       }).catch(done);
     });

@@ -40,9 +40,11 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Construct a new terminal session.
    */
   constructor(name: string, options: TerminalSession.IOptions = {}) {
+    this._name = name;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
+    this._readyPromise = this._initializeSocket();
   }
 
   /**
@@ -110,8 +112,15 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       this._ws = null;
     }
     delete Private.running[this._url];
-    this._promise = null;
+    this._readyPromise = null;
     clearSignalData(this);
+  }
+
+  /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -140,44 +149,9 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
-   * Connect to the terminal session.
-   */
-  connect(): Promise<TerminalSession.ISession> {
-    if (this._promise) {
-      return this._promise;
-    }
-    if (this._name) {
-      this._promise = this._initializeSocket();
-      return this._promise;
-    }
-    this._promise = this._getName().then(value => {
-      this._name = value;
-      return this._initializeSocket();
-    });
-    return this._promise;
-  }
-
-  /**
-   * Get a name for the terminal from the server.
-   */
-  private _getName(): Promise<string> {
-    let url = Private.getBaseUrl(this._baseUrl);
-    let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'POST';
-    ajaxSettings.dataType = 'json';
-
-    return utils.ajaxRequest(url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
-      }
-      return (success.data as TerminalSession.IModel).name;
-    });
-  }
-
-  /**
    * Connect to the websocket.
    */
-  private _initializeSocket(): Promise<TerminalSession.ISession> {
+  private _initializeSocket(): Promise<void> {
     let name = this._name;
     this._url = Private.getTermUrl(this._baseUrl, this._name);
     Private.running[this._url] = this;
@@ -192,12 +166,12 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       });
     };
 
-    return new Promise<TerminalSession.ISession>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this._ws.onopen = (event: MessageEvent) => {
-        resolve(this);
+        resolve(void 0);
       };
       this._ws.onerror = (event: Event) => {
-        reject(this);
+        reject(event);
       };
     });
   }
@@ -209,11 +183,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _ajaxSettings = '';
   private _ws: WebSocket = null;
   private _isDisposed = false;
-  private _promise: Promise<TerminalSession.ISession>;
+  private _readyPromise: Promise<TerminalSession.ISession>;
 }
 
 
-
+/**
+ * The static namespace for `DefaultTerminalSession`.
+ */
 export
 namespace DefaultTerminalSession {
   /**
@@ -225,7 +201,19 @@ namespace DefaultTerminalSession {
    */
   export
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    return new DefaultTerminalSession('', options).connect();
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = Private.getBaseUrl(baseUrl);
+    let ajaxSettings = utils.copy(options.ajaxSettings || {}) as IAjaxSettings;
+    ajaxSettings.method = 'POST';
+    ajaxSettings.dataType = 'json';
+
+    return utils.ajaxRequest(url, ajaxSettings).then(success => {
+      if (success.xhr.status !== 200) {
+        return utils.makeAjaxError(success);
+      }
+      let name = (success.data as TerminalSession.IModel).name;
+      return new DefaultTerminalSession(name, options);
+    });
   }
 
   /*
@@ -251,12 +239,13 @@ namespace DefaultTerminalSession {
    */
   export
   function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
-    options.baseUrl = options.baseUrl || utils.getBaseUrl();
-    let url = Private.getTermUrl(options.baseUrl, name);
+    let baseUrl = options.baseUrl || utils.getBaseUrl();
+    let url = Private.getTermUrl(baseUrl, name);
     if (url in Private.running) {
-      return Private.running[url].connect();
+      return Promise.resolve(Private.running[url]);
     }
-    return new DefaultTerminalSession(name, options).connect();
+    let session = new DefaultTerminalSession(name, options);
+    return Promise.resolve(session);
   }
 
   /**

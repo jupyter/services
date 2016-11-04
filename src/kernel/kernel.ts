@@ -108,28 +108,25 @@ namespace Kernel {
     readonly status: Kernel.Status;
 
     /**
-     * Get the kernel info.
-     *
-     * @returns A promise that resolves with a cached kernel info.
+     * The cached kernel info.
      *
      * #### Notes
-     * This value is cached when a kernel connection is made.
-     * This can be used to wait for a kernel connection before taking
-     * further action on the kernel.  It can also be used to get the kernel
-     * info without generating an extra kernel message.
+     * This value will be null until the kernel is ready.
      */
-    info(): Promise<KernelMessage.IInfoReply>;
+    readonly info: KernelMessage.IInfoReply | null;
 
     /**
-     * Get the cached kernel spec.
-     *
-     * @returns A promise that resolves with a cached kernel spec.
+     * The cached kernel spec.
      *
      * #### Notes
-     * It will use the cached kernel spec models for this base url or
-     * fetch them from the server.
+     * This value will be null until the kernel is ready.
      */
-    spec(): Promise<Kernel.ISpecModel>;
+    readonly spec: Kernel.ISpecModel | null;
+
+    /**
+     * A promise that is fulfilled when the kernel is initially ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Send a shell message to the kernel.
@@ -529,7 +526,7 @@ namespace Kernel {
   export
   interface IManager extends IDisposable {
     /**
-     * A signal emitted when the specs change.
+     * A signal emitted when the kernel specs change.
      */
     specsChanged: ISignal<IManager, ISpecModels>;
 
@@ -554,9 +551,17 @@ namespace Kernel {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * Get the most recently fetched kernel specs.
+     * The kernel spec models.
+     *
+     * #### Notes
+     * The value will be null until the manager is ready.
      */
     readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * A promise that fulfills when the manager is initially ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Create an iterator over the known running kernels.
@@ -566,22 +571,26 @@ namespace Kernel {
     running(): IIterator<IModel>;
 
     /**
-     * Fetch the specs from the server.
+     * Force a refresh of the specs from the server.
      *
-     * @returns A promise that resolves with the kernel spec models.
+     * @returns A promise that resolves when the specs are fetched.
+     *
+     * #### Notes
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    fetchSpecs(): Promise<ISpecModels>;
+    refreshSpecs(): Promise<void>;
 
     /**
      * Force a refresh of the running kernels.
      *
-     * @returns A promise that with the list of running kernels.
+     * @returns A promise that resolves when the models are refreshed.
      *
      * #### Notes
-     * This is not typically meant to be called by the user, since the
-     * manager maintains its own internal state.
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    refreshRunning(): Promise<IModel[]>;
+    refreshRunning(): Promise<void>;
 
     /**
      * Start a new kernel.

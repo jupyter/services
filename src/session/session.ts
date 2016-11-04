@@ -366,9 +366,17 @@ namespace Session {
     ajaxSettings?: IAjaxSettings;
 
     /**
-     * Get the most recently fetched kernel specs.
+     * The cached kernel specs.
+     *
+     * #### Notes
+     * This value will be null until the manager is ready.
      */
     readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * A promise that is fulfilled when the manager is ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * Create an iterator over the known running sessions.
@@ -435,22 +443,26 @@ namespace Session {
     shutdown(id: string): Promise<void>;
 
     /**
-     * Fetch the specs from the server.
+     * Force a refresh of the specs from the server.
      *
-     * @returns A promise that resolves with the kernel spec models.
+     * @returns A promise that resolves when the specs are fetched.
+     *
+     * #### Notes
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    fetchSpecs(): Promise<Kernel.ISpecModels>;
+    refreshSpecs(): Promise<void>;
 
     /**
      * Force a refresh of the running sessions.
      *
-     * @returns A promise that with the list of running sessions.
+     * @returns A promise that resolves when the models are refreshed.
      *
      * #### Notes
-     * This is not typically meant to be called by the user, since the
-     * manager maintains its own internal state.
+     * This is intended to be called only in response to a user action,
+     * since the manager maintains its internal state.
      */
-    refreshRunning(): Promise<IModel[]>;
+    refreshRunning(): Promise<void>;
   }
 
   /**

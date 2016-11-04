@@ -10,8 +10,16 @@ import {
 } from 'phosphor/lib/core/disposable';
 
 import {
+  ISignal, clearSignalData, defineSignal
+} from 'phosphor/lib/core/signaling';
+
+import {
   Contents, ContentsManager
 } from './contents';
+
+import {
+  Kernel
+} from './kernel';
 
 import {
   Session, SessionManager
@@ -42,20 +50,24 @@ class ServiceManager implements ServiceManager.IManager {
     this._sessionManager = new SessionManager(options);
     this._contentsManager = new ContentsManager(options);
     this._terminalManager = new TerminalManager(options);
+    this._sessionManager.specsChanged.connect((sender, specs) => {
+      this.specsChanged.emit(specs);
+    });
+    this._readyPromise = this._sessionManager.ready().then(() => {
+      return this._terminalManager.ready;
+    });
   }
+
+  /**
+   * A signal emitted when the kernel specs change.
+   */
+  specsChanged: ISignal<this, Kernel.ISpecModels>;
 
   /**
    * Test whether the terminal manager is disposed.
    */
   get isDisposed(): boolean {
     return this._isDisposed;
-  }
-
-  /**
-   * Get the base url of the server.
-   */
-  get baseUrl(): string {
-    return this._sessionManager.baseUrl;
   }
 
   /**
@@ -66,9 +78,24 @@ class ServiceManager implements ServiceManager.IManager {
       return;
     }
     this._isDisposed = true;
+    clearSignalData(this);
     this._sessionManager.dispose();
     this._contentsManager.dispose();
     this._sessionManager.dispose();
+  }
+
+  /**
+   * The kernel spec models.
+   */
+  get specs(): Kernel.ISpecModels | null {
+    return this._sessionManager.specs;
+  }
+
+  /**
+   * Get the base url of the server.
+   */
+  get baseUrl(): string {
+    return this._sessionManager.baseUrl;
   }
 
   /**
@@ -92,10 +119,18 @@ class ServiceManager implements ServiceManager.IManager {
     return this._terminalManager;
   }
 
+  /**
+   * A promise that fulfills when the manager is ready.
+   */
+  ready(): Promise<void> {
+    return this._readyPromise;
+  }
+
   private _sessionManager: SessionManager = null;
   private _contentsManager: ContentsManager = null;
   private _terminalManager: TerminalManager = null;
   private _isDisposed = false;
+  private _readyPromise: Promise<void>;
 }
 
 
@@ -109,6 +144,16 @@ namespace ServiceManager {
    */
   export
   interface IManager extends IDisposable {
+    /**
+     * A signal emitted when the kernel specs change.
+     */
+    specsChanged: ISignal<IManager, Kernel.ISpecModels>;
+
+    /**
+     * The kernel spec models.
+     */
+    readonly specs: Kernel.ISpecModels | null;
+
     /**
      * The base url of the manager.
      */
@@ -128,6 +173,11 @@ namespace ServiceManager {
      * The terminals manager for the manager.
      */
     readonly terminals: TerminalSession.IManager;
+
+    /**
+     * A promise that fulfills when the manager is initially ready.
+     */
+    ready(): Promise<void>;
   }
 
   /**
@@ -151,3 +201,7 @@ namespace ServiceManager {
     ajaxSettings?: IAjaxSettings;
   }
 }
+
+
+// Define the signals for the `ServiceManager` class.
+defineSignal(ServiceManager.prototype, 'specsChanged');
