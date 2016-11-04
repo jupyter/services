@@ -303,9 +303,6 @@ describe('kernel', () => {
 
     beforeEach((done) => {
       Kernel.startNew().then(k => {
-        tester.onRequest = () => {
-          tester.respond(200, KERNELSPECS);
-        };
         kernel = k;
         return kernel.ready();
       }).then(() => {
