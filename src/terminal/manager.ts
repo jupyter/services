@@ -96,7 +96,7 @@ class TerminalManager implements TerminalSession.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._refreshTimer);
+    clearInterval(this._refreshTimer);
     clearSignalData(this);
     this._running = [];
   }

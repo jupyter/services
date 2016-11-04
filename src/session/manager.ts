@@ -83,8 +83,8 @@ class SessionManager implements Session.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._runningTimer);
-    clearTimeout(this._specsTimer);
+    clearInterval(this._runningTimer);
+    clearInterval(this._specsTimer);
     clearSignalData(this);
     this._running = [];
   }

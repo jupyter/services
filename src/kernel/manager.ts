@@ -79,8 +79,8 @@ class KernelManager implements Kernel.IManager {
       return;
     }
     this._isDisposed = true;
-    clearTimeout(this._runningTimer);
-    clearTimeout(this._specsTimer);
+    clearInterval(this._runningTimer);
+    clearInterval(this._specsTimer);
     clearSignalData(this);
     this._specs = null;
     this._running = [];
