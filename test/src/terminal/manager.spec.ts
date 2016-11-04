@@ -24,10 +24,15 @@ describe('terminals', () => {
 
   let tester: TerminalTester;
   let manager: TerminalSession.IManager;
+  let data: TerminalSession.IModel[] =  [{ name: 'foo'}, { name: 'bar' }];
 
-  beforeEach(() => {
+  beforeEach((done) => {
     tester = new TerminalTester();
+    tester.onRequest = () => {
+      tester.respond(200, data);
+    };
     manager = new TerminalManager();
+    return manager.ready().then(done, done);
   });
 
   afterEach(() => {
@@ -40,29 +45,19 @@ describe('terminals', () => {
     describe('#constructor()', () => {
 
       it('should accept no options', () => {
-        expect(manager).to.be.a(TerminalManager);
         manager.dispose();
+        manager = new TerminalManager();
+        expect(manager).to.be.a(TerminalManager);
       });
 
       it('should accept options', () => {
+        manager.dispose();
         manager = new TerminalManager({
           baseUrl: 'foo',
           wsUrl: 'bar',
           ajaxSettings: {}
         });
         expect(manager).to.be.a(TerminalManager);
-        manager.dispose();
-      });
-
-      it('should trigger a running changed signal', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        manager.runningChanged.connect(() => {
-          manager.dispose();
-          done();
-        });
       });
 
     });
@@ -70,6 +65,7 @@ describe('terminals', () => {
     describe('#baseUrl', () => {
 
       it('should get the base url of the server', () => {
+        manager.dispose();
         manager = new TerminalManager({ baseUrl: 'foo' });
         expect(manager.baseUrl).to.be('foo');
       });
@@ -79,6 +75,7 @@ describe('terminals', () => {
     describe('#wsUrl', () => {
 
       it('should get the ws url of the server', () => {
+        manager.dispose();
         manager = new TerminalManager({ wsUrl: 'bar' });
         expect(manager.wsUrl).to.be('bar');
       });
@@ -89,25 +86,25 @@ describe('terminals', () => {
 
       it('should get the ajax sessions of the server', () => {
         let ajaxSettings = { withCredentials: true };
+        manager.dispose();
         manager = new TerminalManager({ ajaxSettings });
         expect(manager.ajaxSettings).to.eql(ajaxSettings);
       });
 
     });
 
+    describe('#ready()', () => {
+
+      it('should resolve when the manager is ready', (done) => {
+        manager.ready().then(done, done);
+      });
+
+    });
+
     describe('#running()', () => {
 
-      it('should give an iterator over the list of running models', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
-        expect(manager.running().next()).to.be(void 0);
-        manager.runningChanged.connect(() => {
-          expect(toArray(manager.running())).to.eql(data);
-          manager.dispose();
-          done();
-        });
+      it('should give an iterator over the list of running models', () => {
+        expect(toArray(manager.running())).to.eql(data);
       });
 
     });
@@ -144,15 +141,16 @@ describe('terminals', () => {
     describe('#runningChanged', () => {
 
       it('should be emitted when the running terminals changed', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        let newData: TerminalSession.IModel[] = [{ name: 'foo'}];
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), data)).to.be(true);
+          expect(deepEqual(toArray(args), newData)).to.be(true);
           done();
         });
         tester.onRequest = () => {
-          tester.respond(200, data);
+          tester.respond(200, newData);
         };
+        manager.refreshRunning();
       });
 
     });
@@ -160,13 +158,13 @@ describe('terminals', () => {
     describe('#refreshRunning()', () => {
 
       it('should update the running session models', (done) => {
-        let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
+        let newData: TerminalSession.IModel[] = [{ name: 'foo'}];
         tester.onRequest = () => {
-          tester.respond(200, data);
+          tester.respond(200, newData);
         };
         manager.refreshRunning().then(() => {
           let running = toArray(manager.running());
-          expect(deepEqual(data, running)).to.be(true);
+          expect(deepEqual(newData, running)).to.be(true);
           done();
         }).catch(done);
       });

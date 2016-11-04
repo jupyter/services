@@ -182,7 +182,6 @@ class TerminalManager implements TerminalSession.IManager {
         this._running = running.slice();
         this.runningChanged.emit(running);
       }
-      return running;
     });
   }
 
