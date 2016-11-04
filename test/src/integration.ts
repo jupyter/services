@@ -48,6 +48,8 @@ describe('jupyter.services - Integration', () => {
       let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
+        return kernel.ready();
+      }).then(() => {
         return kernel.interrupt();
       }).then(() => {
         return kernel.restart();
@@ -349,7 +351,9 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
-      manager.startNew().then(session => {
+      manager.ready().then(() => {
+        return manager.startNew();
+      }).then(session => {
         return manager.refreshRunning();
       }).then(() => {
         let running = toArray(manager.running());
@@ -358,7 +362,7 @@ describe('jupyter.services - Integration', () => {
       }).then(() => {
         return manager.refreshRunning();
       }).then(() => {
-        expect(manager.running().next).to.be(void 0);
+        expect(manager.running().next()).to.be(void 0);
         done();
       }).catch(done);
     });
