@@ -73,9 +73,6 @@ describe('terminals', () => {
 
       it('should shut down a terminal session by name', (done) => {
         TerminalSession.startNew().then(s => {
-          tester.onRequest = () => {
-            tester.respond(204, {});
-          };
           session = s;
           return TerminalSession.shutdown(s.name);
         }).then(() => {
@@ -89,9 +86,7 @@ describe('terminals', () => {
 
       it('should list the running session models', (done) => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
-        tester.onRequest = () => {
-          tester.respond(200, data);
-        };
+        tester.runningTerminals = data;
         TerminalSession.listRunning().then(models => {
           expect(deepEqual(data, toArray(models))).to.be(true);
           done();
@@ -123,9 +118,6 @@ describe('terminals', () => {
           expect(args).to.be(void 0);
           done();
         });
-        tester.onRequest = () => {
-          tester.respond(204, {});
-        };
         session.shutdown();
       });
 
@@ -149,12 +141,9 @@ describe('terminals', () => {
 
       it('should be the name of the session', (done) => {
         session.dispose();
-        tester.onRequest = () => {
-          tester.respond(200, { name: 'foo' });
-        };
         TerminalSession.startNew().then(s => {
           session = s;
-          expect(session.name).to.be('foo');
+          expect(session.name).to.be.ok();
           done();
         }).catch(done);
       });
@@ -194,6 +183,22 @@ describe('terminals', () => {
 
     });
 
+    context('#isReady', () => {
+
+      it('should test whether the termainl is ready', (done) => {
+        session.shutdown();
+        TerminalSession.startNew().then(s => {
+          session = s;
+          expect(session.isReady).to.be(false);
+          return session.ready();
+        }).then(() => {
+          expect(session.isReady).to.be(true);
+          done();
+        }).catch(done);
+      });
+
+    });
+
     describe('#ready()', () => {
 
       it('should resolve when the terminal is ready', (done) => {
@@ -219,9 +224,6 @@ describe('terminals', () => {
     describe('#shutdown()', () => {
 
       it('should shut down the terminal session', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, {});
-        };
         session.shutdown().then(done, done);
       });
 
