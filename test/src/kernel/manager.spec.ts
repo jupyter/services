@@ -47,9 +47,12 @@ describe('kernel/manager', () => {
     manager.ready().then(done, done);
   });
 
-  afterEach(() => {
-    manager.dispose();
-    tester.dispose();
+  afterEach((done) => {
+    manager.ready().then(() => {
+      manager.dispose();
+      tester.dispose();
+      done();
+    }).catch(done);
   });
 
   describe('KernelManager', () => {
@@ -228,7 +231,6 @@ describe('kernel/manager', () => {
       it('should connect to an existing kernel', (done) => {
         let id = uuid();
         tester.runningKernels = [{ name: 'foo', id }];
-        debugger;
         return manager.connectTo(id).then(kernel => {
           expect(kernel.name).to.be('foo');
           expect(kernel.id).to.be(id);

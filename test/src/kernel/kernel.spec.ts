@@ -16,14 +16,14 @@ import {
 } from '../../../lib/utils';
 
 import {
-  KernelManager, Kernel, KernelMessage
+  Kernel, KernelMessage
 } from '../../../lib/kernel';
 
 import {
   ajaxSettings, doLater, expectFailure, expectAjaxError,
   KernelTester,
   KERNEL_OPTIONS, AJAX_KERNEL_OPTIONS, EXAMPLE_KERNEL_INFO,
-  PYTHON_SPEC, KERNELSPECS
+  PYTHON_SPEC
 } from '../utils';
 
 
@@ -67,9 +67,7 @@ describe('kernel', () => {
         { id: uuid(), name: 'test' },
         { id: uuid(), name: 'test2' }
       ];
-      tester.onRequest = () => {
-        tester.respond(200, data);
-      };
+      tester.runningKernels = data;
       let options: Kernel.IOptions = {
         baseUrl: 'http://localhost:8888',
       };
@@ -86,9 +84,7 @@ describe('kernel', () => {
         { id: uuid(), name: 'test' },
         { id: uuid(), name: 'test2' }
       ];
-      tester.onRequest = () => {
-        tester.respond(200, data);
-      };
+      tester.runningKernels = data;
       let options: Kernel.IOptions = {
         baseUrl: 'http://localhost:8888',
         ajaxSettings: ajaxSettings
@@ -195,9 +191,6 @@ describe('kernel', () => {
     });
 
     it('should auto-reconnect on websocket error', (done) => {
-      tester.onRequest = () => {
-        tester.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
-      };
       Kernel.startNew(KERNEL_OPTIONS).then(k => {
         kernel = k;
         expect(kernel.status).to.be('unknown');
@@ -216,30 +209,11 @@ describe('kernel', () => {
 
   });
 
-  describe('findKernelById()', () => {
-
-    it('should find an existing kernel by id', (done) => {
-      let manager = new KernelManager(KERNEL_OPTIONS);
-      let id = uuid();
-      tester.onRequest = () => {
-        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
-      };
-      manager.findById(id).then(newKernel => {
-        expect(newKernel.name).to.be(KERNEL_OPTIONS.name);
-        expect(newKernel.id).to.be(id);
-        done();
-      });
-    });
-
-  });
-
   describe('Kernel.connectTo()', () => {
 
     it('should reuse an exisiting kernel', (done) => {
       let id = uuid();
-      tester.onRequest = () => {
-        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
-      };
+      tester.runningKernels = [{ name: 'foo', id }];
       Kernel.connectTo(id, KERNEL_OPTIONS).then(k => {
         kernel = k;
         Kernel.connectTo(id).then(newKernel => {
@@ -253,28 +227,24 @@ describe('kernel', () => {
 
     it('should connect to a running kernel if given kernel options', (done) => {
       let id = uuid();
-      tester.onRequest = () => {
-        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
-      };
+      tester.runningKernels = [{ name: KERNEL_OPTIONS.name, id }];
       Kernel.connectTo(id, KERNEL_OPTIONS).then(k => {
         kernel = k;
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
-      });
+      }).catch(done);
     });
 
     it('should accept ajax options', (done) => {
       let id = uuid();
-      tester.onRequest = () => {
-        tester.respond(200, { id: id, name: KERNEL_OPTIONS.name });
-      };
+      tester.runningKernels = [{ name: KERNEL_OPTIONS.name, id }];
       Kernel.connectTo(id, AJAX_KERNEL_OPTIONS).then(k => {
         kernel = k;
         expect(kernel.name).to.be(KERNEL_OPTIONS.name);
         expect(kernel.id).to.be(id);
         done();
-      });
+      }).catch(done);
     });
 
     it('should fail if no running kernel available', (done) => {
@@ -291,9 +261,6 @@ describe('kernel', () => {
   describe('Kernel.shutdown()', () => {
 
     it('should shut down a kernel by id', (done) => {
-      tester.onRequest = () => {
-        tester.respond(204, { });
-      };
       Kernel.shutdown('foo').then(done, done);
     });
 
@@ -318,9 +285,6 @@ describe('kernel', () => {
           expect(args).to.be(void 0);
           done();
         });
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         kernel.shutdown();
       });
 
@@ -712,9 +676,6 @@ describe('kernel', () => {
     context('#interrupt()', () => {
 
       it('should interrupt and resolve with a valid server response', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204,  { id: kernel.id, name: kernel.name });
-        };
         kernel.interrupt().then(() => { done(); });
       });
 
@@ -747,10 +708,6 @@ describe('kernel', () => {
     context('#restart()', () => {
 
       it('should restart and resolve with a valid server response', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, { id: kernel.id, name: kernel.name });
-          tester.sendStatus('starting');
-        };
         kernel.restart().then(() => { done(); });
       });
 
@@ -764,10 +721,10 @@ describe('kernel', () => {
 
       it('should throw an error for an invalid response', (done) => {
         tester.onRequest = () => {
-          tester.respond(204, { id: kernel.id, name: kernel.name });
+          tester.respond(205, { id: kernel.id, name: kernel.name });
         };
         let restart = kernel.restart();
-        expectAjaxError(restart, done, 'Invalid Status: 204');
+        expectAjaxError(restart, done, 'Invalid Status: 205');
       });
 
       it('should throw an error for an error response', (done) => {
@@ -789,9 +746,7 @@ describe('kernel', () => {
       it('should dispose of existing comm and future objects', (done) => {
         let comm = kernel.connectToComm('test');
         let future = kernel.requestExecute({ code: 'foo' });
-        tester.onRequest = () => {
-          tester.respond(200, { id: kernel.id, name: kernel.name });
-        };
+        tester.runningKernels = [{ id: kernel.id, name: kernel.name }];
         kernel.restart().then(() => {
           expect(comm.isDisposed).to.be(true);
           expect(future.isDisposed).to.be(true);
@@ -831,9 +786,6 @@ describe('kernel', () => {
     context('#shutdown()', () => {
 
       it('should shut down and resolve with a valid server response', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         kernel.shutdown().then(() => { done(); });
       });
 
@@ -866,9 +818,6 @@ describe('kernel', () => {
         let kernel2: Kernel.IKernel;
         Kernel.connectTo(kernel.id).then(k => {
           kernel2 = k;
-          tester.onRequest = () => {
-            tester.respond(204, { });
-          };
           return kernel.shutdown();
         }).then(() => {
           expect(kernel2.isDisposed).to.be(true);
@@ -1609,10 +1558,8 @@ describe('kernel', () => {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC
       };
-      tester.onRequest = () => {
-        tester.respond(200, { 'default': 'python',
-                             'kernelspecs': ids });
-      };
+      tester.specs =  { 'default': 'python',
+                        'kernelspecs': ids };
       Kernel.getSpecs({ baseUrl: 'localhost' }).then(specs => {
         let names = Object.keys(specs.kernelspecs);
         expect(names[0]).to.be('python');
@@ -1626,10 +1573,8 @@ describe('kernel', () => {
         'python': PYTHON_SPEC,
         'python3': PYTHON3_SPEC
       };
-      tester.onRequest = () => {
-        tester.respond(200, { 'default': 'python',
-                               'kernelspecs': ids });
-      };
+      tester.specs = { 'default': 'python',
+                       'kernelspecs': ids };
       Kernel.getSpecs({ ajaxSettings: ajaxSettings }).then(specs => {
         let names = Object.keys(specs.kernelspecs);
         expect(names[0]).to.be('python');

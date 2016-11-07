@@ -1087,7 +1087,6 @@ namespace Private {
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
-
     let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
@@ -1177,6 +1176,7 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       validate.validateModel(success.data);
+      options = utils.copy(options) as Kernel.IOptions;
       options.name = success.data.name;
       return new DefaultKernel(options, success.data.id);
     }, onKernelError);
@@ -1207,6 +1207,7 @@ namespace Private {
     }
 
     return getKernelModel(id, options).then(model => {
+      options = utils.copy(options) as Kernel.IOptions;
       options.name = model.name;
       return new DefaultKernel(options, id);
     }).catch(() => {

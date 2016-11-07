@@ -190,7 +190,7 @@ class RequestHandler {
   set onRequest(cb: (request: MockXMLHttpRequest) => void) {
     MockXMLHttpRequest.onRequest = cb;
   }
-
+//
   /**
    * Respond to the latest Ajax request.
    */
@@ -204,9 +204,17 @@ class RequestHandler {
    * Handle kernel requests.
    */
   private _handleKernelRequest(request: MockXMLHttpRequest): void {
+    let url = request.url;
     switch (request.method) {
     case 'POST':
-      this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      let data = { id: uuid(), name: KERNEL_OPTIONS.name };
+      if (url.indexOf('interrupt') !== -1) {
+        this.respond(204, data);
+      } else if (url.indexOf('restart') !== -1) {
+        this.respond(200, data);
+      } else {
+        this.respond(201, data);
+      }
       break;
     case 'GET':
       for (let model of this.runningKernels) {
