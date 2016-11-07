@@ -128,7 +128,7 @@ class SessionManager implements Session.IManager {
    * Test whether the manager is ready.
    */
   get isReady(): boolean {
-    return this._specs === null;
+    return this._specs !== null;
   }
 
   /**

@@ -261,7 +261,9 @@ class RequestHandler {
       this.respond(200, this.runningSessions);
       break;
     case 'POST':
-      this.respond(200, session);
+      let model = { name: session.kernel.name, id: session.kernel.id };
+      this.runningKernels.push(model);
+      this.respond(201, session);
       break;
     case 'DELETE':
       this.respond(204, {});
