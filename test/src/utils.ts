@@ -152,6 +152,11 @@ interface IFakeRequest {
 
 export
 class RequestHandler {
+  specs: Kernel.ISpecModels = KERNELSPECS;
+  runningKernels: Kernel.IModel[] = [];
+  runningSessions: Session.IModel[] = [];
+  runningTerminals: TerminalSession.IModel[] = [];
+
   /**
    * Create a new RequestHandler.
    */
@@ -164,13 +169,14 @@ class RequestHandler {
       (window as any).XMLHttpRequest = MockXMLHttpRequest;
     }
     MockXMLHttpRequest.requests = [];
+
     if (!onRequest) {
       onRequest = request => {
         let url = request.url;
         if (url.indexOf('api/sessions') !== -1) {
           this._handleSessionRequest(request);
         } else if (url.indexOf('api/kernelspecs') !== -1) {
-          this.respond(200, KERNELSPECS);
+          this.respond(200, this.specs);
         } else if (url.indexOf('api/kernels') !== -1) {
           this._handleKernelRequest(request);
         } else if (url.indexOf('api/terminals') !== -1) {
@@ -203,7 +209,13 @@ class RequestHandler {
       this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
       break;
     case 'GET':
-      this.respond(200, []);
+      for (let model of this.runningKernels) {
+        if (request.url.indexOf(model.id) !== -1) {
+          this.respond(200, model);
+          return;
+        }
+      }
+      this.respond(200, this.runningKernels);
       break;
     case 'DELETE':
       this.respond(204, {});
@@ -232,7 +244,13 @@ class RequestHandler {
       this.respond(200, session);
       break;
     case 'GET':
-      this.respond(200, []);
+      for (let model of this.runningKernels) {
+        if (request.url.indexOf(model.id) !== -1) {
+          this.respond(200, model);
+          return;
+        }
+      }
+      this.respond(200, this.runningSessions);
       break;
     case 'POST':
       this.respond(200, session);
@@ -254,7 +272,7 @@ class RequestHandler {
       this.respond(200, { name: uuid() });
       break;
     case 'GET':
-      this.respond(200, []);
+      this.respond(200, this.runningTerminals);
       break;
     case 'DELETE':
       this.respond(204, {});

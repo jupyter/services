@@ -540,15 +540,28 @@ describe('kernel', () => {
 
     });
 
-    context('#spec', () => {
+    context('#spec()', () => {
 
-      it('should be set after calling getSpec', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, KERNELSPECS);
-        };
-        return kernel.ready().then(() => {
-          expect(kernel.spec.language).to.be('python');
+      it('should resolve with the spec', (done) => {
+        return kernel.spec().then(spec => {
+          expect(spec.language).to.be('python');
         }).then(done, done);
+      });
+
+    });
+
+    context('#isReady', () => {
+
+      it('should test whether the kernel is ready', (done) => {
+        kernel.shutdown();
+        Kernel.startNew().then(k => {
+          kernel = k;
+          expect(kernel.isReady).to.be(false);
+          return kernel.ready();
+        }).then(() => {
+          expect(kernel.isReady).to.be(true);
+          done();
+        }).catch(done);
       });
 
     });
