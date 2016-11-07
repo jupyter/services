@@ -116,17 +116,21 @@ namespace Kernel {
     readonly info: KernelMessage.IInfoReply | null;
 
     /**
-     * The cached kernel spec.
-     *
-     * #### Notes
-     * This value will be null until the kernel is ready.
+     * Test whether the manager is ready.
      */
-    readonly spec: Kernel.ISpecModel | null;
+    readonly isReady: boolean;
 
     /**
      * A promise that is fulfilled when the kernel is initially ready.
      */
     ready(): Promise<void>;
+
+    /**
+     * Get the kernel spec.
+     *
+     * @returns A promise that resolves with the kernel spec.
+     */
+    spec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Send a shell message to the kernel.
@@ -557,6 +561,11 @@ namespace Kernel {
      * The value will be null until the manager is ready.
      */
     readonly specs: Kernel.ISpecModels | null;
+
+    /**
+     * A promise that is fulfilled when the kernel is initially ready.
+     */
+    ready(): Promise<void>;
 
     /**
      * A promise that fulfills when the manager is initially ready.

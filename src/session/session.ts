@@ -374,6 +374,11 @@ namespace Session {
     readonly specs: Kernel.ISpecModels | null;
 
     /**
+     * Test whether the manager is ready.
+     */
+    readonly isReady: boolean;
+
+    /**
      * A promise that is fulfilled when the manager is ready.
      */
     ready(): Promise<void>;

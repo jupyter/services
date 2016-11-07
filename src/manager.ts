@@ -120,6 +120,13 @@ class ServiceManager implements ServiceManager.IManager {
   }
 
   /**
+   * Test whether the manager is ready.
+   */
+  get isReady(): boolean {
+    return this._sessionManager.isReady || this._terminalManager.isReady;
+  }
+
+  /**
    * A promise that fulfills when the manager is ready.
    */
   ready(): Promise<void> {
@@ -173,6 +180,11 @@ namespace ServiceManager {
      * The terminals manager for the manager.
      */
     readonly terminals: TerminalSession.IManager;
+
+    /**
+     * Test whether the manager is ready.
+     */
+    readonly isReady: boolean;
 
     /**
      * A promise that fulfills when the manager is initially ready.

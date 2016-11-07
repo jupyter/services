@@ -93,6 +93,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
+   * Test whether the session is ready.
+   */
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
+  /**
    * Test whether the session is disposed.
    */
   get isDisposed(): boolean {
@@ -168,6 +175,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 
     return new Promise<void>((resolve, reject) => {
       this._ws.onopen = (event: MessageEvent) => {
+        this._isReady = true;
         resolve(void 0);
       };
       this._ws.onerror = (event: Event) => {
@@ -184,6 +192,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _ws: WebSocket = null;
   private _isDisposed = false;
   private _readyPromise: Promise<TerminalSession.ISession>;
+  private _isReady = false;
 }
 
 

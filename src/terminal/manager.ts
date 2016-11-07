@@ -87,6 +87,13 @@ class TerminalManager implements TerminalSession.IManager {
     this._ajaxSettings = JSON.stringify(value);
   }
 
+  /**
+   * Test whether the manger is ready.
+   */
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
 
   /**
    * Dispose of the resources used by the manager.
@@ -178,6 +185,7 @@ class TerminalManager implements TerminalSession.IManager {
    */
   private _refreshRunning(): Promise<void> {
     return TerminalSession.listRunning(this._getOptions({})).then(running => {
+      this._isReady = true;
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
         this.runningChanged.emit(running);
@@ -200,6 +208,7 @@ class TerminalManager implements TerminalSession.IManager {
   private _ajaxSettings = '';
   private _running: TerminalSession.IModel[] = [];
   private _isDisposed = false;
+  private _isReady = false;
   private _refreshTimer = -1;
   private _readyPromise: Promise<void>;
 }
