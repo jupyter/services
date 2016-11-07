@@ -223,6 +223,12 @@ class RequestHandler {
           return;
         }
       }
+      for (let model of this.runningSessions) {
+        if (request.url.indexOf(model.kernel.id) !== -1) {
+          this.respond(200, model.kernel);
+          return;
+        }
+      }
       this.respond(200, this.runningKernels);
       break;
     case 'DELETE':
