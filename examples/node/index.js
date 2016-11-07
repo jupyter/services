@@ -36,7 +36,7 @@ services.Session.startNew(options).then(function(session) {
   session.rename('bar.ipynb').then(function() {
     console.log('Session renamed to', session.path);
     // Execute and handle replies on the kernel.
-    var future = session.kernel.execute({ code: 'a = 1' });
+    var future = session.kernel.requestExecute({ code: 'a = 1' });
     future.onReply = function(reply) {
       console.log('Got execute reply');
     }

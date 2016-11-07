@@ -30,7 +30,7 @@ function main() {
     session.rename('bar.ipynb').then(() => {
       console.log('Session renamed to', session.path);
       // Execute and handle replies on the kernel.
-      let future = session.kernel.execute({ code: 'a = 1' });
+      let future = session.kernel.requestExecute({ code: 'a = 1' });
       future.onReply = (reply) => {
         console.log('Got execute reply');
       };
