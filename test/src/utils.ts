@@ -252,7 +252,7 @@ class RequestHandler {
       this.respond(200, session);
       break;
     case 'GET':
-      for (let model of this.runningKernels) {
+      for (let model of this.runningSessions) {
         if (request.url.indexOf(model.id) !== -1) {
           this.respond(200, model);
           return;
