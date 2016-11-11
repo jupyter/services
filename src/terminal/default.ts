@@ -136,7 +136,14 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
     msg.push(...message.content);
-    this._ws.send(JSON.stringify(msg));
+    let value = JSON.stringify(msg);
+    if (this._isReady) {
+      this._ws.send(value);
+      return;
+    }
+    this.ready().then(() => {
+      this._ws.send(value);
+    });
   }
 
   /**
@@ -284,7 +291,7 @@ namespace DefaultTerminalSession {
           return utils.urlPathJoin(url, item.name);
       }));
       each(Object.keys(Private.running), runningUrl => {
-        if (urls.indexOf(runningUrl) !== -1) {
+        if (urls.indexOf(runningUrl) === -1) {
           let session = Private.running[runningUrl];
           session.terminated.emit(void 0);
           session.dispose();
