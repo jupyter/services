@@ -4,10 +4,10 @@ module.exports = {
     entry: './lib',
     output: {
         filename: './dist/index.js',
-        library: 'jupyter-js-services',
+        library: '@jupyterlab/services',
         libraryTarget: 'umd',
         umdNamedDefine: true,
-        publicPath: 'https://unpkg.com/jupyter-js-services@' + version + '/dist/'
+        publicPath: 'https://unpkg.com/@jupyterlab/services@' + version + '/dist/'
     },
     bail: true,
     devtool: 'source-map'

@@ -10,4 +10,9 @@ npm test || npm test || npm test
 npm run test:coverage || npm run test:coverage || npm run test:coverage
 export PATH="$HOME/miniconda/bin:$PATH"
 npm run test:integration || npm run test:integration || npm run test:integration
+
+pushd examples/node
+python main.py 
+popd
+
 npm run docs
