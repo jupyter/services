@@ -5,8 +5,7 @@
 |----------------------------------------------------------------------------*/
 'use strict';
 
-var services = require('jupyter-js-services');
-var utils = require('jupyter-js-utils');
+var services = require('@jupyterlab/services');
 var ws = require('ws');
 var xhr = require('xmlhttprequest');
 var requirejs = require('requirejs');
@@ -21,6 +20,7 @@ global.XMLHttpRequest = xhr.XMLHttpRequest;
 global.WebSocket = ws;
 
 // Retrieve the base url and websocket url based on t command line arguments.
+var utils = services.utils;
 var BASE_URL = utils.getBaseUrl();
 var WS_URL = utils.getWsUrl();
 
