@@ -70,6 +70,11 @@ namespace TerminalSession {
     ajaxSettings: utils.IAjaxSettings;
 
     /**
+     * Test whether the session is ready.
+     */
+    readonly isReady: boolean;
+
+    /**
      * A promise that fulfills when the session is initially ready.
      */
     ready(): Promise<void>;
@@ -231,6 +236,11 @@ namespace TerminalSession {
      * The default ajax settings for the manager.
      */
     ajaxSettings?: IAjaxSettings;
+
+    /**
+     * Test whether the manager is ready.
+     */
+    readonly isReady: boolean;
 
     /**
      * A promise that fulfills when the manager is ready.

@@ -50,24 +50,22 @@ describe('session/manager', () => {
   beforeEach((done) => {
     data = [createSessionModel(), createSessionModel()];
     tester = new KernelTester();
-    tester.onRequest = () => {
-      tester.respond(200, KERNELSPECS);
-      tester.onRequest = () => {
-        tester.respond(200, data);
-      };
-    };
+    tester.runningSessions = data;
     manager = new SessionManager();
     expect(manager.specs).to.be(null);
     expect(manager.running().next()).to.be(void 0);
     manager.ready().then(done, done);
   });
 
-  afterEach(() => {
-    manager.dispose();
-    if (session) {
-      session.dispose();
-    }
-    tester.dispose();
+  afterEach((done) => {
+    manager.ready().then(() => {
+      manager.dispose();
+      if (session) {
+        session.dispose();
+      }
+      tester.dispose();
+      done();
+    }).catch(done);
   });
 
   describe('SessionManager', () => {
@@ -119,6 +117,20 @@ describe('session/manager', () => {
 
     });
 
+    describe('#isReady', () => {
+
+      it('should test whether the manager is ready', (done) => {
+        manager.dispose();
+        manager = new SessionManager();
+        expect(manager.isReady).to.be(false);
+        manager.ready().then(() => {
+          expect(manager.isReady).to.be(true);
+          done();
+        }).catch(done);
+      });
+
+    });
+
     describe('#ready()', () => {
 
       it('should resolve when the manager is ready', (done) => {
@@ -141,15 +153,12 @@ describe('session/manager', () => {
       it('should be emitted when the specs change', (done) => {
         let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
         specs.default = 'shell';
+        tester.specs = specs;
         manager.specsChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
           expect(args.default).to.be(specs.default);
           done();
         });
-
-        tester.onRequest = () => {
-          tester.respond(200, specs);
-        };
         manager.refreshSpecs();
       });
 
@@ -159,14 +168,12 @@ describe('session/manager', () => {
 
       it('should be emitted in refreshRunning when the running sessions changed', (done) => {
         let sessionModels = [createSessionModel(), createSessionModel()];
+        tester.runningSessions = sessionModels;
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
           expect(deepEqual(toArray(args), sessionModels)).to.be(true);
           done();
         });
-        tester.onRequest = () => {
-          tester.respond(200, sessionModels);
-        };
         manager.refreshRunning();
       });
 
@@ -176,9 +183,7 @@ describe('session/manager', () => {
 
       it('should refresh the list of session ids', (done) => {
         let sessionModels = [createSessionModel(), createSessionModel()];
-        tester.onRequest = () => {
-          tester.respond(200, sessionModels);
-        };
+        tester.runningSessions = sessionModels;
         manager.refreshRunning().then(() => {
           let running = toArray(manager.running());
           expect(running[0]).to.eql(sessionModels[0]);
@@ -195,9 +200,7 @@ describe('session/manager', () => {
       it('should refresh the specs', (done) => {
         let specs = copy(KERNELSPECS) as Kernel.ISpecModels;
         specs.default = 'shell';
-        tester.onRequest = () => {
-          tester.respond(200, specs);
-        };
+        tester.specs = specs;
         manager.refreshSpecs().then(() => {
           expect(manager.specs.default).to.be(specs.default);
           done();
@@ -209,20 +212,11 @@ describe('session/manager', () => {
     describe('#startNew()', () => {
 
       it('should start a session', (done) => {
-        let model = createSessionModel();
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
         manager.startNew({ path: 'test.ipynb'}).then(s => {
           session = s;
-          expect(session.id).to.be(model.id);
+          expect(session.id).to.be.ok();
           done();
-        });
+        }).catch(done);
       });
 
     });
@@ -230,23 +224,14 @@ describe('session/manager', () => {
     describe('#findByPath()', () => {
 
       it('should find an existing session by path', (done) => {
-        let model = createSessionModel();
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(s => {
+        manager.startNew({ path: 'test.ipynb' }).then(s => {
           session = s;
-          manager.findByPath(session.path).then(newModel => {
-            expect(newModel.id).to.be(session.id);
-            done();
-          });
-        });
+          tester.runningSessions = [s.model];
+          return manager.findByPath(session.path);
+        }).then(newModel => {
+          expect(newModel.id).to.be(session.id);
+          done();
+        }).catch(done);
       });
 
     });
@@ -255,23 +240,14 @@ describe('session/manager', () => {
     describe('#findById()', () => {
 
       it('should find an existing session by id', (done) => {
-        let model = createSessionModel();
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(s => {
+        manager.startNew({ path: 'test.ipynb' }).then(s => {
           session = s;
-          manager.findById(session.id).then(newModel => {
-            expect(newModel.id).to.be(session.id);
-            done();
-          });
-        });
+          tester.runningSessions = [s.model];
+          return manager.findById(session.id);
+        }).then(newModel => {
+          expect(newModel.id).to.be(session.id);
+          done();
+        }).catch(done);
       });
 
     });
@@ -279,17 +255,7 @@ describe('session/manager', () => {
     describe('#connectTo()', () => {
 
       it('should connect to a running session', (done) => {
-        let model = createSessionModel();
-        tester.onRequest = (request) => {
-          if (request.method === 'POST') {
-            tester.respond(201, model);
-          } else {
-            tester.respond(200, { name: model.kernel.name,
-                                    id: model.kernel.id });
-          }
-        };
-        manager.startNew({ path: 'test.ipynb' }
-        ).then(s => {
+        manager.startNew({ path: 'test.ipynb' }).then(s => {
           session = s;
           manager.connectTo(session.id).then(newSession => {
             expect(newSession.id).to.be(session.id);
@@ -299,7 +265,7 @@ describe('session/manager', () => {
             newSession.dispose();
             done();
           });
-        });
+        }).catch(done);
       });
 
     });
@@ -307,9 +273,6 @@ describe('session/manager', () => {
     describe('shutdown()', () => {
 
       it('should shut down a session by id', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         manager.shutdown('foo').then(done, done);
       });
 

@@ -122,6 +122,13 @@ class KernelManager implements Kernel.IManager {
   }
 
   /**
+   * Test whether the manager is ready.
+   */
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
+  /**
    * A promise that fulfills when the manager is ready.
    */
   ready(): Promise<void> {
@@ -224,6 +231,7 @@ class KernelManager implements Kernel.IManager {
    */
   private _refreshRunning(): Promise<void> {
     return Kernel.listRunning(this._getOptions({})).then(running => {
+      this._isReady = true;
       if (!deepEqual(running, this._running)) {
         this._running = running.slice();
         this.runningChanged.emit(running);
@@ -250,6 +258,7 @@ class KernelManager implements Kernel.IManager {
   private _runningTimer = -1;
   private _specsTimer = -1;
   private _readyPromise: Promise<void>;
+  private _isReady = false;
 }
 
 

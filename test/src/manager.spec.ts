@@ -13,10 +13,6 @@ import {
 } from '../../lib/manager';
 
 import {
-  KernelManager
-} from '../../lib/kernel';
-
-import {
   SessionManager
 } from '../../lib/session';
 
@@ -25,7 +21,7 @@ import {
 } from '../../lib/terminal';
 
 import {
-  RequestHandler, KERNELSPECS
+  KernelTester
 } from './utils';
 
 
@@ -34,17 +30,17 @@ describe('manager', () => {
   describe('SessionManager', () => {
 
     let manager: ServiceManager.IManager;
+    let tester: KernelTester;
 
     beforeEach((done) => {
-      let handler = new RequestHandler(() => {
-        handler.respond(200, KERNELSPECS);
-        done();
-      });
+      tester = new KernelTester();
       manager = new ServiceManager();
+      manager.ready().then(done, done);
     });
 
     afterEach(() => {
       manager.dispose();
+      tester.dispose();
     });
 
     describe('#constructor()', () => {
@@ -75,6 +71,20 @@ describe('manager', () => {
 
       it('should be the terminal manager instance', () => {
         expect(manager.terminals).to.be.a(TerminalManager);
+      });
+
+    });
+
+    describe('#isReady', () => {
+
+      it('should test whether the manager is ready', (done) => {
+        manager.dispose();
+        manager = new ServiceManager();
+        expect(manager.isReady).to.be(false);
+        manager.ready().then(() => {
+          expect(manager.isReady).to.be(true);
+          done();
+        }).catch(done);
       });
 
     });

@@ -12,7 +12,7 @@ import {
 } from '../../../lib/utils';
 
 import {
-  Kernel, KernelMessage
+  KernelMessage
 } from '../../../lib/kernel';
 
 import {
@@ -48,21 +48,6 @@ function createSessionOptions(sessionModel?: Session.IModel): Session.IOptions {
 }
 
 
-function startNewSession(tester?: KernelTester): Promise<Session.ISession> {
-  tester = tester || new KernelTester();
-  let sessionModel = createSessionModel();
-  tester.onRequest = request => {
-    tester.respond(200, sessionModel);
-    tester.onRequest = () => {
-      tester.respond(200, { name: sessionModel.kernel.name,
-                              id: sessionModel.kernel.id });
-    };
-  };
-  let options = createSessionOptions(sessionModel);
-  return Session.connectTo(sessionModel.id, options);
-}
-
-
 describe('session', () => {
 
   let tester: KernelTester;
@@ -83,9 +68,7 @@ describe('session', () => {
 
     it('should yield a list of valid session models', (done) => {
       let sessionModels = [createSessionModel(), createSessionModel()];
-      tester.onRequest = () => {
-        tester.respond(200, sessionModels);
-      };
+      tester.runningSessions = sessionModels;
       let list = Session.listRunning({ baseUrl: 'http://localhost:8888' });
       list.then(response => {
         let running = toArray(response);
@@ -97,9 +80,7 @@ describe('session', () => {
 
     it('should accept ajax options', (done) => {
       let sessionModels = [createSessionModel(), createSessionModel()];
-      tester.onRequest = () => {
-        tester.respond(200, sessionModels);
-      };
+      tester.runningSessions = sessionModels;
       let list = Session.listRunning({ ajaxSettings: ajaxSettings });
       list.then(response => {
         let running = toArray(response);
@@ -145,7 +126,7 @@ describe('session', () => {
 
     it('should update an existing session', (done) => {
       let newKernel = { name: 'fizz', id: 'buzz' };
-      startNewSession(tester).then(s => {
+      Session.startNew({ path: 'foo' }).then(s => {
         session = s;
         tester.onRequest = request => {
           tester.respond(200, [ {
@@ -170,58 +151,29 @@ describe('session', () => {
 
   });
 
-  describe('Session.startNew()', () => {
+  describe('Session.startNew', () => {
 
     it('should start a session', (done) => {
-      let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        if (request.method === 'POST') {
-          tester.respond(201, sessionModel);
-        } else {
-          tester.respond(200, { name: sessionModel.kernel.name,
-                                  id: sessionModel.kernel.id });
-        }
-      };
-      let options = createSessionOptions(sessionModel);
-      Session.startNew(options).then(s => {
+      Session.startNew({ path: 'foo' }).then(s => {
         session = s;
-        expect(session.id).to.be(sessionModel.id);
+        expect(session.id).to.be.ok();
         done();
       });
     });
 
     it('should accept ajax options', (done) => {
-      let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        if (request.method === 'POST') {
-          tester.respond(201, sessionModel);
-        } else {
-          tester.respond(200, { name: sessionModel.kernel.name,
-                                  id: sessionModel.kernel.id });
-        }
-      };
-      let options = createSessionOptions(sessionModel);
+      let options: Session.IOptions = { path: 'foo' };
       options.ajaxSettings = ajaxSettings;
       Session.startNew(options).then(s => {
         session = s;
-        expect(session.id).to.be(sessionModel.id);
+        expect(session.id).to.ok();
         done();
       });
     });
 
     it('should start even if the websocket fails', (done) => {
-      tester.onRequest = request => {
-        if (request.method === 'POST') {
-          tester.respond(201, sessionModel);
-        } else {
-          tester.respond(200, { name: sessionModel.kernel.name,
-                                  id: sessionModel.kernel.id });
-        }
-      };
       tester.initialStatus = 'dead';
-      let sessionModel = createSessionModel();
-      let options = createSessionOptions(sessionModel);
-      Session.startNew(options).then(s => {
+      Session.startNew({ path: 'foo' }).then(s => {
         session = s;
         done();
       });
@@ -284,13 +236,11 @@ describe('session', () => {
 
     it('should find an existing session by path', (done) => {
       let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        tester.respond(200, [sessionModel]);
-      };
+      tester.runningSessions = [sessionModel];
       Session.findByPath(sessionModel.notebook.path).then(newId => {
         expect(newId.notebook.path).to.be(sessionModel.notebook.path);
         done();
-      });
+      }).catch(done);
     });
 
   });
@@ -299,13 +249,11 @@ describe('session', () => {
 
     it('should find an existing session by id', (done) => {
       let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        tester.respond(200, sessionModel);
-      };
+      tester.runningSessions = [sessionModel];
       Session.findById(sessionModel.id).then(newId => {
         expect(newId.id).to.be(sessionModel.id);
         done();
-      });
+      }).catch(done);
     });
 
   });
@@ -313,7 +261,7 @@ describe('session', () => {
   describe('Session.connectTo()', () => {
 
     it('should connect to a running session', (done) => {
-      startNewSession(tester).then(s => {
+      Session.startNew({ path: 'foo' }).then(s => {
         session = s;
         Session.connectTo(session.id).then((newSession) => {
           expect(newSession.id).to.be(session.id);
@@ -322,45 +270,31 @@ describe('session', () => {
           expect(newSession.kernel).to.not.be(session.kernel);
           newSession.dispose();
           done();
-        });
+        }).catch(done);
       });
     });
 
     it('should connect to a client session if given session options', (done) => {
       let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        if (request.url.indexOf('session') !== -1) {
-          tester.respond(200, sessionModel);
-        } else {
-          tester.respond(200, { name: sessionModel.kernel.name,
-                                id: sessionModel.kernel.id });
-        }
-      };
+      tester.runningSessions = [sessionModel];
       let options = createSessionOptions(sessionModel);
       Session.connectTo(sessionModel.id, options).then(s => {
         session = s;
         expect(session.id).to.be(sessionModel.id);
         done();
-      });
+      }).catch(done);
     });
 
     it('should accept ajax options', (done) => {
       let sessionModel = createSessionModel();
-      tester.onRequest = request => {
-        if (request.url.indexOf('session') !== -1) {
-          tester.respond(200, sessionModel);
-        } else {
-          tester.respond(200, { name: sessionModel.kernel.name,
-                                id: sessionModel.kernel.id });
-        }
-      };
+      tester.runningSessions = [sessionModel];
       let options = createSessionOptions(sessionModel);
       options.ajaxSettings = ajaxSettings;
       Session.connectTo(sessionModel.id, options).then(s => {
         session = s;
-        expect(session.id).to.be(sessionModel.id);
+        expect(session.id).to.be.ok();
         done();
-      });
+      }).catch(done);
     });
 
     it('should fail if session is not available', (done) => {
@@ -379,9 +313,6 @@ describe('session', () => {
   describe('Session.shutdown()', () => {
 
     it('should shut down a kernel by id', (done) => {
-      tester.onRequest = () => {
-        tester.respond(204, { });
-      };
       Session.shutdown('foo').then(done, done);
     });
 
@@ -392,7 +323,7 @@ describe('session', () => {
 
 
     beforeEach((done) => {
-      startNewSession(tester).then(s => {
+      Session.startNew({ path: 'foo' }).then(s => {
         session = s;
         done();
       }).catch(done);
@@ -408,9 +339,6 @@ describe('session', () => {
         session.terminated.connect(() => {
           done();
         });
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         session.shutdown();
       });
     });
@@ -445,9 +373,6 @@ describe('session', () => {
             done();
           }
         });
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         session.kernel.requestKernelInfo().then(() => {
           tester.sendStatus('busy');
         }).catch(done);
@@ -726,16 +651,10 @@ describe('session', () => {
     context('#shutdown()', () => {
 
       it('should shut down properly', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         session.shutdown().then(done, done);
       });
 
       it('should emit a terminated signal', (done) => {
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         session.shutdown();
         session.terminated.connect(() => {
           done();
@@ -744,9 +663,6 @@ describe('session', () => {
 
       it('should accept ajax options', (done) => {
         session.ajaxSettings = ajaxSettings;
-        tester.onRequest = () => {
-          tester.respond(204, { });
-        };
         session.shutdown().then(done, done);
       });
 

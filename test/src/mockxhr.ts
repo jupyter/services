@@ -199,7 +199,7 @@ class MockXMLHttpRequest {
     setTimeout(() => {
       if (MockXMLHttpRequest.requests.indexOf(this) === -1) {
         console.warn('Unhandled request:', JSON.stringify(this));
-        return;
+        throw new Error('Unhandled request: ' + JSON.stringify(this));
       }
       var onRequest = MockXMLHttpRequest.onRequest;
       if (onRequest) onRequest(this);

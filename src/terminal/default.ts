@@ -93,6 +93,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
+   * Test whether the session is ready.
+   */
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
+  /**
    * Test whether the session is disposed.
    */
   get isDisposed(): boolean {
@@ -129,7 +136,14 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   send(message: TerminalSession.IMessage): void {
     let msg: JSONPrimitive[] = [message.type];
     msg.push(...message.content);
-    this._ws.send(JSON.stringify(msg));
+    let value = JSON.stringify(msg);
+    if (this._isReady) {
+      this._ws.send(value);
+      return;
+    }
+    this.ready().then(() => {
+      this._ws.send(value);
+    });
   }
 
   /**
@@ -168,6 +182,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 
     return new Promise<void>((resolve, reject) => {
       this._ws.onopen = (event: MessageEvent) => {
+        this._isReady = true;
         resolve(void 0);
       };
       this._ws.onerror = (event: Event) => {
@@ -184,6 +199,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _ws: WebSocket = null;
   private _isDisposed = false;
   private _readyPromise: Promise<TerminalSession.ISession>;
+  private _isReady = false;
 }
 
 
@@ -275,7 +291,7 @@ namespace DefaultTerminalSession {
           return utils.urlPathJoin(url, item.name);
       }));
       each(Object.keys(Private.running), runningUrl => {
-        if (urls.indexOf(runningUrl) !== -1) {
+        if (urls.indexOf(runningUrl) === -1) {
           let session = Private.running[runningUrl];
           session.terminated.emit(void 0);
           session.dispose();

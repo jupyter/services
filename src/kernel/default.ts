@@ -85,11 +85,6 @@ class DefaultKernel implements Kernel.IKernel {
     this._futures = new Map<string, KernelFutureHandler>();
     this._commPromises = new Map<string, Promise<Kernel.IComm>>();
     this._comms = new Map<string, Kernel.IComm>();
-
-    this._readyPromise = Private.findSpecs(options).then(specs => {
-      this._spec = specs.kernelspecs[this._name];
-      return this._connectionPromise.promise;
-    });
     this._createSocket();
     Private.runningKernels.pushBack(this);
   }
@@ -194,20 +189,32 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
-   * The cached kernel spec.
-   *
-   * #### Notes
-   * This value will be null until the kernel is ready.
+   * Test whether the kernel is ready.
    */
-  get spec(): Kernel.ISpecModel | null {
-    return this._spec;
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
+  /**
+   * Get the kernel spec.
+   *
+   * @returns A promise that resolves with the kernel spec.
+   */
+  spec(): Promise<Kernel.ISpecModel> {
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return Private.findSpecs(options).then(specs => {
+      return specs.kernelspecs[this._name];
+    });
   }
 
   /**
    * A promise that is fulfilled when the kernel is ready.
    */
   ready(): Promise<void> {
-    return this._readyPromise;
+    return this._connectionPromise.promise;
   }
 
   /**
@@ -919,8 +926,6 @@ class DefaultKernel implements Kernel.IKernel {
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
-  private _readyPromise: Promise<void>;
-  private _spec: Kernel.ISpecModel | null;
 }
 
 
@@ -1082,7 +1087,6 @@ namespace Private {
     let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
-
     let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
         return utils.makeAjaxError(success);
@@ -1172,6 +1176,7 @@ namespace Private {
         return utils.makeAjaxError(success);
       }
       validate.validateModel(success.data);
+      options = utils.copy(options) as Kernel.IOptions;
       options.name = success.data.name;
       return new DefaultKernel(options, success.data.id);
     }, onKernelError);
@@ -1202,6 +1207,8 @@ namespace Private {
     }
 
     return getKernelModel(id, options).then(model => {
+      options = utils.copy(options) as Kernel.IOptions;
+      options.name = model.name;
       return new DefaultKernel(options, id);
     }).catch(() => {
       throw new Error(`No running kernel with id: ${id}`);

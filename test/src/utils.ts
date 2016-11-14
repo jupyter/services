@@ -152,6 +152,11 @@ interface IFakeRequest {
 
 export
 class RequestHandler {
+  specs: Kernel.ISpecModels = KERNELSPECS;
+  runningKernels: Kernel.IModel[] = [];
+  runningSessions: Session.IModel[] = [];
+  runningTerminals: TerminalSession.IModel[] = [];
+
   /**
    * Create a new RequestHandler.
    */
@@ -164,13 +169,14 @@ class RequestHandler {
       (window as any).XMLHttpRequest = MockXMLHttpRequest;
     }
     MockXMLHttpRequest.requests = [];
+
     if (!onRequest) {
       onRequest = request => {
         let url = request.url;
         if (url.indexOf('api/sessions') !== -1) {
           this._handleSessionRequest(request);
         } else if (url.indexOf('api/kernelspecs') !== -1) {
-          this.respond(200, KERNELSPECS);
+          this.respond(200, this.specs);
         } else if (url.indexOf('api/kernels') !== -1) {
           this._handleKernelRequest(request);
         } else if (url.indexOf('api/terminals') !== -1) {
@@ -184,7 +190,7 @@ class RequestHandler {
   set onRequest(cb: (request: MockXMLHttpRequest) => void) {
     MockXMLHttpRequest.onRequest = cb;
   }
-
+//
   /**
    * Respond to the latest Ajax request.
    */
@@ -198,12 +204,32 @@ class RequestHandler {
    * Handle kernel requests.
    */
   private _handleKernelRequest(request: MockXMLHttpRequest): void {
+    let url = request.url;
     switch (request.method) {
     case 'POST':
-      this.respond(201, { id: uuid(), name: KERNEL_OPTIONS.name });
+      let data = { id: uuid(), name: KERNEL_OPTIONS.name };
+      if (url.indexOf('interrupt') !== -1) {
+        this.respond(204, data);
+      } else if (url.indexOf('restart') !== -1) {
+        this.respond(200, data);
+      } else {
+        this.respond(201, data);
+      }
       break;
     case 'GET':
-      this.respond(200, []);
+      for (let model of this.runningKernels) {
+        if (request.url.indexOf(model.id) !== -1) {
+          this.respond(200, model);
+          return;
+        }
+      }
+      for (let model of this.runningSessions) {
+        if (request.url.indexOf(model.kernel.id) !== -1) {
+          this.respond(200, model.kernel);
+          return;
+        }
+      }
+      this.respond(200, this.runningKernels);
       break;
     case 'DELETE':
       this.respond(204, {});
@@ -232,10 +258,18 @@ class RequestHandler {
       this.respond(200, session);
       break;
     case 'GET':
-      this.respond(200, []);
+      for (let model of this.runningSessions) {
+        if (request.url.indexOf(model.id) !== -1) {
+          this.respond(200, model);
+          return;
+        }
+      }
+      this.respond(200, this.runningSessions);
       break;
     case 'POST':
-      this.respond(200, session);
+      let model = { name: session.kernel.name, id: session.kernel.id };
+      this.runningKernels.push(model);
+      this.respond(201, session);
       break;
     case 'DELETE':
       this.respond(204, {});
@@ -254,7 +288,7 @@ class RequestHandler {
       this.respond(200, { name: uuid() });
       break;
     case 'GET':
-      this.respond(200, []);
+      this.respond(200, this.runningTerminals);
       break;
     case 'DELETE':
       this.respond(204, {});

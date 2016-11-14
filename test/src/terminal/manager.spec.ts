@@ -28,16 +28,17 @@ describe('terminals', () => {
 
   beforeEach((done) => {
     tester = new TerminalTester();
-    tester.onRequest = () => {
-      tester.respond(200, data);
-    };
+    tester.runningTerminals = data;
     manager = new TerminalManager();
     return manager.ready().then(done, done);
   });
 
-  afterEach(() => {
-    manager.dispose();
-    tester.dispose();
+  afterEach((done) => {
+    manager.ready().then(() => {
+      manager.dispose();
+      tester.dispose();
+      done();
+    }).catch(done);
   });
 
   describe('TerminalManager', () => {
@@ -93,6 +94,20 @@ describe('terminals', () => {
 
     });
 
+    describe('#isReady', () => {
+
+      it('should test whether the manager is ready', (done) => {
+        manager.dispose();
+        manager = new TerminalManager();
+        expect(manager.isReady).to.be(false);
+        manager.ready().then(() => {
+          expect(manager.isReady).to.be(true);
+          done();
+        }).catch(done);
+      });
+
+    });
+
     describe('#ready()', () => {
 
       it('should resolve when the manager is ready', (done) => {
@@ -112,11 +127,8 @@ describe('terminals', () => {
     describe('#startNew()', () => {
 
       it('should startNew a new terminal session', (done) => {
-        tester.onRequest = () => {
-          tester.respond(200, { name: '1' });
-        };
         manager.startNew().then(session => {
-          expect(session.name).to.be('1');
+          expect(session.name).to.be.ok();
           done();
         }).catch(done);
       });
@@ -127,9 +139,6 @@ describe('terminals', () => {
 
       it('should shut down a terminal session by name', (done) => {
         manager.startNew().then(session => {
-          tester.onRequest = () => {
-            tester.respond(204, {});
-          };
           return manager.shutdown(session.name);
         }).then(() => {
           done();
@@ -142,14 +151,12 @@ describe('terminals', () => {
 
       it('should be emitted when the running terminals changed', (done) => {
         let newData: TerminalSession.IModel[] = [{ name: 'foo'}];
+        tester.runningTerminals = newData;
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
           expect(deepEqual(toArray(args), newData)).to.be(true);
           done();
         });
-        tester.onRequest = () => {
-          tester.respond(200, newData);
-        };
         manager.refreshRunning();
       });
 
@@ -159,9 +166,7 @@ describe('terminals', () => {
 
       it('should update the running session models', (done) => {
         let newData: TerminalSession.IModel[] = [{ name: 'foo'}];
-        tester.onRequest = () => {
-          tester.respond(200, newData);
-        };
+        tester.runningTerminals = newData;
         manager.refreshRunning().then(() => {
           let running = toArray(manager.running());
           expect(deepEqual(newData, running)).to.be(true);
