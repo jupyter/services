@@ -171,26 +171,35 @@ class RequestHandler {
     MockXMLHttpRequest.requests = [];
 
     if (!onRequest) {
-      onRequest = request => {
-        let url = request.url;
-        if (url.indexOf('api/sessions') !== -1) {
-          this._handleSessionRequest(request);
-        } else if (url.indexOf('api/kernelspecs') !== -1) {
-          this.respond(200, this.specs);
-        } else if (url.indexOf('api/kernels') !== -1) {
-          this._handleKernelRequest(request);
-        } else if (url.indexOf('api/terminals') !== -1) {
-          this._handleTerminalRequst(request);
-        }
-      };
+      onRequest = this._defaultHandler.bind(this);
     }
     this.onRequest = onRequest;
   }
 
+  /**
+   * Test whether the handler is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * The request handler for the handler.
+   */
   set onRequest(cb: (request: MockXMLHttpRequest) => void) {
     MockXMLHttpRequest.onRequest = cb;
   }
-//
+
+  /**
+   * Dispose of the resources used by the handler.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this.onRequest = this._defaultHandler.bind(this);
+  }
+
   /**
    * Respond to the latest Ajax request.
    */
@@ -198,6 +207,22 @@ class RequestHandler {
     let len = MockXMLHttpRequest.requests.length;
     let request = MockXMLHttpRequest.requests[len - 1];
     request.respond(statusCode, data, header);
+  }
+
+  /**
+   * The default handler for requests.
+   */
+  private _defaultHandler(request: MockXMLHttpRequest): void {
+    let url = request.url;
+    if (url.indexOf('api/sessions') !== -1) {
+      this._handleSessionRequest(request);
+    } else if (url.indexOf('api/kernelspecs') !== -1) {
+      this.respond(200, this.specs);
+    } else if (url.indexOf('api/kernels') !== -1) {
+      this._handleKernelRequest(request);
+    } else if (url.indexOf('api/terminals') !== -1) {
+      this._handleTerminalRequst(request);
+    }
   }
 
   /**
@@ -298,6 +323,7 @@ class RequestHandler {
     }
   };
 
+  private _isDisposed = false;
 }
 
 
@@ -329,6 +355,7 @@ class RequestSocketTester extends RequestHandler {
     }
     this._server.close();
     this._server = null;
+    super.dispose();
   }
 
   get isDisposed(): boolean {

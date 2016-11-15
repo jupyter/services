@@ -10,6 +10,10 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  findIndex
+} from 'phosphor/lib/algorithm/searching';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
@@ -176,7 +180,10 @@ class KernelManager implements Kernel.IManager {
    * @param options - Overrides for the default options.
    */
   startNew(options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.startNew(this._getOptions(options));
+    return Kernel.startNew(this._getOptions(options)).then(kernel => {
+      this._onStarted(kernel);
+      return kernel;
+    });
   }
 
   /**
@@ -194,7 +201,10 @@ class KernelManager implements Kernel.IManager {
    * @param options - Overrides for the default options.
    */
   connectTo(id: string, options?: Kernel.IOptions): Promise<Kernel.IKernel> {
-    return Kernel.connectTo(id, this._getOptions(options));
+    return Kernel.connectTo(id, this._getOptions(options)).then(kernel => {
+      this._onStarted(kernel);
+      return kernel;
+    });
   }
 
   /**
@@ -207,7 +217,35 @@ class KernelManager implements Kernel.IManager {
    * changes.
    */
   shutdown(id: string, options?: Kernel.IOptions): Promise<void> {
-    return Kernel.shutdown(id, this._getOptions(options));
+    return Kernel.shutdown(id, this._getOptions(options)).then(() => {
+      this._onTerminated(id);
+    });
+  }
+
+  /**
+   * Handle a kernel terminating.
+   */
+  private _onTerminated(id: string): void {
+    let index = findIndex(this._running, value => value.id === id);
+    if (index !== -1) {
+      this._running.splice(index, 1);
+      this.runningChanged.emit(this._running.slice());
+    }
+  }
+
+  /**
+   * Handle a kernel starting.
+   */
+  private _onStarted(kernel: Kernel.IKernel): void {
+    let id = kernel.id;
+    let index = findIndex(this._running, value => value.id === id);
+    if (index === -1) {
+      this._running.push(kernel.model);
+      this.runningChanged.emit(this._running.slice());
+    }
+    kernel.terminated.connect(() => {
+      this._onTerminated(id);
+    });
   }
 
   /**

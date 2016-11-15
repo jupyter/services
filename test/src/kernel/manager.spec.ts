@@ -144,6 +144,16 @@ describe('kernel/manager', () => {
         manager.refreshRunning();
       });
 
+      it('should be emitted when a kernel is shut down', (done) => {
+        manager.startNew().then(kernel => {
+          manager.runningChanged.connect(() => {
+            manager.dispose();
+            done();
+          });
+          return kernel.shutdown();
+        }).catch(done);
+      });
+
     });
 
     describe('#isReady', () => {
@@ -211,6 +221,13 @@ describe('kernel/manager', () => {
 
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        manager.startNew();
+      });
+
     });
 
     describe('#findById()', () => {
@@ -238,12 +255,28 @@ describe('kernel/manager', () => {
         }).then(done, done);
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        let id = uuid();
+        tester.runningKernels = [{ name: 'foo', id }];
+        manager.connectTo(id);
+      });
+
     });
 
     describe('shutdown()', () => {
 
       it('should shut down a kernel by id', (done) => {
         manager.shutdown('foo').then(done, done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect((sender, args) => {
+          done();
+        });
+        manager.shutdown(data[0].id);
       });
 
     });

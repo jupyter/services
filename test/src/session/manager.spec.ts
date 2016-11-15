@@ -31,9 +31,9 @@ import {
 /**
  * Create a unique session id.
  */
-function createSessionModel(): Session.IModel {
+function createSessionModel(id = ''): Session.IModel {
   return {
-    id: uuid(),
+    id: id || uuid(),
     notebook: { path: uuid() },
     kernel: { id: uuid(), name: uuid() }
   };
@@ -177,6 +177,60 @@ describe('session/manager', () => {
         manager.refreshRunning();
       });
 
+      it('should be emitted when a session is shut down', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          manager.runningChanged.connect(() => {
+            manager.dispose();
+            done();
+          });
+          return s.shutdown();
+        }).catch(done);
+      });
+
+      it('should be emitted when a session is renamed', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          let model = {
+            id: s.id,
+            kernel: s.kernel.model,
+            notebook: { path: 'bar' }
+          };
+          tester.onRequest = () => {
+            tester.respond(200, model);
+          };
+          manager.runningChanged.connect(() => {
+            manager.dispose();
+            done();
+          });
+          return s.rename(model.notebook.path);
+        }).catch(done);
+      });
+
+      it('should be emitted when a session changes kernels', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          let model = {
+            id: s.id,
+            kernel: {
+              name: 'foo',
+              id: uuid()
+            },
+            notebook: { path: 'bar' }
+          };
+          let name = model.kernel.name;
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, model);
+            } else {
+              tester.respond(200, { name, id: model.kernel.id });
+            }
+          };
+          manager.runningChanged.connect(() => {
+            manager.dispose();
+            done();
+          });
+          return s.changeKernel({ name });
+        }).catch(done);
+      });
+
     });
 
     describe('#refreshRunning()', () => {
@@ -217,6 +271,13 @@ describe('session/manager', () => {
           expect(session.id).to.be.ok();
           done();
         }).catch(done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        manager.startNew({ path: 'foo.ipynb' });
       });
 
     });
@@ -268,12 +329,28 @@ describe('session/manager', () => {
         }).catch(done);
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        let model = createSessionModel();
+        tester.runningSessions = [model];
+        manager.connectTo(model.id);
+      });
+
     });
 
     describe('shutdown()', () => {
 
       it('should shut down a session by id', (done) => {
         manager.shutdown('foo').then(done, done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect((sender, args) => {
+          done();
+        });
+        manager.shutdown(data[0].id);
       });
 
     });
