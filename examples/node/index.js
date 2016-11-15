@@ -5,8 +5,7 @@
 |----------------------------------------------------------------------------*/
 'use strict';
 
-var services = require('jupyter-js-services');
-var utils = require('jupyter-js-utils');
+var services = require('@jupyterlab/services');
 var ws = require('ws');
 var xhr = require('xmlhttprequest');
 var requirejs = require('requirejs');
@@ -21,6 +20,7 @@ global.XMLHttpRequest = xhr.XMLHttpRequest;
 global.WebSocket = ws;
 
 // Retrieve the base url and websocket url based on t command line arguments.
+var utils = services.utils;
 var BASE_URL = utils.getBaseUrl();
 var WS_URL = utils.getWsUrl();
 
@@ -36,7 +36,7 @@ services.Session.startNew(options).then(function(session) {
   session.rename('bar.ipynb').then(function() {
     console.log('Session renamed to', session.path);
     // Execute and handle replies on the kernel.
-    var future = session.kernel.execute({ code: 'a = 1' });
+    var future = session.kernel.requestExecute({ code: 'a = 1' });
     future.onReply = function(reply) {
       console.log('Got execute reply');
     }

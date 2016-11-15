@@ -175,7 +175,7 @@ Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
   };
   Kernel.startNew(options).then(kernel => {
     // Execute and handle replies.
-    let future = kernel.execute({ code: 'a = 1' } );
+    let future = kernel.requestExecute({ code: 'a = 1' } );
     future.onDone = () => {
       console.log('Future is fulfilled');
     };
@@ -188,14 +188,14 @@ Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
       let request: KernelMessage.IInspectRequest = {
         code: 'hello', cursor_pos: 4, detail_level: 0
       };
-      kernel.inspect(request).then(reply => {
+      kernel.requestInspect(request).then(reply => {
         console.log(reply.content.data);
       });
     });
 
     // Interrupt the kernel and then send a complete message.
     kernel.interrupt().then(() => {
-      kernel.complete({ code: 'impor', cursor_pos: 4 } ).then((reply) => {
+      kernel.requestComplete({ code: 'impor', cursor_pos: 4 } ).then((reply) => {
         console.log(reply.content.matches);
       });
     });
@@ -220,9 +220,9 @@ import {
   Session
 } from '@jupyterlab/services';
 
+
 // The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
-
 
 
 // Get a list of available sessions and connect to one.
@@ -232,7 +232,7 @@ Session.listRunning({ baseUrl: BASE_URL }).then(sessionModels => {
     kernelName: sessionModels[0].kernel.name,
     path: sessionModels[0].notebook.path
   };
-  session.connectTo(sessionModels[0].id, options).then((session) => {
+  Session.connectTo(sessionModels[0].id, options).then((session) => {
     console.log(session.kernel.name);
   });
 });
@@ -246,7 +246,7 @@ let options = {
 
 Session.startNew(options).then(session => {
   // Execute and handle replies on the kernel.
-  let future = session.kernel.execute({ code: 'a = 1' });
+  let future = session.kernel.requestExecute({ code: 'a = 1' });
   future.onDone = () => {
     console.log('Future is fulfilled');
   };
@@ -257,7 +257,7 @@ Session.startNew(options).then(session => {
   });
 
   // Register a callback for when the session dies.
-  session.sessionDied.connect(() => {
+  session.terminated.connect(() => {
     console.log('session died');
   });
 
@@ -267,15 +267,12 @@ Session.startNew(options).then(session => {
   });
 
 });
+
 ```
 
 **Comm**
 
 ```typescript
-import {
-  Kernel
-} from '@jupyterlab/services';
-
 // The base url of the Jupyter server.
 const BASE_URL = 'http://localhost:8000';
 
@@ -296,8 +293,8 @@ Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
 });
 
 // Create a comm from the client side.
-getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
-  return kernel.startNew({
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
+  return Kernel.startNew({
     baseUrl: BASE_URL,
     name: kernelSpecs.default,
   });
@@ -320,7 +317,7 @@ getKernelSpecs({ baseUrl: BASE_URL }).then(kernelSpecs => {
     'comm.send(data="hello")',
     'comm.close(data="bye")'
   ].join('\n');
-  kernel.execute({ code: code });
+  kernel.requestExecute({ code: code });
 });
 ```
 
@@ -414,7 +411,7 @@ import {
 
 
 // Create a named terminal session and send some data.
-TerminalSession.open({ name: 'foo' }).then(session => {
+TerminalSession.startNew().then(session => {
   session.send({ type: 'stdin', content: ['foo'] });
 });
 ```
