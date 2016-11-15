@@ -219,6 +219,13 @@ describe('session/manager', () => {
         }).catch(done);
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        manager.startNew({ path: 'foo.ipynb' });
+      });
+
     });
 
     describe('#findByPath()', () => {
@@ -268,12 +275,28 @@ describe('session/manager', () => {
         }).catch(done);
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        let model = createSessionModel();
+        tester.runningSessions = [model];
+        manager.connectTo(model.id);
+      });
+
     });
 
     describe('shutdown()', () => {
 
       it('should shut down a session by id', (done) => {
         manager.shutdown('foo').then(done, done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect((sender, args) => {
+          done();
+        });
+        manager.shutdown(data[0].id);
       });
 
     });

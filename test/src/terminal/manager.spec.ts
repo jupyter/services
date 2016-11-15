@@ -192,6 +192,15 @@ describe('terminals', () => {
         manager.refreshRunning();
       });
 
+      it('should be emitted when a session is shut down', (done) => {
+        manager.startNew().then(session => {
+          manager.runningChanged.connect(() => {
+            done();
+          });
+          return session.shutdown();
+        }).catch(done);
+      });
+
     });
 
     describe('#refreshRunning()', () => {

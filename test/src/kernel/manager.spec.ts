@@ -144,6 +144,15 @@ describe('kernel/manager', () => {
         manager.refreshRunning();
       });
 
+      it('should be emitted when a kernel is shut down', (done) => {
+        manager.startNew().then(kernel => {
+          manager.runningChanged.connect(() => {
+            done();
+          });
+          return kernel.shutdown();
+        }).catch(done);
+      });
+
     });
 
     describe('#isReady', () => {
