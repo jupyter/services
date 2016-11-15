@@ -31,9 +31,9 @@ import {
 /**
  * Create a unique session id.
  */
-function createSessionModel(): Session.IModel {
+function createSessionModel(id = ''): Session.IModel {
   return {
-    id: uuid(),
+    id: id || uuid(),
     notebook: { path: uuid() },
     kernel: { id: uuid(), name: uuid() }
   };
@@ -175,6 +175,57 @@ describe('session/manager', () => {
           done();
         });
         manager.refreshRunning();
+      });
+
+      it('should be emitted when a session is shut down', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          manager.runningChanged.connect(() => {
+            done();
+          });
+          return s.shutdown();
+        }).catch(done);
+      });
+
+      it('should be emitted when a session is renamed', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          let model = {
+            id: s.id,
+            kernel: s.kernel.model,
+            notebook: { path: 'bar' }
+          };
+          tester.onRequest = () => {
+            tester.respond(200, model);
+          };
+          manager.runningChanged.connect(() => {
+            done();
+          });
+          return s.rename(model.notebook.path);
+        }).catch(done);
+      });
+
+      it('should be emitted when a session changes kernels', (done) => {
+        manager.startNew({ path: 'foo' }).then(s => {
+          let model = {
+            id: s.id,
+            kernel: {
+              name: 'foo',
+              id: uuid()
+            },
+            notebook: { path: 'bar' }
+          };
+          let name = model.kernel.name;
+          tester.onRequest = request => {
+            if (request.method === 'PATCH') {
+              tester.respond(200, model);
+            } else {
+              tester.respond(200, { name, id: model.kernel.id });
+            }
+          };
+          manager.runningChanged.connect(() => {
+            done();
+          });
+          return s.changeKernel({ name });
+        }).catch(done);
       });
 
     });
