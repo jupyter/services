@@ -195,6 +195,7 @@ describe('terminals', () => {
       it('should be emitted when a session is shut down', (done) => {
         manager.startNew().then(session => {
           manager.runningChanged.connect(() => {
+            manager.dispose();
             done();
           });
           return session.shutdown();

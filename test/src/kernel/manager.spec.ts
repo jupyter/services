@@ -147,6 +147,7 @@ describe('kernel/manager', () => {
       it('should be emitted when a kernel is shut down', (done) => {
         manager.startNew().then(kernel => {
           manager.runningChanged.connect(() => {
+            manager.dispose();
             done();
           });
           return kernel.shutdown();

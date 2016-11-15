@@ -180,6 +180,7 @@ describe('session/manager', () => {
       it('should be emitted when a session is shut down', (done) => {
         manager.startNew({ path: 'foo' }).then(s => {
           manager.runningChanged.connect(() => {
+            manager.dispose();
             done();
           });
           return s.shutdown();
@@ -197,6 +198,7 @@ describe('session/manager', () => {
             tester.respond(200, model);
           };
           manager.runningChanged.connect(() => {
+            manager.dispose();
             done();
           });
           return s.rename(model.notebook.path);
@@ -222,6 +224,7 @@ describe('session/manager', () => {
             }
           };
           manager.runningChanged.connect(() => {
+            manager.dispose();
             done();
           });
           return s.changeKernel({ name });
