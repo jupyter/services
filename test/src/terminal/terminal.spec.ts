@@ -185,7 +185,7 @@ describe('terminals', () => {
 
     context('#isReady', () => {
 
-      it('should test whether the termainl is ready', (done) => {
+      it('should test whether the terminal is ready', (done) => {
         session.shutdown();
         TerminalSession.startNew().then(s => {
           session = s;

@@ -133,6 +133,31 @@ describe('terminals', () => {
         }).catch(done);
       });
 
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        manager.startNew();
+      });
+
+    });
+
+    describe('#connectTo()', () => {
+
+      it('should connect to an existing kernel', (done) => {
+        return manager.connectTo(data[0].name).then(session => {
+          expect(session.name).to.be(data[0].name);
+        }).then(done, done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        tester.runningTerminals = [{ name: 'baz' }];
+        manager.runningChanged.connect(() => {
+          done();
+        });
+        manager.connectTo('baz');
+      });
+
     });
 
     describe('#shutdown()', () => {
@@ -143,6 +168,13 @@ describe('terminals', () => {
         }).then(() => {
           done();
         }).catch(done);
+      });
+
+      it('should emit a runningChanged signal', (done) => {
+        manager.runningChanged.connect((sender, args) => {
+          done();
+        });
+        manager.shutdown(data[0].name);
       });
 
     });
