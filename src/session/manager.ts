@@ -10,6 +10,10 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  findIndex
+} from 'phosphor/lib/algorithm/searching';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
@@ -180,7 +184,10 @@ class SessionManager implements Session.IManager {
    *   `'path'`.
    */
   startNew(options: Session.IOptions): Promise<Session.ISession> {
-    return Session.startNew(this._getOptions(options));
+    return Session.startNew(this._getOptions(options)).then(session => {
+      this._onStarted(session);
+      return session;
+    });
   }
 
   /**
@@ -201,14 +208,19 @@ class SessionManager implements Session.IManager {
    * Connect to a running session.  See also [[connectToSession]].
    */
   connectTo(id: string, options?: Session.IOptions): Promise<Session.ISession> {
-    return Session.connectTo(id, this._getOptions(options));
+    return Session.connectTo(id, this._getOptions(options)).then(session => {
+      this._onStarted(session);
+      return session;
+    });
   }
 
   /**
    * Shut down a session by id.
    */
   shutdown(id: string, options?: Session.IOptions): Promise<void> {
-    return Session.shutdown(id, this._getOptions(options));
+    return Session.shutdown(id, this._getOptions(options)).then(() => {
+      this._onTerminated(id);
+    });
   }
 
   /**
@@ -219,6 +231,49 @@ class SessionManager implements Session.IManager {
     options.wsUrl = this._wsUrl;
     options.ajaxSettings = options.ajaxSettings || this.ajaxSettings;
     return options;
+  }
+
+  /**
+   * Handle a session terminating.
+   */
+  private _onTerminated(id: string): void {
+    let index = findIndex(this._running, value => value.id === id);
+    if (index !== -1) {
+      this._running.splice(index, 1);
+      this.runningChanged.emit(this._running.slice());
+    }
+  }
+
+  /**
+   * Handle a session starting.
+   */
+  private _onStarted(session: Session.ISession): void {
+    let id = session.id;
+    let index = findIndex(this._running, value => value.id === id);
+    if (index === -1) {
+      this._running.push(session.model);
+      this.runningChanged.emit(this._running.slice());
+    }
+    session.terminated.connect(() => {
+      this._onTerminated(id);
+    });
+    session.pathChanged.connect(() => {
+      this._onChanged(session.model);
+    });
+    session.kernelChanged.connect(() => {
+      this._onChanged(session.model);
+    });
+  }
+
+  /**
+   * Handle a change to a session.
+   */
+  private _onChanged(model: Session.IModel): void {
+    let index = findIndex(this._running, value => value.id === model.id);
+    if (index !== -1) {
+      this._running[index] = model;
+      this.runningChanged.emit(this._running.slice());
+    }
   }
 
   /**

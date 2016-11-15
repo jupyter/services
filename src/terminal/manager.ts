@@ -10,6 +10,10 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  findIndex
+} from 'phosphor/lib/algorithm/searching';
+
+import {
   ISignal, clearSignalData, defineSignal
 } from 'phosphor/lib/core/signaling';
 
@@ -138,7 +142,10 @@ class TerminalManager implements TerminalSession.IManager {
    * will be used unless overridden.
    */
   startNew(options?: TerminalSession.IOptions): Promise<TerminalSession.ISession> {
-    return TerminalSession.startNew(this._getOptions(options));
+    return TerminalSession.startNew(this._getOptions(options)).then(session => {
+      this._onStarted(session);
+      return session;
+    });
   }
 
   /*
@@ -157,14 +164,19 @@ class TerminalManager implements TerminalSession.IManager {
    * will be used unless overridden.
    */
   connectTo(name: string, options?: IAjaxSettings): Promise<TerminalSession.ISession> {
-    return TerminalSession.connectTo(name, this._getOptions(options));
+    return TerminalSession.connectTo(name, this._getOptions(options)).then(session => {
+      this._onStarted(session);
+      return session;
+    });
   }
 
   /**
    * Shut down a terminal session by name.
    */
   shutdown(name: string): Promise<void> {
-    return TerminalSession.shutdown(name, this._getOptions());
+    return TerminalSession.shutdown(name, this._getOptions()).then(() => {
+      this._onTerminated(name);
+    });
   }
 
   /**
@@ -178,6 +190,33 @@ class TerminalManager implements TerminalSession.IManager {
    */
   refreshRunning(): Promise<void> {
     return this._refreshRunning();
+  }
+
+
+  /**
+   * Handle a session terminating.
+   */
+  private _onTerminated(name: string): void {
+    let index = findIndex(this._running, value => value.name === name);
+    if (index !== -1) {
+      this._running.splice(index, 1);
+      this.runningChanged.emit(this._running.slice());
+    }
+  }
+
+  /**
+   * Handle a session starting.
+   */
+  private _onStarted(session: TerminalSession.ISession): void {
+    let name = session.name;
+    let index = findIndex(this._running, value => value.name === name);
+    if (index === -1) {
+      this._running.push(session.model);
+      this.runningChanged.emit(this._running.slice());
+    }
+    session.terminated.connect(() => {
+      this._onTerminated(name);
+    });
   }
 
   /**
