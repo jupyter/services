@@ -278,7 +278,7 @@ describe('kernel', () => {
     beforeEach((done) => {
       Kernel.startNew().then(k => {
         kernel = k;
-        return kernel.ready();
+        return kernel.ready;
       }).then(() => {
         done();
       }).catch(done);
@@ -503,7 +503,7 @@ describe('kernel', () => {
     context('#info', () => {
 
       it('should get the kernel info', (done) => {
-        return kernel.ready().then(() => {
+        return kernel.ready.then(() => {
           let name = kernel.info.language_info.name;
           expect(name).to.be(EXAMPLE_KERNEL_INFO.language_info.name);
         }).then(done, done);
@@ -511,10 +511,10 @@ describe('kernel', () => {
 
     });
 
-    context('#spec()', () => {
+    context('#getSpec()', () => {
 
       it('should resolve with the spec', (done) => {
-        return kernel.spec().then(spec => {
+        return kernel.getSpec().then(spec => {
           expect(spec.language).to.be('python');
         }).then(done, done);
       });
@@ -528,7 +528,7 @@ describe('kernel', () => {
         Kernel.startNew().then(k => {
           kernel = k;
           expect(kernel.isReady).to.be(false);
-          return kernel.ready();
+          return kernel.ready;
         }).then(() => {
           expect(kernel.isReady).to.be(true);
           done();
@@ -537,10 +537,10 @@ describe('kernel', () => {
 
     });
 
-    context('#ready()', () => {
+    context('#ready', () => {
 
       it('should resolve when the kernel is ready', (done) => {
-        return kernel.ready().then(done, done);
+        return kernel.ready.then(done, done);
       });
 
     });
@@ -766,7 +766,7 @@ describe('kernel', () => {
     describe('#reconnect()', () => {
 
       it('should reconnect the websocket', (done) => {
-        kernel.ready().then(() => {
+        kernel.ready.then(() => {
           return kernel.reconnect();
         }).then(() => {
           done();
@@ -775,7 +775,7 @@ describe('kernel', () => {
 
       it("should emit a `'reconnecting'` status", (done) => {
         let called = false;
-        kernel.ready().then(() => {
+        kernel.ready.then(() => {
           return kernel.reconnect();
         }).then(() => {
           expect(called).to.be(true);

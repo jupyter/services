@@ -77,7 +77,7 @@ namespace TerminalSession {
     /**
      * A promise that fulfills when the session is initially ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
 
     /**
      * Send a message to the terminal session.
@@ -250,7 +250,7 @@ namespace TerminalSession {
     /**
      * A promise that fulfills when the manager is ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
 
     /**
      * Create an iterator over the known running terminals.

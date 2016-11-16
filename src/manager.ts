@@ -53,8 +53,8 @@ class ServiceManager implements ServiceManager.IManager {
     this._sessionManager.specsChanged.connect((sender, specs) => {
       this.specsChanged.emit(specs);
     });
-    this._readyPromise = this._sessionManager.ready().then(() => {
-      return this._terminalManager.ready();
+    this._readyPromise = this._sessionManager.ready.then(() => {
+      return this._terminalManager.ready;
     });
   }
 
@@ -129,7 +129,7 @@ class ServiceManager implements ServiceManager.IManager {
   /**
    * A promise that fulfills when the manager is ready.
    */
-  ready(): Promise<void> {
+  get ready(): Promise<void> {
     return this._readyPromise;
   }
 
@@ -189,7 +189,7 @@ namespace ServiceManager {
     /**
      * A promise that fulfills when the manager is initially ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
   }
 
   /**

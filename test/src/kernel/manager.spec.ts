@@ -44,11 +44,11 @@ describe('kernel/manager', () => {
     manager = new KernelManager();
     expect(manager.specs).to.be(null);
     expect(manager.running().next()).to.be(void 0);
-    manager.ready().then(done, done);
+    manager.ready.then(done, done);
   });
 
   afterEach((done) => {
-    manager.ready().then(() => {
+    manager.ready.then(() => {
       manager.dispose();
       tester.dispose();
       done();
@@ -162,7 +162,7 @@ describe('kernel/manager', () => {
         manager.dispose();
         manager = new KernelManager();
         expect(manager.isReady).to.be(false);
-        manager.ready().then(() => {
+        manager.ready.then(() => {
           expect(manager.isReady).to.be(true);
           done();
         }).catch(done);
@@ -170,10 +170,10 @@ describe('kernel/manager', () => {
 
     });
 
-    describe('#ready()', () => {
+    describe('#ready', () => {
 
       it('should resolve when the manager is ready', (done) => {
-        manager.ready().then(done, done);
+        manager.ready.then(done, done);
       });
 
     });

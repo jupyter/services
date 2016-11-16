@@ -199,25 +199,29 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   /**
+   * A promise that is fulfilled when the kernel is ready.
+   */
+  get ready(): Promise<void> {
+    return this._connectionPromise.promise;
+  }
+
+  /**
    * Get the kernel spec.
    *
    * @returns A promise that resolves with the kernel spec.
    */
-  spec(): Promise<Kernel.ISpecModel> {
+  getSpec(): Promise<Kernel.ISpecModel> {
+    if (this._specPromise) {
+      return this._specPromise;
+    }
     let options = {
       baseUrl: this._baseUrl,
       ajaxSettings: this.ajaxSettings
     };
-    return Private.findSpecs(options).then(specs => {
+    this._specPromise = Private.findSpecs(options).then(specs => {
       return specs.kernelspecs[this._name];
     });
-  }
-
-  /**
-   * A promise that is fulfilled when the kernel is ready.
-   */
-  ready(): Promise<void> {
-    return this._connectionPromise.promise;
+    return this._specPromise;
   }
 
   /**
@@ -934,6 +938,7 @@ class DefaultKernel implements Kernel.IKernel {
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
+  private _specPromise: Promise<Kernel.ISpecModel> = null;
 }
 
 

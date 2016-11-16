@@ -53,7 +53,7 @@ describe('jupyter.services - Integration', () => {
       let kernel: Kernel.IKernel;
       Kernel.startNew().then(value => {
         kernel = value;
-        return kernel.ready();
+        return kernel.ready;
       }).then(() => {
         return kernel.interrupt();
       }).then(() => {
@@ -363,6 +363,7 @@ describe('jupyter.services - Integration', () => {
       let manager = new TerminalManager();
       let name = '';
       manager.ready().then(() => {
+      manager.ready.then(() => {
         return manager.startNew();
       }).then(session => {
         name = session.name;

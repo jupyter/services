@@ -136,7 +136,7 @@ class KernelManager implements Kernel.IManager {
   /**
    * A promise that fulfills when the manager is ready.
    */
-  ready(): Promise<void> {
+  get ready(): Promise<void> {
     return this._readyPromise;
   }
 

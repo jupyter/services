@@ -54,11 +54,11 @@ describe('session/manager', () => {
     manager = new SessionManager();
     expect(manager.specs).to.be(null);
     expect(manager.running().next()).to.be(void 0);
-    manager.ready().then(done, done);
+    manager.ready.then(done, done);
   });
 
   afterEach((done) => {
-    manager.ready().then(() => {
+    manager.ready.then(() => {
       manager.dispose();
       if (session) {
         session.dispose();
@@ -123,7 +123,7 @@ describe('session/manager', () => {
         manager.dispose();
         manager = new SessionManager();
         expect(manager.isReady).to.be(false);
-        manager.ready().then(() => {
+        manager.ready.then(() => {
           expect(manager.isReady).to.be(true);
           done();
         }).catch(done);
@@ -131,10 +131,10 @@ describe('session/manager', () => {
 
     });
 
-    describe('#ready()', () => {
+    describe('#ready', () => {
 
       it('should resolve when the manager is ready', (done) => {
-        manager.ready().then(done, done);
+        manager.ready.then(done, done);
       });
 
     });

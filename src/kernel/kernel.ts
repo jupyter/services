@@ -121,16 +121,16 @@ namespace Kernel {
     readonly isReady: boolean;
 
     /**
-     * A promise that is fulfilled when the kernel is initially ready.
+     * A promise that resolves when the kernel is initially ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
 
     /**
      * Get the kernel spec.
      *
      * @returns A promise that resolves with the kernel spec.
      */
-    spec(): Promise<Kernel.ISpecModel>;
+    getSpec(): Promise<Kernel.ISpecModel>;
 
     /**
      * Send a shell message to the kernel.
@@ -568,14 +568,14 @@ namespace Kernel {
     readonly specs: Kernel.ISpecModels | null;
 
     /**
-     * A promise that is fulfilled when the kernel is initially ready.
+     * Whether the manager is ready.
      */
-    ready(): Promise<void>;
+    readonly isReady: boolean;
 
     /**
-     * A promise that fulfills when the manager is initially ready.
+     * A promise that resolves when the manager is initially ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
 
     /**
      * Create an iterator over the known running kernels.

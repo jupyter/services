@@ -103,6 +103,13 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
+   * A promise that fulfills when the manager is ready.
+   */
+  get ready(): Promise<void> {
+    return this._readyPromise;
+  }
+
+  /**
    * Test whether the session is disposed.
    */
   get isDisposed(): boolean {
@@ -127,13 +134,6 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
-   * A promise that fulfills when the manager is ready.
-   */
-  ready(): Promise<void> {
-    return this._readyPromise;
-  }
-
-  /**
    * Send a message to the terminal session.
    */
   send(message: TerminalSession.IMessage): void {
@@ -144,7 +144,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
       this._ws.send(value);
       return;
     }
-    this.ready().then(() => {
+    this.ready.then(() => {
       this._ws.send(value);
     });
   }
