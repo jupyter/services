@@ -687,17 +687,30 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      each(toArray(runningSessions), session => {
-        if (session.id === id) {
-          session.terminated.emit(void 0);
-          session.dispose();
-        }
-      });
+      killSessions(id);
     }, err => {
+      if (err.xhr.status === 404) {
+        let response = JSON.parse(err.xhr.responseText) as any;
+        console.warn(response['message']);
+        killSessions(id);
+        return;
+      }
       if (err.xhr.status === 410) {
         err.throwError = 'The kernel was deleted but the session was not';
       }
       return onSessionError(err);
+    });
+  }
+
+  /**
+   * Kill the sessions by id.
+   */
+  function killSessions(id: string): void {
+    each(toArray(runningSessions), session => {
+      if (session.id === id) {
+        session.terminated.emit(void 0);
+        session.dispose();
+      }
     });
   }
 
