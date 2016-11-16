@@ -1303,7 +1303,7 @@ namespace Private {
         console.warn(response['message']);
         killKernels(id);
       } else {
-        onKernelError(error);
+        return onKernelError(error);
       }
     });
   }
