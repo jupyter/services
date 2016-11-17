@@ -42,7 +42,8 @@ class KernelManager implements Kernel.IManager {
   constructor(options: Kernel.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
+    this._token = options.token || '';
+    this._ajaxSettings = JSON.stringify(utils.ajaxSettingsWithToken(options.ajaxSettings, options.token));
 
     // Initialize internal data.
     this._readyPromise = this._refreshSpecs().then(() => {
@@ -254,6 +255,7 @@ class KernelManager implements Kernel.IManager {
   private _refreshSpecs(): Promise<void> {
     let options = {
       baseUrl: this._baseUrl,
+      token: this._token,
       ajaxSettings: this.ajaxSettings
     };
     return Kernel.getSpecs(options).then(specs => {
@@ -283,12 +285,14 @@ class KernelManager implements Kernel.IManager {
   private _getOptions(options: Kernel.IOptions = {}): Kernel.IOptions {
     options.baseUrl = this._baseUrl;
     options.wsUrl = this._wsUrl;
+    options.token = this._token;
     options.ajaxSettings = options.ajaxSettings || this.ajaxSettings;
     return options;
   }
 
   private _baseUrl = '';
   private _wsUrl = '';
+  private _token = '';
   private _ajaxSettings = '';
   private _running: Kernel.IModel[] = [];
   private _specs: Kernel.ISpecModels = null;

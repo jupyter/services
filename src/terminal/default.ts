@@ -42,7 +42,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   constructor(name: string, options: TerminalSession.IOptions = {}) {
     this._name = name;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
+    this._ajaxSettings = JSON.stringify(
+      utils.ajaxSettingsWithToken(options.ajaxSettings, this._token)
+    );
+    this._token = options.token;
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._readyPromise = this._initializeSocket();
   }
@@ -170,6 +173,9 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     this._url = Private.getTermUrl(this._baseUrl, this._name);
     Private.running[this._url] = this;
     let wsUrl = utils.urlPathJoin(this._wsUrl, `terminals/websocket/${name}`);
+    if (this._token) {
+      wsUrl = wsUrl + `?token=${this._token}`
+    }
     this._ws = new WebSocket(wsUrl);
 
     this._ws.onmessage = (event: MessageEvent) => {
@@ -195,6 +201,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _baseUrl: string;
   private _wsUrl: string;
   private _url: string;
+  private _token = '';
   private _ajaxSettings = '';
   private _ws: WebSocket = null;
   private _isDisposed = false;
@@ -219,7 +226,7 @@ namespace DefaultTerminalSession {
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getBaseUrl(baseUrl);
-    let ajaxSettings = utils.copy(options.ajaxSettings || {}) as IAjaxSettings;
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
 
@@ -274,7 +281,7 @@ namespace DefaultTerminalSession {
   export
   function listRunning(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession[]> {
     let url = Private.getBaseUrl(options.baseUrl);
-    let ajaxSettings = utils.copy(options.ajaxSettings || {}) as IAjaxSettings;
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
 
@@ -313,7 +320,7 @@ namespace DefaultTerminalSession {
   export
   function shutdown(name: string, options: TerminalSession.IOptions = {}): Promise<void> {
     let url = Private.getTermUrl(options.baseUrl, name);
-    let ajaxSettings = utils.copy(options.ajaxSettings || {}) as IAjaxSettings;
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'DELETE';
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {

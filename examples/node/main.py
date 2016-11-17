@@ -15,7 +15,7 @@ def main():
     url = "http://localhost:%s" % PORT
 
     nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
-                  '--NotebookApp.allow_origin="%s"' % url]
+                  '--NotebookApp.token=secret']
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
@@ -27,7 +27,7 @@ def main():
             continue
         print(line)
         if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search('(http.*?)$', line).groups()[0]
+            base_url = re.search('(http.*?)[\?$]', line).groups()[0]
             break
 
     # Wait for the server to finish starting up.

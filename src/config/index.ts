@@ -80,6 +80,11 @@ namespace ConfigSection {
     baseUrl?: string;
 
     /**
+     * The authentication token for the API.
+     */
+    token?: string;
+
+    /**
      * The default ajax settings.
      */
     ajaxSettings?: IAjaxSettings;
@@ -96,7 +101,7 @@ class DefaultConfigSection implements IConfigSection {
    */
   constructor(options: ConfigSection.IOptions) {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    this.ajaxSettings = options.ajaxSettings || {};
+    this.ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     this._url = utils.urlPathJoin(baseUrl, SERVICE_CONFIG_URL,
                                   encodeURIComponent(options.name));
   }

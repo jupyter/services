@@ -355,8 +355,7 @@ class ContentsManager implements Contents.IManager {
    */
   constructor(options: ContentsManager.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
-    options.ajaxSettings = options.ajaxSettings || {};
-    this._ajaxSettings = utils.copy(options.ajaxSettings);
+    this._ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
   }
 
   /**
@@ -817,6 +816,11 @@ namespace ContentsManager {
      * The root url of the server.
      */
     baseUrl?: string;
+
+    /**
+     * The authentication token for the API.
+     */
+    token?: string;
 
     /**
      * The default ajax settings to use for the kernel.

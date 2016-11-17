@@ -547,3 +547,24 @@ function getWsUrl(baseUrl?: string): string {
   }
   return wsUrl;
 }
+
+/**
+ * Add token to ajaxSettings.requestHeaders if defined.
+ * Always returns a copy of ajaxSettings, and a dict.
+ */
+export
+function ajaxSettingsWithToken(ajaxSettings?: IAjaxSettings, token?: string): IAjaxSettings {
+  if (!ajaxSettings) {
+    ajaxSettings = {};
+  } else {
+    ajaxSettings = copy(ajaxSettings);
+  }
+  if (!token || token === '') {
+    return ajaxSettings;
+  }
+  if (!ajaxSettings.requestHeaders) {
+    ajaxSettings.requestHeaders = {}
+  }
+  ajaxSettings.requestHeaders['Authorization'] = `token ${token}`;
+  return ajaxSettings;
+}
