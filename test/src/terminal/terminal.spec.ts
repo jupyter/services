@@ -80,6 +80,13 @@ describe('terminals', () => {
         }).catch(done);
       });
 
+      it('should handle a 404 status', (done) => {
+        tester.onRequest = () => {
+          tester.respond(404, { });
+        };
+        TerminalSession.shutdown('foo').then(done, done);
+      });
+
     });
 
     describe('.listRunning()', () => {
@@ -224,6 +231,13 @@ describe('terminals', () => {
     describe('#shutdown()', () => {
 
       it('should shut down the terminal session', (done) => {
+        session.shutdown().then(done, done);
+      });
+
+      it('should handle a 404 status', (done) => {
+        tester.onRequest = () => {
+          tester.respond(404, { });
+        };
         session.shutdown().then(done, done);
       });
 

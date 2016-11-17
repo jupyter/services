@@ -150,16 +150,11 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Shut down the terminal session.
    */
   shutdown(): Promise<void> {
-    let ajaxSettings = this.ajaxSettings;
-    ajaxSettings.method = 'DELETE';
-
-    return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
-      if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
-      }
-      this.terminated.emit(void 0);
-      this.dispose();
-    });
+    let options = {
+      baseUrl: this._baseUrl,
+      ajaxSettings: this.ajaxSettings
+    };
+    return DefaultTerminalSession.shutdown(this.name, options);
   }
 
   /**
@@ -319,12 +314,15 @@ namespace DefaultTerminalSession {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      // Update the local data store.
-      if (Private.running[url]) {
-        let session = Private.running[url];
-        session.terminated.emit(void 0);
-        session.dispose();
+      Private.killTerminal(url);
+    }, err => {
+      if (err.xhr.status === 404) {
+        let response = JSON.parse(err.xhr.responseText) as any;
+        console.warn(response['message']);
+        Private.killTerminal(url);
+        return;
       }
+      return Promise.reject(err);
     });
   }
 
@@ -360,5 +358,18 @@ namespace Private {
   export
   function getBaseUrl(baseUrl: string): string {
     return utils.urlPathJoin(baseUrl, TERMINAL_SERVICE_URL);
+  }
+
+  /**
+   * Kill a terminal by url.
+   */
+  export
+  function killTerminal(url: string): void {
+    // Update the local data store.
+    if (Private.running[url]) {
+      let session = Private.running[url];
+      session.terminated.emit(void 0);
+      session.dispose();
+    }
   }
 }

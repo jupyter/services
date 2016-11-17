@@ -1296,13 +1296,28 @@ namespace Private {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      each(toArray(runningKernels), kernel => {
-        if (kernel.id === id) {
-          kernel.terminated.emit(void 0);
-          kernel.dispose();
-        }
-      });
-    }, onKernelError);
+      killKernels(id);
+    }, (error: utils.IAjaxError) => {
+      if (error.xhr.status === 404) {
+        let response = JSON.parse(error.xhr.responseText) as any;
+        console.warn(response['message']);
+        killKernels(id);
+      } else {
+        return onKernelError(error);
+      }
+    });
+  }
+
+  /**
+   * Kill the kernels by id.
+   */
+  function killKernels(id: string): void {
+    each(toArray(runningKernels), kernel => {
+      if (kernel.id === id) {
+        kernel.terminated.emit(void 0);
+        kernel.dispose();
+      }
+    });
   }
 
   /**

@@ -37,10 +37,15 @@ describe('jupyter.services - Integration', () => {
 
     it('should get kernel specs and start', (done) => {
       // get info about the available kernels and connect to one
+      let kernel: Kernel.IKernel;
       Kernel.getSpecs().then((specs) => {
         return Kernel.startNew({ name: specs.default });
-      }).then(kernel => {
+      }).then(k => {
+        kernel = k;
         return kernel.shutdown();
+      }).then(() => {
+        // It should handle another shutdown request.
+        return Kernel.shutdown(kernel.id);
       }).then(done, done);
     });
 
@@ -147,6 +152,7 @@ describe('jupyter.services - Integration', () => {
       let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let session: Session.ISession;
       let session2: Session.ISession;
+      let id = '';
       Session.startNew(options).then(value => {
         session = value;
         return session.rename('Untitled2.ipynb');
@@ -168,7 +174,11 @@ describe('jupyter.services - Integration', () => {
         if (!sessions.length) {
           throw Error('Should be one at least one running session');
         }
+        id = session.id;
         return session.shutdown();
+      }).then(() => {
+        // It should handle another shutdown request.
+        return Session.shutdown(id);
       }).then(done, done);
     });
 
@@ -351,18 +361,23 @@ describe('jupyter.services - Integration', () => {
 
     it('should create, list, and shutdown by name', (done) => {
       let manager = new TerminalManager();
+      let name = '';
       manager.ready().then(() => {
         return manager.startNew();
       }).then(session => {
+        name = session.name;
         return manager.refreshRunning();
       }).then(() => {
         let running = toArray(manager.running());
         expect(running.length).to.be(1);
-        return manager.shutdown(running[0].name);
+        return manager.shutdown(name);
       }).then(() => {
         return manager.refreshRunning();
       }).then(() => {
         expect(manager.running().next()).to.be(void 0);
+        // It should handle another shutdown request.
+        return manager.shutdown(name);
+      }).then(() => {
         done();
       }).catch(done);
     });

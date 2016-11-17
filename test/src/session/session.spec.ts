@@ -316,6 +316,13 @@ describe('session', () => {
       Session.shutdown('foo').then(done, done);
     });
 
+    it('should handle a 404 status', (done) => {
+      tester.onRequest = () => {
+        tester.respond(404, { });
+      };
+      Session.shutdown('foo').then(done, done);
+    });
+
   });
 
 
@@ -672,6 +679,13 @@ describe('session', () => {
         };
         let promise = session.shutdown();
         expectFailure(promise, done);
+      });
+
+      it('should handle a 404 status', (done) => {
+        tester.onRequest = () => {
+          tester.respond(404, { });
+        };
+        session.shutdown().then(done, done);
       });
 
       it('should handle a specific error status', (done) => {

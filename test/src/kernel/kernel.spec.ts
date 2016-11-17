@@ -264,6 +264,13 @@ describe('kernel', () => {
       Kernel.shutdown('foo').then(done, done);
     });
 
+    it('should handle a 404 error', (done) => {
+      tester.onRequest = () => {
+        tester.respond(404, { });
+      };
+      Kernel.shutdown('foo').then(done, done);
+    });
+
   });
 
   describe('Kernel.IKernel', () => {
@@ -795,6 +802,13 @@ describe('kernel', () => {
         };
         let shutdown = kernel.shutdown();
         expectAjaxError(shutdown, done, 'Invalid Status: 200');
+      });
+
+      it('should handle a 404 error', (done) => {
+        tester.onRequest = () => {
+          tester.respond(404, { });
+        };
+        kernel.shutdown().then(done, done);
       });
 
       it('should throw an error for an error response', (done) => {
