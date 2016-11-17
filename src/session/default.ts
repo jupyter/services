@@ -61,7 +61,7 @@ class DefaultSession implements Session.ISession {
       utils.ajaxSettingsWithToken(options.ajaxSettings || {}, options.token)
     );
     console.log(this._ajaxSettings);
-    this._token = options.token;
+    this._token = options.token || utils.getConfigOption('token');
     Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);

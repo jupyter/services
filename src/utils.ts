@@ -559,7 +559,10 @@ function ajaxSettingsWithToken(ajaxSettings?: IAjaxSettings, token?: string): IA
   } else {
     ajaxSettings = copy(ajaxSettings);
   }
-  if (!token || token === '') {
+  if (!token) {
+    token = getConfigOption('token');
+  }
+  if (!token || token == '') {
     return ajaxSettings;
   }
   if (!ajaxSettings.requestHeaders) {

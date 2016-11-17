@@ -42,7 +42,7 @@ class KernelManager implements Kernel.IManager {
   constructor(options: Kernel.IOptions = {}) {
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._token = options.token || '';
+    this._token = options.token || utils.getConfigOption('token');
     this._ajaxSettings = JSON.stringify(utils.ajaxSettingsWithToken(options.ajaxSettings, options.token));
 
     // Initialize internal data.

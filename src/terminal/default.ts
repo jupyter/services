@@ -42,10 +42,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   constructor(name: string, options: TerminalSession.IOptions = {}) {
     this._name = name;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
+    this._token = options.token || utils.getConfigOption('token');
     this._ajaxSettings = JSON.stringify(
       utils.ajaxSettingsWithToken(options.ajaxSettings, this._token)
     );
-    this._token = options.token;
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._readyPromise = this._initializeSocket();
   }

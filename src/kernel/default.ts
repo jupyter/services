@@ -82,7 +82,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._ajaxSettings = JSON.stringify(
       utils.ajaxSettingsWithToken(options.ajaxSettings, options.token)
     );
-    this._token = options.token;
+    this._token = options.token || utils.getConfigOption('token');
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
