@@ -30,7 +30,7 @@ import {
 } from './terminal';
 
 import {
-  IAjaxSettings, getBaseUrl, getWsUrl
+  IAjaxSettings, getBaseUrl, getWsUrl, ajaxSettingsWithToken
 } from './utils';
 
 
@@ -46,7 +46,7 @@ class ServiceManager implements ServiceManager.IManager {
     options = options || {};
     options.wsUrl = options.wsUrl || getWsUrl();
     options.baseUrl = options.baseUrl || getBaseUrl();
-    options.ajaxSettings = options.ajaxSettings || {};
+    options.ajaxSettings = ajaxSettingsWithToken(options.ajaxSettings, options.token);
     this._sessionManager = new SessionManager(options);
     this._contentsManager = new ContentsManager(options);
     this._terminalManager = new TerminalManager(options);
@@ -206,6 +206,11 @@ namespace ServiceManager {
      * The base ws url of the server.
      */
     wsUrl?: string;
+
+    /**
+     * The authentication token for the API.
+     */
+    token?: string;
 
     /**
      * The ajax settings for the manager.

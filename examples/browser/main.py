@@ -24,10 +24,13 @@ class MainPageHandler(tornado.web.RequestHandler):
 
 def main():
     # Start a notebook server with cross-origin access.
-    url = "http://localhost:%s" % PORT
-
-    nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
-                  '--NotebookApp.allow_origin="%s"' % url]
+    nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
+                  '--debug',
+                  # FIXME: allow-origin=* only required for notebook < 4.3
+                  '--NotebookApp.allow_origin="*"',
+                  # disable user password:
+                  '--NotebookApp.password=',
+              ]
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
@@ -39,7 +42,7 @@ def main():
             continue
         print(line)
         if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search('(http.*?)$', line).groups()[0]
+            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
             break
 
     # Wait for the server to finish starting up.

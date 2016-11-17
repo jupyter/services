@@ -21,9 +21,15 @@ with open(os.path.join(root_dir, 'src', 'temp.txt'), 'w') as fid:
 KARMA_PORT = 9876
 
 
+
 def start_notebook():
     nb_command = [sys.executable, '-m', 'notebook', root_dir, '--no-browser',
-                  '--debug', '--NotebookApp.allow_origin="*"']
+                  '--debug',
+                  # FIXME: allow-origin=* only required for notebook < 4.3
+                  '--NotebookApp.allow_origin="*"',
+                  # disable user password:
+                  '--NotebookApp.password=',
+              ]
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
@@ -34,7 +40,12 @@ def start_notebook():
             continue
         print(line)
         if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search('(http.*?)$', line).groups()[0]
+            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
+            token_match = re.search(r'token\=([^&]+)', line)
+            if token_match:
+                token = token_match.groups()[0]
+            else:
+                token = ''
             break
 
     while 1:
@@ -56,12 +67,14 @@ def start_notebook():
     thread.setDaemon(True)
     thread.start()
 
-    return nb_server, base_url
+    return nb_server, base_url, token
 
 
-def run_mocha(options, base_url):
+def run_mocha(options, base_url, token):
     mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js',
                      '--baseUrl=%s' % base_url]
+    if token:
+        mocha_command.append('--token=%s' % token)
     return subprocess.check_call(mocha_command, stderr=subprocess.STDOUT)
 
 
@@ -75,10 +88,10 @@ if __name__ == '__main__':
                            help="Whether to enter debug mode in Karma")
     options = argparser.parse_args(sys.argv[1:])
 
-    nb_server, base_url = start_notebook()
+    nb_server, base_url, token = start_notebook()
 
     try:
-        resp = run_mocha(options, base_url)
+        resp = run_mocha(options, base_url, token)
     except subprocess.CalledProcessError:
         resp = 1
     finally:

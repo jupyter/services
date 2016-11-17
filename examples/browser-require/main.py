@@ -24,12 +24,13 @@ class MainPageHandler(tornado.web.RequestHandler):
 
 def main():
     # Start a notebook server with cross-origin access.
-    url = "http://localhost:%s" % PORT
-
-    nb_command = [sys.executable, '-m', 'notebook','--no-browser', '--debug',
-                  '--NotebookApp.password=""',
-                  '--notebook-dir=.',
-                  '--NotebookApp.allow_origin="%s"' % url]
+    nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
+                  '--debug',
+                  # FIXME: allow-origin=* only required for notebook < 4.3
+                  '--NotebookApp.allow_origin="*"',
+                  # disable user password:
+                  '--NotebookApp.password=',
+              ]
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 

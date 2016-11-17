@@ -515,6 +515,11 @@ namespace Kernel {
     clientId?: string;
 
     /**
+     * The authentication token for the API.
+     */
+    token?: string;
+
+    /**
      * The default ajax settings to use for the kernel.
      */
     ajaxSettings?: IAjaxSettings;

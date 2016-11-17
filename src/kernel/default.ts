@@ -79,7 +79,10 @@ class DefaultKernel implements Kernel.IKernel {
     this._id = id;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
+    this._ajaxSettings = JSON.stringify(
+      utils.ajaxSettingsWithToken(options.ajaxSettings, options.token)
+    );
+    this._token = options.token || utils.getConfigOption('token');
     this._clientId = options.clientId || utils.uuid();
     this._username = options.username || '';
     this._futures = new Map<string, KernelFutureHandler>();
@@ -226,6 +229,7 @@ class DefaultKernel implements Kernel.IKernel {
       wsUrl: this._wsUrl,
       name: this._name,
       username: this._username,
+      token: this._token,
       ajaxSettings: this.ajaxSettings
     };
     return new DefaultKernel(options, this._id);
@@ -639,15 +643,18 @@ class DefaultKernel implements Kernel.IKernel {
     // Strip any authentication from the display string.
     let parsed = utils.urlParse(partialUrl);
     let display = partialUrl.replace(parsed.auth, '');
-    console.log('Starting WebSocket:', display);
 
     let url = utils.urlPathJoin(
         partialUrl,
         'channels?session_id=' + encodeURIComponent(this._clientId)
     );
+    // if token authentication is in use
+    if (this._token !== '') {
+      url = url + `&token=${encodeURIComponent(this._token)}`;
+    }
+    console.log("new websocket", url);
 
     this._connectionPromise = new utils.PromiseDelegate<void>();
-
     this._ws = new WebSocket(url);
 
     // Ensure incoming binary messages are not Blobs
@@ -908,6 +915,7 @@ class DefaultKernel implements Kernel.IKernel {
   }
 
   private _id = '';
+  private _token = '';
   private _name = '';
   private _baseUrl = '';
   private _wsUrl = '';
@@ -1084,7 +1092,7 @@ namespace Private {
   function getSpecs(options: Kernel.IOptions = {}): Promise<Kernel.ISpecModels> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNELSPEC_SERVICE_URL);
-    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    let ajaxSettings: IAjaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -1113,7 +1121,7 @@ namespace Private {
   function listRunning(options: Kernel.IOptions = {}): Promise<Kernel.IModel[]> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    let ajaxSettings: IAjaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
@@ -1164,7 +1172,7 @@ namespace Private {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL);
-    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    let ajaxSettings: IAjaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'POST';
     ajaxSettings.data = JSON.stringify({ name: options.name });
     ajaxSettings.dataType = 'json';
@@ -1221,7 +1229,7 @@ namespace Private {
   export
   function shutdown(id: string, options: Kernel.IOptions = {}): Promise<void> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    let ajaxSettings = options.ajaxSettings || {};
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     return shutdownKernel(id, baseUrl, ajaxSettings);
   }
 
@@ -1329,7 +1337,7 @@ namespace Private {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, KERNEL_SERVICE_URL,
                                 encodeURIComponent(id));
-    let ajaxSettings = options.ajaxSettings || {};
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;

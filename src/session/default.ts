@@ -57,7 +57,11 @@ class DefaultSession implements Session.ISession {
     this._path = options.path;
     this._baseUrl = options.baseUrl || utils.getBaseUrl();
     this._uuid = utils.uuid();
-    this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
+    this._ajaxSettings = JSON.stringify(
+      utils.ajaxSettingsWithToken(options.ajaxSettings || {}, options.token)
+    );
+    console.log(this._ajaxSettings);
+    this._token = options.token || utils.getConfigOption('token');
     Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
@@ -353,6 +357,7 @@ class DefaultSession implements Session.ISession {
   private _id = '';
   private _path = '';
   private _ajaxSettings = '';
+  private _token = '';
   private _kernel: Kernel.IKernel = null;
   private _uuid = '';
   private _baseUrl = '';
@@ -442,7 +447,7 @@ namespace Private {
   function listRunning(options: Session.IOptions = {}): Promise<Session.IModel[]> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = utils.urlPathJoin(baseUrl, SESSION_SERVICE_URL);
-    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;
@@ -541,7 +546,7 @@ namespace Private {
   export
   function shutdown(id: string, options: Session.IOptions = {}): Promise<void> {
     let baseUrl = options.baseUrl || utils.getBaseUrl();
-    let ajaxSettings = options.ajaxSettings || {};
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     return shutdownSession(id, baseUrl, ajaxSettings);
   }
 
@@ -557,7 +562,7 @@ namespace Private {
       kernel: { name: options.kernelName, id: options.kernelId },
       notebook: { path: options.path }
     };
-    let ajaxSettings: IAjaxSettings = utils.copy(options.ajaxSettings || {});
+    let ajaxSettings: IAjaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
     ajaxSettings.data = JSON.stringify(model);
@@ -588,6 +593,7 @@ namespace Private {
       wsUrl: options.wsUrl,
       username: options.username,
       clientId: options.clientId,
+      token: options.token,
       ajaxSettings: options.ajaxSettings
     };
     return Kernel.connectTo(options.kernelId, kernelOptions);
@@ -618,7 +624,7 @@ namespace Private {
     options = options || {};
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = getSessionUrl(baseUrl, id);
-    let ajaxSettings = options.ajaxSettings || {};
+    let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
     ajaxSettings.dataType = 'json';
     ajaxSettings.cache = false;

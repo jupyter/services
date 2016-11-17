@@ -29,8 +29,10 @@ var options = {
   baseUrl: BASE_URL,
   wsUrl: WS_URL,
   kernelName: 'python',
-  path: 'foo.ipynb'
+  path: 'foo.ipynb',
+  token: 'secret',
 }
+
 services.Session.startNew(options).then(function(session) {
   // Rename the session.
   session.rename('bar.ipynb').then(function() {

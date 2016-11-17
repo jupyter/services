@@ -170,6 +170,11 @@ namespace TerminalSession {
     wsUrl?: string;
 
     /**
+     * The authentication token for the API.
+     */
+    token?: string;
+
+    /**
      * The Ajax settings used for server requests.
      */
     ajaxSettings?: utils.IAjaxSettings;

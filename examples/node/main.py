@@ -12,10 +12,8 @@ PORT = 8765
 
 def main():
     # Start a notebook server with cross-origin access.
-    url = "http://localhost:%s" % PORT
-
     nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
-                  '--NotebookApp.allow_origin="%s"' % url]
+                  '--NotebookApp.token=secret']
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
@@ -27,7 +25,12 @@ def main():
             continue
         print(line)
         if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search('(http.*?)$', line).groups()[0]
+            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
+            token_match = re.search(r'token\=([^&]+)', line)
+            if token_match:
+                token = token_match.groups()[0]
+            else:
+                token = ''
             break
 
     # Wait for the server to finish starting up.
@@ -54,6 +57,9 @@ def main():
 
     # Run the node script with command arguments.
     node_command = ['node', 'index.js', '-baseUrl', base_url]
+    if token:
+        node_command.append('--token=%s' % token)
+
     print('*' * 60)
     print(' '.join(node_command))
     node_proc = subprocess.Popen(node_command, stderr=subprocess.STDOUT,
