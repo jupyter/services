@@ -30,11 +30,11 @@ describe('terminals', () => {
     tester = new TerminalTester();
     tester.runningTerminals = data;
     manager = new TerminalManager();
-    return manager.ready().then(done, done);
+    return manager.ready.then(done, done);
   });
 
   afterEach((done) => {
-    manager.ready().then(() => {
+    manager.ready.then(() => {
       manager.dispose();
       tester.dispose();
       done();
@@ -100,7 +100,7 @@ describe('terminals', () => {
         manager.dispose();
         manager = new TerminalManager();
         expect(manager.isReady).to.be(false);
-        manager.ready().then(() => {
+        manager.ready.then(() => {
           expect(manager.isReady).to.be(true);
           done();
         }).catch(done);
@@ -108,10 +108,10 @@ describe('terminals', () => {
 
     });
 
-    describe('#ready()', () => {
+    describe('#ready', () => {
 
       it('should resolve when the manager is ready', (done) => {
-        manager.ready().then(done, done);
+        manager.ready.then(done, done);
       });
 
     });

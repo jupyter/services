@@ -197,7 +197,7 @@ describe('terminals', () => {
         TerminalSession.startNew().then(s => {
           session = s;
           expect(session.isReady).to.be(false);
-          return session.ready();
+          return session.ready;
         }).then(() => {
           expect(session.isReady).to.be(true);
           done();
@@ -206,10 +206,10 @@ describe('terminals', () => {
 
     });
 
-    describe('#ready()', () => {
+    describe('#ready', () => {
 
       it('should resolve when the terminal is ready', (done) => {
-        session.ready().then(done, done);
+        session.ready.then(done, done);
       });
 
     });
@@ -221,7 +221,7 @@ describe('terminals', () => {
           expect(msg.type).to.be('stdin');
           done();
         });
-        session.ready().then(() => {
+        session.ready.then(() => {
           session.send({ type: 'stdin', content: [1, 2] });
         });
       });

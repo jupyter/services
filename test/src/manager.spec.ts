@@ -35,7 +35,7 @@ describe('manager', () => {
     beforeEach((done) => {
       tester = new KernelTester();
       manager = new ServiceManager();
-      manager.ready().then(done, done);
+      manager.ready.then(done, done);
     });
 
     afterEach(() => {
@@ -81,7 +81,7 @@ describe('manager', () => {
         manager.dispose();
         manager = new ServiceManager();
         expect(manager.isReady).to.be(false);
-        manager.ready().then(() => {
+        manager.ready.then(() => {
           expect(manager.isReady).to.be(true);
           done();
         }).catch(done);

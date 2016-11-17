@@ -386,7 +386,7 @@ namespace Session {
     /**
      * A promise that is fulfilled when the manager is ready.
      */
-    ready(): Promise<void>;
+    readonly ready: Promise<void>;
 
     /**
      * Create an iterator over the known running sessions.
