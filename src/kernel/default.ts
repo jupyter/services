@@ -656,7 +656,7 @@ class DefaultKernel implements Kernel.IKernel {
     if (this._token !== '') {
       url = url + `&token=${encodeURIComponent(this._token)}`;
     }
-    console.log("new websocket", url);
+    console.log('Starting websocket', display);
 
     this._connectionPromise = new utils.PromiseDelegate<void>();
     this._ws = new WebSocket(url);
