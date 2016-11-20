@@ -42,9 +42,10 @@ class TerminalManager implements TerminalSession.IManager {
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._ajaxSettings = JSON.stringify(options.ajaxSettings || {});
 
+    // Initialize internal data.
     this._readyPromise = this._refreshRunning();
 
-    // Initialize internal data.
+    // Set up polling if terminals are available.
     if (TerminalSession.isAvailable()) {
       // Set up polling.
       this._refreshTimer = setInterval(() => {
