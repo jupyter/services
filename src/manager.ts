@@ -54,7 +54,9 @@ class ServiceManager implements ServiceManager.IManager {
       this.specsChanged.emit(specs);
     });
     this._readyPromise = this._sessionManager.ready.then(() => {
-      return this._terminalManager.ready;
+      if (this._terminalManager.isAvailable()) {
+        return this._terminalManager.ready;
+      }
     });
   }
 

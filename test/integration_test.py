@@ -71,8 +71,10 @@ def start_notebook():
 
 
 def run_mocha(options, base_url, token):
+    terminalsAvailable = sys.platform != 'win32'
     mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js',
-                     '--baseUrl=%s' % base_url]
+                     '--baseUrl=%s' % base_url,
+                     '--terminalsAvailable=%s' % terminalsAvailable]
     if token:
         mocha_command.append('--token=%s' % token)
     return subprocess.check_call(mocha_command, stderr=subprocess.STDOUT)

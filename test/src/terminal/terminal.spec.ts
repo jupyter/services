@@ -42,6 +42,14 @@ describe('terminals', () => {
 
   describe('TerminalSession', () => {
 
+    describe('.isAvailable()', () => {
+
+      it('should test whether terminal sessions are available', () => {
+        expect(TerminalSession.isAvailable()).to.be(true);
+      });
+
+    });
+
     describe('.startNew()', () => {
 
       it('should startNew a terminal session', (done) => {
