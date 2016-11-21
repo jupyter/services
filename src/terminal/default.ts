@@ -169,7 +169,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     Private.running[this._url] = this;
     let wsUrl = utils.urlPathJoin(this._wsUrl, `terminals/websocket/${name}`);
     if (this._token) {
-      wsUrl = wsUrl + `?token=${this._token}`
+      wsUrl = wsUrl + `?token=${this._token}`;
     }
     this._ws = new WebSocket(wsUrl);
 
@@ -215,7 +215,7 @@ namespace DefaultTerminalSession {
    */
   export
   function isAvailable(): boolean {
-    return !!utils.getConfigOption('terminalsAvailable');
+    return utils.getConfigOption('terminalsAvailable') === 'True';
   }
 
   /**
@@ -376,7 +376,7 @@ namespace Private {
    */
   export
   function unavailable(): Promise<void> {
-    return Promise.reject(new Error('Terminals Unavailable'));
+    return Promise.reject('Terminals Unavailable');
   }
 
   /**

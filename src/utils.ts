@@ -492,10 +492,7 @@ function deepFreeze(obj: any): any {
  * configuration as valid JSON.
  */
 export
-function getConfigOption(name: string): string;
-
-export
-function getConfigOption(name: string): any {
+function getConfigOption(name: string): string {
   if (configData) {
     return configData[name];
   }
