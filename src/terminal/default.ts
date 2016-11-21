@@ -376,7 +376,7 @@ namespace Private {
    */
   export
   function unavailable(): Promise<void> {
-    return Promise.reject(new Error('Terminals Unavailable'));
+    return Promise.reject('Terminals Unavailable');
   }
 
   /**

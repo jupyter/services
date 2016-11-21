@@ -118,7 +118,7 @@ class TerminalManager implements TerminalSession.IManager {
    * A promise that fulfills when the manager is ready.
    */
   get ready(): Promise<void> {
-    return this._readyPromise || Private.unavailable();
+    return this._readyPromise || Promise.reject('Terminals unavailable');
   }
 
   /**
