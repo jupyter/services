@@ -215,7 +215,7 @@ namespace DefaultTerminalSession {
    */
   export
   function isAvailable(): boolean {
-    return !!utils.getConfigOption('terminalsAvailable');
+    return utils.getConfigOption('terminalsAvailable') === true;
   }
 
   /**
