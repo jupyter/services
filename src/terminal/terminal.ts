@@ -91,6 +91,14 @@ namespace TerminalSession {
   }
 
   /**
+   * Test whether the terminal service is available.
+   */
+  export
+  function isAvailable(): boolean {
+    return DefaultTerminalSession.isAvailable();
+  }
+
+  /**
    * Start a new terminal session.
    *
    * @options - The session options to use.
@@ -251,6 +259,11 @@ namespace TerminalSession {
      * A promise that fulfills when the manager is ready.
      */
     readonly ready: Promise<void>;
+
+    /**
+     * Whether the terminal service is available.
+     */
+    isAvailable(): boolean;
 
     /**
      * Create an iterator over the known running terminals.

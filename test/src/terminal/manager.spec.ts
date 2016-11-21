@@ -116,6 +116,14 @@ describe('terminals', () => {
 
     });
 
+    describe('#isAvailable()', () => {
+
+      it('should test whether terminal sessions are available', () => {
+        expect(TerminalSession.isAvailable()).to.be(true);
+      });
+
+    });
+
     describe('#running()', () => {
 
       it('should give an iterator over the list of running models', () => {

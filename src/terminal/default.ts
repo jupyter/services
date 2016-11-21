@@ -211,6 +211,14 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 export
 namespace DefaultTerminalSession {
   /**
+   * Whether the terminal service is available.
+   */
+  export
+  function isAvailable(): boolean {
+    return !!utils.getConfigOption('terminalsAvailable');
+  }
+
+  /**
    * Start a new terminal session.
    *
    * @options - The session options to use.
@@ -219,6 +227,9 @@ namespace DefaultTerminalSession {
    */
   export
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
+    if (!TerminalSession.isAvailable()) {
+      return Private.unavailable;
+    }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getBaseUrl(baseUrl);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
@@ -257,6 +268,9 @@ namespace DefaultTerminalSession {
    */
   export
   function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
+    if (!TerminalSession.isAvailable()) {
+      return Private.unavailable;
+    }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getTermUrl(baseUrl, name);
     if (url in Private.running) {
@@ -275,6 +289,9 @@ namespace DefaultTerminalSession {
    */
   export
   function listRunning(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession[]> {
+    if (!TerminalSession.isAvailable()) {
+      return Private.unavailable;
+    }
     let url = Private.getBaseUrl(options.baseUrl);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'GET';
@@ -314,6 +331,9 @@ namespace DefaultTerminalSession {
    */
   export
   function shutdown(name: string, options: TerminalSession.IOptions = {}): Promise<void> {
+    if (!TerminalSession.isAvailable()) {
+      return Private.unavailable;
+    }
     let url = Private.getTermUrl(options.baseUrl, name);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'DELETE';
@@ -349,7 +369,13 @@ namespace Private {
    * A mapping of running terminals by url.
    */
   export
-  var running: { [key: string]: DefaultTerminalSession } = Object.create(null);
+  const running: { [key: string]: DefaultTerminalSession } = Object.create(null);
+
+  /**
+   * A promise returned for when terminals are unavailable.
+   */
+  export
+  const unavailable = Promise.reject(new Error('Terminals Unavailable'));
 
   /**
    * Get the url for a terminal.

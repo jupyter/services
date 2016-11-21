@@ -45,10 +45,13 @@ class TerminalManager implements TerminalSession.IManager {
     // Initialize internal data.
     this._readyPromise = this._refreshRunning();
 
-    // Set up polling.
-    this._refreshTimer = setInterval(() => {
-      this._refreshRunning();
-    }, 10000);
+    // Set up polling if terminals are available.
+    if (TerminalSession.isAvailable()) {
+      // Set up polling.
+      this._refreshTimer = setInterval(() => {
+        this._refreshRunning();
+      }, 10000);
+    }
   }
 
   /**
@@ -98,7 +101,6 @@ class TerminalManager implements TerminalSession.IManager {
     return this._isReady;
   }
 
-
   /**
    * Dispose of the resources used by the manager.
    */
@@ -117,6 +119,13 @@ class TerminalManager implements TerminalSession.IManager {
    */
   get ready(): Promise<void> {
     return this._readyPromise;
+  }
+
+  /**
+   * Whether the terminal service is available.
+   */
+  isAvailable(): boolean {
+    return TerminalSession.isAvailable();
   }
 
   /**
