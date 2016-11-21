@@ -228,7 +228,7 @@ namespace DefaultTerminalSession {
   export
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable;
+      return Private.unavailable();
     }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getBaseUrl(baseUrl);
@@ -269,7 +269,7 @@ namespace DefaultTerminalSession {
   export
   function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable;
+      return Private.unavailable();
     }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getTermUrl(baseUrl, name);
@@ -290,7 +290,7 @@ namespace DefaultTerminalSession {
   export
   function listRunning(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession[]> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable;
+      return Private.unavailable();
     }
     let url = Private.getBaseUrl(options.baseUrl);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
@@ -332,7 +332,7 @@ namespace DefaultTerminalSession {
   export
   function shutdown(name: string, options: TerminalSession.IOptions = {}): Promise<void> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable;
+      return Private.unavailable();
     }
     let url = Private.getTermUrl(options.baseUrl, name);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
@@ -375,7 +375,9 @@ namespace Private {
    * A promise returned for when terminals are unavailable.
    */
   export
-  const unavailable = Promise.reject(new Error('Terminals Unavailable'));
+  function unavailable(): Promise<void> {
+    return Promise.reject(new Error('Terminals Unavailable'));
+  }
 
   /**
    * Get the url for a terminal.
