@@ -214,11 +214,6 @@ namespace nbformat {
      * Raw cell metadata format for nbconvert.
      */
     format?: string;
-
-    /**
-     * Media attachments (e.g. inline images).
-     */
-    attachments?: IAttachments;
   }
 
   /**
@@ -235,6 +230,11 @@ namespace nbformat {
      * Cell-level metadata.
      */
     metadata: IRawCellMetadata;
+
+    /**
+     * Cell attachments.
+     */
+    attachments?: IAttachments;
   }
 
   /**
@@ -246,6 +246,11 @@ namespace nbformat {
      * String identifying the type of cell.
      */
     cell_type: 'markdown';
+
+    /**
+     * Cell attachments.
+     */
+    attachments?: IAttachments;
   }
 
   /**
@@ -262,11 +267,6 @@ namespace nbformat {
      * Whether the cell's output is scrolled, unscrolled, or autoscrolled.
      */
     scrolled?: boolean | 'auto';
-
-    /**
-     * Media attachments (e.g. inline images).
-     */
-    attachments?: IAttachments;
   }
 
   /**
