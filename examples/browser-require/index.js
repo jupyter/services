@@ -21,7 +21,7 @@ require(['jquery', '@jupyterlab/services'], function ($, services) {
       // clear output
       $('#output').text('');
       // Execute and handle replies on the kernel.
-      var future = kernel.execute({ code: code });
+      var future = kernel.requestExecute({ code: code });
       // record each IOPub message
       future.onIOPub = function (msg) {
         console.log('Got IOPub:', msg);
