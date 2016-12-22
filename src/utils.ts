@@ -274,6 +274,11 @@ interface IAjaxError {
 }
 
 
+function _getCookie(name: string) {
+  // from tornado docs: http://www.tornadoweb.org/en/stable/guide/security.html
+  var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+  return r ? r[1] : void 0;
+}
 /**
  * Asynchronous XMLHTTPRequest handler.
  *
@@ -307,6 +312,14 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
     if (!!ajaxSettings.withCredentials) {
       xhr.withCredentials = true;
     }
+
+    if (typeof document !== 'undefined' && document.cookie) {
+      let xsrfToken = _getCookie('_xsrf');
+      if (xsrfToken !== void 0) {
+        xhr.setRequestHeader('X-XSRFToken', xsrfToken);
+      }
+    }
+
     if (ajaxSettings.requestHeaders !== void 0) {
        for (let prop in ajaxSettings.requestHeaders) {
          xhr.setRequestHeader(prop, ajaxSettings.requestHeaders[prop]);
