@@ -216,7 +216,7 @@ namespace DefaultTerminalSession {
   export
   function isAvailable(): boolean {
     let available = utils.getConfigOption('terminalsAvailable');
-    return available.toLowerCase() == 'true';
+    return available === 'True' || available === 'true';
   }
 
   /**
