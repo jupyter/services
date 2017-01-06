@@ -215,7 +215,8 @@ namespace DefaultTerminalSession {
    */
   export
   function isAvailable(): boolean {
-    return utils.getConfigOption('terminalsAvailable') === 'True';
+    let available = utils.getConfigOption('terminalsAvailable');
+    return available.toLowerCase() == 'true';
   }
 
   /**
@@ -234,6 +235,7 @@ namespace DefaultTerminalSession {
     let url = Private.getBaseUrl(baseUrl);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'POST';
+    ajaxSettings.data = "{}";
     ajaxSettings.dataType = 'json';
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
