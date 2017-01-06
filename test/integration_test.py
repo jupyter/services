@@ -1,103 +1,67 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-import argparse
+from __future__ import print_function, absolute_import
+
+import atexit
 import subprocess
 import sys
 import os
-import re
 import shutil
-import threading
 import tempfile
+from multiprocessing.pool import ThreadPool
+
+from tornado import ioloop
+from notebook.notebookapp import NotebookApp
+from traitlets import Bool, Unicode
 
 
-# Set up the file structure
-root_dir = tempfile.mkdtemp(prefix='mock_contents')
-os.mkdir(os.path.join(root_dir, 'src'))
-with open(os.path.join(root_dir, 'src', 'temp.txt'), 'w') as fid:
-    fid.write('hello')
+def create_notebook_dir():
+    """Create a temporary directory with some file structure."""
+    root_dir = tempfile.mkdtemp(prefix='mock_contents')
+    os.mkdir(os.path.join(root_dir, 'src'))
+    with open(os.path.join(root_dir, 'src', 'temp.txt'), 'w') as fid:
+        fid.write('hello')
+    atexit.register(lambda: shutil.rmtree(root_dir, True))
+    return root_dir
 
 
-KARMA_PORT = 9876
+def run_task(func, args=(), kwds={}):
+    """Run a task in a thread and exit with the return code."""
+    loop = ioloop.IOLoop.instance()
+    worker = ThreadPool(1)
+
+    def callback(result):
+        loop.add_callback(lambda: sys.exit(result))
+
+    def start():
+        worker.apply_async(func, args, kwds, callback)
+
+    loop.call_later(1, start)
 
 
-
-def start_notebook():
-    nb_command = [sys.executable, '-m', 'notebook', root_dir, '--no-browser',
-                  '--debug',
-                  # FIXME: allow-origin=* only required for notebook < 4.3
-                  '--NotebookApp.allow_origin="*"',
-                  # disable user password:
-                  '--NotebookApp.password=',
-              ]
-    nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
-
-    # wait for notebook server to start up
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
-            token_match = re.search(r'token\=([^&]+)', line)
-            if token_match:
-                token = token_match.groups()[0]
-            else:
-                token = ''
-            break
-
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Control-C' in line:
-            break
-
-    def print_thread():
-        while 1:
-            line = nb_server.stdout.readline().decode('utf-8').strip()
-            if not line:
-                continue
-            print(line)
-
-    thread = threading.Thread(target=print_thread)
-    thread.setDaemon(True)
-    thread.start()
-
-    return nb_server, base_url, token
-
-
-def run_mocha(options, base_url, token):
-    terminalsAvailable = sys.platform != 'win32'
+def run_mocha(base_url, token, terminalsAvailable):
+    """Run the mocha command and return its return value"""
     mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js',
                      '--baseUrl=%s' % base_url,
                      '--terminalsAvailable=%s' % terminalsAvailable]
     if token:
         mocha_command.append('--token=%s' % token)
-    return subprocess.check_call(mocha_command, stderr=subprocess.STDOUT)
+    return subprocess.check_call(mocha_command)
+
+
+class TestApp(NotebookApp):
+    """A notebook app that runs a mocha test."""
+
+    open_browser = Bool(False)
+    notebook_dir = Unicode(create_notebook_dir())
+
+    def start(self):
+        terminals_available = self.web_app.settings['terminals_available']
+        run_task(run_mocha,
+            args=(self.connection_url, self.token, terminals_available))
+        super(TestApp, self).start()
 
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(
-        description='Run Jupyter JS Sevices integration tests'
-    )
-    argparser.add_argument('-b', '--browsers', default='Firefox',
-                           help="Browsers to use for Karma test")
-    argparser.add_argument('-d', '--debug', action='store_true',
-                           help="Whether to enter debug mode in Karma")
-    options = argparser.parse_args(sys.argv[1:])
-
-    nb_server, base_url, token = start_notebook()
-
-    try:
-        resp = run_mocha(options, base_url, token)
-    except subprocess.CalledProcessError:
-        resp = 1
-    finally:
-        nb_server.kill()
-
-    shutil.rmtree(root_dir, True)
-    sys.exit(resp)
+    TestApp.launch_instance()

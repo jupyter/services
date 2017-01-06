@@ -2,91 +2,44 @@
 Copyright (c) Jupyter Development Team.
 Distributed under the terms of the Modified BSD License.
 """
-import re
-import subprocess
-import sys
-import threading
-
-import tornado.web
-
-PORT = 8765
+from notebook.notebookapp import NotebookApp
+import os
+from jinja2 import FileSystemLoader
+from notebook.base.handlers import IPythonHandler, FileFindHandler
+from traitlets import Unicode
 
 
-class MainPageHandler(tornado.web.RequestHandler):
+HERE = os.path.dirname(__file__)
+LOADER = FileSystemLoader(HERE)
 
-    def initialize(self, base_url):
-        self.base_url = base_url
+
+class ExampleHander(IPythonHandler):
+    """Handle requests between the main app page and notebook server."""
 
     def get(self):
-        return self.render("index.html", static=self.static_url,
-                           base_url=self.base_url)
+        """Get the main page for the application's interface."""
+        return self.write(self.render_template("index.html",
+            static=self.static_url, base_url=self.base_url,
+            token=self.settings['token']))
+
+    def get_template(self, name):
+        return LOADER.load(self.settings['jinja2_env'], name)
 
 
-def main():
-    # Start a notebook server with cross-origin access.
-    nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
-                  '--debug',
-                  # FIXME: allow-origin=* only required for notebook < 4.3
-                  '--NotebookApp.allow_origin="*"',
-                  # disable user password:
-                  '--NotebookApp.password=',
-              ]
-    nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
+class ExampleApp(NotebookApp):
+    """A notebook app that runs the example."""
 
-    # Wait for notebook server to start up.
-    # Extract the url used by the server.
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
-            break
+    default_url = Unicode('/example')
 
-    # Wait for the server to finish starting up.
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Control-C' in line:
-            break
+    def start(self):
+        handlers = [
+            (r'/example/?', ExampleHander),
+            (r"/example/(.*)", FileFindHandler,
+                {'path': os.path.join(HERE, 'build')}),
+        ]
+        self.web_app.add_handlers(".*$", handlers)
+        super(ExampleApp, self).start()
 
-    def print_server_output():
-        """Print output from the notebook server"""
-        while 1:
-            line = nb_server.stdout.readline().decode('utf-8').strip()
-            if not line:
-                continue
-            print(line)
-
-    # Start a thread to print output from the notebook server.
-    thread = threading.Thread(target=print_server_output)
-    thread.setDaemon(True)
-    thread.start()
-
-    # Set up the web server and start the event loop.
-    handlers = [
-        (r"/", MainPageHandler, {'base_url': base_url}),
-        (r'/(.*)', tornado.web.StaticFileHandler, {'path': '.'}),
-    ]
-
-    app = tornado.web.Application(handlers, static_path='build',
-                                  template_path='.',
-                                  compiled_template_cache=False)
-
-    app.listen(PORT, 'localhost')
-    loop = tornado.ioloop.IOLoop.instance()
-    print('Browse to http://localhost:%s' % PORT)
-    try:
-        loop.start()
-    except KeyboardInterrupt:
-        print(" Shutting down on SIGINT")
-    finally:
-        nb_server.kill()
-        loop.close()
 
 if __name__ == '__main__':
-    main()
+    ExampleApp.launch_instance()
