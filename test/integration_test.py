@@ -42,7 +42,9 @@ def run_task(func, args=(), kwds={}):
 
 def run_mocha(base_url, token, terminalsAvailable):
     """Run the mocha command and return its return value"""
-    mocha_command = ['mocha', '--timeout', '20000', 'build/integration.js',
+    mocha_command = ['mocha', '--timeout', '20000',
+                     '--retries', '2',
+                    'build/integration.js',
                      '--baseUrl=%s' % base_url,
                      '--terminalsAvailable=%s' % terminalsAvailable]
     if token:
