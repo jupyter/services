@@ -292,6 +292,13 @@ function _getCookie(name: string) {
 export
 function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuccess> {
   let method = ajaxSettings.method || 'GET';
+
+  // Ensure that requests have applied data.
+  if (!ajaxSettings.data) {
+    ajaxSettings.data = '{}';
+    ajaxSettings.contentType = 'application/json';
+  }
+
   let user = ajaxSettings.user || '';
   let password = ajaxSettings.password || '';
   if (!ajaxSettings.cache) {
@@ -313,7 +320,9 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
       xhr.withCredentials = true;
     }
 
-    if (typeof document !== 'undefined' && document.cookie) {
+    // Try to add the xsrf token if there is no existing authorization.
+    let token = ajaxSettings.requestHeaders['Authorization'];
+    if (!token && typeof document !== 'undefined' && document.cookie) {
       let xsrfToken = _getCookie('_xsrf');
       if (xsrfToken !== void 0) {
         xhr.setRequestHeader('X-XSRFToken', xsrfToken);
