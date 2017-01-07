@@ -301,6 +301,8 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
 
   let user = ajaxSettings.user || '';
   let password = ajaxSettings.password || '';
+  let headers = ajaxSettings.requestHeaders || {};
+
   if (!ajaxSettings.cache) {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache.
     url += ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
@@ -321,7 +323,7 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
     }
 
     // Try to add the xsrf token if there is no existing authorization.
-    let token = ajaxSettings.requestHeaders['Authorization'];
+    let token = headers['Authorization'];
     if (!token && typeof document !== 'undefined' && document.cookie) {
       let xsrfToken = _getCookie('_xsrf');
       if (xsrfToken !== void 0) {
@@ -329,11 +331,9 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
       }
     }
 
-    if (ajaxSettings.requestHeaders !== void 0) {
-       for (let prop in ajaxSettings.requestHeaders) {
-         xhr.setRequestHeader(prop, ajaxSettings.requestHeaders[prop]);
-       }
-    }
+     for (let prop in headers) {
+       xhr.setRequestHeader(prop, headers[prop]);
+     }
 
     xhr.onload = (event: ProgressEvent) => {
       if (xhr.status >= 300) {
