@@ -1,80 +1,58 @@
-"""
-Copyright (c) Jupyter Development Team.
-Distributed under the terms of the Modified BSD License.
-"""
-import re
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+
+from __future__ import print_function, absolute_import
+
+import atexit
+import shutil
 import subprocess
 import sys
-import threading
+import tempfile
+from multiprocessing.pool import ThreadPool
 
-PORT = 8765
+
+from tornado import ioloop
+from notebook.notebookapp import NotebookApp
+from traitlets import Bool, Unicode
+
+root_dir = tempfile.mkdtemp(prefix='mock_contents')
+atexit.register(lambda: shutil.rmtree(root_dir, True))
 
 
-def main():
-    # Start a notebook server with cross-origin access.
-    nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
-                  '--NotebookApp.token=secret']
-    nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
+def run_task(func, args=(), kwds={}):
+    """Run a task in a thread and exit with the return code."""
+    loop = ioloop.IOLoop.instance()
+    worker = ThreadPool(1)
 
-    # Wait for notebook server to start up.
-    # Extract the url used by the server.
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Jupyter Notebook is running at:' in line:
-            base_url = re.search(r'(http[^\?]+)', line).groups()[0]
-            token_match = re.search(r'token\=([^&]+)', line)
-            if token_match:
-                token = token_match.groups()[0]
-            else:
-                token = ''
-            break
+    def callback(result):
+        loop.add_callback(lambda: sys.exit(result))
 
-    # Wait for the server to finish starting up.
-    while 1:
-        line = nb_server.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Control-C' in line:
-            break
+    def start():
+        worker.apply_async(func, args, kwds, callback)
 
-    def print_server_output():
-        """Print output from the notebook server"""
-        while 1:
-            line = nb_server.stdout.readline().decode('utf-8').strip()
-            if not line:
-                continue
-            print(line)
+    loop.call_later(1, start)
 
-    # Start a thread to print output from the notebook server.
-    thread = threading.Thread(target=print_server_output)
-    thread.setDaemon(True)
-    thread.start()
 
+class TestApp(NotebookApp):
+
+    open_browser = Bool(False)
+    notebook_dir = Unicode(root_dir)
+
+    def start(self):
+        run_task(run_node, args=(self.connection_url, self.token))
+        super(TestApp, self).start()
+
+
+def run_node(base_url, token):
     # Run the node script with command arguments.
-    node_command = ['node', 'index.js', '-baseUrl', base_url]
+    node_command = ['node', 'index.js', '--baseUrl', base_url]
     if token:
         node_command.append('--token=%s' % token)
 
     print('*' * 60)
     print(' '.join(node_command))
-    node_proc = subprocess.Popen(node_command, stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
+    return subprocess.check_call(node_command)
 
-    while 1:
-        line = node_proc.stdout.readline().decode('utf-8').strip()
-        if not line:
-            continue
-        print(line)
-        if 'Session shut down' in line:
-            break
-
-    node_proc.wait()
-    nb_server.kill()
 
 if __name__ == '__main__':
-    main()
+    TestApp.launch_instance()

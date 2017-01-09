@@ -292,8 +292,17 @@ function _getCookie(name: string) {
 export
 function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuccess> {
   let method = ajaxSettings.method || 'GET';
+
+  // Ensure that requests have applied data.
+  if (!ajaxSettings.data) {
+    ajaxSettings.data = '{}';
+    ajaxSettings.contentType = 'application/json';
+  }
+
   let user = ajaxSettings.user || '';
   let password = ajaxSettings.password || '';
+  let headers = ajaxSettings.requestHeaders || {};
+
   if (!ajaxSettings.cache) {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache.
     url += ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
@@ -313,18 +322,18 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
       xhr.withCredentials = true;
     }
 
-    if (typeof document !== 'undefined' && document.cookie) {
+    // Try to add the xsrf token if there is no existing authorization.
+    let token = headers['Authorization'];
+    if (!token && typeof document !== 'undefined' && document.cookie) {
       let xsrfToken = _getCookie('_xsrf');
       if (xsrfToken !== void 0) {
         xhr.setRequestHeader('X-XSRFToken', xsrfToken);
       }
     }
 
-    if (ajaxSettings.requestHeaders !== void 0) {
-       for (let prop in ajaxSettings.requestHeaders) {
-         xhr.setRequestHeader(prop, ajaxSettings.requestHeaders[prop]);
-       }
-    }
+     for (let prop in headers) {
+       xhr.setRequestHeader(prop, headers[prop]);
+     }
 
     xhr.onload = (event: ProgressEvent) => {
       if (xhr.status >= 300) {
@@ -520,7 +529,7 @@ function getConfigOption(name: string): string {
     }
   }
   configData = deepFreeze(configData);
-  return configData[name];
+  return String(configData[name]);
 }
 
 

@@ -1253,7 +1253,6 @@ namespace Private {
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
-    ajaxSettings.contentType = 'application/json';
     ajaxSettings.cache = false;
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
@@ -1283,7 +1282,6 @@ namespace Private {
     ajaxSettings = ajaxSettings || { };
     ajaxSettings.method = 'POST';
     ajaxSettings.dataType = 'json';
-    ajaxSettings.contentType = 'application/json';
     ajaxSettings.cache = false;
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {

@@ -472,13 +472,13 @@ class ContentsManager implements Contents.IManager {
   newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
     let ajaxSettings = this.ajaxSettings;
     ajaxSettings.method = 'POST';
+    ajaxSettings.contentType = 'application/json';
     ajaxSettings.dataType = 'json';
     if (options) {
       if (options.ext) {
         options.ext = ContentsManager.normalizeExtension(options.ext);
       }
       ajaxSettings.data = JSON.stringify(options);
-      ajaxSettings.contentType = 'application/json';
     }
     let url = this._getUrl(options.path || '');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {

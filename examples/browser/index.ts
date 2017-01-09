@@ -13,38 +13,45 @@ import {
 } from '@jupyterlab/services';
 
 
-const BASE_URL = utils.getBaseUrl();
-const WS_URL = utils.getWsUrl();
-
+function log(text: string): void {
+  let el = document.getElementById('output');
+  el.textContent = el.textContent + '\n' + text;
+  console.log(text);
+}
 
 function main() {
   // Start a new session.
   let options: Session.IOptions = {
-    baseUrl: BASE_URL,
-    wsUrl: WS_URL,
     kernelName: 'python',
     path: 'foo.ipynb'
   };
-  Session.startNew(options).then(session => {
+  let session: Session.ISession;
+
+  log('Starting session');
+  Session.startNew(options).then(s => {
+    log('Session started');
+    session = s;
     // Rename the session.
-    session.rename('bar.ipynb').then(() => {
-      console.log('Session renamed to', session.path);
-      // Execute and handle replies on the kernel.
-      let future = session.kernel.requestExecute({ code: 'a = 1' });
-      future.onReply = (reply) => {
-        console.log('Got execute reply');
-      };
-      future.onDone = () => {
-        console.log('Future is fulfilled');
-        // Shut down the session.
-        session.shutdown().then(() => {
-          console.log('Session shut down');
-          alert('Test Complete!  See the console output for details');
-        });
-      };
-    });
+    return session.rename('bar.ipynb');
+  }).then(() => {
+    log(`Session renamed to ${session.path}`);
+    // Execute and handle replies on the kernel.
+    let future = session.kernel.requestExecute({ code: 'a = 1' });
+    future.onReply = (reply) => {
+      log('Got execute reply');
+    };
+    future.onDone = () => {
+      log('Future is fulfilled');
+      // Shut down the session.
+      session.shutdown().then(() => {
+        log('Session shut down');
+        log('Test Complete!');
+      });
+    };
+  }).catch(err => {
+    console.error(err);
+    log('Test Failed! See the console output for details');
   });
 }
-
 
 window.onload = main;
