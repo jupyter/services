@@ -4,14 +4,13 @@
 from __future__ import print_function, absolute_import
 
 import atexit
-import subprocess
 import sys
 import os
 import shutil
 import tempfile
-from multiprocessing.pool import ThreadPool
 
-from tornado import ioloop
+from tornado.ioloop import IOLoop
+from tornado.process import Subprocess
 from notebook.notebookapp import NotebookApp
 from traitlets import Bool, Unicode
 
@@ -26,30 +25,25 @@ def create_notebook_dir():
     return root_dir
 
 
-def run_task(func, args=(), kwds={}):
+def run_command(cmd):
     """Run a task in a thread and exit with the return code."""
-    loop = ioloop.IOLoop.instance()
-    worker = ThreadPool(1)
-
-    def callback(result):
-        loop.add_callback(lambda: sys.exit(result))
-
-    def start():
-        worker.apply_async(func, args, kwds, callback)
-
-    loop.call_later(1, start)
+    shell = os.name == 'nt'
+    p = Subprocess(cmd, shell=shell)
+    print('\n\nRunning command: "%s"\n\n' % ' '.join(cmd))
+    p.set_exit_callback(sys.exit)
 
 
-def run_mocha(base_url, token, terminalsAvailable):
-    """Run the mocha command and return its return value"""
-    mocha_command = ['mocha', '--timeout', '20000',
-                     '--retries', '2',
-                    'build/integration.js',
-                     '--baseUrl=%s' % base_url,
-                     '--terminalsAvailable=%s' % terminalsAvailable]
-    if token:
-        mocha_command.append('--token=%s' % token)
-    return subprocess.check_call(mocha_command)
+def get_command(nbapp):
+    """Get the command to run"""
+    terminalsAvailable = nbapp.web_app.settings['terminals_available']
+    cmd = ['mocha', '--timeout', '20000',
+           '--retries', '2',
+           'build/integration.js',
+           '--baseUrl=%s' % nbapp.connection_url,
+           '--terminalsAvailable=%s' % terminalsAvailable]
+    if nbapp.token:
+        cmd.append('--token=%s' % nbapp.token)
+    return cmd
 
 
 class TestApp(NotebookApp):
@@ -59,11 +53,13 @@ class TestApp(NotebookApp):
     notebook_dir = Unicode(create_notebook_dir())
 
     def start(self):
-        terminals_available = self.web_app.settings['terminals_available']
-        run_task(run_mocha,
-            args=(self.connection_url, self.token, terminals_available))
+        cmd = get_command(self)
+        IOLoop.current().add_callback(run_command, cmd)
         super(TestApp, self).start()
 
 
 if __name__ == '__main__':
-    TestApp.launch_instance()
+    try:
+        TestApp.launch_instance()
+    except KeyboardInterrupt:
+        sys.exit(1)
