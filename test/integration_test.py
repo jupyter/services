@@ -36,13 +36,15 @@ def run_command(cmd):
 def get_command(nbapp):
     """Get the command to run"""
     terminalsAvailable = nbapp.web_app.settings['terminals_available']
+    # Compatibility with Notebook 4.2.
+    token = getattr(nbapp, 'token', '')
     cmd = ['mocha', '--timeout', '20000',
            '--retries', '2',
            'build/integration.js',
            '--baseUrl=%s' % nbapp.connection_url,
            '--terminalsAvailable=%s' % terminalsAvailable]
     if nbapp.token:
-        cmd.append('--token=%s' % nbapp.token)
+        cmd.append('--token=%s' % token)
     return cmd
 
 
@@ -53,6 +55,13 @@ class TestApp(NotebookApp):
     notebook_dir = Unicode(create_notebook_dir())
 
     def start(self):
+        # Cannot run against Notebook 4.3.0 due to auth incompatibilities.
+        if self.version == '4.3.0':
+            msg = ('Cannot run unit tests against Notebook 4.3.0.  '
+                   'Please upgrade to Notebook 4.3.1+')
+            self.log.error(msg)
+            sys.exit(1)
+
         cmd = get_command(self)
         IOLoop.current().add_callback(run_command, cmd)
         super(TestApp, self).start()
