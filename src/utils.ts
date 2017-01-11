@@ -529,7 +529,7 @@ function getConfigOption(name: string): string {
     }
   }
   configData = deepFreeze(configData);
-  return String(configData[name]);
+  return configData[name];
 }
 
 
