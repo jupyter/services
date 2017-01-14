@@ -232,9 +232,10 @@ namespace Contents {
     /**
      * Get an encoded download url given a file path.
      *
-     * @param path - An absolute POSIX file path on the server.
+     * @param A promise which resolves with the absolute POSIX
+     *   file path on the server.
      */
-    getDownloadUrl(path: string): string;
+    getDownloadUrl(path: string): Promise<string>;
 
     /**
      * Create a new untitled file or directory in the specified directory path.
@@ -453,9 +454,9 @@ class ContentsManager implements Contents.IManager {
    * use [[ContentsManager.getAbsolutePath]] to get an absolute
    * path if necessary.
    */
-  getDownloadUrl(path: string): string {
-    return utils.urlPathJoin(this._baseUrl, FILES_URL,
-                             utils.urlEncodeParts(path));
+  getDownloadUrl(path: string): Promise<string> {
+    return Promise.resolve(utils.urlPathJoin(this._baseUrl, FILES_URL,
+                                             utils.urlEncodeParts(path)));
   }
 
   /**
