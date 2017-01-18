@@ -229,30 +229,32 @@ describe('contents', () => {
 
   describe('#getDownloadUrl()', () => {
 
-    it('should get the url of a file', () => {
+    it('should get the url of a file', (done) => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
-      contents.getDownloadUrl('bar.txt').then((url)=>{
-        expect(url).to.be('http://foo/files/bar.txt');
-      });
-      contents.getDownloadUrl('fizz/buzz/bar.txt').then((url)=>{
-        expect(url).to.be('http://foo/files/fizz/buzz/bar.txt');
-      });
-      contents.getDownloadUrl('/bar.txt').then((url)=>{
-        expect(url).to.be('http://foo/files/bar.txt');
+      let test1 = contents.getDownloadUrl('bar.txt');
+      let test2 = contents.getDownloadUrl('fizz/buzz/bar.txt');
+      let test3 = contents.getDownloadUrl('/bar.txt');
+      Promise.all([test1,test2,test3]).then((urls)=>{
+        expect(urls[0]).to.be('http://foo/files/bar.txt');
+        expect(urls[1]).to.be('http://foo/files/fizz/buzz/bar.txt');
+        expect(urls[2]).to.be('http://foo/files/bar.txt');
+        done();
       });
     });
 
-    it('should encode characters', () => {
+    it('should encode characters', (done) => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
       contents.getDownloadUrl('b ar?3.txt').then((url)=>{
         expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
+        done();
       });
     });
 
-    it('should not handle relative paths', () => {
+    it('should not handle relative paths', (done) => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
       contents.getDownloadUrl('fizz/../bar.txt').then((url)=>{
         expect(url).to.be('http://foo/files/fizz/../bar.txt');
+        done();
       });
     });
 
