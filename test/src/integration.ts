@@ -228,6 +228,19 @@ describe('jupyter.services - Integration', () => {
       }).then(done, done);
     });
 
+    it('should handle a path change', (done) => {
+      let options: Session.IOptions = { path: 'Untitled2a.ipynb' };
+      let session: Session.ISession;
+      let newPath = 'Untitled2b.ipynb';
+      Session.startNew(options).then(s => {
+        session = s;
+        return session.rename(newPath);
+      }).then(() => {
+        expect(session.path).to.be(newPath);
+        expect(session.model.notebook.path).to.be(newPath);
+      }).then(done, done);
+    });
+
   });
 
   describe('Comm', () => {
