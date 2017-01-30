@@ -193,17 +193,21 @@ class DefaultSession implements Session.ISession {
     if (this._updating) {
       return Promise.resolve(void 0);
     }
-    if (this._path !== model.notebook.path) {
-      this.pathChanged.emit(model.notebook.path);
-    }
+    let oldPath = this._path;
     this._path = model.notebook.path;
+
     if (this._kernel.isDisposed || model.kernel.id !== this._kernel.id) {
       let options = this._getKernelOptions();
       options.name = model.kernel.name;
       return Kernel.connectTo(model.kernel.id, options).then(kernel => {
         this.setupKernel(kernel);
         this.kernelChanged.emit(kernel);
+        if (oldPath !== model.notebook.path) {
+          this.pathChanged.emit(model.notebook.path);
+        }
       });
+    } else if (oldPath !== model.notebook.path) {
+      this.pathChanged.emit(model.notebook.path);
     }
     return Promise.resolve(void 0);
   }
