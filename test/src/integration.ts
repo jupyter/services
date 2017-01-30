@@ -235,8 +235,7 @@ describe('jupyter.services - Integration', () => {
       Session.startNew(options).then(s => {
         session = s;
         return session.rename(newPath);
-      }).then(path => {
-        expect(path).to.be(newPath);
+      }).then(() => {
         expect(session.path).to.be(newPath);
         expect(session.model.notebook.path).to.be(newPath);
       }).then(done, done);
