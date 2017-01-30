@@ -424,6 +424,7 @@ describe('session', () => {
     context('#pathChanged', () => {
 
       it('should be emitted when the session path changes', () => {
+        // TODO: reinstate after switching to mock-socket
         // let model = createSessionModel(session.id);
         // tester.onRequest = () => {
         //   tester.respond(200, model);
