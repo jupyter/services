@@ -429,6 +429,7 @@ describe('session', () => {
           tester.respond(200, model);
         };
         session.pathChanged.connect((s, path) => {
+          expect(session.path).to.be(model.notebook.path);
           expect(path).to.be(model.notebook.path);
           done();
         });

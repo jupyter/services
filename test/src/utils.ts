@@ -280,6 +280,17 @@ class RequestHandler {
     };
     switch (request.method) {
     case 'PATCH':
+      let body = request.requestBody;
+      session = {
+        id: body.id,
+        kernel: {
+          name: body.kernel.name || 'python',
+          id: body.kernel.id || uuid()
+        },
+        notebook: {
+          path: body.notebook.path || uuid()
+        }
+      };
       this.respond(200, session);
       break;
     case 'GET':
