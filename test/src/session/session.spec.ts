@@ -430,6 +430,7 @@ describe('session', () => {
         };
         session.pathChanged.connect((s, path) => {
           expect(session.path).to.be(model.notebook.path);
+          expect(session.model.path).to.be(model.notebook.path);
           expect(path).to.be(model.notebook.path);
           done();
         });
