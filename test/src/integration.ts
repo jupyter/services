@@ -363,7 +363,13 @@ describe('jupyter.services - Integration', () => {
   describe('TerminalSession.startNew', () => {
 
     it('should create and shut down a terminal session', (done) => {
-      TerminalSession.startNew().then(session => {
+      let session: TerminalSession.ISession;
+      TerminalSession.startNew().then(s => {
+        session = s;
+        return session.ready;
+      }).then(() => {
+        return session.reconnect();
+      }).then(() => {
         return session.shutdown();
       }).then(done, done);
     });

@@ -231,7 +231,21 @@ describe('terminals', () => {
         });
         session.ready.then(() => {
           session.send({ type: 'stdin', content: [1, 2] });
-        });
+        }).catch(done);
+      });
+
+    });
+
+    describe('#reconnect()', () => {
+
+      it('should reconnect to the socket', (done) => {
+        session.ready.then(() => {
+          let promise = session.reconnect();
+          expect(session.isReady).to.be(false);
+          return promise;
+        }).then(() => {
+          expect(session.isReady).to.be(true);
+        }).then(done, done);
       });
 
     });

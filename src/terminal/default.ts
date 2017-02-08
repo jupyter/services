@@ -103,7 +103,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
-   * A promise that fulfills when the manager is ready.
+   * A promise that fulfills when the session is ready.
    */
   get ready(): Promise<void> {
     return this._readyPromise;
@@ -150,6 +150,16 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   }
 
   /**
+   * Reconnect to the terminal.
+   *
+   * @returns A promise that resolves when the terminal has reconnected.
+   */
+  reconnect(): Promise<void> {
+    this._readyPromise = this._initializeSocket();
+    return this._readyPromise;
+  }
+
+  /**
    * Shut down the terminal session.
    */
   shutdown(): Promise<void> {
@@ -165,6 +175,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    */
   private _initializeSocket(): Promise<void> {
     let name = this._name;
+    if (this._ws) {
+      this._ws.close();
+    }
+    this._isReady = false;
     this._url = Private.getTermUrl(this._baseUrl, this._name);
     Private.running[this._url] = this;
     let wsUrl = utils.urlPathJoin(this._wsUrl, `terminals/websocket/${name}`);
