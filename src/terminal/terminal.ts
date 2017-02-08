@@ -85,6 +85,13 @@ namespace TerminalSession {
     send(message: IMessage): void;
 
     /**
+     * Reconnect to the terminal.
+     *
+     * @returns A promise that resolves when the terminal has reconnected.
+     */
+    reconnect(): Promise<void>;
+
+    /**
      * Shut down the terminal session.
      */
     shutdown(): Promise<void>;
