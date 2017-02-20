@@ -2,16 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, IIterator, iter
+} from '@phosphor/algorithm';
 
 import {
   JSONExt
 } from '@phosphor/utilities';
-
-import {
-  findIndex
-} from 'phosphor/lib/algorithm/searching';
 
 import {
   ISignal, Signal
@@ -208,7 +204,7 @@ class TerminalManager implements TerminalSession.IManager {
    * Handle a session terminating.
    */
   private _onTerminated(name: string): void {
-    let index = findIndex(this._running, value => value.name === name);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.name === name);
     if (index !== -1) {
       this._running.splice(index, 1);
       this._runningChanged.emit(this._running.slice());
@@ -220,7 +216,7 @@ class TerminalManager implements TerminalSession.IManager {
    */
   private _onStarted(session: TerminalSession.ISession): void {
     let name = session.name;
-    let index = findIndex(this._running, value => value.name === name);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.name === name);
     if (index === -1) {
       this._running.push(session.model);
       this._runningChanged.emit(this._running.slice());

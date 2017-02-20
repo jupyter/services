@@ -2,16 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, IIterator, iter
+} from '@phosphor/algorithm';
 
 import {
   JSONExt
 } from '@phosphor/utilities';
-
-import {
-  findIndex
-} from 'phosphor/lib/algorithm/searching';
 
 import {
   ISignal, Signal
@@ -241,7 +237,7 @@ class SessionManager implements Session.IManager {
    * Handle a session terminating.
    */
   private _onTerminated(id: string): void {
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index !== -1) {
       this._running.splice(index, 1);
       this._runningChanged.emit(this._running.slice());
@@ -253,7 +249,7 @@ class SessionManager implements Session.IManager {
    */
   private _onStarted(session: Session.ISession): void {
     let id = session.id;
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index === -1) {
       this._running.push(session.model);
       this._runningChanged.emit(this._running.slice());
@@ -273,7 +269,7 @@ class SessionManager implements Session.IManager {
    * Handle a change to a session.
    */
   private _onChanged(model: Session.IModel): void {
-    let index = findIndex(this._running, value => value.id === model.id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === model.id);
     if (index !== -1) {
       this._running[index] = model;
       this._runningChanged.emit(this._running.slice());

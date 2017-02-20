@@ -3,7 +3,7 @@
 
 import {
   each, map, toArray
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   JSONPrimitive

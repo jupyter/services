@@ -2,16 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, IIterator, iter
+} from '@phosphor/algorithm';
 
 import {
   JSONExt
 } from '@phosphor/utilities';
-
-import {
-  findIndex
-} from 'phosphor/lib/algorithm/searching';
 
 import {
   ISignal, Signal
@@ -231,7 +227,7 @@ class KernelManager implements Kernel.IManager {
    * Handle a kernel terminating.
    */
   private _onTerminated(id: string): void {
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index !== -1) {
       this._running.splice(index, 1);
       this._runningChanged.emit(this._running.slice());
@@ -243,7 +239,7 @@ class KernelManager implements Kernel.IManager {
    */
   private _onStarted(kernel: Kernel.IKernel): void {
     let id = kernel.id;
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index === -1) {
       this._running.push(kernel.model);
       this._runningChanged.emit(this._running.slice());

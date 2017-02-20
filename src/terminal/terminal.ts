@@ -3,7 +3,7 @@
 
 import {
   IIterator
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   JSONPrimitive, JSONObject

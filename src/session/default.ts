@@ -2,16 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  each, toArray
-} from 'phosphor/lib/algorithm/iteration';
-
-import {
-  find
-} from 'phosphor/lib/algorithm/searching';
-
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
+  ArrayExt, each, find, toArray
+} from '@phosphor/algorithm';
 
 import {
   ISignal, Signal
@@ -61,7 +53,7 @@ class DefaultSession implements Session.ISession {
       utils.ajaxSettingsWithToken(options.ajaxSettings || {}, options.token)
     );
     this._token = options.token || utils.getConfigOption('token');
-    Private.runningSessions.pushBack(this);
+    Private.runningSessions.push(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
     this.terminated = new Signal<this, void>(this);
@@ -234,7 +226,7 @@ class DefaultSession implements Session.ISession {
     if (this._kernel) {
       this._kernel.dispose();
     }
-    Private.runningSessions.remove(this);
+    ArrayExt.removeFirstOf(Private.runningSessions, this);
     this._kernel = null;
     Signal.clearData(this);
   }
@@ -447,7 +439,7 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions = new Vector<DefaultSession>();
+  const runningSessions: DefaultSession[] = [];
 
   /**
    * List the running sessions.

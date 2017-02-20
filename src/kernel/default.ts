@@ -2,20 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  each, toArray
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, each, find, toArray
+} from '@phosphor/algorithm';
 
 import {
   JSONObject
 } from '@phosphor/utilities';
-
-import {
-  find
-} from 'phosphor/lib/algorithm/searching';
-
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
 
 import {
   DisposableDelegate, IDisposable
@@ -90,7 +82,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._comms = new Map<string, Kernel.IComm>();
     this._createSocket();
     this.terminated = new Signal<this, void>(this);
-    Private.runningKernels.pushBack(this);
+    Private.runningKernels.push(this);
   }
 
   /**
@@ -268,7 +260,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._commPromises = null;
     this._comms = null;
     this._targetRegistry = null;
-    Private.runningKernels.remove(this);
+    ArrayExt.removeFirstOf(Private.runningKernels, this);
     Signal.clearData(this);
   }
 
@@ -1056,7 +1048,7 @@ namespace Private {
    * A module private store for running kernels.
    */
   export
-  const runningKernels = new Vector<DefaultKernel>();
+  const runningKernels: DefaultKernel[] = [];
 
   /**
    * A module private store of kernel specs by base url.
