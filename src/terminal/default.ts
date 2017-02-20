@@ -7,11 +7,11 @@ import {
 
 import {
   JSONPrimitive
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   IAjaxSettings
@@ -48,17 +48,20 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     );
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._readyPromise = this._initializeSocket();
+    this.terminated = new Signal<this, void>(this);
   }
 
   /**
    * A signal emitted when the session is shut down.
    */
-  terminated: ISignal<this, void>;
+  readonly terminated: Signal<this, void>;
 
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<this, TerminalSession.IMessage>;
+  get messageReceived(): ISignal<this, TerminalSession.IMessage> {
+    return this._messageReceived;
+  }
 
   /**
    * Get the name of the terminal session.
@@ -130,7 +133,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     }
     delete Private.running[this._url];
     this._readyPromise = null;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -189,7 +192,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 
     this._ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data) as JSONPrimitive[];
-      this.messageReceived.emit({
+      this._messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
         content: data.slice(1)
       });
@@ -216,6 +219,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _isDisposed = false;
   private _readyPromise: Promise<TerminalSession.ISession>;
   private _isReady = false;
+  private _messageReceived = new Signal<this, TerminalSession.IMessage>(this);
 }
 
 
@@ -369,11 +373,6 @@ namespace DefaultTerminalSession {
   }
 
 }
-
-
-// Define the signals for the `DefaultTerminalSession` class.
-defineSignal(DefaultTerminalSession.prototype, 'terminated');
-defineSignal(DefaultTerminalSession.prototype, 'messageReceived');
 
 
 /**

@@ -6,16 +6,16 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/utilities';
 
 import {
   findIndex
 } from 'phosphor/lib/algorithm/searching';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   IAjaxSettings
@@ -57,7 +57,9 @@ class TerminalManager implements TerminalSession.IManager {
   /**
    * A signal emitted when the running terminals change.
    */
-  runningChanged: ISignal<this, TerminalSession.IModel[]>;
+  get runningChanged(): ISignal<this, TerminalSession.IModel[]> {
+    return this._runningChanged;
+  }
 
   /**
    * Test whether the terminal manager is disposed.
@@ -110,7 +112,7 @@ class TerminalManager implements TerminalSession.IManager {
     }
     this._isDisposed = true;
     clearInterval(this._refreshTimer);
-    clearSignalData(this);
+    Signal.clearData(this);
     this._running = [];
   }
 
@@ -209,7 +211,7 @@ class TerminalManager implements TerminalSession.IManager {
     let index = findIndex(this._running, value => value.name === name);
     if (index !== -1) {
       this._running.splice(index, 1);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
   }
 
@@ -221,7 +223,7 @@ class TerminalManager implements TerminalSession.IManager {
     let index = findIndex(this._running, value => value.name === name);
     if (index === -1) {
       this._running.push(session.model);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
     session.terminated.connect(() => {
       this._onTerminated(name);
@@ -234,9 +236,9 @@ class TerminalManager implements TerminalSession.IManager {
   private _refreshRunning(): Promise<void> {
     return TerminalSession.listRunning(this._getOptions({})).then(running => {
       this._isReady = true;
-      if (!deepEqual(running, this._running)) {
+      if (!JSONExt.deepEqual(running, this._running)) {
         this._running = running.slice();
-        this.runningChanged.emit(running);
+        this._runningChanged.emit(running);
       }
     });
   }
@@ -259,6 +261,7 @@ class TerminalManager implements TerminalSession.IManager {
   private _isReady = false;
   private _refreshTimer = -1;
   private _readyPromise: Promise<void>;
+  private _runningChanged = new Signal<this, TerminalSession.IModel[]>(this);
 }
 
 
@@ -294,8 +297,3 @@ namespace TerminalManager {
     ajaxSettings?: utils.IAjaxSettings;
   }
 }
-
-
-
-// Define the signals for the `TerminalManager` class.
-defineSignal(TerminalManager.prototype, 'runningChanged');

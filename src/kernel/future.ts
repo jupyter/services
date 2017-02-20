@@ -3,7 +3,7 @@
 
 import {
   DisposableDelegate
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
   Kernel

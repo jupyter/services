@@ -3,7 +3,7 @@
 
 import {
   JSONObject, JSONValue
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   nbformat

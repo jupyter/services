@@ -5,6 +5,10 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
+    "@phosphor/algorithm": "^0.1.0",
+    "@phosphor/disposable": "^0.1.0",
+    "@phosphor/signaling": "^0.1.0",
+    "@phosphor/utilities": "^0.1.0",
     "@types/minimist": "^1.1.29",
     "minimist": "^1.2.0",
     "path-posix": "^1.0.0",

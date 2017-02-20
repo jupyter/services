@@ -14,8 +14,8 @@ import {
 } from 'phosphor/lib/collections/vector';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   Kernel, KernelMessage
@@ -64,37 +64,48 @@ class DefaultSession implements Session.ISession {
     Private.runningSessions.pushBack(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
+    this.terminated = new Signal<this, void>(this);
   }
 
   /**
    * A signal emitted when the session is shut down.
    */
-  terminated: ISignal<Session.ISession, void>;
+  readonly terminated: Signal<this, void>;
 
   /**
    * A signal emitted when the kernel changes.
    */
-  kernelChanged: ISignal<Session.ISession, Kernel.IKernel>;
+  get kernelChanged(): ISignal<this, Kernel.IKernel> {
+    return this._kernelChanged;
+  }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<Session.ISession, Kernel.Status>;
+  get statusChanged(): ISignal<this, Kernel.Status> {
+    return this._statusChanged;
+  }
 
   /**
    * A signal emitted for a kernel messages.
    */
-  iopubMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
+  get iopubMessage(): ISignal<this, KernelMessage.IMessage> {
+    return this._iopubMessage;
+  }
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  unhandledMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
+  get unhandledMessage(): ISignal<this, KernelMessage.IMessage> {
+    return this._unhandledMessage;
+  }
 
   /**
    * A signal emitted when the session path changes.
    */
-  pathChanged: ISignal<Session.ISession, string>;
+  get pathChanged(): ISignal<this, string> {
+    return this._pathChanged;
+  }
 
   /**
    * Get the session id.
@@ -201,13 +212,13 @@ class DefaultSession implements Session.ISession {
       options.name = model.kernel.name;
       return Kernel.connectTo(model.kernel.id, options).then(kernel => {
         this.setupKernel(kernel);
-        this.kernelChanged.emit(kernel);
+        this._kernelChanged.emit(kernel);
         if (oldPath !== newPath) {
-          this.pathChanged.emit(newPath);
+          this._pathChanged.emit(newPath);
         }
       });
     } else if (oldPath !== newPath) {
-      this.pathChanged.emit(newPath);
+      this._pathChanged.emit(newPath);
     }
     return Promise.resolve(void 0);
   }
@@ -225,7 +236,7 @@ class DefaultSession implements Session.ISession {
     }
     Private.runningSessions.remove(this);
     this._kernel = null;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -297,21 +308,21 @@ class DefaultSession implements Session.ISession {
    * Handle to changes in the Kernel status.
    */
   protected onKernelStatus(sender: Kernel.IKernel, state: Kernel.Status) {
-    this.statusChanged.emit(state);
+    this._statusChanged.emit(state);
   }
 
   /**
    * Handle iopub kernel messages.
    */
   protected onIOPubMessage(sender: Kernel.IKernel, msg: KernelMessage.IIOPubMessage) {
-    this.iopubMessage.emit(msg);
+    this._iopubMessage.emit(msg);
   }
 
   /**
    * Handle unhandled kernel messages.
    */
   protected onUnhandledMessage(sender: Kernel.IKernel, msg: KernelMessage.IMessage) {
-    this.unhandledMessage.emit(msg);
+    this._unhandledMessage.emit(msg);
   }
 
   /**
@@ -366,17 +377,12 @@ class DefaultSession implements Session.ISession {
   private _baseUrl = '';
   private _options: Session.IOptions = null;
   private _updating = false;
+  private _kernelChanged = new Signal<this, Kernel.IKernel>(this);
+  private _statusChanged = new Signal<this, Kernel.Status>(this);
+  private _iopubMessage = new Signal<this, KernelMessage.IMessage>(this);
+  private _unhandledMessage = new Signal<this, KernelMessage.IMessage>(this);
+  private _pathChanged = new Signal<this, string>(this);
 }
-
-
-// Define the signals for the `DefaultSession` class.
-defineSignal(DefaultSession.prototype, 'terminated');
-defineSignal(DefaultSession.prototype, 'kernelChanged');
-defineSignal(DefaultSession.prototype, 'statusChanged');
-defineSignal(DefaultSession.prototype, 'iopubMessage');
-defineSignal(DefaultSession.prototype, 'unhandledMessage');
-defineSignal(DefaultSession.prototype, 'pathChanged');
-
 
 /**
  * The namespace for `DefaultSession` statics.

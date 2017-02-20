@@ -7,7 +7,7 @@ import {
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   find
@@ -19,11 +19,11 @@ import {
 
 import {
   DisposableDelegate, IDisposable
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   CommHandler
@@ -89,28 +89,35 @@ class DefaultKernel implements Kernel.IKernel {
     this._commPromises = new Map<string, Promise<Kernel.IComm>>();
     this._comms = new Map<string, Kernel.IComm>();
     this._createSocket();
+    this.terminated = new Signal<this, void>(this);
     Private.runningKernels.pushBack(this);
   }
 
   /**
    * A signal emitted when the kernel is shut down.
    */
-  terminated: ISignal<Kernel.IKernel, void>;
+  readonly terminated: Signal<this, void>;
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<Kernel.IKernel, Kernel.Status>;
+  get statusChanged(): ISignal<this, Kernel.Status> {
+    return this._statusChanged;
+  }
 
   /**
    * A signal emitted for iopub kernel messages.
    */
-  iopubMessage: ISignal<Kernel.IKernel, KernelMessage.IIOPubMessage>;
+  get iopubMessage(): ISignal<this, KernelMessage.IIOPubMessage> {
+    return this._iopubMessage;
+  }
 
   /**
    * A signal emitted for unhandled kernel message.
    */
-  unhandledMessage: ISignal<Kernel.IKernel, KernelMessage.IMessage>;
+  get unhandledMessage(): ISignal<this, KernelMessage.IMessage> {
+    return this._unhandledMessage;
+  }
 
   /**
    * The id of the server-side kernel.
@@ -262,7 +269,7 @@ class DefaultKernel implements Kernel.IKernel {
     this._comms = null;
     this._targetRegistry = null;
     Private.runningKernels.remove(this);
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -710,7 +717,7 @@ class DefaultKernel implements Kernel.IKernel {
         // If the message was sent by us and was not iopub, it is orphaned.
         let owned = parentHeader.session === this.clientId;
         if (msg.channel !== 'iopub' && owned) {
-          this.unhandledMessage.emit(msg);
+          this._unhandledMessage.emit(msg);
         }
       }
     }
@@ -728,8 +735,10 @@ class DefaultKernel implements Kernel.IKernel {
       case 'comm_close':
         this._handleCommClose(msg as KernelMessage.ICommCloseMsg);
         break;
+      default:
+        break;
       }
-      this.iopubMessage.emit(msg as KernelMessage.IIOPubMessage);
+      this._iopubMessage.emit(msg as KernelMessage.IIOPubMessage);
     }
   }
 
@@ -779,7 +788,7 @@ class DefaultKernel implements Kernel.IKernel {
     if (status !== this._status) {
       this._status = status;
       Private.logKernelStatus(this);
-      this.statusChanged.emit(status);
+      this._statusChanged.emit(status);
       if (status === 'dead') {
         this.dispose();
       }
@@ -939,14 +948,10 @@ class DefaultKernel implements Kernel.IKernel {
   private _pendingMessages: KernelMessage.IMessage[] = [];
   private _connectionPromise: utils.PromiseDelegate<void> = null;
   private _specPromise: Promise<Kernel.ISpecModel> = null;
+  private _statusChanged = new Signal<this, Kernel.Status>(this);
+  private _iopubMessage = new Signal<this, KernelMessage.IIOPubMessage>(this);
+  private _unhandledMessage = new Signal<this, KernelMessage.IMessage>(this);
 }
-
-
-// Define the signals for the `DefaultKernel` class.
-defineSignal(DefaultKernel.prototype, 'terminated');
-defineSignal(DefaultKernel.prototype, 'statusChanged');
-defineSignal(DefaultKernel.prototype, 'iopubMessage');
-defineSignal(DefaultKernel.prototype, 'unhandledMessage');
 
 
 /**

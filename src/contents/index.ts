@@ -6,15 +6,15 @@ import * as posix
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   IDisposable
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import * as utils
   from '../utils';
@@ -362,7 +362,9 @@ class ContentsManager implements Contents.IManager {
   /**
    * A signal emitted when a file operation takes place.
    */
-  fileChanged: ISignal<this, Contents.IChangedArgs>;
+  get fileChanged(): ISignal<this, Contents.IChangedArgs> {
+    return this._fileChanged;
+  }
 
   /**
    * Test whether the manager has been disposed.
@@ -379,7 +381,7 @@ class ContentsManager implements Contents.IManager {
       return;
     }
     this._isDisposed = true;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -492,7 +494,7 @@ class ContentsManager implements Contents.IManager {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'new',
         oldValue: null,
         newValue: data
@@ -521,7 +523,7 @@ class ContentsManager implements Contents.IManager {
       if (success.xhr.status !== 204) {
         return utils.makeAjaxError(success);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'delete',
         oldValue: { path },
         newValue: null
@@ -572,7 +574,7 @@ class ContentsManager implements Contents.IManager {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'rename',
         oldValue: { path },
         newValue: data
@@ -616,7 +618,7 @@ class ContentsManager implements Contents.IManager {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'save',
         oldValue: null,
         newValue: data
@@ -658,7 +660,7 @@ class ContentsManager implements Contents.IManager {
       } catch (err) {
         return utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'new',
         oldValue: null,
         newValue: data
@@ -796,11 +798,8 @@ class ContentsManager implements Contents.IManager {
   private _baseUrl = '';
   private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;
+  private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }
-
-
-// Define the signals for the `ContentsManager` class.
-defineSignal(ContentsManager.prototype, 'fileChanged');
 
 
 /**

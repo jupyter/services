@@ -3,15 +3,15 @@
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   IDisposable
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   Contents, ContentsManager
@@ -51,7 +51,7 @@ class ServiceManager implements ServiceManager.IManager {
     this._contentsManager = new ContentsManager(options);
     this._terminalManager = new TerminalManager(options);
     this._sessionManager.specsChanged.connect((sender, specs) => {
-      this.specsChanged.emit(specs);
+      this._specsChanged.emit(specs);
     });
     this._readyPromise = this._sessionManager.ready.then(() => {
       if (this._terminalManager.isAvailable()) {
@@ -63,7 +63,9 @@ class ServiceManager implements ServiceManager.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  specsChanged: ISignal<this, Kernel.ISpecModels>;
+  get specsChanged(): ISignal<this, Kernel.ISpecModels> {
+    return this._specsChanged;
+  }
 
   /**
    * Test whether the terminal manager is disposed.
@@ -80,7 +82,7 @@ class ServiceManager implements ServiceManager.IManager {
       return;
     }
     this._isDisposed = true;
-    clearSignalData(this);
+    Signal.clearData(this);
     this._sessionManager.dispose();
     this._contentsManager.dispose();
     this._sessionManager.dispose();
@@ -140,6 +142,7 @@ class ServiceManager implements ServiceManager.IManager {
   private _terminalManager: TerminalManager = null;
   private _isDisposed = false;
   private _readyPromise: Promise<void>;
+  private _specsChanged = new Signal<this, Kernel.ISpecModels>(this);
 }
 
 
@@ -220,7 +223,3 @@ namespace ServiceManager {
     ajaxSettings?: IAjaxSettings;
   }
 }
-
-
-// Define the signals for the `ServiceManager` class.
-defineSignal(ServiceManager.prototype, 'specsChanged');
