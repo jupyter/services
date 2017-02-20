@@ -8,8 +8,8 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/utilities';
 
 import {
   TerminalSession, TerminalManager
@@ -194,7 +194,7 @@ describe('terminals', () => {
         tester.runningTerminals = newData;
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), newData)).to.be(true);
+          expect(JSONExt.deepEqual(toArray(args), newData)).to.be(true);
           done();
         });
         manager.refreshRunning();
@@ -219,7 +219,7 @@ describe('terminals', () => {
         tester.runningTerminals = newData;
         manager.refreshRunning().then(() => {
           let running = toArray(manager.running());
-          expect(deepEqual(newData, running)).to.be(true);
+          expect(JSONExt.deepEqual(newData, running)).to.be(true);
           done();
         }).catch(done);
       });

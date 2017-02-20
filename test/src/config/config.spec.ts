@@ -5,7 +5,7 @@ import expect = require('expect.js');
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   ConfigSection, ConfigWithDefaults

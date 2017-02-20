@@ -8,8 +8,8 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  JSONObject, deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONObject, JSONExt
+} from '@phosphor/utilities';
 
 import * as NodeWebSocket
   from 'ws';
@@ -71,7 +71,7 @@ describe('jupyter.services - Integration', () => {
         return kernel.requestKernelInfo();
       }).then((info) => {
         content = info.content;
-        expect(deepEqual(content, kernel.info)).to.be(true);
+        expect(JSONExt.deepEqual(content, kernel.info)).to.be(true);
         return kernel.shutdown();
       }).then(done, done);
     });

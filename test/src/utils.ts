@@ -5,7 +5,7 @@ import encoding = require('text-encoding');
 
 import {
   JSONPrimitive
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import * as WebSocket
   from  'ws';

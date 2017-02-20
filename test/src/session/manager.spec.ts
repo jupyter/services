@@ -8,8 +8,8 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/utilities';
 
 import {
   Kernel
@@ -142,7 +142,7 @@ describe('session/manager', () => {
     describe('#running()', () => {
 
       it('should get the running sessions', () => {
-        let test = deepEqual(toArray(manager.running()), data);
+        let test = JSONExt.deepEqual(toArray(manager.running()), data);
         expect(test).to.be(true);
       });
 
@@ -171,7 +171,7 @@ describe('session/manager', () => {
         tester.runningSessions = sessionModels;
         manager.runningChanged.connect((sender, args) => {
           expect(sender).to.be(manager);
-          expect(deepEqual(toArray(args), sessionModels)).to.be(true);
+          expect(JSONExt.deepEqual(toArray(args), sessionModels)).to.be(true);
           done();
         });
         manager.refreshRunning();
