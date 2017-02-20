@@ -8,8 +8,8 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/utilities';
 
 import {
   TerminalSession
@@ -103,7 +103,7 @@ describe('terminals', () => {
         let data: TerminalSession.IModel[] = [{ name: 'foo'}, { name: 'bar' }];
         tester.runningTerminals = data;
         TerminalSession.listRunning().then(models => {
-          expect(deepEqual(data, toArray(models))).to.be(true);
+          expect(JSONExt.deepEqual(data, toArray(models))).to.be(true);
           done();
         }).catch(done);
       });

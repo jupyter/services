@@ -9,7 +9,7 @@ import {
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   uuid, getBaseUrl

@@ -7,7 +7,7 @@ import {
 
 import {
   JSONPrimitive, JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/utilities';
 
 import {
   IDisposable
