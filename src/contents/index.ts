@@ -435,12 +435,12 @@ class ContentsManager implements Contents.IManager {
 
     return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): Contents.IModel => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
          validate.validateContentsModel(success.data);
        } catch (err) {
-         return utils.makeAjaxError(success, err.message);
+         throw utils.makeAjaxError(success, err.message);
        }
       return success.data;
     });
@@ -486,13 +486,13 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(options.path || '');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       this._fileChanged.emit({
         type: 'new',
@@ -566,13 +566,13 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       this._fileChanged.emit({
         type: 'rename',
@@ -610,13 +610,13 @@ class ContentsManager implements Contents.IManager {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       // will return 200 for an existing file and 201 for a new file
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       this._fileChanged.emit({
         type: 'save',
@@ -652,13 +652,13 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(toDir);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       this._fileChanged.emit({
         type: 'new',
@@ -688,12 +688,12 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
         validate.validateCheckpointModel(success.data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return success.data;
     });
@@ -719,16 +719,16 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       if (!Array.isArray(success.data)) {
-        return utils.makeAjaxError(success, 'Invalid Checkpoint list');
+        throw utils.makeAjaxError(success, 'Invalid Checkpoint list');
       }
       for (let i = 0; i < success.data.length; i++) {
         try {
         validate.validateCheckpointModel(success.data[i]);
         } catch (err) {
-          return utils.makeAjaxError(success, err.message);
+          throw utils.makeAjaxError(success, err.message);
         }
       }
       return success.data;

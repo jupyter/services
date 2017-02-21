@@ -322,7 +322,7 @@ namespace DefaultTerminalSession {
       }
       let data = success.data as TerminalSession.IModel[];
       if (!Array.isArray(data)) {
-        return utils.makeAjaxError(success, 'Invalid terminal data');
+        throw utils.makeAjaxError(success, 'Invalid terminal data');
       }
       // Update the local data store.
       let urls = toArray(map(data, item => {

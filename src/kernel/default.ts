@@ -1099,12 +1099,12 @@ namespace Private {
     ajaxSettings.dataType = 'json';
     let promise = utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
         return validate.validateSpecModels(success.data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
     });
     Private.specs[baseUrl] = promise;
@@ -1130,16 +1130,16 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       if (!Array.isArray(success.data)) {
-        return utils.makeAjaxError(success, 'Invalid kernel list');
+        throw utils.makeAjaxError(success, 'Invalid kernel list');
       }
       for (let i = 0; i < success.data.length; i++) {
         try {
           validate.validateModel(success.data[i]);
         } catch (err) {
-          return utils.makeAjaxError(success, err.message);
+          throw utils.makeAjaxError(success, err.message);
         }
       }
       return updateRunningKernels(success.data);
@@ -1183,7 +1183,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       validate.validateModel(success.data);
       options = utils.copy(options) as Kernel.IOptions;
@@ -1254,12 +1254,12 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
         validate.validateModel(success.data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
     }, onKernelError);
   }
@@ -1283,7 +1283,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
     }, onKernelError);
   }
@@ -1302,7 +1302,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       killKernels(id);
     }, (error: utils.IAjaxError) => {
@@ -1344,13 +1344,13 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Kernel.IModel;
       try {
         validate.validateModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return data;
     }, Private.onKernelError);
