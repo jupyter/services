@@ -6,7 +6,7 @@ import * as posix
 
 import {
   JSONObject
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import {
   IDisposable

@@ -3,7 +3,7 @@
 
 import {
   JSONObject, JSONValue
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import {
   IAjaxSettings

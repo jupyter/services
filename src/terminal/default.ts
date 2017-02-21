@@ -7,7 +7,7 @@ import {
 
 import {
   JSONPrimitive
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import {
   ISignal, Signal

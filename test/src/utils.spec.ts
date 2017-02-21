@@ -6,7 +6,7 @@ import expect = require('expect.js');
 
 import {
   JSONObject
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import {
   PromiseDelegate, extend, copy, uuid, urlPathJoin, urlEncodeParts,

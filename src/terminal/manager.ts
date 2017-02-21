@@ -7,7 +7,7 @@ import {
 
 import {
   JSONExt
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import {
   ISignal, Signal

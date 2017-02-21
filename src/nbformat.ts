@@ -7,7 +7,7 @@
 
 import {
   JSONObject, JSONExt
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 
 /**

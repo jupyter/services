@@ -5,11 +5,11 @@ import expect = require('expect.js');
 
 import {
   toArray
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   JSONObject, JSONExt
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import * as NodeWebSocket
   from 'ws';

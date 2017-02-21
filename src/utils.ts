@@ -4,7 +4,7 @@
 
 import {
   JSONObject
-} from '@phosphor/utilities';
+} from '@phosphor/coreutils';
 
 import * as minimist
   from 'minimist';
