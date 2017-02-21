@@ -3,7 +3,7 @@
 
 import {
   JSONObject, JSONValue
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
   IAjaxSettings
@@ -141,7 +141,7 @@ class DefaultConfigSection implements IConfigSection {
     ajaxSettings.cache = false;
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+         throw utils.makeAjaxError(success);
       }
       this._data = success.data;
     });
@@ -169,7 +169,7 @@ class DefaultConfigSection implements IConfigSection {
 
     return utils.ajaxRequest(this._url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-       return utils.makeAjaxError(success);
+       throw utils.makeAjaxError(success);
       }
 
       this._data = success.data;

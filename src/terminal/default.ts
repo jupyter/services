@@ -3,15 +3,15 @@
 
 import {
   each, map, toArray
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   JSONPrimitive
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   IAjaxSettings
@@ -48,17 +48,20 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     );
     this._wsUrl = options.wsUrl || utils.getWsUrl(this._baseUrl);
     this._readyPromise = this._initializeSocket();
+    this.terminated = new Signal<this, void>(this);
   }
 
   /**
    * A signal emitted when the session is shut down.
    */
-  terminated: ISignal<this, void>;
+  readonly terminated: Signal<this, void>;
 
   /**
    * A signal emitted when a message is received from the server.
    */
-  messageReceived: ISignal<this, TerminalSession.IMessage>;
+  get messageReceived(): ISignal<this, TerminalSession.IMessage> {
+    return this._messageReceived;
+  }
 
   /**
    * Get the name of the terminal session.
@@ -130,7 +133,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     }
     delete Private.running[this._url];
     this._readyPromise = null;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -189,7 +192,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 
     this._ws.onmessage = (event: MessageEvent) => {
       let data = JSON.parse(event.data) as JSONPrimitive[];
-      this.messageReceived.emit({
+      this._messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
         content: data.slice(1)
       });
@@ -214,8 +217,9 @@ class DefaultTerminalSession implements TerminalSession.ISession {
   private _ajaxSettings = '';
   private _ws: WebSocket = null;
   private _isDisposed = false;
-  private _readyPromise: Promise<TerminalSession.ISession>;
+  private _readyPromise: Promise<void>;
   private _isReady = false;
+  private _messageReceived = new Signal<this, TerminalSession.IMessage>(this);
 }
 
 
@@ -243,7 +247,7 @@ namespace DefaultTerminalSession {
   export
   function startNew(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable();
+      throw Private.unavailableMsg;
     }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getBaseUrl(baseUrl);
@@ -253,7 +257,7 @@ namespace DefaultTerminalSession {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let name = (success.data as TerminalSession.IModel).name;
       return new DefaultTerminalSession(name, options);
@@ -284,7 +288,7 @@ namespace DefaultTerminalSession {
   export
   function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable();
+      return Promise.reject(Private.unavailableMsg);
     }
     let baseUrl = options.baseUrl || utils.getBaseUrl();
     let url = Private.getTermUrl(baseUrl, name);
@@ -303,9 +307,9 @@ namespace DefaultTerminalSession {
    * @returns A promise that resolves with the list of running session models.
    */
   export
-  function listRunning(options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession[]> {
+  function listRunning(options: TerminalSession.IOptions = {}): Promise<TerminalSession.IModel[]> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable();
+      return Promise.reject(Private.unavailableMsg);
     }
     let url = Private.getBaseUrl(options.baseUrl);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
@@ -314,11 +318,11 @@ namespace DefaultTerminalSession {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as TerminalSession.IModel[];
       if (!Array.isArray(data)) {
-        return utils.makeAjaxError(success, 'Invalid terminal data');
+        throw utils.makeAjaxError(success, 'Invalid terminal data');
       }
       // Update the local data store.
       let urls = toArray(map(data, item => {
@@ -347,14 +351,14 @@ namespace DefaultTerminalSession {
   export
   function shutdown(name: string, options: TerminalSession.IOptions = {}): Promise<void> {
     if (!TerminalSession.isAvailable()) {
-      return Private.unavailable();
+      return Promise.reject(Private.unavailableMsg);
     }
     let url = Private.getTermUrl(options.baseUrl, name);
     let ajaxSettings = utils.ajaxSettingsWithToken(options.ajaxSettings, options.token);
     ajaxSettings.method = 'DELETE';
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       Private.killTerminal(url);
     }, err => {
@@ -371,11 +375,6 @@ namespace DefaultTerminalSession {
 }
 
 
-// Define the signals for the `DefaultTerminalSession` class.
-defineSignal(DefaultTerminalSession.prototype, 'terminated');
-defineSignal(DefaultTerminalSession.prototype, 'messageReceived');
-
-
 /**
  * A namespace for private data.
  */
@@ -390,9 +389,7 @@ namespace Private {
    * A promise returned for when terminals are unavailable.
    */
   export
-  function unavailable(): Promise<void> {
-    return Promise.reject('Terminals Unavailable');
-  }
+  const unavailableMsg = 'Terminals Unavailable';
 
   /**
    * Get the url for a terminal.

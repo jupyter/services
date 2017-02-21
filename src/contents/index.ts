@@ -6,15 +6,15 @@ import * as posix
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
   IDisposable
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import * as utils
   from '../utils';
@@ -362,7 +362,9 @@ class ContentsManager implements Contents.IManager {
   /**
    * A signal emitted when a file operation takes place.
    */
-  fileChanged: ISignal<this, Contents.IChangedArgs>;
+  get fileChanged(): ISignal<this, Contents.IChangedArgs> {
+    return this._fileChanged;
+  }
 
   /**
    * Test whether the manager has been disposed.
@@ -379,7 +381,7 @@ class ContentsManager implements Contents.IManager {
       return;
     }
     this._isDisposed = true;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -433,12 +435,12 @@ class ContentsManager implements Contents.IManager {
 
     return utils.ajaxRequest(url, ajaxSettings).then((success: utils.IAjaxSuccess): Contents.IModel => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
          validate.validateContentsModel(success.data);
        } catch (err) {
-         return utils.makeAjaxError(success, err.message);
+         throw utils.makeAjaxError(success, err.message);
        }
       return success.data;
     });
@@ -484,15 +486,15 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(options.path || '');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'new',
         oldValue: null,
         newValue: data
@@ -519,9 +521,9 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'delete',
         oldValue: { path },
         newValue: null
@@ -564,15 +566,15 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'rename',
         oldValue: { path },
         newValue: data
@@ -608,15 +610,15 @@ class ContentsManager implements Contents.IManager {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       // will return 200 for an existing file and 201 for a new file
       if (success.xhr.status !== 200 && success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'save',
         oldValue: null,
         newValue: data
@@ -650,15 +652,15 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(toDir);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Contents.IModel;
       try {
         validate.validateContentsModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'new',
         oldValue: null,
         newValue: data
@@ -686,12 +688,12 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
         validate.validateCheckpointModel(success.data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return success.data;
     });
@@ -717,16 +719,16 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints');
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       if (!Array.isArray(success.data)) {
-        return utils.makeAjaxError(success, 'Invalid Checkpoint list');
+        throw utils.makeAjaxError(success, 'Invalid Checkpoint list');
       }
       for (let i = 0; i < success.data.length; i++) {
         try {
         validate.validateCheckpointModel(success.data[i]);
         } catch (err) {
-          return utils.makeAjaxError(success, err.message);
+          throw utils.makeAjaxError(success, err.message);
         }
       }
       return success.data;
@@ -753,7 +755,7 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
     });
 
@@ -779,7 +781,7 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
     });
   }
@@ -796,11 +798,8 @@ class ContentsManager implements Contents.IManager {
   private _baseUrl = '';
   private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;
+  private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }
-
-
-// Define the signals for the `ContentsManager` class.
-defineSignal(ContentsManager.prototype, 'fileChanged');
 
 
 /**

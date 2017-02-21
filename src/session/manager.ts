@@ -2,20 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, IIterator, iter
+} from '@phosphor/algorithm';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/coreutils';
 
 import {
-  findIndex
-} from 'phosphor/lib/algorithm/searching';
-
-import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   Kernel
@@ -54,10 +50,10 @@ class SessionManager implements Session.IManager {
     });
 
     // Set up polling.
-    this._runningTimer = setInterval(() => {
+    this._runningTimer = (setInterval as any)(() => {
       this._refreshRunning();
     }, 10000);
-    this._specsTimer = setInterval(() => {
+    this._specsTimer = (setInterval as any)(() => {
       this._refreshSpecs();
     }, 61000);
   }
@@ -65,12 +61,16 @@ class SessionManager implements Session.IManager {
   /**
    * A signal emitted when the kernel specs change.
    */
-  specsChanged: ISignal<SessionManager, Kernel.ISpecModels>;
+  get specsChanged(): ISignal<this, Kernel.ISpecModels> {
+    return this._specsChanged;
+  }
 
   /**
    * A signal emitted when the running sessions change.
    */
-  runningChanged: ISignal<SessionManager, Session.IModel[]>;
+  get runningChanged(): ISignal<this, Session.IModel[]> {
+    return this._runningChanged;
+  }
 
   /**
    * Test whether the terminal manager is disposed.
@@ -89,7 +89,7 @@ class SessionManager implements Session.IManager {
     this._isDisposed = true;
     clearInterval(this._runningTimer);
     clearInterval(this._specsTimer);
-    clearSignalData(this);
+    Signal.clearData(this);
     this._running = [];
   }
 
@@ -237,10 +237,10 @@ class SessionManager implements Session.IManager {
    * Handle a session terminating.
    */
   private _onTerminated(id: string): void {
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index !== -1) {
       this._running.splice(index, 1);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
   }
 
@@ -249,10 +249,10 @@ class SessionManager implements Session.IManager {
    */
   private _onStarted(session: Session.ISession): void {
     let id = session.id;
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index === -1) {
       this._running.push(session.model);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
     session.terminated.connect(() => {
       this._onTerminated(id);
@@ -269,10 +269,10 @@ class SessionManager implements Session.IManager {
    * Handle a change to a session.
    */
   private _onChanged(model: Session.IModel): void {
-    let index = findIndex(this._running, value => value.id === model.id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === model.id);
     if (index !== -1) {
       this._running[index] = model;
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
   }
 
@@ -285,9 +285,9 @@ class SessionManager implements Session.IManager {
       ajaxSettings: this.ajaxSettings
     };
     return Kernel.getSpecs(options).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
+      if (!JSONExt.deepEqual(specs, this._specs)) {
         this._specs = specs;
-        this.specsChanged.emit(specs);
+        this._specsChanged.emit(specs);
       }
     });
   }
@@ -297,9 +297,9 @@ class SessionManager implements Session.IManager {
    */
   private _refreshRunning(): Promise<void> {
     return Session.listRunning(this._getOptions({})).then(running => {
-      if (!deepEqual(running, this._running)) {
+      if (!JSONExt.deepEqual(running, this._running)) {
         this._running = running.slice();
-        this.runningChanged.emit(running);
+        this._runningChanged.emit(running);
       }
     });
   }
@@ -313,8 +313,6 @@ class SessionManager implements Session.IManager {
   private _runningTimer = -1;
   private _specsTimer = -1;
   private _readyPromise: Promise<void>;
+  private _specsChanged = new Signal<this, Kernel.ISpecModels>(this);
+  private _runningChanged = new Signal<this, Session.IModel[]>(this);
 }
-
-// Define the signals for the `SessionManager` class.
-defineSignal(SessionManager.prototype, 'specsChanged');
-defineSignal(SessionManager.prototype, 'runningChanged');

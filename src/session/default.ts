@@ -2,20 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  each, toArray
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, each, find, toArray
+} from '@phosphor/algorithm';
 
 import {
-  find
-} from 'phosphor/lib/algorithm/searching';
-
-import {
-  Vector
-} from 'phosphor/lib/collections/vector';
-
-import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import {
   Kernel, KernelMessage
@@ -61,40 +53,51 @@ class DefaultSession implements Session.ISession {
       utils.ajaxSettingsWithToken(options.ajaxSettings || {}, options.token)
     );
     this._token = options.token || utils.getConfigOption('token');
-    Private.runningSessions.pushBack(this);
+    Private.runningSessions.push(this);
     this.setupKernel(kernel);
     this._options = utils.copy(options);
+    this.terminated = new Signal<this, void>(this);
   }
 
   /**
    * A signal emitted when the session is shut down.
    */
-  terminated: ISignal<Session.ISession, void>;
+  readonly terminated: Signal<this, void>;
 
   /**
    * A signal emitted when the kernel changes.
    */
-  kernelChanged: ISignal<Session.ISession, Kernel.IKernel>;
+  get kernelChanged(): ISignal<this, Kernel.IKernel> {
+    return this._kernelChanged;
+  }
 
   /**
    * A signal emitted when the kernel status changes.
    */
-  statusChanged: ISignal<Session.ISession, Kernel.Status>;
+  get statusChanged(): ISignal<this, Kernel.Status> {
+    return this._statusChanged;
+  }
 
   /**
    * A signal emitted for a kernel messages.
    */
-  iopubMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
+  get iopubMessage(): ISignal<this, KernelMessage.IMessage> {
+    return this._iopubMessage;
+  }
 
   /**
    * A signal emitted for an unhandled kernel message.
    */
-  unhandledMessage: ISignal<Session.ISession, KernelMessage.IMessage>;
+  get unhandledMessage(): ISignal<this, KernelMessage.IMessage> {
+    return this._unhandledMessage;
+  }
 
   /**
    * A signal emitted when the session path changes.
    */
-  pathChanged: ISignal<Session.ISession, string>;
+  get pathChanged(): ISignal<this, string> {
+    return this._pathChanged;
+  }
 
   /**
    * Get the session id.
@@ -201,13 +204,13 @@ class DefaultSession implements Session.ISession {
       options.name = model.kernel.name;
       return Kernel.connectTo(model.kernel.id, options).then(kernel => {
         this.setupKernel(kernel);
-        this.kernelChanged.emit(kernel);
+        this._kernelChanged.emit(kernel);
         if (oldPath !== newPath) {
-          this.pathChanged.emit(newPath);
+          this._pathChanged.emit(newPath);
         }
       });
     } else if (oldPath !== newPath) {
-      this.pathChanged.emit(newPath);
+      this._pathChanged.emit(newPath);
     }
     return Promise.resolve(void 0);
   }
@@ -223,9 +226,9 @@ class DefaultSession implements Session.ISession {
     if (this._kernel) {
       this._kernel.dispose();
     }
-    Private.runningSessions.remove(this);
+    ArrayExt.removeFirstOf(Private.runningSessions, this);
     this._kernel = null;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -297,21 +300,21 @@ class DefaultSession implements Session.ISession {
    * Handle to changes in the Kernel status.
    */
   protected onKernelStatus(sender: Kernel.IKernel, state: Kernel.Status) {
-    this.statusChanged.emit(state);
+    this._statusChanged.emit(state);
   }
 
   /**
    * Handle iopub kernel messages.
    */
   protected onIOPubMessage(sender: Kernel.IKernel, msg: KernelMessage.IIOPubMessage) {
-    this.iopubMessage.emit(msg);
+    this._iopubMessage.emit(msg);
   }
 
   /**
    * Handle unhandled kernel messages.
    */
   protected onUnhandledMessage(sender: Kernel.IKernel, msg: KernelMessage.IMessage) {
-    this.unhandledMessage.emit(msg);
+    this._unhandledMessage.emit(msg);
   }
 
   /**
@@ -342,13 +345,13 @@ class DefaultSession implements Session.ISession {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       this._updating = false;
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let value = success.data as Session.IModel;
       try {
         validate.validateModel(value);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return Private.updateFromServer(value);
     }, error => {
@@ -366,17 +369,12 @@ class DefaultSession implements Session.ISession {
   private _baseUrl = '';
   private _options: Session.IOptions = null;
   private _updating = false;
+  private _kernelChanged = new Signal<this, Kernel.IKernel>(this);
+  private _statusChanged = new Signal<this, Kernel.Status>(this);
+  private _iopubMessage = new Signal<this, KernelMessage.IMessage>(this);
+  private _unhandledMessage = new Signal<this, KernelMessage.IMessage>(this);
+  private _pathChanged = new Signal<this, string>(this);
 }
-
-
-// Define the signals for the `DefaultSession` class.
-defineSignal(DefaultSession.prototype, 'terminated');
-defineSignal(DefaultSession.prototype, 'kernelChanged');
-defineSignal(DefaultSession.prototype, 'statusChanged');
-defineSignal(DefaultSession.prototype, 'iopubMessage');
-defineSignal(DefaultSession.prototype, 'unhandledMessage');
-defineSignal(DefaultSession.prototype, 'pathChanged');
-
 
 /**
  * The namespace for `DefaultSession` statics.
@@ -441,7 +439,7 @@ namespace Private {
    * The running sessions.
    */
   export
-  const runningSessions = new Vector<DefaultSession>();
+  const runningSessions: DefaultSession[] = [];
 
   /**
    * List the running sessions.
@@ -457,17 +455,17 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Session.IModel[];
       if (!Array.isArray(success.data)) {
-        return utils.makeAjaxError(success, 'Invalid Session list');
+        throw utils.makeAjaxError(success, 'Invalid Session list');
       }
       for (let i = 0; i < data.length; i++) {
         try {
           validate.validateModel(data[i]);
         } catch (err) {
-          return utils.makeAjaxError(success, err.message);
+          throw utils.makeAjaxError(success, err.message);
         }
       }
       return updateRunningSessions(data);
@@ -574,12 +572,12 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 201) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       try {
         validate.validateModel(success.data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       let data = success.data as Session.IModel;
       return updateFromServer(data);
@@ -634,13 +632,13 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let data = success.data as Session.IModel;
       try {
         validate.validateModel(data);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return updateFromServer(data);
     }, Private.onSessionError);
@@ -694,7 +692,7 @@ namespace Private {
 
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       killSessions(id);
     }, err => {

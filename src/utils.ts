@@ -4,7 +4,7 @@
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import * as minimist
   from 'minimist';
@@ -14,6 +14,10 @@ import * as url
 
 import * as urljoin
   from 'url-join';
+
+
+// Stub for requirejs.
+declare var requirejs: any;
 
 
 /**
@@ -378,12 +382,12 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
  *  we use "Invalid Status: <xhr.status>"
  */
 export
-function makeAjaxError(success: IAjaxSuccess, throwError?: string): Promise<any> {
+function makeAjaxError(success: IAjaxSuccess, throwError?: string): IAjaxError {
   let xhr = success.xhr;
   let ajaxSettings = success.ajaxSettings;
   let event = success.event;
   throwError = throwError || `Invalid Status: ${xhr.status}`;
-  return Promise.reject({ xhr, ajaxSettings, event, throwError });
+  return { xhr, ajaxSettings, event, throwError };
 }
 
 

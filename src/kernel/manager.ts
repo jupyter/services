@@ -2,20 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IIterator, iter
-} from 'phosphor/lib/algorithm/iteration';
+  ArrayExt, IIterator, iter
+} from '@phosphor/algorithm';
 
 import {
-  deepEqual
-} from 'phosphor/lib/algorithm/json';
+  JSONExt
+} from '@phosphor/coreutils';
 
 import {
-  findIndex
-} from 'phosphor/lib/algorithm/searching';
-
-import {
-  ISignal, clearSignalData, defineSignal
-} from 'phosphor/lib/core/signaling';
+  ISignal, Signal
+} from '@phosphor/signaling';
 
 import * as utils
   from '../utils';
@@ -51,10 +47,10 @@ class KernelManager implements Kernel.IManager {
     });
 
     // Set up polling.
-    this._runningTimer = setInterval(() => {
+    this._runningTimer = (setInterval as any)(() => {
       this._refreshRunning();
     }, 10000);
-    this._specsTimer = setInterval(() => {
+    this._specsTimer = (setInterval as any)(() => {
       this._refreshSpecs();
     }, 61000);
   }
@@ -62,12 +58,16 @@ class KernelManager implements Kernel.IManager {
   /**
    * A signal emitted when the specs change.
    */
-  specsChanged: ISignal<this, Kernel.ISpecModels>;
+  get specsChanged(): ISignal<this, Kernel.ISpecModels> {
+    return this._specsChanged;
+  }
 
   /**
    * A signal emitted when the running kernels change.
    */
-  runningChanged: ISignal<this, Kernel.IModel[]>;
+  get runningChanged(): ISignal<this, Kernel.IModel[]> {
+    return this._runningChanged;
+  }
 
   /**
    * Test whether the terminal manager is disposed.
@@ -86,7 +86,7 @@ class KernelManager implements Kernel.IManager {
     this._isDisposed = true;
     clearInterval(this._runningTimer);
     clearInterval(this._specsTimer);
-    clearSignalData(this);
+    Signal.clearData(this);
     this._specs = null;
     this._running = [];
   }
@@ -227,10 +227,10 @@ class KernelManager implements Kernel.IManager {
    * Handle a kernel terminating.
    */
   private _onTerminated(id: string): void {
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index !== -1) {
       this._running.splice(index, 1);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
   }
 
@@ -239,10 +239,10 @@ class KernelManager implements Kernel.IManager {
    */
   private _onStarted(kernel: Kernel.IKernel): void {
     let id = kernel.id;
-    let index = findIndex(this._running, value => value.id === id);
+    let index = ArrayExt.findFirstIndex(this._running, value => value.id === id);
     if (index === -1) {
       this._running.push(kernel.model);
-      this.runningChanged.emit(this._running.slice());
+      this._runningChanged.emit(this._running.slice());
     }
     kernel.terminated.connect(() => {
       this._onTerminated(id);
@@ -259,9 +259,9 @@ class KernelManager implements Kernel.IManager {
       ajaxSettings: this.ajaxSettings
     };
     return Kernel.getSpecs(options).then(specs => {
-      if (!deepEqual(specs, this._specs)) {
+      if (!JSONExt.deepEqual(specs, this._specs)) {
         this._specs = specs;
-        this.specsChanged.emit(specs);
+        this._specsChanged.emit(specs);
       }
     });
   }
@@ -272,9 +272,9 @@ class KernelManager implements Kernel.IManager {
   private _refreshRunning(): Promise<void> {
     return Kernel.listRunning(this._getOptions({})).then(running => {
       this._isReady = true;
-      if (!deepEqual(running, this._running)) {
+      if (!JSONExt.deepEqual(running, this._running)) {
         this._running = running.slice();
-        this.runningChanged.emit(running);
+        this._runningChanged.emit(running);
       }
     });
   }
@@ -301,9 +301,6 @@ class KernelManager implements Kernel.IManager {
   private _specsTimer = -1;
   private _readyPromise: Promise<void>;
   private _isReady = false;
+  private _specsChanged = new Signal<this, Kernel.ISpecModels>(this);
+  private _runningChanged = new Signal<this, Kernel.IModel[]>(this);
 }
-
-
-// Define the signal for the `KernelManager` class.
-defineSignal(KernelManager.prototype, 'specsChanged');
-defineSignal(KernelManager.prototype, 'runningChanged');

@@ -6,8 +6,8 @@
 // https://github.com/jupyter/nbformat/blob/master/nbformat/v4/nbformat.v4.schema.json
 
 import {
-  JSONObject, isObject
-} from 'phosphor/lib/algorithm/json';
+  JSONObject, JSONExt
+} from '@phosphor/coreutils';
 
 
 /**
@@ -148,7 +148,7 @@ namespace nbformat {
     }
 
     // It is a JSON type, make sure it is a valid JSON object.
-    return isObject(value);
+    return JSONExt.isObject(value);
   }
 
   /**

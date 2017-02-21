@@ -3,19 +3,19 @@
 
 import {
   IIterator
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   JSONObject, JSONValue
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
   IDisposable
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
   ISignal
-} from 'phosphor/lib/core/signaling';
+} from '@phosphor/signaling';
 
 import {
   IAjaxSettings
@@ -50,22 +50,22 @@ namespace Kernel {
     /**
      * A signal emitted when the kernel is shut down.
      */
-    terminated: ISignal<IKernel, void>;
+    terminated: ISignal<this, void>;
 
     /**
      * A signal emitted when the kernel status changes.
      */
-    statusChanged: ISignal<IKernel, Kernel.Status>;
+    statusChanged: ISignal<this, Kernel.Status>;
 
     /**
      * A signal emitted for iopub kernel messages.
      */
-    iopubMessage: ISignal<IKernel, KernelMessage.IIOPubMessage>;
+    iopubMessage: ISignal<this, KernelMessage.IIOPubMessage>;
 
     /**
      * A signal emitted for unhandled kernel message.
      */
-    unhandledMessage: ISignal<IKernel, KernelMessage.IMessage>;
+    unhandledMessage: ISignal<this, KernelMessage.IMessage>;
 
     /**
      * The id of the server-side kernel.
