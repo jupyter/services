@@ -345,13 +345,13 @@ class DefaultSession implements Session.ISession {
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       this._updating = false;
       if (success.xhr.status !== 200) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       let value = success.data as Session.IModel;
       try {
         validate.validateModel(value);
       } catch (err) {
-        return utils.makeAjaxError(success, err.message);
+        throw utils.makeAjaxError(success, err.message);
       }
       return Private.updateFromServer(value);
     }, error => {

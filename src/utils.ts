@@ -378,12 +378,12 @@ function ajaxRequest(url: string, ajaxSettings: IAjaxSettings): Promise<IAjaxSuc
  *  we use "Invalid Status: <xhr.status>"
  */
 export
-function makeAjaxError(success: IAjaxSuccess, throwError?: string): Promise<any> {
+function makeAjaxError(success: IAjaxSuccess, throwError?: string): IAjaxError {
   let xhr = success.xhr;
   let ajaxSettings = success.ajaxSettings;
   let event = success.event;
   throwError = throwError || `Invalid Status: ${xhr.status}`;
-  return Promise.reject({ xhr, ajaxSettings, event, throwError });
+  return { xhr, ajaxSettings, event, throwError };
 }
 
 

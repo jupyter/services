@@ -521,7 +521,7 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
       this._fileChanged.emit({
         type: 'delete',
@@ -755,7 +755,7 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
     });
 
@@ -781,7 +781,7 @@ class ContentsManager implements Contents.IManager {
     let url = this._getUrl(path, 'checkpoints', checkpointID);
     return utils.ajaxRequest(url, ajaxSettings).then(success => {
       if (success.xhr.status !== 204) {
-        return utils.makeAjaxError(success);
+        throw utils.makeAjaxError(success);
       }
     });
   }
