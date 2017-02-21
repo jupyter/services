@@ -6,7 +6,6 @@
  * after typedoc understands the lib compiler option and @types packages.
  */
 /// <reference path="../node_modules/@types/text-encoding/index.d.ts"/>
-/// <reference path="../node_modules/@types/requirejs/index.d.ts"/>
 /// <reference path="../node_modules/typescript/lib/lib.es2015.promise.d.ts"/>
 /// <reference path="../node_modules/typescript/lib/lib.dom.d.ts"/>
 /// <reference path="../node_modules/typescript/lib/lib.es5.d.ts"/>

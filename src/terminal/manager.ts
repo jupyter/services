@@ -44,7 +44,7 @@ class TerminalManager implements TerminalSession.IManager {
       this._readyPromise = this._refreshRunning();
 
       // Set up polling.
-      this._refreshTimer = setInterval(() => {
+      this._refreshTimer = (setInterval as any)(() => {
         this._refreshRunning();
       }, 10000);
     }

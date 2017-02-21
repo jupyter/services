@@ -50,10 +50,10 @@ class SessionManager implements Session.IManager {
     });
 
     // Set up polling.
-    this._runningTimer = setInterval(() => {
+    this._runningTimer = (setInterval as any)(() => {
       this._refreshRunning();
     }, 10000);
-    this._specsTimer = setInterval(() => {
+    this._specsTimer = (setInterval as any)(() => {
       this._refreshSpecs();
     }, 61000);
   }
