@@ -426,54 +426,6 @@ function loadObject(name: string, moduleName: string, registry?: { [key: string]
 
 
 /**
- * A Promise that can be resolved or rejected by another object.
- */
-export
-class PromiseDelegate<T> {
-
-  /**
-   * Construct a new Promise delegate.
-   */
-  constructor() {
-    this._promise = new Promise<T>((resolve, reject) => {
-      this._resolve = resolve;
-      this._reject = reject;
-    });
-  }
-
-  /**
-   * Get the underlying Promise.
-   */
-  get promise(): Promise<T> {
-    return this._promise;
-  }
-
-  /**
-   * Resolve the underlying Promise with an optional value or another Promise.
-   */
-  resolve(value?: T | Promise<T>): void {
-    // Note: according to the Promise spec, and the `this` context for resolve
-    // and reject are ignored
-    this._resolve(value);
-  }
-
-  /**
-   * Reject the underlying Promise with an optional reason.
-   */
-  reject(reason?: any): void {
-    // Note: according to the Promise spec, the `this` context for resolve
-    // and reject are ignored
-    this._reject(reason);
-  }
-
-  private _promise: Promise<T>;
-  private _resolve: (value?: T | Promise<T>) => void;
-  private _reject: (reason?: any) => void;
-}
-
-
-
-/**
  * Global config data for the Jupyter application.
  */
 let configData: any = null;

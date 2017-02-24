@@ -4,7 +4,7 @@
 import encoding = require('text-encoding');
 
 import {
-  JSONPrimitive
+  JSONPrimitive, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import * as WebSocket
@@ -19,7 +19,7 @@ import {
 } from '../../lib';
 
 import {
-  IAjaxSettings, PromiseDelegate, uuid, IAjaxError
+  IAjaxSettings, uuid, IAjaxError
 } from '../../lib/utils';
 
 import {
@@ -341,7 +341,7 @@ class RequestSocketTester extends RequestHandler {
     this._server.on('connection', ws => {
       this._ws = ws;
       this.onSocket(ws);
-      this._promiseDelegate.resolve();
+      this._promiseDelegate.resolve(void 0);
       let connect = this._onConnect;
       if (connect) {
         connect(ws);
