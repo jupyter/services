@@ -20,6 +20,10 @@ import * as urljoin
 declare var requirejs: any;
 
 
+// Export the Promise Delegate for now to preserve API.
+export { PromiseDelegate } from '@phosphor/coreutils';
+
+
 /**
  * Copy the contents of one object to another, recursively.
  *
