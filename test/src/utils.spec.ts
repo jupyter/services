@@ -9,7 +9,7 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  PromiseDelegate, extend, copy, uuid, urlPathJoin, urlEncodeParts,
+  extend, copy, uuid, urlPathJoin, urlEncodeParts,
   jsonToQueryString, getConfigOption,
   getBaseUrl, getWsUrl, ajaxRequest, loadObject
 } from '../../lib/utils';
@@ -106,74 +106,6 @@ describe('jupyter-js-utils', () => {
 
     it('should return `undefined` for a option that was not given', () => {
       expect(getConfigOption('baz')).to.be(void 0);
-    });
-
-  });
-
-  describe('PromiseDelegate', () => {
-
-    describe('#constructor()', () => {
-
-      it('should create a new promise delegate', () => {
-        let delegate = new PromiseDelegate<number>();
-        expect(delegate instanceof PromiseDelegate).to.be(true);
-      });
-
-    });
-
-    describe('#promise', () => {
-
-      it('should get the underlying promise', done => {
-        let delegate = new PromiseDelegate<number>();
-        delegate.promise.then(value => {
-          expect(value).to.be(1);
-          done();
-        });
-        delegate.resolve(1);
-      });
-
-    });
-
-    describe('#resolve()', () => {
-
-      it('should resolve the underlying promise', done => {
-        let delegate = new PromiseDelegate<number>();
-        delegate.promise.then(value => {
-          expect(value).to.be(1);
-          done();
-        });
-        delegate.resolve(1);
-      });
-
-      it('should accept another promise', done => {
-        let delegate = new PromiseDelegate<number>();
-        delegate.promise.then(value => {
-          expect(value).to.be(1);
-          done();
-        });
-        delegate.resolve(Promise.resolve(1));
-      });
-
-    });
-
-    describe('#reject()', () => {
-
-      it('should reject the underlying promise', done => {
-        let delegate = new PromiseDelegate<number>();
-        delegate.promise.catch(() => {
-          done();
-        });
-        delegate.reject();
-      });
-
-      it('should accept a reason', done => {
-        let delegate = new PromiseDelegate<number>();
-        delegate.promise.catch(reason => {
-          expect(reason).to.be('some reason');
-          done();
-        });
-        delegate.reject('some reason');
-      });
     });
 
   });

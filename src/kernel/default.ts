@@ -6,7 +6,7 @@ import {
 } from '@phosphor/algorithm';
 
 import {
-  JSONObject
+  JSONObject, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import {
@@ -657,7 +657,7 @@ class DefaultKernel implements Kernel.IKernel {
     }
     console.log('Starting websocket', display);
 
-    this._connectionPromise = new utils.PromiseDelegate<void>();
+    this._connectionPromise = new PromiseDelegate<void>();
     this._ws = new WebSocket(url);
 
     // Ensure incoming binary messages are not Blobs
@@ -938,7 +938,7 @@ class DefaultKernel implements Kernel.IKernel {
   private _targetRegistry: { [key: string]: (comm: Kernel.IComm, msg: KernelMessage.ICommOpenMsg) => void; } = Object.create(null);
   private _info: KernelMessage.IInfoReply = null;
   private _pendingMessages: KernelMessage.IMessage[] = [];
-  private _connectionPromise: utils.PromiseDelegate<void> = null;
+  private _connectionPromise: PromiseDelegate<void> = null;
   private _specPromise: Promise<Kernel.ISpecModel> = null;
   private _statusChanged = new Signal<this, Kernel.Status>(this);
   private _iopubMessage = new Signal<this, KernelMessage.IIOPubMessage>(this);
