@@ -9,11 +9,8 @@ import {
 import * as minimist
   from 'minimist';
 
-import * as url
-  from 'url';
-
-import * as urljoin
-  from 'url-join';
+import * as path
+  from 'path-posix';
 
 
 // Stub for requirejs.
@@ -79,18 +76,12 @@ function uuid(): string {
 export interface IUrl {
     href?: string;
     protocol?: string;
-    auth?: string;
     hostname?: string;
     port?: string;
     host?: string;
     pathname?: string;
-    search?: string;
-    query?: string | any;
-    slashes?: boolean;
     hash?: string;
-    path?: string;
 }
-
 
 /**
  * Parse a url into a URL object.
@@ -112,8 +103,12 @@ export interface IUrl {
  */
 
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrl {
-  return url.parse(urlStr, parseQueryString, slashesDenoteHost);
+function urlParse(urlStr: string): IUrl {
+  if (typeof document !== 'undefined') {
+    let a = document.createElement('a');
+    return a;
+  }
+  throw Error('Cannot parse a URL without a document object');
 }
 
 
@@ -125,7 +120,7 @@ function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?
  */
 export
 function urlResolve(from: string, to: string): string {
-  return url.resolve(from, to);
+  return path.resolve(from, to);
 }
 
 
@@ -134,7 +129,7 @@ function urlResolve(from: string, to: string): string {
  */
 export
 function urlPathJoin(...parts: string[]): string {
-  return urljoin(...parts);
+  return path.join(...parts);
 }
 
 
@@ -148,9 +143,9 @@ function urlPathJoin(...parts: string[]): string {
 export
 function urlEncodeParts(uri: string): string {
   // Normalize and join, split, encode, then join.
-  uri = urljoin(uri);
+  uri = path.normalize(uri);
   let parts = uri.split('/').map(encodeURIComponent);
-  return urljoin(...parts);
+  return path.join(...parts);
 }
 
 
@@ -517,9 +512,9 @@ function getWsUrl(baseUrl?: string): string {
     baseUrl = baseUrl || getBaseUrl();
     if (baseUrl.indexOf('http') !== 0) {
       if (typeof location !== 'undefined') {
-        baseUrl = urlPathJoin(location.origin, baseUrl);
+        baseUrl = path.join(location.origin, baseUrl);
       } else {
-        baseUrl = urlPathJoin('http://localhost:8888/', baseUrl);
+        baseUrl = path.join('http://localhost:8888/', baseUrl);
       }
     }
     wsUrl = 'ws' + baseUrl.slice(4);
@@ -541,11 +536,11 @@ function ajaxSettingsWithToken(ajaxSettings?: IAjaxSettings, token?: string): IA
   if (!token) {
     token = getConfigOption('token');
   }
-  if (!token || token == '') {
+  if (!token || token === '') {
     return ajaxSettings;
   }
   if (!ajaxSettings.requestHeaders) {
-    ajaxSettings.requestHeaders = {}
+    ajaxSettings.requestHeaders = {};
   }
   ajaxSettings.requestHeaders['Authorization'] = `token ${token}`;
   return ajaxSettings;

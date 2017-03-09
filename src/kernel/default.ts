@@ -644,8 +644,10 @@ class DefaultKernel implements Kernel.IKernel {
     let partialUrl = utils.urlPathJoin(this._wsUrl, KERNEL_SERVICE_URL,
                                        encodeURIComponent(this._id));
     // Strip any authentication from the display string.
-    let parsed = utils.urlParse(partialUrl);
-    let display = partialUrl.replace(parsed.auth, '');
+    if (typeof document !== 'undefined') {
+      let parsed = utils.urlParse(partialUrl);
+      console.log('Starting websocket', parsed.hostname);
+    }
 
     let url = utils.urlPathJoin(
         partialUrl,
@@ -655,7 +657,6 @@ class DefaultKernel implements Kernel.IKernel {
     if (this._token !== '') {
       url = url + `&token=${encodeURIComponent(this._token)}`;
     }
-    console.log('Starting websocket', display);
 
     this._connectionPromise = new PromiseDelegate<void>();
     this._ws = new WebSocket(url);
