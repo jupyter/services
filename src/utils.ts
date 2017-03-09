@@ -86,26 +86,16 @@ export interface IUrl {
 /**
  * Parse a url into a URL object.
  *
- * @param urlString - The URL string to parse.
- *
- * @param parseQueryString - If `true`, the query property will always be set
- *   to an object returned by the `querystring` module's `parse()` method.
- *   If `false`, the `query` property on the returned URL object will be an
- *   unparsed, undecoded string. Defaults to `false`.
- *
- * @param slashedDenoteHost - If `true`, the first token after the literal
- *   string `//` and preceeding the next `/` will be interpreted as the `host`.
- *   For instance, given `//foo/bar`, the result would be
- *   `{host: 'foo', pathname: '/bar'}` rather than `{pathname: '//foo/bar'}`.
- *   Defaults to `false`.
+ * @param url - The URL string to parse.
  *
  * @returns A URL object.
  */
 
 export
-function urlParse(urlStr: string): IUrl {
+function urlParse(url: string): IUrl {
   if (typeof document !== 'undefined') {
     let a = document.createElement('a');
+    a.herf = url;
     return a;
   }
   throw Error('Cannot parse a URL without a document object');
