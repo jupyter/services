@@ -117,7 +117,7 @@ function urlPathJoin(...parts: string[]): string {
       continue;
     }
     if (url.length > 0 && url[url.length - 1] !== '/') {
-      url = url + '/' + arguments[i];
+      url = url + '/' + parts[i];
     } else {
       url = url + parts[i];
     }
@@ -125,7 +125,7 @@ function urlPathJoin(...parts: string[]): string {
   url = url.replace(/\/\/+/, '/');
 
   // Handle a protocol in the first part.
-  if (parts.length > 0 && parts[0].indexOf('//') !== -1) {
+  if (parts[0] && parts[0].indexOf('//') !== -1) {
     url = url.replace('/', '//');
   }
   return url;
