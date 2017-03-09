@@ -81,6 +81,7 @@ export interface IUrl {
     host?: string;
     pathname?: string;
     hash?: string;
+    search?: string;
 }
 
 /**
