@@ -3,8 +3,6 @@ JupyterLab Services
 
 Javascript client for the Jupyter services REST APIs
 
-[API Docs](http://jupyterlab.github.io/services/)
-
 [REST API Docs](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml)
 
 Note: All functions and classes using the REST API allow an `ajaxOptions` 
