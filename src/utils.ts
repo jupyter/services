@@ -95,7 +95,7 @@ export
 function urlParse(url: string): IUrl {
   if (typeof document !== 'undefined') {
     let a = document.createElement('a');
-    a.herf = url;
+    a.href = url;
     return a;
   }
   throw Error('Cannot parse a URL without a document object');
