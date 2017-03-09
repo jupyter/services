@@ -125,7 +125,7 @@ function urlPathJoin(...parts: string[]): string {
   url = url.replace(/\/\/+/, '/');
 
   // Handle a protocol in the first part.
-  if (parts.length && parts[0].indexOf('//') !== -1) {
+  if (parts.length > 0 && parts[0].indexOf('//') !== -1) {
     url = url.replace('/', '//');
   }
   return url;
