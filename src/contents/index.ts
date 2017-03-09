@@ -452,9 +452,7 @@ class ContentsManager implements Contents.IManager {
    * @param path - An absolute POSIX file path on the server.
    *
    * #### Notes
-   * It is expected that the path contains no relative paths,
-   * use [[ContentsManager.getAbsolutePath]] to get an absolute
-   * path if necessary.
+   * It is expected that the path contains no relative paths.
    */
   getDownloadUrl(path: string): Promise<string> {
     return Promise.resolve(utils.urlPathJoin(this._baseUrl, FILES_URL,
@@ -479,7 +477,7 @@ class ContentsManager implements Contents.IManager {
     ajaxSettings.dataType = 'json';
     if (options) {
       if (options.ext) {
-        options.ext = ContentsManager.normalizeExtension(options.ext);
+        options.ext = Private.normalizeExtension(options.ext);
       }
       ajaxSettings.data = JSON.stringify(options);
     }
@@ -827,66 +825,13 @@ namespace ContentsManager {
      */
     ajaxSettings?: IAjaxSettings;
   }
+}
 
-  /**
-   * Get the absolute POSIX path to a file on the server.
-   *
-   * @param relativePath - The relative POSIX path to the file.
-   *
-   * @param cwd - The optional POSIX current working directory.  The default is
-   *  an empty string.
-   *
-   * #### Notes
-   * Absolute path in this context is equivalent to a POSIX path without
-   * the initial `'/'` because IPEP 27 paths denote `''` as the root.
-   * If the resulting path is not contained within the server root,
-   * returns `null`, since it cannot be served.
-   */
-  export
-  function getAbsolutePath(relativePath: string, cwd = ''): string {
-    // Bail if it looks like a url.
-    let urlObj = utils.urlParse(relativePath);
-    if (urlObj.protocol) {
-      return relativePath;
-    }
-    let norm = posix.normalize(posix.join(cwd, relativePath));
-    if (norm.indexOf('../') === 0) {
-      return null;
-    }
-    return posix.resolve('/', cwd, relativePath).slice(1);
-  }
 
-  /**
-   * Get the last portion of a path, similar to the Unix basename command.
-   */
-  export
-  function basename(path: string, ext?: string): string {
-    return posix.basename(path, ext);
-  }
-
-  /**
-   * Get the directory name of a path, similar to the Unix dirname command.
-   */
-  export
-  function dirname(path: string): string {
-    return posix.dirname(path);
-  }
-
-  /**
-   * Get the extension of the path.
-   *
-   * #### Notes
-   * The extension is the string from the last occurance of the `.`
-   * character to end of string in the last portion of the path.
-   * If there is no `.` in the last portion of the path, or if the first
-   * character of the basename of path [[basename]] is `.`, then an
-   * empty string is returned.
-   */
-  export
-  function extname(path: string): string {
-    return posix.extname(path);
-  }
-
+/**
+ * A namespace for module private data.
+ */
+namespace Private {
   /**
    * Normalize a file extension to be of the type `'.foo'`.
    *

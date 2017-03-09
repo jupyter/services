@@ -104,23 +104,31 @@ function urlParse(url: string): IUrl {
 
 
 /**
- * Resolve a url.
- *
- * Take a base URL, and a href URL, and resolve them as a browser would for
- * an anchor tag.
- */
-export
-function urlResolve(from: string, to: string): string {
-  return path.resolve(from, to);
-}
-
-
-/**
- * Join a sequence of url components and normalizes as in node `path.join`.
+ * Join a sequence of url components with `'/'`.
  */
 export
 function urlPathJoin(...parts: string[]): string {
-  return path.join(...parts);
+  /**
+   * Join a sequence of url components with '/'
+   */
+  let url = '';
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i] === '') {
+      continue;
+    }
+    if (url.length > 0 && url[url.length - 1] !== '/') {
+      url = url + '/' + arguments[i];
+    } else {
+      url = url + parts[i];
+    }
+  }
+  url = url.replace(/\/\/+/, '/');
+
+  // Handle a protocol in the first part.
+  if (parts[0].indexOf('//') !== -1) {
+    url = url.replace('/', '//');
+  }
+  return url;
 }
 
 
@@ -133,10 +141,7 @@ function urlPathJoin(...parts: string[]): string {
  */
 export
 function urlEncodeParts(uri: string): string {
-  // Normalize and join, split, encode, then join.
-  uri = path.normalize(uri);
-  let parts = uri.split('/').map(encodeURIComponent);
-  return path.join(...parts);
+  return urlPathJoin(...uri.split('/').map(encodeURIComponent));
 }
 
 
