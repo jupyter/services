@@ -15,4 +15,4 @@ pushd examples/node
 python main.py 
 popd
 
-#npm run docs
+npm run docs

@@ -24,8 +24,8 @@
     "mocha": "^2.2.5",
     "rimraf": "^2.4.2",
     "text-encoding": "^0.5.2",
-    "typedoc": "^0.5.0",
-    "typescript": "^2.2.1",
+    "typedoc": "^0.5.7",
+    "typescript": "~2.1.6",
     "webpack": "^1.13.1",
     "ws": "^1.0.1",
     "xmlhttprequest": "^1.8.0"
