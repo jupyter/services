@@ -653,7 +653,7 @@ class DefaultKernel implements Kernel.IKernel {
     );
     // if token authentication is in use
     if (this._token !== '') {
-      url += `${parsed.search ? '&' : '?'}token=${this._token}`;
+      url = url + `&token=${encodeURIComponent(this._token)}`;
     }
 
     this._connectionPromise = new PromiseDelegate<void>();
