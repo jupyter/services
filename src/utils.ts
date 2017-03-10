@@ -12,6 +12,9 @@ import * as minimist
 import * as path
   from 'path-posix';
 
+import * as urlparse
+  from 'url-parse';
+
 
 // Stub for requirejs.
 declare var requirejs: any;
@@ -99,7 +102,7 @@ function urlParse(url: string): IUrl {
     a.href = url;
     return a;
   }
-  throw Error('Cannot parse a URL without a document object');
+  return urlparse(url);
 }
 
 
