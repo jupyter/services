@@ -144,117 +144,31 @@ describe('contents', () => {
 
   });
 
-  describe('.getAbsolutePath()', () => {
-
-    it('should get a file in the base directory', () => {
-      let path = ContentsManager.getAbsolutePath('bar.txt');
-      expect(path).to.be('bar.txt');
-    });
-
-    it('should handle a relative path within the path', () => {
-      let url = ContentsManager.getAbsolutePath('fizz/../bar.txt');
-      expect(url).to.be('bar.txt');
-    });
-
-    it('should get a file in the current directory', () => {
-      let path = ContentsManager.getAbsolutePath('./bar.txt', 'baz');
-      expect(path).to.be('baz/bar.txt');
-    });
-
-    it('should get a file in the parent directory', () => {
-      let path = ContentsManager.getAbsolutePath('../bar.txt', '/fizz/buzz');
-      expect(path).to.be('fizz/bar.txt');
-    });
-
-    it('should get a file in the grandparent directory', () => {
-      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz/buzz/bing/');
-      expect(path).to.be('fizz/bar.txt');
-    });
-
-    it('should return `null` if not contained in the base url', () => {
-      let path = ContentsManager.getAbsolutePath('../../bar.txt', 'fizz');
-      expect(path).to.be(null);
-    });
-
-    it('should short-circuit to the root directory of the server', () => {
-      let path = ContentsManager.getAbsolutePath('/bar.txt', 'fizz/buzz');
-      expect(path).to.be('bar.txt');
-    });
-
-    it('should yield the current directory', () => {
-      let path = ContentsManager.getAbsolutePath('.', 'fizz/buzz');
-      expect(path).to.be('fizz/buzz');
-    });
-
-    it('should yield the parent directory', () => {
-      let path = ContentsManager.getAbsolutePath('..', 'fizz/buzz');
-      expect(path).to.be('fizz');
-    });
-
-    it('should not encode characters ', () => {
-      let path = ContentsManager.getAbsolutePath('foo/b ar?.txt');
-      expect(path).to.be('foo/b ar?.txt');
-    });
-
-    it('should bail on a url', () => {
-      let path = ContentsManager.getAbsolutePath('http://../foo.txt');
-      expect(path).to.be('http://../foo.txt');
-    });
-
-  });
-
-  describe('.normalizeExtension()', () => {
-
-    it('should add pass a valid extension through unmodified', () => {
-      let ext = ContentsManager.normalizeExtension('.txt');
-      expect(ext).to.be('.txt');
-    });
-
-    it('should add a leading dot if not present', () => {
-      let ext = ContentsManager.normalizeExtension('txt');
-      expect(ext).to.be('.txt');
-    });
-
-    it('should not convert to lower case', () => {
-      let ext = ContentsManager.normalizeExtension('.TXT');
-      expect(ext).to.be('.TXT');
-    });
-
-    it('should handle an empty extension', () => {
-      let ext = ContentsManager.normalizeExtension('');
-      expect(ext).to.be('');
-    });
-
-  });
-
   describe('#getDownloadUrl()', () => {
 
-    it('should get the url of a file', (done) => {
+    it('should get the url of a file', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
       let test1 = contents.getDownloadUrl('bar.txt');
       let test2 = contents.getDownloadUrl('fizz/buzz/bar.txt');
       let test3 = contents.getDownloadUrl('/bar.txt');
-      Promise.all([test1,test2,test3]).then((urls)=>{
+      return Promise.all([test1, test2, test3]).then(urls => {
         expect(urls[0]).to.be('http://foo/files/bar.txt');
         expect(urls[1]).to.be('http://foo/files/fizz/buzz/bar.txt');
         expect(urls[2]).to.be('http://foo/files/bar.txt');
-        done();
       });
     });
 
-    it('should encode characters', (done) => {
+    it('should encode characters', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
-      contents.getDownloadUrl('b ar?3.txt').then((url)=>{
+      return contents.getDownloadUrl('b ar?3.txt').then(url => {
         expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
-        done();
       });
     });
 
-    it('should not handle relative paths', (done) => {
+    it('should not handle relative paths', () => {
       let contents = new ContentsManager({ baseUrl: 'http://foo', });
-      contents.getDownloadUrl('fizz/../bar.txt').then((url)=>{
+      return contents.getDownloadUrl('fizz/../bar.txt').then(url => {
         expect(url).to.be('http://foo/files/fizz/../bar.txt');
-        done();
       });
     });
 

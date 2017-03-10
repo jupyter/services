@@ -35,10 +35,10 @@ describe('jupyter.services - Integration', () => {
 
   describe('Kernel', () => {
 
-    it('should get kernel specs and start', (done) => {
+    it('should get kernel specs and start', () => {
       // get info about the available kernels and connect to one
       let kernel: Kernel.IKernel;
-      Kernel.getSpecs().then((specs) => {
+      return Kernel.getSpecs().then((specs) => {
         return Kernel.startNew({ name: specs.default });
       }).then(k => {
         kernel = k;
@@ -46,12 +46,12 @@ describe('jupyter.services - Integration', () => {
       }).then(() => {
         // It should handle another shutdown request.
         return Kernel.shutdown(kernel.id);
-      }).then(done, done);
+      });
     });
 
-    it('should interrupt and restart', (done) => {
+    it('should interrupt and restart', () => {
       let kernel: Kernel.IKernel;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         return kernel.ready;
       }).then(() => {
@@ -60,26 +60,26 @@ describe('jupyter.services - Integration', () => {
         return kernel.restart();
       }).then(() => {
         return kernel.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should get info', (done) => {
+    it('should get info', () => {
       let kernel: Kernel.IKernel;
       let content: KernelMessage.IInfoReply;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         return kernel.requestKernelInfo();
       }).then((info) => {
         content = info.content;
         expect(JSONExt.deepEqual(content, kernel.info)).to.be(true);
         return kernel.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should connect to existing kernel and list running kernels', (done) => {
+    it('should connect to existing kernel and list running kernels', () => {
       let kernel: Kernel.IKernel;
       let kernel2: Kernel.IKernel;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         // should grab the same kernel object
         return Kernel.connectTo(kernel.id);
@@ -97,22 +97,22 @@ describe('jupyter.services - Integration', () => {
           throw Error('Should be one at least one running kernel');
         }
         return kernel.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should trigger a reconnect', (done) => {
+    it('should trigger a reconnect', () => {
       let kernel: Kernel.IKernel;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         return kernel.reconnect();
       }).then(() => {
         return kernel.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should handle other kernel messages', (done) => {
+    it('should handle other kernel messages', () => {
       let kernel: Kernel.IKernel;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         return kernel.requestComplete({ code: 'impor', cursor_pos: 4 });
       }).then(msg => {
@@ -141,19 +141,19 @@ describe('jupyter.services - Integration', () => {
           console.log('Execute finished');
           return kernel.shutdown();
         };
-      }).then(done, done);
+      });
     });
 
   });
 
   describe('Session', () => {
 
-    it('should start, connect to existing session and list running sessions', (done) => {
+    it('should start, connect to existing session and list running sessions', () => {
       let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let session: Session.ISession;
       let session2: Session.ISession;
       let id = '';
-      Session.startNew(options).then(value => {
+      return Session.startNew(options).then(value => {
         session = value;
         return session.rename('Untitled2.ipynb');
       }).then(() => {
@@ -179,12 +179,12 @@ describe('jupyter.services - Integration', () => {
       }).then(() => {
         // It should handle another shutdown request.
         return Session.shutdown(id);
-      }).then(done, done);
+      });
     });
 
-    it('should connect to an existing kernel', (done) => {
+    it('should connect to an existing kernel', () => {
       let kernel: Kernel.IKernel;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: Session.IOptions = {
           kernelId: kernel.id,
@@ -194,13 +194,13 @@ describe('jupyter.services - Integration', () => {
       }).then(session => {
         expect(session.kernel.id).to.be(kernel.id);
         return session.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should be able to switch to an existing kernel by id', (done) => {
+    it('should be able to switch to an existing kernel by id', () => {
       let kernel: Kernel.IKernel;
       let session: Session.ISession;
-      Kernel.startNew().then(value => {
+      return Kernel.startNew().then(value => {
         kernel = value;
         let sessionOptions: Session.IOptions = { path: 'Untitled1.ipynb' };
         return Session.startNew(sessionOptions);
@@ -210,35 +210,35 @@ describe('jupyter.services - Integration', () => {
       }).then(newKernel => {
         expect(newKernel.id).to.be(kernel.id);
         return session.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should be able to switch to a new kernel by name', (done) => {
+    it('should be able to switch to a new kernel by name', () => {
       // Get info about the available kernels and connect to one.
       let options: Session.IOptions = { path: 'Untitled1.ipynb' };
       let id: string;
       let session: Session.ISession;
-      Session.startNew(options).then(value => {
+      return Session.startNew(options).then(value => {
         session = value;
         id = session.kernel.id;
         return session.changeKernel({ name: session.kernel.name });
       }).then(newKernel => {
         expect(newKernel.id).to.not.be(id);
         return session.shutdown();
-      }).then(done, done);
+      });
     });
 
-    it('should handle a path change', (done) => {
+    it('should handle a path change', () => {
       let options: Session.IOptions = { path: 'Untitled2a.ipynb' };
       let session: Session.ISession;
       let newPath = 'Untitled2b.ipynb';
-      Session.startNew(options).then(s => {
+      return Session.startNew(options).then(s => {
         session = s;
         return session.rename(newPath);
       }).then(() => {
         expect(session.path).to.be(newPath);
         expect(session.model.notebook.path).to.be(newPath);
-      }).then(done, done);
+      });
     });
 
   });
@@ -280,28 +280,27 @@ describe('jupyter.services - Integration', () => {
 
   describe('Config', () => {
 
-    it('should get a config section on the server and update it', (done) => {
+    it('should get a config section on the server and update it', () => {
       let config: ConfigWithDefaults;
-      ConfigSection.create({ name: 'notebook' }).then(section => {
+      return ConfigSection.create({ name: 'notebook' }).then(section => {
         let defaults: JSONObject = { default_cell_type: 'code' };
         config = new ConfigWithDefaults({ section, defaults, className: 'Notebook' });
         expect(config.get('default_cell_type')).to.be('code');
         return config.set('foo', 'bar');
       }).then(() => {
         expect(config.get('foo')).to.be('bar');
-        done();
-      }).catch(done);
+      });
     });
 
   });
 
   describe('ContentManager', () => {
 
-    it('should list a directory and get the file contents', (done) => {
+    it('should list a directory and get the file contents', () => {
       let contents = new ContentsManager();
       let content: Contents.IModel[];
       let path = '';
-      contents.get('src').then(listing => {
+      return contents.get('src').then(listing => {
         content = listing.content as Contents.IModel[];
         for (let i = 0; i < content.length; i++) {
           if (content[i].type === 'file') {
@@ -311,38 +310,37 @@ describe('jupyter.services - Integration', () => {
         }
       }).then(msg => {
         expect(msg.path).to.be(path);
-        done();
-      }).catch(done);
+      });
     });
 
-    it('should create a new file, rename it, and delete it', (done) => {
+    it('should create a new file, rename it, and delete it', () => {
       let contents = new ContentsManager();
       let options: Contents.ICreateOptions = { type: 'file', ext: '.ipynb' };
-      contents.newUntitled(options).then(model0 => {
+      return contents.newUntitled(options).then(model0 => {
         return contents.rename(model0.path, 'foo.ipynb');
       }).then(model1 => {
         expect(model1.path).to.be('foo.ipynb');
         return contents.delete('foo.ipynb');
-      }).then(done, done);
+      });
     });
 
-    it('should create a file by name and delete it', (done) => {
+    it('should create a file by name and delete it', () => {
       let contents = new ContentsManager();
       let options: Contents.IModel = {
         type: 'file', content: '', format: 'text'
       };
-      contents.save('baz.txt', options).then(model0 => {
+      return contents.save('baz.txt', options).then(model0 => {
         return contents.delete('baz.txt');
-      }).then(done, done);
+      });
     });
 
-    it('should exercise the checkpoint API', (done) => {
+    it('should exercise the checkpoint API', () => {
       let contents = new ContentsManager();
       let options: Contents.IModel = {
         type: 'file', format: 'text', content: 'foo'
       };
       let checkpoint: Contents.ICheckpointModel;
-      contents.save('baz.txt', options).then(model0 => {
+      return contents.save('baz.txt', options).then(model0 => {
         expect(model0.name).to.be('baz.txt');
         return contents.createCheckpoint('baz.txt');
       }).then(value => {
@@ -355,33 +353,33 @@ describe('jupyter.services - Integration', () => {
         return contents.deleteCheckpoint('baz.txt', checkpoint.id);
       }).then(() => {
         return contents.delete('baz.txt');
-      }).then(done, done);
+      });
     });
 
   });
 
   describe('TerminalSession.startNew', () => {
 
-    it('should create and shut down a terminal session', (done) => {
+    it('should create and shut down a terminal session', () => {
       let session: TerminalSession.ISession;
-      TerminalSession.startNew().then(s => {
+      return TerminalSession.startNew().then(s => {
         session = s;
         return session.ready;
       }).then(() => {
         return session.reconnect();
       }).then(() => {
         return session.shutdown();
-      }).then(done, done);
+      });
     });
 
   });
 
   describe('TerminalManager', () => {
 
-    it('should create, list, and shutdown by name', (done) => {
+    it('should create, list, and shutdown by name', () => {
       let manager = new TerminalManager();
       let name = '';
-      manager.ready.then(() => {
+      return manager.ready.then(() => {
         return manager.startNew();
       }).then(session => {
         name = session.name;
@@ -396,9 +394,7 @@ describe('jupyter.services - Integration', () => {
         expect(manager.running().next()).to.be(void 0);
         // It should handle another shutdown request.
         return manager.shutdown(name);
-      }).then(() => {
-        done();
-      }).catch(done);
+      });
     });
 
   });

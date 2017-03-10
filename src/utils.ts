@@ -9,11 +9,11 @@ import {
 import * as minimist
   from 'minimist';
 
-import * as url
-  from 'url';
+import * as path
+  from 'path-posix';
 
-import * as urljoin
-  from 'url-join';
+import * as urlparse
+  from 'url-parse';
 
 
 // Stub for requirejs.
@@ -79,62 +79,56 @@ function uuid(): string {
 export interface IUrl {
     href?: string;
     protocol?: string;
-    auth?: string;
     hostname?: string;
     port?: string;
     host?: string;
     pathname?: string;
-    search?: string;
-    query?: string | any;
-    slashes?: boolean;
     hash?: string;
-    path?: string;
+    search?: string;
 }
-
 
 /**
  * Parse a url into a URL object.
  *
- * @param urlString - The URL string to parse.
- *
- * @param parseQueryString - If `true`, the query property will always be set
- *   to an object returned by the `querystring` module's `parse()` method.
- *   If `false`, the `query` property on the returned URL object will be an
- *   unparsed, undecoded string. Defaults to `false`.
- *
- * @param slashedDenoteHost - If `true`, the first token after the literal
- *   string `//` and preceeding the next `/` will be interpreted as the `host`.
- *   For instance, given `//foo/bar`, the result would be
- *   `{host: 'foo', pathname: '/bar'}` rather than `{pathname: '//foo/bar'}`.
- *   Defaults to `false`.
+ * @param url - The URL string to parse.
  *
  * @returns A URL object.
  */
 
 export
-function urlParse(urlStr: string, parseQueryString?: boolean, slashesDenoteHost?: boolean): IUrl {
-  return url.parse(urlStr, parseQueryString, slashesDenoteHost);
+function urlParse(url: string): IUrl {
+  if (typeof document !== 'undefined') {
+    let a = document.createElement('a');
+    a.href = url;
+    return a;
+  }
+  return urlparse(url);
 }
 
 
 /**
- * Resolve a url.
- *
- * Take a base URL, and a href URL, and resolve them as a browser would for
- * an anchor tag.
- */
-export
-function urlResolve(from: string, to: string): string {
-  return url.resolve(from, to);
-}
-
-
-/**
- * Join a sequence of url components and normalizes as in node `path.join`.
+ * Join a sequence of url components with `'/'`.
  */
 export
 function urlPathJoin(...parts: string[]): string {
-  return urljoin(...parts);
+  // Adapted from url-join.
+  // Copyright (c) 2016 José F. Romaniello, MIT License.
+  // https://github.com/jfromaniello/url-join/blob/v1.1.0/lib/url-join.js
+  let str = [].slice.call(parts, 0).join('/');
+
+  // make sure protocol is followed by two slashes
+  str = str.replace(/:\//g, '://');
+
+  // remove consecutive slashes
+  str = str.replace(/([^:\s])\/+/g, '$1/');
+
+  // remove trailing slash before parameters or hash
+  str = str.replace(/\/(\?|&|#[^!])/g, '$1');
+
+  // replace ? in parameters with &
+  str = str.replace(/(\?.+)\?/g, '$1&');
+
+  return str;
 }
 
 
@@ -147,10 +141,7 @@ function urlPathJoin(...parts: string[]): string {
  */
 export
 function urlEncodeParts(uri: string): string {
-  // Normalize and join, split, encode, then join.
-  uri = urljoin(uri);
-  let parts = uri.split('/').map(encodeURIComponent);
-  return urljoin(...parts);
+  return urlPathJoin(...uri.split('/').map(encodeURIComponent));
 }
 
 
@@ -517,9 +508,9 @@ function getWsUrl(baseUrl?: string): string {
     baseUrl = baseUrl || getBaseUrl();
     if (baseUrl.indexOf('http') !== 0) {
       if (typeof location !== 'undefined') {
-        baseUrl = urlPathJoin(location.origin, baseUrl);
+        baseUrl = path.join(location.origin, baseUrl);
       } else {
-        baseUrl = urlPathJoin('http://localhost:8888/', baseUrl);
+        baseUrl = path.join('http://localhost:8888/', baseUrl);
       }
     }
     wsUrl = 'ws' + baseUrl.slice(4);
@@ -541,11 +532,11 @@ function ajaxSettingsWithToken(ajaxSettings?: IAjaxSettings, token?: string): IA
   if (!token) {
     token = getConfigOption('token');
   }
-  if (!token || token == '') {
+  if (!token || token === '') {
     return ajaxSettings;
   }
   if (!ajaxSettings.requestHeaders) {
-    ajaxSettings.requestHeaders = {}
+    ajaxSettings.requestHeaders = {};
   }
   ajaxSettings.requestHeaders['Authorization'] = `token ${token}`;
   return ajaxSettings;
