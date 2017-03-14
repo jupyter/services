@@ -143,6 +143,40 @@ namespace Kernel {
     reconnect(): Promise<void>;
 
     /**
+     * Interrupt a kernel.
+     *
+     * @returns A promise that resolves when the kernel has interrupted.
+     *
+     * #### Notes
+     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
+     *
+     * The promise is fulfilled on a valid response and rejected otherwise.
+     *
+     * It is assumed that the API call does not mutate the kernel id or name.
+     *
+     * The promise will be rejected if the kernel status is `'dead'` or if the
+     * request fails or the response is invalid.
+     */
+    interrupt(): Promise<void>;
+
+    /**
+     * Restart a kernel.
+     *
+     * @returns A promise that resolves when the kernel has restarted.
+     *
+     * #### Notes
+     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
+     *
+     * Any existing Future or Comm objects are cleared.
+     *
+     * It is assumed that the API call does not mutate the kernel id or name.
+     *
+     * The promise will be rejected if the kernel status is `'dead'` or if the
+     * request fails or the response is invalid.
+     */
+    restart(): Promise<void>;
+
+    /**
      * Send a `kernel_info_request` message.
      *
      * @param content - The content of the request.
@@ -347,40 +381,6 @@ namespace Kernel {
      * The Ajax settings used for server requests.
      */
     ajaxSettings: IAjaxSettings;
-
-    /**
-     * Interrupt a kernel.
-     *
-     * @returns A promise that resolves when the kernel has interrupted.
-     *
-     * #### Notes
-     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels).
-     *
-     * The promise is fulfilled on a valid response and rejected otherwise.
-     *
-     * It is assumed that the API call does not mutate the kernel id or name.
-     *
-     * The promise will be rejected if the kernel status is `'dead'` or if the
-     * request fails or the response is invalid.
-     */
-    interrupt(): Promise<void>;
-
-    /**
-     * Restart a kernel.
-     *
-     * @returns A promise that resolves when the kernel has restarted.
-     *
-     * #### Notes
-     * Uses the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels) and validates the response model.
-     *
-     * Any existing Future or Comm objects are cleared.
-     *
-     * It is assumed that the API call does not mutate the kernel id or name.
-     *
-     * The promise will be rejected if the kernel status is `'dead'` or if the
-     * request fails or the response is invalid.
-     */
-    restart(): Promise<void>;
 
     /**
      * Shutdown a kernel.
