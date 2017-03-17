@@ -123,7 +123,7 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Dispose of the resources held by the session.
    */
   dispose(): void {
-    if (this.isDisposed) {
+    if (this._isDisposed) {
       return;
     }
     this._isDisposed = true;
@@ -140,6 +140,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
    * Send a message to the terminal session.
    */
   send(message: TerminalSession.IMessage): void {
+    if (this._isDisposed) {
+      return;
+    }
+
     let msg: JSONPrimitive[] = [message.type];
     msg.push(...message.content);
     let value = JSON.stringify(msg);
