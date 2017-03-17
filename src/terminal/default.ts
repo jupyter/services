@@ -195,6 +195,10 @@ class DefaultTerminalSession implements TerminalSession.ISession {
     this._ws = new WebSocket(wsUrl);
 
     this._ws.onmessage = (event: MessageEvent) => {
+      if (this._isDisposed) {
+        return;
+      }
+
       let data = JSON.parse(event.data) as JSONPrimitive[];
       this._messageReceived.emit({
         type: data[0] as TerminalSession.MessageType,
@@ -204,10 +208,16 @@ class DefaultTerminalSession implements TerminalSession.ISession {
 
     return new Promise<void>((resolve, reject) => {
       this._ws.onopen = (event: MessageEvent) => {
+        if (this._isDisposed) {
+          return;
+        }
         this._isReady = true;
         resolve(void 0);
       };
       this._ws.onerror = (event: Event) => {
+        if (this._isDisposed) {
+          return;
+        }
         reject(event);
       };
     });
