@@ -15,4 +15,6 @@ pushd examples/node
 python main.py 
 popd
 
-npm run docs
+if [[ $TRAVIS_NODE_VERSION == "5.1" ]]; then    
+    npm run docs
+fi
