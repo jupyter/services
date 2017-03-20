@@ -1,0 +1,622 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@jupyterlab/services</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@jupyterlab/services</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1> @jupyterlab/services</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<h1 id="jupyterlab-services">JupyterLab Services</h1>
+				<p>Javascript client for the Jupyter services REST APIs</p>
+				<p><a href="http://jupyterlab.github.io/services/">API Docs</a></p>
+				<p><a href="http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml">REST API Docs</a></p>
+				<p>Note: All functions and classes using the REST API allow an <code>ajaxOptions</code>
+				parameter to configure requests.</p>
+				<h2 id="package-install">Package Install</h2>
+				<p><strong>Prerequisites</strong></p>
+				<ul>
+					<li><a href="http://nodejs.org/">node</a></li>
+					<li><a href="https://www.continuum.io/downloads">python</a></li>
+				</ul>
+				<pre><code class="lang-bash">npm install --save @jupyterlab/services
+conda install notebook  <span class="hljs-comment"># notebook 4.2+ required</span>
+</code></pre>
+				<h2 id="source-build">Source Build</h2>
+				<p><strong>Prerequisites</strong></p>
+				<ul>
+					<li><a href="http://git-scm.com/">git</a></li>
+					<li><a href="http://nodejs.org/">node 0.12+</a></li>
+					<li><a href="https://www.continuum.io/downloads">python</a></li>
+				</ul>
+				<pre><code class="lang-bash">git <span class="hljs-built_in">clone</span> https://github.com/jupyterlab/services.git
+<span class="hljs-built_in">cd</span> services
+npm install
+npm run build
+conda install notebook  <span class="hljs-comment"># notebook 4.2+ required</span>
+</code></pre>
+				<p><strong>Rebuild</strong></p>
+				<pre><code class="lang-bash">npm run clean
+npm run build
+</code></pre>
+				<h2 id="run-tests">Run Tests</h2>
+				<p>Follow the source build instructions first.</p>
+				<pre><code class="lang-bash">npm <span class="hljs-built_in">test</span>
+</code></pre>
+				<h2 id="build-docs">Build Docs</h2>
+				<p>Follow the source build instructions first.</p>
+				<pre><code class="lang-bash">npm run docs
+</code></pre>
+				<p>Navigate to <code>docs/index.html</code>.</p>
+				<h2 id="supported-runtimes">Supported Runtimes</h2>
+				<p>The runtime versions which are currently <em>known to work</em> are listed below.
+				Earlier versions may also work, but come with no guarantees.</p>
+				<ul>
+					<li>Node 0.12.7+</li>
+					<li>IE 11+</li>
+					<li>Firefox 32+</li>
+					<li>Chrome 38+</li>
+				</ul>
+				<p>Note: &quot;requirejs&quot; must be included in a global context for Comm targets.<br>This can be as a <code>&lt;script&gt;</code> tag in the browser or by using the <code>requirejs</code>
+					package in node (<code>npm install requirejs</code> and setting
+					<code>global.requirejs = require(&#39;requirejs&#39;);</code>).  See the <code>examples</code> folder
+				for usage.</p>
+				<h2 id="starting-the-notebook-server">Starting the Notebook Server</h2>
+				<p>Follow the package install instructions first.</p>
+				<p>The library requires a running Jupyter Notebook server, launched as:</p>
+				<pre><code class="lang-bash">python -m notebook --NotebookApp.allow_origin=<span class="hljs-string">"*"</span>
+</code></pre>
+				<p>The origin can be specified directly instead of using <code>*</code> if desired.</p>
+				<h2 id="bundling-for-the-browser">Bundling for the Browser</h2>
+				<p>Follow the package install instructions first.</p>
+				<p>See <code>examples/browser</code> for an example of using Webpack to bundle the library.</p>
+				<p>Note: Some browsers (such as IE11), require a polyfill for Promises.
+				The example demonstrates the use of the polyfill.</p>
+				<h2 id="usage-from-node-js">Usage from Node.js</h2>
+				<p>Follow the package install instructions first.</p>
+				<pre><code class="lang-bash">npm install --save xmlhttprequest ws
+</code></pre>
+				<p>Override the global <code>XMLHttpRequest</code> and <code>WebSocket</code> (in ES6 syntax):</p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { XMLHttpRequest } <span class="hljs-keyword">from</span> <span class="hljs-string">"xmlhttprequest"</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> WebSocket } <span class="hljs-keyword">from</span> <span class="hljs-string">'ws'</span>;
+
+global.XMLHttpRequest = XMLHttpRequest;
+global.WebSocket = WebSocket;
+</code></pre>
+				<p>See <code>examples/node</code> for an example of using an ES5 node script.</p>
+				<h2 id="usage-examples">Usage Examples</h2>
+				<p><strong>Note:</strong> This module is fully compatible with Node/Babel/ES6/ES5. The
+					examples below are written in TypeScript using ES6 syntax.  Simply
+					omit the type declarations when using a language other than TypeScript.
+				A translator such as Babel can be used to convert from ES6 -&gt; ES5.</p>
+				<p><strong>Kernel</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> {
+  KernelMessage, Kernel
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'@jupyterlab/services'</span>;
+
+<span class="hljs-comment">// The base url of the notebook server.</span>
+<span class="hljs-keyword">const</span> BASE_URL = <span class="hljs-string">'http://localhost:8000'</span>;
+
+
+<span class="hljs-comment">// Get a list of available kernels and connect to one.</span>
+Kernel.listRunning({ baseUrl: BASE_URL }).then(<span class="hljs-function"><span class="hljs-params">kernelModels</span> =&gt;</span> {
+  <span class="hljs-keyword">let</span> options: Kernel.IOptions = {
+    baseUrl: BASE_URL,
+    name: kernelModels[<span class="hljs-number">0</span>].name
+  };
+  Kernel.connectTo(kernelModels[<span class="hljs-number">0</span>].id, options).then(<span class="hljs-function">(<span class="hljs-params">kernel</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(kernel.name);
+  });
+});
+
+
+<span class="hljs-comment">// Get info about the available kernels and start a new one.</span>
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(<span class="hljs-function"><span class="hljs-params">kernelSpecs</span> =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Default spec:'</span>, kernelSpecs.default);
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Available specs'</span>, <span class="hljs-built_in">Object</span>.keys(kernelSpecs.kernelspecs));
+  <span class="hljs-comment">// use the default name</span>
+  <span class="hljs-keyword">let</span> options: Kernel.IOptions = {
+    baseUrl: BASE_URL,
+    name: kernelSpecs.default
+  };
+  Kernel.startNew(options).then(<span class="hljs-function"><span class="hljs-params">kernel</span> =&gt;</span> {
+    <span class="hljs-comment">// Execute and handle replies.</span>
+    <span class="hljs-keyword">let</span> future = kernel.requestExecute({ code: <span class="hljs-string">'a = 1'</span> } );
+    future.onDone = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Future is fulfilled'</span>);
+    };
+    future.onIOPub = <span class="hljs-function">(<span class="hljs-params">msg</span>) =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(msg.content);  <span class="hljs-comment">// Print rich output data.</span>
+    };
+
+    <span class="hljs-comment">// Restart the kernel and then send an inspect message.</span>
+    kernel.restart().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">let</span> request: KernelMessage.IInspectRequest = {
+        code: <span class="hljs-string">'hello'</span>, cursor_pos: <span class="hljs-number">4</span>, detail_level: <span class="hljs-number">0</span>
+      };
+      kernel.requestInspect(request).then(<span class="hljs-function"><span class="hljs-params">reply</span> =&gt;</span> {
+        <span class="hljs-built_in">console</span>.log(reply.content.data);
+      });
+    });
+
+    <span class="hljs-comment">// Interrupt the kernel and then send a complete message.</span>
+    kernel.interrupt().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      kernel.requestComplete({ code: <span class="hljs-string">'impor'</span>, cursor_pos: <span class="hljs-number">4</span> } ).then(<span class="hljs-function">(<span class="hljs-params">reply</span>) =&gt;</span> {
+        <span class="hljs-built_in">console</span>.log(reply.content.matches);
+      });
+    });
+
+    <span class="hljs-comment">// Register a callback for when the kernel changes state.</span>
+    kernel.statusChanged.connect(<span class="hljs-function">(<span class="hljs-params">status</span>) =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'status'</span>, status);
+    });
+
+    <span class="hljs-comment">// Kill the kernel.</span>
+    kernel.shutdown().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Kernel shut down'</span>);
+    });
+  });
+});
+</code></pre>
+				<p><strong>Session</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> {
+  Session
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'@jupyterlab/services'</span>;
+
+
+<span class="hljs-comment">// The base url of the Jupyter server.</span>
+<span class="hljs-keyword">const</span> BASE_URL = <span class="hljs-string">'http://localhost:8000'</span>;
+
+
+<span class="hljs-comment">// Get a list of available sessions and connect to one.</span>
+Session.listRunning({ baseUrl: BASE_URL }).then(<span class="hljs-function"><span class="hljs-params">sessionModels</span> =&gt;</span> {
+  <span class="hljs-keyword">let</span> options = {
+    baseUrl: BASE_URL,
+    kernelName: sessionModels[<span class="hljs-number">0</span>].kernel.name,
+    path: sessionModels[<span class="hljs-number">0</span>].notebook.path
+  };
+  Session.connectTo(sessionModels[<span class="hljs-number">0</span>].id, options).then(<span class="hljs-function">(<span class="hljs-params">session</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(session.kernel.name);
+  });
+});
+
+<span class="hljs-comment">// Start a new session.</span>
+<span class="hljs-keyword">let</span> options = {
+  baseUrl: BASE_URL,
+  kernelName: <span class="hljs-string">'python'</span>,
+  path: <span class="hljs-string">'/tmp/foo.ipynb'</span>
+};
+
+Session.startNew(options).then(<span class="hljs-function"><span class="hljs-params">session</span> =&gt;</span> {
+  <span class="hljs-comment">// Execute and handle replies on the kernel.</span>
+  <span class="hljs-keyword">let</span> future = session.kernel.requestExecute({ code: <span class="hljs-string">'a = 1'</span> });
+  future.onDone = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Future is fulfilled'</span>);
+  };
+
+  <span class="hljs-comment">// Rename the session.</span>
+  session.rename(<span class="hljs-string">'/local/bar.ipynb'</span>).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Session renamed to'</span>, session.path);
+  });
+
+  <span class="hljs-comment">// Register a callback for when the session dies.</span>
+  session.terminated.connect(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'session died'</span>);
+  });
+
+  <span class="hljs-comment">// Kill the session.</span>
+  session.shutdown().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'session closed'</span>);
+  });
+
+});
+</code></pre>
+				<p><strong>Comm</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-comment">// The base url of the Jupyter server.</span>
+<span class="hljs-keyword">const</span> BASE_URL = <span class="hljs-string">'http://localhost:8000'</span>;
+
+
+<span class="hljs-comment">// Create a comm from the server side.</span>
+<span class="hljs-comment">//</span>
+<span class="hljs-comment">// Get info about the available kernels and connect to one.</span>
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(<span class="hljs-function"><span class="hljs-params">kernelSpecs</span> =&gt;</span> {
+  <span class="hljs-keyword">return</span> Kernel.startNew({
+    baseUrl: BASE_URL,
+    name: kernelSpecs.default,
+  });
+}).then(<span class="hljs-function"><span class="hljs-params">kernel</span> =&gt;</span> {
+  <span class="hljs-keyword">let</span> comm = kernel.connectToComm(<span class="hljs-string">'test'</span>);
+  comm.open(<span class="hljs-string">'initial state'</span>);
+  comm.send(<span class="hljs-string">'test'</span>);
+  comm.close(<span class="hljs-string">'bye'</span>);
+});
+
+<span class="hljs-comment">// Create a comm from the client side.</span>
+Kernel.getSpecs({ baseUrl: BASE_URL }).then(<span class="hljs-function"><span class="hljs-params">kernelSpecs</span> =&gt;</span> {
+  <span class="hljs-keyword">return</span> Kernel.startNew({
+    baseUrl: BASE_URL,
+    name: kernelSpecs.default,
+  });
+}).then(<span class="hljs-function"><span class="hljs-params">kernel</span> =&gt;</span> {
+  kernel.registerCommTarget(<span class="hljs-string">'test2'</span>, <span class="hljs-function">(<span class="hljs-params">comm, commMsg</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (commMsg.content.target_name !== <span class="hljs-string">'test2'</span>) {
+       <span class="hljs-keyword">return</span>;
+    }
+    comm.onMsg = <span class="hljs-function">(<span class="hljs-params">msg</span>) =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(msg);  <span class="hljs-comment">// 'hello'</span>
+    };
+    comm.onClose = <span class="hljs-function">(<span class="hljs-params">msg</span>) =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(msg);  <span class="hljs-comment">// 'bye'</span>
+    };
+  });
+
+  <span class="hljs-keyword">let</span> code = [
+    <span class="hljs-string">'from ipykernel.comm import Comm'</span>,
+    <span class="hljs-string">'comm = Comm(target_name="test2")'</span>,
+    <span class="hljs-string">'comm.send(data="hello")'</span>,
+    <span class="hljs-string">'comm.close(data="bye")'</span>
+  ].join(<span class="hljs-string">'\n'</span>);
+  kernel.requestExecute({ code: code });
+});
+</code></pre>
+				<p><strong>Contents</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> {
+  ContentsManager
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'@jupyterlab/services'</span>;
+
+<span class="hljs-comment">// The base url of the Jupyter server.</span>
+<span class="hljs-keyword">let</span> baseUrl = <span class="hljs-string">'http://localhost:8000'</span>;
+
+
+<span class="hljs-keyword">let</span> contents = <span class="hljs-keyword">new</span> ContentsManager({ baseUrl });
+
+<span class="hljs-comment">// Create a new python file.</span>
+contents.newUntitled({ path: <span class="hljs-string">'/foo'</span>, <span class="hljs-keyword">type</span>: <span class="hljs-string">'file'</span>, ext: <span class="hljs-string">'py'</span> }).then(
+  <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'new file:'</span>, model.path);
+  }
+);
+
+<span class="hljs-comment">// Get the contents of a directory.</span>
+contents.get(<span class="hljs-string">'/foo/bar'</span>).then(
+  <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'files:'</span>, model.content);
+  }
+);
+
+<span class="hljs-comment">// Rename a file.</span>
+contents.rename(<span class="hljs-string">'/foo/bar.txt'</span>, <span class="hljs-string">'/foo/baz.txt'</span>);
+
+<span class="hljs-comment">// Save a file.</span>
+contents.save(<span class="hljs-string">'/foo/test.ipynb'</span>);
+
+<span class="hljs-comment">// Delete a file.</span>
+contents.delete(<span class="hljs-string">'/foo/bar.txt'</span>);
+
+<span class="hljs-comment">// Copy a file.</span>
+contents.copy(<span class="hljs-string">'/foo/bar.txt'</span>, <span class="hljs-string">'/baz'</span>).then(<span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'new path'</span>, model.path);
+});
+
+<span class="hljs-comment">// Create a checkpoint.</span>
+contents.createCheckpoint(<span class="hljs-string">'/foo/bar.ipynb'</span>).then(<span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+  <span class="hljs-keyword">let</span> checkpoint = model;
+
+  <span class="hljs-comment">// Restore a checkpoint.</span>
+  contents.restoreCheckpoint(<span class="hljs-string">'/foo/bar.ipynb'</span>, checkpoint.id);
+
+  <span class="hljs-comment">// Delete a checkpoint.</span>
+  contents.deleteCheckpoint(<span class="hljs-string">'/foo/bar.ipynb'</span>, checkpoint.id);
+});
+
+<span class="hljs-comment">// List checkpoints for a file.</span>
+contents.listCheckpoints(<span class="hljs-string">'/foo/bar.txt'</span>).then(<span class="hljs-function">(<span class="hljs-params">models</span>) =&gt;</span> {
+    <span class="hljs-built_in">console</span>.log(models[<span class="hljs-number">0</span>].id);
+});
+</code></pre>
+				<p><strong>Configuration</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> {
+  ConfigWithDefaults, ConfigSection
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'@jupyterlab/services'</span>;
+
+<span class="hljs-comment">// The base url of the Jupyter server.</span>
+<span class="hljs-keyword">let</span> baseUrl = <span class="hljs-string">'http://localhost:8000'</span>;
+
+ConfigSection.create({ name: <span class="hljs-string">'notebook'</span>, baseUrl }).then(<span class="hljs-function"><span class="hljs-params">section</span> =&gt;</span> {
+  <span class="hljs-keyword">let</span> config = <span class="hljs-keyword">new</span> ConfigWithDefaults({
+    section,
+    defaults: { default_cell_type: <span class="hljs-string">'code'</span> },
+    className: <span class="hljs-string">'Notebook'</span>
+  });
+  <span class="hljs-built_in">console</span>.log(config.get(<span class="hljs-string">'default_cell_type'</span>));   <span class="hljs-comment">// 'code'</span>
+  config.set(<span class="hljs-string">'foo'</span>, <span class="hljs-string">'bar'</span>).then(<span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> {
+     <span class="hljs-built_in">console</span>.log(data); <span class="hljs-comment">// "{ 'foo': 'bar' }"</span>
+  });
+});
+</code></pre>
+				<p><strong>Terminals</strong></p>
+				<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> {
+  TerminalSession
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'@jupyterlab/services'</span>;
+
+
+<span class="hljs-comment">// Create a named terminal session and send some data.</span>
+TerminalSession.startNew().then(<span class="hljs-function"><span class="hljs-params">session</span> =&gt;</span> {
+  session.send({ <span class="hljs-keyword">type</span>: <span class="hljs-string">'stdin'</span>, content: [<span class="hljs-string">'foo'</span>] });
+});
+</code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/configsection.html">Config<wbr>Section</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/contents.html">Contents</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/kernel.html">Kernel</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/kernelmessage.html">Kernel<wbr>Message</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/session.html">Session</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/terminalsession.html">Terminal<wbr>Session</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/nbformat.html">nbformat</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/commhandler.html" class="tsd-kind-icon">Comm<wbr>Handler</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/configwithdefaults.html" class="tsd-kind-icon">Config<wbr>With<wbr>Defaults</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/contentsmanager.html" class="tsd-kind-icon">Contents<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/defaultkernel.html" class="tsd-kind-icon">Default<wbr>Kernel</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/defaultsession.html" class="tsd-kind-icon">Default<wbr>Session</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/defaultterminalsession.html" class="tsd-kind-icon">Default<wbr>Terminal<wbr>Session</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/kernelfuturehandler.html" class="tsd-kind-icon">Kernel<wbr>Future<wbr>Handler</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/kernelmanager.html" class="tsd-kind-icon">Kernel<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/servicemanager.html" class="tsd-kind-icon">Service<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sessionmanager.html" class="tsd-kind-icon">Session<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/terminalmanager.html" class="tsd-kind-icon">Terminal<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iajaxerror.html" class="tsd-kind-icon">IAjax<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iajaxsettings.html" class="tsd-kind-icon">IAjax<wbr>Settings</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iajaxsuccess.html" class="tsd-kind-icon">IAjax<wbr>Success</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iconfigsection.html" class="tsd-kind-icon">IConfig<wbr>Section</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iservicemanager.html" class="tsd-kind-icon">IService<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iurl.html" class="tsd-kind-icon">IUrl</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#ajaxrequest" class="tsd-kind-icon">ajax<wbr>Request</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#ajaxsettingswithtoken" class="tsd-kind-icon">ajax<wbr>Settings<wbr>With<wbr>Token</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#copy" class="tsd-kind-icon">copy</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#deserialize" class="tsd-kind-icon">deserialize</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#extend" class="tsd-kind-icon">extend</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getbaseurl" class="tsd-kind-icon">get<wbr>Base<wbr>Url</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getconfigoption" class="tsd-kind-icon">get<wbr>Config<wbr>Option</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getwsurl" class="tsd-kind-icon">get<wbr>WsUrl</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#jsontoquerystring" class="tsd-kind-icon">json<wbr>ToQuery<wbr>String</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#loadobject" class="tsd-kind-icon">load<wbr>Object</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#makeajaxerror" class="tsd-kind-icon">make<wbr>Ajax<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#serialize" class="tsd-kind-icon">serialize</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#urlencodeparts" class="tsd-kind-icon">url<wbr>Encode<wbr>Parts</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#urlparse" class="tsd-kind-icon">url<wbr>Parse</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#urlpathjoin" class="tsd-kind-icon">url<wbr>Path<wbr>Join</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#uuid" class="tsd-kind-icon">uuid</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatecheckpointmodel" class="tsd-kind-icon">validate<wbr>Checkpoint<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatecontentsmodel" class="tsd-kind-icon">validate<wbr>Contents<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatemessage" class="tsd-kind-icon">validate<wbr>Message</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatemodel" class="tsd-kind-icon">validate<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatespecmodel" class="tsd-kind-icon">validate<wbr>Spec<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#validatespecmodels" class="tsd-kind-icon">validate<wbr>Spec<wbr>Models</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>

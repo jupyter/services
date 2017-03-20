@@ -1,0 +1,1325 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>IKernel | @jupyterlab/services</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="../assets/js/search.js" data-base="..">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="../index.html" class="title">@jupyterlab/services</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="../globals.html">Globals</a>
+				</li>
+				<li>
+					<a href="../modules/kernel.html">Kernel</a>
+				</li>
+				<li>
+					<a href="kernel.ikernel.html">IKernel</a>
+				</li>
+			</ul>
+			<h1>Interface IKernel</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Interface of a Kernel object.</p>
+					</div>
+					<h4 id="notes">Notes</h4>
+					<p>The Kernel object is tied to the lifetime of the Kernel id, which is
+						a unique id for the Kernel session on the server.  The Kernel object
+						manages a websocket connection internally, and will auto-restart if the
+						websocket temporarily loses connection.  Restarting creates a new Kernel
+					process on the server, but preserves the Kernel id.</p>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="tsd-signature-type">IDisposable</span>
+						<ul class="tsd-hierarchy">
+							<li>
+								<span class="target">IKernel</span>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel">
+				<h3>Implemented by</h3>
+				<ul class="tsd-hierarchy">
+					<li><a href="../classes/defaultkernel.html" class="tsd-signature-type">DefaultKernel</a></li>
+				</ul>
+			</section>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#ajaxsettings" class="tsd-kind-icon">ajax<wbr>Settings</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#baseurl" class="tsd-kind-icon">base<wbr>Url</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#clientid" class="tsd-kind-icon">client<wbr>Id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#id" class="tsd-kind-icon">id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#info" class="tsd-kind-icon">info</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#iopubmessage" class="tsd-kind-icon">iopub<wbr>Message</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="kernel.ikernel.html#isdisposed" class="tsd-kind-icon">is<wbr>Disposed</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#isready" class="tsd-kind-icon">is<wbr>Ready</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#model" class="tsd-kind-icon">model</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#name" class="tsd-kind-icon">name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#ready" class="tsd-kind-icon">ready</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#status" class="tsd-kind-icon">status</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#statuschanged" class="tsd-kind-icon">status<wbr>Changed</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#terminated" class="tsd-kind-icon">terminated</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#unhandledmessage" class="tsd-kind-icon">unhandled<wbr>Message</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="kernel.ikernel.html#username" class="tsd-kind-icon">username</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Methods</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#connecttocomm" class="tsd-kind-icon">connect<wbr>ToComm</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="kernel.ikernel.html#dispose" class="tsd-kind-icon">dispose</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#getspec" class="tsd-kind-icon">get<wbr>Spec</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#interrupt" class="tsd-kind-icon">interrupt</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#reconnect" class="tsd-kind-icon">reconnect</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#registercommtarget" class="tsd-kind-icon">register<wbr>Comm<wbr>Target</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#registermessagehook" class="tsd-kind-icon">register<wbr>Message<wbr>Hook</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestcomminfo" class="tsd-kind-icon">request<wbr>Comm<wbr>Info</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestcomplete" class="tsd-kind-icon">request<wbr>Complete</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestexecute" class="tsd-kind-icon">request<wbr>Execute</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requesthistory" class="tsd-kind-icon">request<wbr>History</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestinspect" class="tsd-kind-icon">request<wbr>Inspect</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestiscomplete" class="tsd-kind-icon">request<wbr>IsComplete</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#requestkernelinfo" class="tsd-kind-icon">request<wbr>Kernel<wbr>Info</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#restart" class="tsd-kind-icon">restart</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#sendinputreply" class="tsd-kind-icon">send<wbr>Input<wbr>Reply</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#sendshellmessage" class="tsd-kind-icon">send<wbr>Shell<wbr>Message</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="kernel.ikernel.html#shutdown" class="tsd-kind-icon">shutdown</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="ajaxsettings" class="tsd-anchor"></a>
+					<h3>ajax<wbr>Settings</h3>
+					<div class="tsd-signature tsd-kind-icon">ajax<wbr>Settings<span class="tsd-signature-symbol">:</span> <a href="iajaxsettings.html" class="tsd-signature-type">IAjaxSettings</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L103">kernel/kernel.ts:103</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The Ajax settings used for server requests.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="baseurl" class="tsd-anchor"></a>
+					<h3>base<wbr>Url</h3>
+					<div class="tsd-signature tsd-kind-icon">base<wbr>Url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L98">kernel/kernel.ts:98</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The base url of the kernel.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="clientid" class="tsd-anchor"></a>
+					<h3>client<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">client<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L93">kernel/kernel.ts:93</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The client unique id.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="id" class="tsd-anchor"></a>
+					<h3>id</h3>
+					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L73">kernel/kernel.ts:73</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The id of the server-side kernel.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="info" class="tsd-anchor"></a>
+					<h3>info</h3>
+					<div class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">:</span> <a href="kernelmessage.iinforeply.html" class="tsd-signature-type">IInfoReply</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L116">kernel/kernel.ts:116</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The cached kernel info.</p>
+						</div>
+						<h4 id="notes">Notes</h4>
+						<p>This value will be null until the kernel is ready.</p>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="iopubmessage" class="tsd-anchor"></a>
+					<h3>iopub<wbr>Message</h3>
+					<div class="tsd-signature tsd-kind-icon">iopub<wbr>Message<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ISignal</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><a href="kernelmessage.iiopubmessage.html" class="tsd-signature-type">IIOPubMessage</a><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L63">kernel/kernel.ts:63</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A signal emitted for iopub kernel messages.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
+					<a name="isdisposed" class="tsd-anchor"></a>
+					<h3>is<wbr>Disposed</h3>
+					<div class="tsd-signature tsd-kind-icon">is<wbr>Disposed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<p>Inherited from IDisposable.isDisposed</p>
+						<ul>
+							<li>Defined in /home/travis/build/jupyterlab/services/node_modules/@phosphor/disposable/lib/index.d.ts:12</li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Test whether the object has been disposed.</p>
+						</div>
+						<h4 id="notes">Notes</h4>
+						<p>This property is always safe to access.</p>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="isready" class="tsd-anchor"></a>
+					<h3>is<wbr>Ready</h3>
+					<div class="tsd-signature tsd-kind-icon">is<wbr>Ready<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L121">kernel/kernel.ts:121</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Test whether the manager is ready.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="model" class="tsd-anchor"></a>
+					<h3>model</h3>
+					<div class="tsd-signature tsd-kind-icon">model<span class="tsd-signature-symbol">:</span> <a href="kernel.imodel.html" class="tsd-signature-type">IModel</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L83">kernel/kernel.ts:83</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The model associated with the kernel.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="name" class="tsd-anchor"></a>
+					<h3>name</h3>
+					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L78">kernel/kernel.ts:78</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The name of the server-side kernel.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="ready" class="tsd-anchor"></a>
+					<h3>ready</h3>
+					<div class="tsd-signature tsd-kind-icon">ready<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L126">kernel/kernel.ts:126</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A promise that resolves when the kernel is initially ready.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="status" class="tsd-anchor"></a>
+					<h3>status</h3>
+					<div class="tsd-signature tsd-kind-icon">status<span class="tsd-signature-symbol">:</span> <a href="../modules/kernel.html#status" class="tsd-signature-type">Status</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L108">kernel/kernel.ts:108</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The current status of the kernel.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="statuschanged" class="tsd-anchor"></a>
+					<h3>status<wbr>Changed</h3>
+					<div class="tsd-signature tsd-kind-icon">status<wbr>Changed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ISignal</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><a href="../modules/kernel.html#status" class="tsd-signature-type">Status</a><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L58">kernel/kernel.ts:58</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A signal emitted when the kernel status changes.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="terminated" class="tsd-anchor"></a>
+					<h3>terminated</h3>
+					<div class="tsd-signature tsd-kind-icon">terminated<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ISignal</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L53">kernel/kernel.ts:53</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A signal emitted when the kernel is shut down.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="unhandledmessage" class="tsd-anchor"></a>
+					<h3>unhandled<wbr>Message</h3>
+					<div class="tsd-signature tsd-kind-icon">unhandled<wbr>Message<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ISignal</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><a href="kernelmessage.imessage.html" class="tsd-signature-type">IMessage</a><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L68">kernel/kernel.ts:68</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A signal emitted for unhandled kernel message.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="username" class="tsd-anchor"></a>
+					<h3>username</h3>
+					<div class="tsd-signature tsd-kind-icon">username<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L88">kernel/kernel.ts:88</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The client username.</p>
+						</div>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="connecttocomm" class="tsd-anchor"></a>
+					<h3>connect<wbr>ToComm</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">connect<wbr>ToComm<span class="tsd-signature-symbol">(</span>targetName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, commId<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="kernel.icomm.html" class="tsd-signature-type">IComm</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L359">kernel/kernel.ts:359</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Connect to a comm, or create a new one.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>targetName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The name of the comm target.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> commId: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="kernel.icomm.html" class="tsd-signature-type">IComm</a></h4>
+							<p>A comm instance.</p>
+							<h4 id="notes">Notes</h4>
+							<p>If a client-side comm already exists, it is returned.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a name="dispose" class="tsd-anchor"></a>
+					<h3>dispose</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">dispose<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from IDisposable.dispose</p>
+								<ul>
+									<li>Defined in /home/travis/build/jupyterlab/services/node_modules/@phosphor/disposable/lib/index.d.ts:24</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Dispose of the resources held by the object.</p>
+								</div>
+								<h4 id="notes">Notes</h4>
+								<p>If the object&#39;s <code>dispose</code> method is called more than once, all
+								calls made after the first will be a no-op.</p>
+								<h4 id="undefined-behavior">Undefined Behavior</h4>
+								<p>It is undefined behavior to use any functionality of the object
+								after it has been disposed unless otherwise explicitly noted.</p>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="getspec" class="tsd-anchor"></a>
+					<h3>get<wbr>Spec</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Spec<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernel.ispecmodel.html" class="tsd-signature-type">ISpecModel</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L133">kernel/kernel.ts:133</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the kernel spec.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernel.ispecmodel.html" class="tsd-signature-type">ISpecModel</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the kernel spec.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="interrupt" class="tsd-anchor"></a>
+					<h3>interrupt</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">interrupt<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L178">kernel/kernel.ts:178</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Interrupt a kernel.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves when the kernel has interrupted.</p>
+							<h4 id="notes">Notes</h4>
+							<p>Uses the <a href="http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels">Jupyter Notebook API</a>.</p>
+							<p>The promise is fulfilled on a valid response and rejected otherwise.</p>
+							<p>It is assumed that the API call does not mutate the kernel id or name.</p>
+							<p>The promise will be rejected if the kernel status is <code>&#39;dead&#39;</code> or if the
+							request fails or the response is invalid.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="reconnect" class="tsd-anchor"></a>
+					<h3>reconnect</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">reconnect<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L207">kernel/kernel.ts:207</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Reconnect to a disconnected kernel.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves when the kernel has reconnected.</p>
+							<h4 id="notes">Notes</h4>
+							<p>This is not actually a  standard HTTP request, but useful function
+								nonetheless for reconnecting to the kernel if the connection is somehow
+							lost.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="registercommtarget" class="tsd-anchor"></a>
+					<h3>register<wbr>Comm<wbr>Target</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">register<wbr>Comm<wbr>Target<span class="tsd-signature-symbol">(</span>targetName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, callback<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IDisposable</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L375">kernel/kernel.ts:375</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Register a comm target handler.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>targetName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The name of the comm target.</p>
+									</div>
+								</li>
+								<li>
+									<h5>callback: <span class="tsd-signature-type">function</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The callback invoked for a comm open message.</p>
+									</div>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-siganture">
+											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>comm<span class="tsd-signature-symbol">: </span><a href="kernel.icomm.html" class="tsd-signature-type">IComm</a>, msg<span class="tsd-signature-symbol">: </span><a href="kernelmessage.icommopenmsg.html" class="tsd-signature-type">ICommOpenMsg</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>comm: <a href="kernel.icomm.html" class="tsd-signature-type">IComm</a></h5>
+														</li>
+														<li>
+															<h5>msg: <a href="kernelmessage.icommopenmsg.html" class="tsd-signature-type">ICommOpenMsg</a></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">IDisposable</span></h4>
+							<p>A disposable used to unregister the comm target.</p>
+							<h4 id="notes">Notes</h4>
+							<p>Only one comm target can be registered at a time, an existing
+								callback will be overidden.  A registered comm target handler will take
+							precedence over a comm which specifies a <code>target_module</code>.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="registermessagehook" class="tsd-anchor"></a>
+					<h3>register<wbr>Message<wbr>Hook</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">register<wbr>Message<wbr>Hook<span class="tsd-signature-symbol">(</span>msgId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, hook<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IDisposable</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L396">kernel/kernel.ts:396</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Register an IOPub message hook.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>msgId: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>hook: <span class="tsd-signature-type">function</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The callback invoked for the message.</p>
+									</div>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-siganture">
+											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>msg<span class="tsd-signature-symbol">: </span><a href="kernelmessage.iiopubmessage.html" class="tsd-signature-type">IIOPubMessage</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>msg: <a href="kernelmessage.iiopubmessage.html" class="tsd-signature-type">IIOPubMessage</a></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">IDisposable</span></h4>
+							<p>A disposable used to unregister the message hook.</p>
+							<h4 id="notes">Notes</h4>
+							<p>The IOPub hook system allows you to preempt the handlers for IOPub messages with a
+								given parent_header message id. The most recently registered hook is run first.
+								If the hook returns false, any later hooks and the future&#39;s onIOPub handler will not run.
+								If a hook throws an error, the error is logged to the console and the next hook is run.
+								If a hook is registered during the hook processing, it won&#39;t run until the next message.
+							If a hook is disposed during the hook processing, it will be deactivated immediately.</p>
+							<p>See also <a href="kernel.ifuture.html#registermessagehook">IFuture.registerMessageHook</a>.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestcomminfo" class="tsd-anchor"></a>
+					<h3>request<wbr>Comm<wbr>Info</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>Comm<wbr>Info<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.icomminforequest.html" class="tsd-signature-type">ICommInfoRequest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.icomminforeplymsg.html" class="tsd-signature-type">ICommInfoReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L335">kernel/kernel.ts:335</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send a <code>comm_info_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.icomminforequest.html" class="tsd-signature-type">ICommInfoRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.icomminforeplymsg.html" class="tsd-signature-type">ICommInfoReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#comm_info">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>comm_info_reply</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestcomplete" class="tsd-anchor"></a>
+					<h3>request<wbr>Complete</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>Complete<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.icompleterequest.html" class="tsd-signature-type">ICompleteRequest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.icompletereplymsg.html" class="tsd-signature-type">ICompleteReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L256">kernel/kernel.ts:256</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send a <code>complete_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.icompleterequest.html" class="tsd-signature-type">ICompleteRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.icompletereplymsg.html" class="tsd-signature-type">ICompleteReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#completion">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>complete_reply</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestexecute" class="tsd-anchor"></a>
+					<h3>request<wbr>Execute</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>Execute<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.iexecuterequest.html" class="tsd-signature-type">IExecuteRequest</a>, disposeOnDone<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="kernel.ifuture.html" class="tsd-signature-type">IFuture</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L305">kernel/kernel.ts:305</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send an <code>execute_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.iexecuterequest.html" class="tsd-signature-type">IExecuteRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> disposeOnDone: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to dispose of the future when done.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="kernel.ifuture.html" class="tsd-signature-type">IFuture</a></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#execute">Messaging in Jupyter</a>.</p>
+							<p>Future <code>onReply</code> is called with the <code>execute_reply</code> content when the
+							shell reply is received and validated.</p>
+							<p><strong>See also:</strong> <a href="kernelmessage.iexecutereply.html">IExecuteReply</a></p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requesthistory" class="tsd-anchor"></a>
+					<h3>request<wbr>History</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>History<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.ihistoryrequest.html" class="tsd-signature-type">IHistoryRequest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.ihistoryreplymsg.html" class="tsd-signature-type">IHistoryReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L286">kernel/kernel.ts:286</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send a <code>history_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.ihistoryrequest.html" class="tsd-signature-type">IHistoryRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.ihistoryreplymsg.html" class="tsd-signature-type">IHistoryReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#history">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>history_reply</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestinspect" class="tsd-anchor"></a>
+					<h3>request<wbr>Inspect</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>Inspect<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.iinspectrequest.html" class="tsd-signature-type">IInspectRequest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iinspectreplymsg.html" class="tsd-signature-type">IInspectReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L271">kernel/kernel.ts:271</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send an <code>inspect_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.iinspectrequest.html" class="tsd-signature-type">IInspectRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iinspectreplymsg.html" class="tsd-signature-type">IInspectReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#introspection">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>inspect_reply</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestiscomplete" class="tsd-anchor"></a>
+					<h3>request<wbr>IsComplete</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>IsComplete<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.iiscompleterequest.html" class="tsd-signature-type">IIsCompleteRequest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iiscompletereplymsg.html" class="tsd-signature-type">IIsCompleteReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L320">kernel/kernel.ts:320</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send an <code>is_complete_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.iiscompleterequest.html" class="tsd-signature-type">IIsCompleteRequest</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the request.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iiscompletereplymsg.html" class="tsd-signature-type">IIsCompleteReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#code-completeness">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>is_complete_response</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="requestkernelinfo" class="tsd-anchor"></a>
+					<h3>request<wbr>Kernel<wbr>Info</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">request<wbr>Kernel<wbr>Info<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iinforeplymsg.html" class="tsd-signature-type">IInfoReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L241">kernel/kernel.ts:241</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send a <code>kernel_info_request</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="kernelmessage.iinforeplymsg.html" class="tsd-signature-type">IInfoReplyMsg</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves with the response message.</p>
+							<h4 id="notes">Notes</h4>
+							<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#kernel-info">Messaging in Jupyter</a>.</p>
+							<p>Fulfills with the <code>kernel_info_response</code> content when the shell reply is
+							received and validated.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="restart" class="tsd-anchor"></a>
+					<h3>restart</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">restart<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L195">kernel/kernel.ts:195</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Restart a kernel.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves when the kernel has restarted.</p>
+							<h4 id="notes">Notes</h4>
+							<p>Uses the <a href="http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels">Jupyter Notebook API</a> and validates the response model.</p>
+							<p>Any existing Future or Comm objects are cleared.</p>
+							<p>It is assumed that the API call does not mutate the kernel id or name.</p>
+							<p>The promise will be rejected if the kernel status is <code>&#39;dead&#39;</code> or if the
+							request fails or the response is invalid.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="sendinputreply" class="tsd-anchor"></a>
+					<h3>send<wbr>Input<wbr>Reply</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">send<wbr>Input<wbr>Reply<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><a href="kernelmessage.iinputreply.html" class="tsd-signature-type">IInputReply</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L345">kernel/kernel.ts:345</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send an <code>input_reply</code> message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>content: <a href="kernelmessage.iinputreply.html" class="tsd-signature-type">IInputReply</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The content of the reply.</p>
+										<h4 id="notes">Notes</h4>
+										<p>See <a href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#messages-on-the-stdin-router-dealer-sockets">Messaging in Jupyter</a>.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="sendshellmessage" class="tsd-anchor"></a>
+					<h3>send<wbr>Shell<wbr>Message</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">send<wbr>Shell<wbr>Message<span class="tsd-signature-symbol">(</span>msg<span class="tsd-signature-symbol">: </span><a href="kernelmessage.ishellmessage.html" class="tsd-signature-type">IShellMessage</a>, expectReply<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span>, disposeOnDone<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="kernel.ifuture.html" class="tsd-signature-type">IFuture</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L161">kernel/kernel.ts:161</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send a shell message to the kernel.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>msg: <a href="kernelmessage.ishellmessage.html" class="tsd-signature-type">IShellMessage</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The fully formed shell message to send.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> expectReply: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to expect a shell reply message.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> disposeOnDone: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to dispose of the future when done.</p>
+										<h4 id="notes">Notes</h4>
+										<p>Send a message to the kernel&#39;s shell channel, yielding a future object
+										for accepting replies.</p>
+										<p>If <code>expectReply</code> is given and <code>true</code>, the future is disposed when both a
+											shell reply and an idle status message are received. If <code>expectReply</code>
+											is not given or is <code>false</code>, the future is disposed when an idle status
+										message is received.</p>
+										<p>If <code>disposeOnDone</code> is given and <code>false</code>, the future will not be disposed
+											of when the future is done, instead relying on the caller to dispose of it.
+										This allows for the handling of out-of-order output from ill-behaved kernels.</p>
+										<p>All replies are validated as valid kernel messages.</p>
+										<p>If the kernel status is <code>&#39;dead&#39;</code>, this will throw an error.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="kernel.ifuture.html" class="tsd-signature-type">IFuture</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="shutdown" class="tsd-anchor"></a>
+					<h3>shutdown</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">shutdown<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jupyterlab/services/blob/d64afa0/src/kernel/kernel.ts#L226">kernel/kernel.ts:226</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Shutdown a kernel.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A promise that resolves when the kernel has shut down.</p>
+							<h4 id="notes">Notes</h4>
+							<p>Uses the <a href="http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/kernels">Jupyter Notebook API</a>.</p>
+							<p>On a valid response, closes the websocket and disposes of the kernel
+							object, and fulfills the promise.</p>
+							<p>The promise will be rejected if the kernel status is <code>&#39;dead&#39;</code> or if the
+							request fails or the response is invalid.</p>
+							<p>If the server call is successful, the <a href="kernel.ikernel.html#terminated">terminated</a> signal will be
+							emitted.</p>
+						</li>
+					</ul>
+				</section>
+			</section>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="../globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/configsection.html">Config<wbr>Section</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/contents.html">Contents</a>
+					</li>
+					<li class="current tsd-kind-module">
+						<a href="../modules/kernel.html">Kernel</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/kernelmessage.html">Kernel<wbr>Message</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/session.html">Session</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/terminalsession.html">Terminal<wbr>Session</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/nbformat.html">nbformat</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.icomm.html" class="tsd-kind-icon">IComm</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.ifuture.html" class="tsd-kind-icon">IFuture</a>
+					</li>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.ikernel.html" class="tsd-kind-icon">IKernel</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#ajaxsettings" class="tsd-kind-icon">ajax<wbr>Settings</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#baseurl" class="tsd-kind-icon">base<wbr>Url</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#clientid" class="tsd-kind-icon">client<wbr>Id</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#id" class="tsd-kind-icon">id</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#info" class="tsd-kind-icon">info</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#iopubmessage" class="tsd-kind-icon">iopub<wbr>Message</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited">
+								<a href="kernel.ikernel.html#isdisposed" class="tsd-kind-icon">is<wbr>Disposed</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#isready" class="tsd-kind-icon">is<wbr>Ready</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#model" class="tsd-kind-icon">model</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#name" class="tsd-kind-icon">name</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#ready" class="tsd-kind-icon">ready</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#status" class="tsd-kind-icon">status</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#statuschanged" class="tsd-kind-icon">status<wbr>Changed</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#terminated" class="tsd-kind-icon">terminated</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#unhandledmessage" class="tsd-kind-icon">unhandled<wbr>Message</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#username" class="tsd-kind-icon">username</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#connecttocomm" class="tsd-kind-icon">connect<wbr>ToComm</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+								<a href="kernel.ikernel.html#dispose" class="tsd-kind-icon">dispose</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#getspec" class="tsd-kind-icon">get<wbr>Spec</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#interrupt" class="tsd-kind-icon">interrupt</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#reconnect" class="tsd-kind-icon">reconnect</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#registercommtarget" class="tsd-kind-icon">register<wbr>Comm<wbr>Target</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#registermessagehook" class="tsd-kind-icon">register<wbr>Message<wbr>Hook</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestcomminfo" class="tsd-kind-icon">request<wbr>Comm<wbr>Info</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestcomplete" class="tsd-kind-icon">request<wbr>Complete</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestexecute" class="tsd-kind-icon">request<wbr>Execute</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requesthistory" class="tsd-kind-icon">request<wbr>History</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestinspect" class="tsd-kind-icon">request<wbr>Inspect</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestiscomplete" class="tsd-kind-icon">request<wbr>IsComplete</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#requestkernelinfo" class="tsd-kind-icon">request<wbr>Kernel<wbr>Info</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#restart" class="tsd-kind-icon">restart</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#sendinputreply" class="tsd-kind-icon">send<wbr>Input<wbr>Reply</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#sendshellmessage" class="tsd-kind-icon">send<wbr>Shell<wbr>Message</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="kernel.ikernel.html#shutdown" class="tsd-kind-icon">shutdown</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.imanager.html" class="tsd-kind-icon">IManager</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.imodel.html" class="tsd-kind-icon">IModel</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.ioptions.html" class="tsd-kind-icon">IOptions</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.ispecmodel.html" class="tsd-kind-icon">ISpec<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-module">
+						<a href="kernel.ispecmodels.html" class="tsd-kind-icon">ISpec<wbr>Models</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module">
+						<a href="../modules/kernel.html#status" class="tsd-kind-icon">Status</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#connectto" class="tsd-kind-icon">connect<wbr>To</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#findbyid" class="tsd-kind-icon">find<wbr>ById</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#getspecs" class="tsd-kind-icon">get<wbr>Specs</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#listrunning" class="tsd-kind-icon">list<wbr>Running</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#shutdown" class="tsd-kind-icon">shutdown</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="../modules/kernel.html#startnew" class="tsd-kind-icon">start<wbr>New</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="../assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="../assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>
