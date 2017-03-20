@@ -67,11 +67,11 @@ describe('kernel/validate', () => {
       validateMessage(msg);
     });
 
-    it('should throw on an an iopub message type', () => {
+    it('should ignore on an unknown iopub message type', () => {
       let msg = KernelMessage.createMessage({
         msgType: 'foo', channel: 'iopub', session: 'baz'
       }, { });
-      expect(() => validateMessage(msg)).to.throwError();
+      validateMessage(msg);
     });
 
     it('should throw on missing iopub message content', () => {
