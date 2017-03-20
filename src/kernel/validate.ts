@@ -94,8 +94,9 @@ function validateMessage(msg: KernelMessage.IMessage) : void {
 function validateIOPubContent(msg: KernelMessage.IIOPubMessage) : void {
   if (msg.channel === 'iopub') {
     let fields = IOPUB_CONTENT_FIELDS[msg.header.msg_type];
+    // Check for unknown message type.
     if (fields === void 0) {
-      throw Error(`Invalid Kernel message: iopub message type ${msg.header.msg_type} not recognized`);
+      return;
     }
     let names = Object.keys(fields);
     let content = msg.content;
