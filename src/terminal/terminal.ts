@@ -130,13 +130,10 @@ namespace TerminalSession {
    * If the session was already started via `startNew`, the existing
    * session object is used as the fulfillment value.
    *
-   * Otherwise, if `options` are given, we attempt to connect to the existing
-   * session.
-   * The promise is fulfilled when the session is ready on the server,
-   * otherwise the promise is rejected.
+   * Otherwise, if `options` are given, we resolve the promise after
+   * confirming that the session exists on the server.
    *
-   * If the session was not already started and no `options` are given,
-   * the promise is rejected.
+   * If the session does not exist on the server, the promise is rejected.
    */
   export
   function connectTo(name: string, options?: IOptions): Promise<ISession> {

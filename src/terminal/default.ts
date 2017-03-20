@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  each, map, toArray
+  ArrayExt, each, map, toArray
 } from '@phosphor/algorithm';
 
 import {
@@ -291,13 +291,10 @@ namespace DefaultTerminalSession {
    * If the session was already started via `startNew`, the existing
    * session object is used as the fulfillment value.
    *
-   * Otherwise, if `options` are given, we attempt to connect to the existing
-   * session.
-   * The promise is fulfilled when the session is ready on the server,
-   * otherwise the promise is rejected.
+   * Otherwise, if `options` are given, we resolve the promise after
+   * confirming that the session exists on the server.
    *
-   * If the session was not already started and no `options` are given,
-   * the promise is rejected.
+   * If the session does not exist on the server, the promise is rejected.
    */
   export
   function connectTo(name: string, options: TerminalSession.IOptions = {}): Promise<TerminalSession.ISession> {
@@ -309,8 +306,16 @@ namespace DefaultTerminalSession {
     if (url in Private.running) {
       return Promise.resolve(Private.running[url]);
     }
-    let session = new DefaultTerminalSession(name, options);
-    return Promise.resolve(session);
+    return listRunning(options).then(models => {
+      let index = ArrayExt.findFirstIndex(models, model => {
+        return model.name === name;
+      });
+      if (index !== -1) {
+        let session = new DefaultTerminalSession(name, options);
+        return Promise.resolve(session);
+      }
+      return Promise.reject<TerminalSession.ISession>('Could not find session');
+    });
   }
 
   /**

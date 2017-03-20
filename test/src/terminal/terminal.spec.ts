@@ -64,14 +64,33 @@ describe('terminals', () => {
 
     describe('.connectTo', () => {
 
-      it('should give back an existing session', (done) => {
-        TerminalSession.startNew().then(s => {
+      it('should give back an existing session', () => {
+        return TerminalSession.startNew().then(s => {
           session = s;
-          return TerminalSession.connectTo(s.name).then(newSession => {
+          return TerminalSession.connectTo(s.name);
+        }).then(newSession => {
             expect(newSession).to.be(session);
-            done();
-          });
-        }).catch(done);
+         });
+      });
+
+      it('should give back a session that exists on the server', () => {
+        tester.onRequest = () => {
+          tester.respond(200, [{ name: 'foo' }]);
+        };
+        return TerminalSession.connectTo('foo').then(s => {
+          expect(s.name).to.be('foo');
+          s.dispose();
+        });
+      });
+
+      it('should reject if the session does not exist on the server', () => {
+        tester.onRequest = () => {
+          tester.respond(200, [{ name: 'foo' }]);
+        };
+        return TerminalSession.connectTo('bar').then(
+          () => { throw Error('should not get here'); },
+          () => undefined
+        );
       });
 
     });
